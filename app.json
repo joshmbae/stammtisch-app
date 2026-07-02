@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Stammtisch",
+    "name": "Die Hellen",
     "slug": "stammtisch-app",
     "scheme": "stammtisch-app",
     "version": "1.0.0",
@@ -10,15 +10,16 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#1A4480"
     },
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#ffffff",
-        "foregroundImage": "./assets/adaptive-icon.png"
+        "backgroundColor": "#1A4480",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false
     },

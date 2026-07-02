@@ -5,105 +5,184 @@ export interface ChatMessage {
   timestamp: string;
 }
 
-export interface BabyProfile {
+export interface MemberProfile {
   id: string;
   name: string;
-  birthDate: string;
-  dueDate?: string;         // Errechneter Geburtstermin (für Entwicklungssprünge)
-  gender?: "male" | "female" | "other";
-  feedingType: "breastfed" | "formula" | "mixed";
+  spitzname?: string;
+  mitgliedSeit: string;
+  geburtsdatum?: string;                     // ISO date "1990-03-15"
+  rolle: "Stammtischkönig" | "Schriftführer" | "Kassenwart" | "Bierwart" | "Eventmanager" | "Reserviermeister" | "Kameramann" | "Mitglied" | "Gast";
+  lieblingsgetraenk?: string;
+  beruf?: string;
   avatarColor: string;
-  createdAt: string;
   photoUri?: string;
-  weightGrams?: number;
-  premature?: boolean;
-  siblings?: string;
-  medicalNotes?: string;
-  description?: string;
-}
-
-export type MilestoneStatus = "not_yet" | "trying" | "achieved";
-export interface MilestoneProgress {
-  milestoneId: string;
-  status: MilestoneStatus;
-  achievedAt?: string;  // ISO date
-}
-
-export interface ParentProfile {
-  id: string;
-  name: string;
-  role: "Mutter" | "Vater" | "andere";
+  notizen?: string;
   createdAt: string;
-  description?: string;
-}
-
-export interface PregnancyProfile {
-  id: string;
-  nickname: string;         // z. B. "Erdnuss", "Mein Baby"
-  dueDate: string;          // ISO — Errechneter Geburtstermin
-  avatarColor: string;
-  createdAt: string;
-  description?: string;
 }
 
 export interface ChatSession {
   id: string;
-  babyId: string;         // "general" für allgemeinen Chat
+  memberId: string;
   createdAt: string;
   updatedAt: string;
-  preview: string;        // letzte Nutzer-Nachricht als Vorschau
+  preview: string;
 }
 
-// ─── Feeding & Sleep Logs ────────────────────────────────────────────────────
+// ─── Stammtisch-Termin ────────────────────────────────────────────────────────
 
-export type FeedingType = "breast" | "bottle";
-export type BreastSide = "left" | "right" | "both";
-export type SleepType = "nap" | "night";
+export type TerminArt = "stammtisch" | "veranstaltung" | "geburtstag";
 
-export interface FeedingLog {
+export interface StammtischTermin {
   id: string;
-  babyId: string;
-  type: FeedingType;
-  startedAt: string;          // ISO datetime
-  durationMinutes: number;
-  side?: BreastSide;          // only for "breast"
-  amountMl?: number;          // only for "bottle"
-  note?: string;
-}
-
-export interface SleepLog {
-  id: string;
-  babyId: string;
-  type: SleepType;
-  startedAt: string;
-  endedAt: string;
-  durationMinutes: number;
-  note?: string;
-}
-
-export interface ActiveTimer {
-  babyId: string;
-  timerType: "feeding" | "sleep";
-  feedingType?: FeedingType;
-  side?: BreastSide;
-  sleepType?: SleepType;
-  startedAt: string;          // ISO datetime
-}
-
-// ─── Weight Logs ─────────────────────────────────────────────────────────────
-
-export interface WeightLog {
-  id: string;
-  babyId: string;
-  weightGrams: number;
-  measuredAt: string;   // ISO date only: "2025-03-01"
-  note?: string;
-}
-
-export interface Memory {
-  id: string;
-  babyId: string;
-  content: string;
-  category: "sleep" | "feeding" | "health" | "development" | "general" | "mood";
+  art: TerminArt;
+  titel?: string;                           // Pflicht bei "veranstaltung"/"geburtstag", optional bei "stammtisch"
+  datum: string;                            // ISO date "2025-05-01"
+  datumBis?: string;                        // ISO date — Ende bei mehrtägigen Events
+  startZeit?: string;                       // "19:30"
+  endZeit?: string;
+  ort?: string;
+  notizen?: string;
+  aktiv: boolean;                           // läuft gerade
+  startedAt?: string;                       // ISO datetime — wenn gestartet
+  endedAt?: string;                         // ISO datetime — wenn beendet
   createdAt: string;
+  anwesenheit?: string[];                   // memberId-Liste der Anwesenden (Zusagen)
+  absagen?: string[];                        // memberId-Liste der Absagen
+}
+
+// ─── Bier-Logs ────────────────────────────────────────────────────────────────
+
+export type BierTyp = "helles" | "weißbier" | "dunkles" | "radler" | "maß" | "sonstiges";
+
+export interface BierLog {
+  id: string;
+  memberId: string;
+  terminId?: string;
+  bierTyp: BierTyp;
+  anzahl: number;
+  loggedAt: string;
+  note?: string;
+}
+
+// ─── Verspätungs-Logs ─────────────────────────────────────────────────────────
+
+export interface VerspätungLog {
+  id: string;
+  memberId: string;
+  terminId?: string;
+  datum: string;
+  minutenVerspätet: number;
+  grund?: string;
+}
+
+// ─── Schock-Logs ──────────────────────────────────────────────────────────────
+
+export type SchockTyp = "niederlage" | "schock_aus";
+
+export interface SchockLog {
+  id: string;
+  memberId: string;
+  terminId?: string;
+  typ: SchockTyp;
+  loggedAt: string;
+}
+
+// ─── Wetten ───────────────────────────────────────────────────────────────────
+
+export interface Wette {
+  id: string;
+  memberId: string;         // wer wettet
+  terminId?: string;
+  gegenMemberId: string;    // auf wen gewettet wird
+  betrag: number;           // in Euro
+  loggedAt: string;
+  gewonnen?: boolean;       // undefined = offen
+}
+
+// ─── Stammtisch-Erinnerungen ──────────────────────────────────────────────────
+
+export type ErinnerungsKategorie = "bier" | "verspätung" | "anekdote" | "strafe" | "allgemein" | "stimmung";
+
+export interface Erinnerung {
+  id: string;
+  memberId: string;
+  content: string;
+  category: ErinnerungsKategorie;
+  createdAt: string;
+}
+
+// ─── Protokoll ────────────────────────────────────────────────────────────────
+
+export interface Protokoll {
+  id: string;
+  terminId: string;
+  titel?: string;
+  inhalt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ─── Strafen ──────────────────────────────────────────────────────────────────
+
+export type StrafKategorie =
+  | "fehlen_entschuldigt"
+  | "fehlen_unentschuldigt"
+  | "spaet_entschuldigt"
+  | "spaet_15min"
+  | "spaet_30min"
+  | "maennlicher_gast"
+  | "sonstiges";
+
+export const STRAF_KATEGORIEN: {
+  key: StrafKategorie;
+  label: string;
+  betrag: number;
+  emoji: string;
+  beschreibung?: string;
+}[] = [
+  { key: "fehlen_entschuldigt",   label: "Fehlen (entschuld.)",   betrag: 10,  emoji: "📵", beschreibung: "Angekündigt bis 23:59 Uhr Vortag oder triftiger Grund" },
+  { key: "fehlen_unentschuldigt", label: "Fehlen (unentschuld.)", betrag: 50,  emoji: "🚫" },
+  { key: "spaet_entschuldigt",    label: "Zu spät (entschuld.)",  betrag: 5,   emoji: "⏰", beschreibung: "Straffrei <30 Min., sonst 5 € – Tracker ab neuer Ankunftszeit" },
+  { key: "spaet_15min",           label: "Zu spät 15–30 Min.",    betrag: 5,   emoji: "⏱️", beschreibung: "Unentschuldigt – Trinkspruch ab 1 Min., 5 € ab 15 Min." },
+  { key: "spaet_30min",           label: "Zu spät >30 Min.",      betrag: 10,  emoji: "⏱️", beschreibung: "Unentschuldigt" },
+  { key: "maennlicher_gast",      label: "Männl. Gast",           betrag: 20,  emoji: "👨", beschreibung: "Pro Gast – weibliche Gäste nur am Valentinsstammtisch" },
+  { key: "sonstiges",             label: "Sonstiges",             betrag: 0,   emoji: "💰" },
+];
+
+export interface StrafLog {
+  id: string;
+  memberId: string;
+  terminId?: string;
+  kategorie: StrafKategorie;
+  betrag: number;               // in Euro
+  notiz?: string;
+  loggedAt: string;
+  beglichen: boolean;
+}
+
+// ─── Kasse ────────────────────────────────────────────────────────────────────
+
+export type KassenEintragTyp = "einnahme" | "ausgabe" | "abendkosten";
+
+export interface KassenEintrag {
+  id: string;
+  typ: KassenEintragTyp;
+  betrag: number;              // Euro, always positive
+  beschreibung?: string;
+  terminId?: string;
+  bezahltVon?: string;         // memberId — nur bei abendkosten
+  datum: string;               // ISO datetime
+  beglichen?: boolean;         // abendkosten: alle haben zurückgezahlt
+}
+
+// ─── Stammtischverordnung (Settings) ─────────────────────────────────────────
+
+export interface StammtischVerordnung {
+  name: string;
+  treffpunkt?: string;
+  stammtischTag?: string;
+  stammtischzeit?: string;
+  gruendungsjahr?: string;
+  regeln: string[];
+  sonstiges?: string;
 }

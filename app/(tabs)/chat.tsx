@@ -9,101 +9,80 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { BabyProfile, PregnancyProfile, ChatSession } from "../../types";
-import {
-  loadProfiles,
-  loadPregnancyProfiles,
-  loadSessions,
-  createSession,
-} from "../../utils/storage";
+import { MemberProfile, ChatSession } from "../../types";
+import { loadMembers, loadSessions, createSession, loadGeneralSessions, createGeneralSession, deleteGeneralSession } from "../../utils/storage";
+import { useSession } from "../../contexts/SessionContext";
+import { COLORS, SHADOWS } from "../../constants/design";
+import { HamburgerButton } from "../../components/HamburgerButton";
 
-type SessionWithProfile = ChatSession & {
-  profileId: string;
-  profileName: string;
-  profileColor: string;
-  isPregnancy: boolean;
+type SessionWithMember = ChatSession & {
+  memberId: string;
+  memberName: string;
+  memberColor: string;
 };
 
 function formatDate(iso: string): string {
   const date = new Date(iso);
   const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  if (diffDays === 0)
-    return date.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+  const diffDays = Math.floor((now.getTime() - date.getTime()) / 86400000);
+  if (diffDays === 0) return date.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
   if (diffDays === 1) return "Gestern";
   if (diffDays < 7) return date.toLocaleDateString("de-DE", { weekday: "short" });
   return date.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
 }
 
 export default function ChatTab() {
-  const [sessions, setSessions] = useState<SessionWithProfile[]>([]);
-  const [babies, setBabies] = useState<BabyProfile[]>([]);
-  const [pregnancies, setPregnancies] = useState<PregnancyProfile[]>([]);
-  const [showPicker, setShowPicker] = useState(false);
+  const { activeMemberId } = useSession();
+  const [sessions, setSessions] = useState<SessionWithMember[]>([]);
+  const [generalSessions, setGeneralSessions] = useState<ChatSession[]>([]);
+  const [members, setMembers] = useState<MemberProfile[]>([]);
 
   useFocusEffect(
     useCallback(() => {
       async function load() {
-        const [babyProfiles, pregProfiles] = await Promise.all([
-          loadProfiles(),
-          loadPregnancyProfiles(),
-        ]);
-        setBabies(babyProfiles);
-        setPregnancies(pregProfiles);
+        const ms = await loadMembers();
+        setMembers(ms);
 
-        const all: SessionWithProfile[] = [];
+        // Allgemeine Sessions laden (für alle sichtbar)
+        const gs = await loadGeneralSessions();
+        setGeneralSessions(gs);
 
-        for (const b of babyProfiles) {
-          const s = await loadSessions(b.id);
-          for (const sess of s) {
-            all.push({
-              ...sess,
-              profileId: b.id,
-              profileName: b.name,
-              profileColor: b.avatarColor,
-              isPregnancy: false,
-            });
-          }
-        }
+        // Nur Sessions des aktiven Mitglieds laden (persönliche Chats bleiben privat)
+        const targetId = activeMemberId;
+        if (!targetId) { setSessions([]); return; }
 
-        for (const p of pregProfiles) {
-          const s = await loadSessions(p.id);
-          for (const sess of s) {
-            all.push({
-              ...sess,
-              profileId: p.id,
-              profileName: p.nickname,
-              profileColor: p.avatarColor,
-              isPregnancy: true,
-            });
-          }
-        }
+        const s = await loadSessions(targetId);
+        const member = ms.find((m) => m.id === targetId);
+        if (!member) { setSessions([]); return; }
 
-        all.sort(
-          (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-        );
-        setSessions(all);
+        const mapped: SessionWithMember[] = s.map((sess) => ({
+          ...sess, memberId: targetId,
+          memberName: member.name, memberColor: member.avatarColor,
+        }));
+        mapped.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+        setSessions(mapped);
       }
       load();
-    }, [])
+    }, [activeMemberId])
   );
 
-  async function startNewChat(profileId: string, profileName: string, isPregnancy: boolean) {
-    const session = await createSession(profileId);
-    setShowPicker(false);
-    const param = isPregnancy ? `pregnancyId=${profileId}` : `babyId=${profileId}`;
-    router.push(`/chat/${session.id}?${param}`);
+  async function startNewChat() {
+    if (!activeMemberId) return;
+    const session = await createSession(activeMemberId);
+    router.push(`/chat/${session.id}?memberId=${activeMemberId}`);
   }
 
-  function openSession(sess: SessionWithProfile) {
-    const param = sess.isPregnancy
-      ? `pregnancyId=${sess.profileId}`
-      : `babyId=${sess.profileId}`;
-    router.push(`/chat/${sess.id}?${param}`);
+  async function startNewGeneralChat() {
+    const session = await createGeneralSession();
+    router.push(`/chat/${session.id}`);
   }
 
-  const hasProfiles = babies.length > 0 || pregnancies.length > 0;
+  async function handleDeleteGeneralSession(sessionId: string) {
+    await deleteGeneralSession(sessionId);
+    setGeneralSessions((prev) => prev.filter((s) => s.id !== sessionId));
+  }
+
+  const activeMemberObj = activeMemberId ? members.find((m) => m.id === activeMemberId) : null;
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
@@ -111,116 +90,128 @@ export default function ChatTab() {
 
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>Chats</Text>
-          {hasProfiles && (
-            <TouchableOpacity
-              style={[styles.newBtn, showPicker && styles.newBtnActive]}
-              onPress={() => setShowPicker((v) => !v)}
-            >
-              <Ionicons name={showPicker ? "close" : "add"} size={22} color="#FFFFFF" />
+          <HamburgerButton />
+          <View style={styles.headerTexts}>
+            <Text style={styles.headerTitle}>Der Sepp</Text>
+            <Text style={styles.headerSub}>Persönlicher KI-Stammtisch-Assistent</Text>
+          </View>
+          {activeMemberId && (
+            <TouchableOpacity style={styles.newBtn} onPress={startNewChat}>
+              <Ionicons name="add" size={22} color="#FFFFFF" />
             </TouchableOpacity>
           )}
         </View>
 
-        {/* New chat picker */}
-        {showPicker && (
-          <View style={styles.pickerCard}>
-            <Text style={styles.pickerTitle}>Neues Gespräch</Text>
-            {babies.map((b) => (
-              <TouchableOpacity
-                key={b.id}
-                style={styles.pickerRow}
-                onPress={() => startNewChat(b.id, b.name, false)}
-              >
-                <View style={[styles.pickerAvatar, { backgroundColor: b.avatarColor }]}>
-                  <Text style={styles.pickerAvatarText}>{b.name.charAt(0).toUpperCase()}</Text>
-                </View>
-                <Text style={styles.pickerName}>{b.name}</Text>
-                <Ionicons name="chevron-forward" size={16} color="#B0A89A" />
-              </TouchableOpacity>
-            ))}
-            {pregnancies.map((p) => (
-              <TouchableOpacity
-                key={p.id}
-                style={styles.pickerRow}
-                onPress={() => startNewChat(p.id, p.nickname, true)}
-              >
-                <View style={[styles.pickerAvatar, { backgroundColor: p.avatarColor }]}>
-                  <Text style={styles.pickerAvatarText}>{p.nickname.charAt(0).toUpperCase()}</Text>
-                </View>
-                <Text style={styles.pickerName}>{p.nickname}</Text>
-                <Text style={styles.pickerBadge}>Schwangerschaft</Text>
-                <Ionicons name="chevron-forward" size={16} color="#B0A89A" />
-              </TouchableOpacity>
-            ))}
-          </View>
+        {/* Mein persönlicher Sepp */}
+        {activeMemberObj && (
+          <TouchableOpacity
+            style={[styles.personalCard, { borderColor: activeMemberObj.avatarColor + "66" }]}
+            onPress={startNewChat}
+            activeOpacity={0.85}
+          >
+            <View style={[styles.personalIcon, { backgroundColor: activeMemberObj.avatarColor }]}>
+              <Text style={styles.personalLetter}>
+                {activeMemberObj.name.charAt(0).toUpperCase()}
+              </Text>
+            </View>
+            <View style={styles.cardText}>
+              <Text style={styles.cardName}>Mein Sepp</Text>
+              <Text style={styles.cardSub}>Privates Gespräch · nur auf deinem Gerät</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={COLORS.textLight} />
+          </TouchableOpacity>
         )}
 
-        {/* Allgemeiner Chat */}
-        <TouchableOpacity
-          style={styles.generalCard}
-          onPress={() => router.push("/chat/general")}
-          activeOpacity={0.85}
-        >
-          <View style={styles.generalIcon}>
-            <Ionicons name="chatbubble-ellipses" size={24} color="#4A7C6F" />
-          </View>
-          <View style={styles.cardText}>
-            <Text style={styles.cardName}>Allgemeiner Chat</Text>
-            <Text style={styles.cardSub}>Fragen ohne Kindprofil</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color="#B0A89A" />
-        </TouchableOpacity>
+        {/* Allgemeine Sepp-Chats */}
+        <View style={styles.sectionRow}>
+          <Text style={styles.sectionLabel}>Stammtisch-Gespräche</Text>
+          <TouchableOpacity style={styles.sectionAddBtn} onPress={startNewGeneralChat}>
+            <Ionicons name="add" size={18} color={COLORS.blue} />
+          </TouchableOpacity>
+        </View>
 
-        {/* Chronological sessions */}
+        {generalSessions.length === 0 && (
+          <TouchableOpacity style={styles.generalCard} onPress={startNewGeneralChat} activeOpacity={0.85}>
+            <View style={styles.generalIcon}>
+              <Text style={{ fontSize: 26 }}>🧔</Text>
+            </View>
+            <View style={styles.cardText}>
+              <Text style={styles.cardName}>Neues Gespräch mit Sepp</Text>
+              <Text style={styles.cardSub}>Stammtisch-Weisheiten für alle</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={COLORS.textLight} />
+          </TouchableOpacity>
+        )}
+
+        {generalSessions.map((sess) => (
+          <View key={sess.id} style={styles.generalSessionRow}>
+            <TouchableOpacity
+              style={[styles.sessionCard, { flex: 1, marginBottom: 0 }]}
+              onPress={() => router.push(`/chat/${sess.id}`)}
+              activeOpacity={0.85}
+            >
+              <View style={styles.generalIcon}>
+                <Text style={{ fontSize: 22 }}>🧔</Text>
+              </View>
+              <View style={styles.sessionBody}>
+                <View style={styles.sessionTopRow}>
+                  <Text style={styles.sessionName}>Sepp</Text>
+                  <Text style={styles.sessionDate}>{formatDate(sess.updatedAt)}</Text>
+                </View>
+                <Text style={styles.sessionPreview} numberOfLines={1}>{sess.preview}</Text>
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.deleteSessionBtn}
+              onPress={() => handleDeleteGeneralSession(sess.id)}
+            >
+              <Ionicons name="trash-outline" size={16} color={COLORS.danger} />
+            </TouchableOpacity>
+          </View>
+        ))}
+
+        {/* Meine Chat-Verläufe */}
         {sessions.length > 0 && (
-          <Text style={styles.sectionLabel}>Verlauf</Text>
+          <Text style={[styles.sectionLabel, { marginTop: 16, marginBottom: 10 }]}>Meine Gespräche</Text>
         )}
 
         {sessions.map((sess) => (
           <TouchableOpacity
             key={sess.id}
             style={styles.sessionCard}
-            onPress={() => openSession(sess)}
+            onPress={() => router.push(`/chat/${sess.id}?memberId=${sess.memberId}`)}
             activeOpacity={0.85}
           >
-            <View style={[styles.sessionAvatar, { backgroundColor: sess.profileColor }]}>
+            <View style={[styles.sessionAvatar, { backgroundColor: sess.memberColor }]}>
               <Text style={styles.sessionAvatarText}>
-                {sess.profileName.charAt(0).toUpperCase()}
+                {sess.memberName.charAt(0).toUpperCase()}
               </Text>
             </View>
             <View style={styles.sessionBody}>
               <View style={styles.sessionTopRow}>
-                <View style={[styles.profileTag, { backgroundColor: sess.profileColor + "28" }]}>
-                  <Text style={[styles.profileTagText, { color: sess.profileColor }]}>
-                    {sess.profileName}
-                  </Text>
-                </View>
+                <Text style={styles.sessionName}>{sess.memberName}</Text>
                 <Text style={styles.sessionDate}>{formatDate(sess.updatedAt)}</Text>
               </View>
-              <Text style={styles.sessionPreview} numberOfLines={1}>
-                {sess.preview}
-              </Text>
+              <Text style={styles.sessionPreview} numberOfLines={1}>{sess.preview}</Text>
             </View>
           </TouchableOpacity>
         ))}
 
-        {/* Empty state */}
-        {!hasProfiles && (
+        {members.length === 0 && (
           <View style={styles.empty}>
-            <Text style={styles.emptyIcon}>👶</Text>
-            <Text style={styles.emptyText}>Noch kein Kind angelegt.</Text>
-            <TouchableOpacity style={styles.addBtn} onPress={() => router.push("/profile/new")}>
-              <Text style={styles.addBtnText}>Kind hinzufügen</Text>
+            <Text style={styles.emptyIcon}>🧔</Text>
+            <Text style={styles.emptyText}>Noch kein Mitglied angelegt.{"\n"}Sepp wartet schon auf euch!</Text>
+            <TouchableOpacity style={styles.addBtn} onPress={() => router.push("/member/new")}>
+              <Text style={styles.addBtnText}>Mitglied hinzufügen</Text>
             </TouchableOpacity>
           </View>
         )}
 
-        {hasProfiles && sessions.length === 0 && !showPicker && (
+        {activeMemberId && sessions.length === 0 && (
           <View style={styles.noSessions}>
             <Text style={styles.noSessionsText}>
-              Noch keine Gespräche. Tippe auf{" "}
-              <Text style={styles.noSessionsPlus}>+</Text> um zu starten.
+              Noch keine Gespräche.{"\n"}Tippe auf{" "}
+              <Text style={styles.noSessionsPlus}>+</Text> oder auf „Mein Sepp".
             </Text>
           </View>
         )}
@@ -231,150 +222,105 @@ export default function ChatTab() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#FDFAF6" },
+  safe: { flex: 1, backgroundColor: COLORS.background },
   content: { padding: 20, paddingBottom: 40 },
 
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 20,
-    paddingTop: 8,
+    flexDirection: "row", alignItems: "center", gap: 12,
+    backgroundColor: COLORS.cardAlt, borderRadius: 20,
+    padding: 16, marginBottom: 16, ...SHADOWS.card,
+    borderWidth: 1, borderColor: COLORS.border,
   },
-  title: { fontSize: 28, fontWeight: "800", color: "#2D2A26" },
+  headerTexts: { flex: 1 },
+  headerTitle: { fontSize: 18, fontWeight: "800", color: COLORS.textDark },
+  headerSub: { fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
   newBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: "#4A7C6F",
-    alignItems: "center",
-    justifyContent: "center",
+    width: 38, height: 38, borderRadius: 19,
+    backgroundColor: COLORS.blue, alignItems: "center", justifyContent: "center",
   },
-  newBtnActive: { backgroundColor: "#7A7269" },
+  newBtnActive: { backgroundColor: COLORS.textMuted },
 
   pickerCard: {
-    backgroundColor: "#EAF2EF",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1.5,
-    borderColor: "#C5DDD8",
+    backgroundColor: COLORS.goldBg, borderRadius: 16, padding: 16, marginBottom: 16,
+    borderWidth: 1.5, borderColor: COLORS.gold + "55",
   },
   pickerTitle: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#7A7269",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginBottom: 12,
+    fontSize: 13, fontWeight: "700", color: COLORS.textMuted,
+    textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 12,
   },
   pickerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    paddingVertical: 10,
-    borderTopWidth: 1,
-    borderTopColor: "#C5DDD8",
+    flexDirection: "row", alignItems: "center", gap: 12,
+    paddingVertical: 10, borderTopWidth: 1, borderTopColor: COLORS.border,
   },
-  pickerAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  pickerAvatar: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
   pickerAvatarText: { fontSize: 15, fontWeight: "700", color: "#FFFFFF" },
-  pickerName: { flex: 1, fontSize: 15, fontWeight: "600", color: "#2D2A26" },
-  pickerBadge: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#9B7BB8",
-    backgroundColor: "#F0E8FA",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
+  pickerName: { fontSize: 15, fontWeight: "600", color: COLORS.textDark },
+  pickerSub: { fontSize: 12, color: COLORS.textMuted, marginTop: 1 },
+
+  personalCard: {
+    flexDirection: "row", alignItems: "center",
+    backgroundColor: COLORS.card, borderRadius: 16,
+    padding: 16, marginBottom: 10, gap: 14,
+    borderWidth: 1.5, ...SHADOWS.light,
   },
+  personalIcon: {
+    width: 48, height: 48, borderRadius: 24,
+    alignItems: "center", justifyContent: "center",
+  },
+  personalLetter: { fontSize: 20, fontWeight: "700", color: "#FFFFFF" },
 
   generalCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#EAF2EF",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    gap: 14,
-    borderWidth: 1.5,
-    borderColor: "#C5DDD8",
+    flexDirection: "row", alignItems: "center",
+    backgroundColor: COLORS.card, borderRadius: 16,
+    padding: 16, marginBottom: 16, gap: 14,
+    borderWidth: 1.5, borderColor: COLORS.blue + "44", ...SHADOWS.light,
   },
   generalIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "#FFFFFF",
-    alignItems: "center",
-    justifyContent: "center",
+    width: 48, height: 48, borderRadius: 24,
+    backgroundColor: COLORS.goldBg, alignItems: "center", justifyContent: "center",
   },
   cardText: { flex: 1 },
-  cardName: { fontSize: 16, fontWeight: "700", color: "#2D2A26" },
-  cardSub: { fontSize: 13, color: "#7A7269", marginTop: 2 },
+  cardName: { fontSize: 16, fontWeight: "700", color: COLORS.textDark },
+  cardSub: { fontSize: 13, color: COLORS.textMuted, marginTop: 2 },
 
-  sectionLabel: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#7A7269",
-    letterSpacing: 0.8,
-    textTransform: "uppercase",
-    marginBottom: 10,
-    marginTop: 4,
+  sectionRow: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    marginBottom: 10, marginTop: 4,
   },
+  sectionAddBtn: { padding: 4 },
+  sectionLabel: {
+    fontSize: 12, fontWeight: "700", color: COLORS.textMuted,
+    letterSpacing: 0.8, textTransform: "uppercase",
+  },
+  generalSessionRow: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
+  deleteSessionBtn: { padding: 12 },
 
   sessionCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F0EBE3",
-    borderRadius: 14,
-    padding: 12,
-    marginBottom: 8,
-    gap: 12,
+    flexDirection: "row", alignItems: "center",
+    backgroundColor: COLORS.card, borderRadius: 14,
+    padding: 12, marginBottom: 8, gap: 12,
+    borderWidth: 1, borderColor: COLORS.border,
   },
-  sessionAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  },
+  sessionAvatar: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", flexShrink: 0 },
   sessionAvatarText: { fontSize: 18, fontWeight: "700", color: "#FFFFFF" },
   sessionBody: { flex: 1, gap: 4 },
-  sessionTopRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-  },
-  profileTag: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-  },
+  sessionTopRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
+  profileTag: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
   profileTagText: { fontSize: 12, fontWeight: "700" },
-  sessionDate: { fontSize: 12, color: "#B0A89A" },
-  sessionPreview: { fontSize: 14, color: "#7A7269" },
+  sessionName: { fontSize: 13, fontWeight: "700", color: COLORS.textDark, flex: 1 },
+  sessionDate: { fontSize: 12, color: COLORS.textLight },
+  sessionPreview: { fontSize: 14, color: COLORS.textMuted },
 
   empty: { alignItems: "center", paddingTop: 48, gap: 12 },
   emptyIcon: { fontSize: 48 },
-  emptyText: { fontSize: 15, color: "#7A7269" },
+  emptyText: { fontSize: 15, color: COLORS.textMuted, textAlign: "center", lineHeight: 22 },
   addBtn: {
-    backgroundColor: "#4A7C6F",
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    marginTop: 4,
+    backgroundColor: COLORS.blue, borderRadius: 12,
+    paddingVertical: 12, paddingHorizontal: 24, marginTop: 4,
   },
   addBtnText: { color: "#FFFFFF", fontWeight: "700", fontSize: 14 },
 
   noSessions: { alignItems: "center", paddingTop: 32 },
-  noSessionsText: { fontSize: 14, color: "#B0A89A", textAlign: "center" },
-  noSessionsPlus: { fontWeight: "800", color: "#4A7C6F" },
+  noSessionsText: { fontSize: 14, color: COLORS.textLight, textAlign: "center", lineHeight: 21 },
+  noSessionsPlus: { fontWeight: "800", color: COLORS.blue },
 });

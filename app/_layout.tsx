@@ -1,28 +1,31 @@
 import "../global.css";
 import { Stack } from "expo-router";
+import { MenuProvider } from "../contexts/MenuContext";
+import { SessionProvider } from "../contexts/SessionContext";
+import { MenuDrawer } from "../components/MenuDrawer";
 
 export default function RootLayout() {
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="index" />
-      <Stack.Screen name="onboarding" />
-      <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="chat/[id]" />
-      <Stack.Screen name="memory/[id]" />
-      <Stack.Screen name="hebamme" />
-      <Stack.Screen name="profile/new" />
-      <Stack.Screen name="profile/parent-new" />
-      <Stack.Screen name="profile/pregnancy-new" />
-      <Stack.Screen name="profile/[id]" />
-      <Stack.Screen name="profile/edit/[id]" />
-      <Stack.Screen name="profile/parent/[id]" />
-      <Stack.Screen name="profile/pregnancy/[id]" />
-      <Stack.Screen name="profile/pregnancy-development/[id]" />
-      <Stack.Screen name="profile/pregnancy-convert/[id]" />
-      <Stack.Screen name="profile/tracker/[id]" />
-      <Stack.Screen name="profile/weight/[id]" />
-      <Stack.Screen name="profile/development/[id]" />
-      <Stack.Screen name="familie" />
-    </Stack>
+    <SessionProvider>
+      <MenuProvider>
+        <MenuDrawer />
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="index" />
+          <Stack.Screen name="onboarding" />
+          <Stack.Screen name="mitglied-waehlen" />
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="chat/[id]" />
+          <Stack.Screen name="member/new" />
+          <Stack.Screen name="member/[id]" />
+          <Stack.Screen name="member/edit/[id]" />
+          <Stack.Screen name="mitglieder" />
+          <Stack.Screen name="termin/[id]" />
+          <Stack.Screen name="protokolle" />
+          <Stack.Screen name="protokoll/[terminId]" />
+          <Stack.Screen name="kasse" />
+          <Stack.Screen name="ranglisten" />
+        </Stack>
+      </MenuProvider>
+    </SessionProvider>
   );
 }

@@ -9,27 +9,28 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
+import { COLORS } from "../constants/design";
 
 const { width } = Dimensions.get("window");
 
 const slides = [
   {
     key: "1",
-    icon: null,
-    title: "Hallo, ich bin Mia",
-    text: "Deine persönliche Begleiterin für die erste Zeit mit deinem Baby.",
+    emoji: "🍺",
+    title: 'Servus bei \u201eDie Hellen\u201c!',
+    text: "Die digitale Heimat eures Stammtischs. Mitglieder, Bier, Verspätungen — alles an einem Ort.",
   },
   {
     key: "2",
-    icon: "💡",
-    title: "Was ich kann",
-    text: "Ich helfe bei Schlafen, Stillen, Wochenbett und allen Alltagsfragen — rund um die Uhr, sofort.",
+    emoji: "🧔",
+    title: "Der Sepp kennt alles",
+    text: "Unser KI-Stammtischkenner Sepp beantwortet Fragen zu Regeln, Traditionen und Bier — mit bayerischem Charme.",
   },
   {
     key: "3",
-    icon: "🛡️",
-    title: "Wichtig zu wissen",
-    text: "Ich bin keine Ärztin und kein Ersatz für deine Hebamme oder deinen Kinderarzt. Bei Notfällen immer 112 anrufen.",
+    emoji: "📜",
+    title: "Eure Verordnung",
+    text: "Tragt eure Stammtischverordnung ein — Regeln, Strafen, Treffpunkt. Sepp kennt sie dann auswendig.",
     hasCheckbox: true,
   },
 ];
@@ -42,33 +43,26 @@ export default function OnboardingScreen() {
   const isLast = current === slides.length - 1;
 
   async function finish() {
-    await AsyncStorage.setItem("mia_onboarded", "true");
-    router.replace("/(tabs)/home");
+    await AsyncStorage.setItem("st_onboarded", "true");
+    router.replace("/mitglied-waehlen");
   }
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       <View style={styles.container}>
+
         {/* Progress dots */}
         <View style={styles.dots}>
           {slides.map((_, i) => (
-            <View
-              key={i}
-              style={[styles.dot, i === current && styles.dotActive]}
-            />
+            <View key={i} style={[styles.dot, i === current && styles.dotActive]} />
           ))}
         </View>
 
-        {/* Slide content */}
+        {/* Content */}
         <View style={styles.content}>
-          {current === 0 ? (
-            <View style={styles.miaAvatar}>
-              <Text style={styles.miaAvatarText}>M</Text>
-            </View>
-          ) : (
-            <Text style={styles.icon}>{slide.icon}</Text>
-          )}
-
+          <View style={styles.emojiCircle}>
+            <Text style={styles.emojiLarge}>{slide.emoji}</Text>
+          </View>
           <Text style={styles.title}>{slide.title}</Text>
           <Text style={styles.text}>{slide.text}</Text>
 
@@ -81,117 +75,66 @@ export default function OnboardingScreen() {
               <View style={[styles.checkbox, checked && styles.checkboxChecked]}>
                 {checked && <Text style={styles.checkmark}>✓</Text>}
               </View>
-              <Text style={styles.checkboxLabel}>Ich habe das verstanden</Text>
+              <Text style={styles.checkboxLabel}>Verstanden, auf geht's!</Text>
             </TouchableOpacity>
           )}
         </View>
 
-        {/* Navigation button */}
+        {/* Navigation */}
         {isLast ? (
           <TouchableOpacity
             style={[styles.btn, !checked && styles.btnDisabled]}
             onPress={finish}
             disabled={!checked}
           >
-            <Text style={styles.btnText}>Loslegen</Text>
+            <Text style={styles.btnText}>Prost — los geht's! 🍺</Text>
           </TouchableOpacity>
         ) : (
           <TouchableOpacity style={styles.btn} onPress={() => setCurrent((c) => c + 1)}>
             <Text style={styles.btnText}>Weiter</Text>
           </TouchableOpacity>
         )}
+
       </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#FDFAF6" },
-  container: {
-    flex: 1,
-    paddingHorizontal: 28,
-    paddingBottom: 24,
-    justifyContent: "space-between",
+  safe: { flex: 1, backgroundColor: COLORS.background },
+  container: { flex: 1, paddingHorizontal: 28, paddingBottom: 24, justifyContent: "space-between" },
+
+  dots: { flexDirection: "row", justifyContent: "center", gap: 8, paddingTop: 24 },
+  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.border },
+  dotActive: { backgroundColor: COLORS.blue, width: 24 },
+
+  content: { flex: 1, alignItems: "center", justifyContent: "center", gap: 20 },
+
+  emojiCircle: {
+    width: 100, height: 100, borderRadius: 50,
+    backgroundColor: COLORS.blue,
+    alignItems: "center", justifyContent: "center", marginBottom: 8,
+    shadowColor: COLORS.blue,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3, shadowRadius: 12, elevation: 6,
   },
-  dots: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 8,
-    paddingTop: 24,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#D9D4CE",
-  },
-  dotActive: {
-    backgroundColor: "#4A7C6F",
-    width: 24,
-  },
-  content: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 20,
-  },
-  miaAvatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: "#4A7C6F",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 8,
-  },
-  miaAvatarText: {
-    fontSize: 48,
-    fontWeight: "800",
-    color: "#FFFFFF",
-  },
-  icon: {
-    fontSize: 72,
-    marginBottom: 8,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "800",
-    color: "#2D2A26",
-    textAlign: "center",
-  },
-  text: {
-    fontSize: 17,
-    color: "#7A7269",
-    textAlign: "center",
-    lineHeight: 26,
-    maxWidth: width - 80,
-  },
-  checkboxRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    marginTop: 12,
-    padding: 4,
-  },
+  emojiLarge: { fontSize: 48 },
+
+  title: { fontSize: 28, fontWeight: "800", color: COLORS.textDark, textAlign: "center" },
+  text: { fontSize: 17, color: COLORS.textMuted, textAlign: "center", lineHeight: 26, maxWidth: width - 80 },
+
+  checkboxRow: { flexDirection: "row", alignItems: "center", gap: 12, marginTop: 12, padding: 4 },
   checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: "#4A7C6F",
-    alignItems: "center",
-    justifyContent: "center",
+    width: 24, height: 24, borderRadius: 6,
+    borderWidth: 2, borderColor: COLORS.blue,
+    alignItems: "center", justifyContent: "center",
   },
-  checkboxChecked: {
-    backgroundColor: "#4A7C6F",
-  },
+  checkboxChecked: { backgroundColor: COLORS.blue },
   checkmark: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
-  checkboxLabel: { fontSize: 15, color: "#2D2A26" },
+  checkboxLabel: { fontSize: 15, color: COLORS.textDark },
+
   btn: {
-    backgroundColor: "#4A7C6F",
-    borderRadius: 16,
-    paddingVertical: 18,
-    alignItems: "center",
+    backgroundColor: COLORS.blue, borderRadius: 16, paddingVertical: 18, alignItems: "center",
   },
   btnDisabled: { opacity: 0.4 },
   btnText: { color: "#FFFFFF", fontSize: 17, fontWeight: "700" },

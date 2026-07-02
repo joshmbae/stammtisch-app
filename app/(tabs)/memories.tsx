@@ -8,83 +8,72 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { BabyProfile, PregnancyProfile, Memory } from "../../types";
-import {
-  loadProfiles,
-  loadPregnancyProfiles,
-  loadMemories,
-} from "../../utils/storage";
+import { MemberProfile, Erinnerung, ErinnerungsKategorie } from "../../types";
+import { loadMembers, loadErinnerungen } from "../../utils/storage";
+import { COLORS, SHADOWS } from "../../constants/design";
+import { HamburgerButton } from "../../components/HamburgerButton";
 
-type MemoryWithProfile = Memory & {
-  profileName: string;
-  profileColor: string;
+type ErinnerungWithMember = Erinnerung & {
+  memberName: string;
+  memberColor: string;
 };
 
-const CATEGORY_LABELS: Record<Memory["category"], string> = {
-  sleep: "Schlaf",
-  feeding: "Ernährung",
-  health: "Gesundheit",
-  development: "Entwicklung",
-  general: "Allgemein",
-  mood: "Stimmung",
+const KATEGORIE_LABELS: Record<ErinnerungsKategorie, string> = {
+  bier: "Bier",
+  verspätung: "Verspätung",
+  anekdote: "Anekdote",
+  strafe: "Strafe",
+  allgemein: "Allgemein",
+  stimmung: "Stimmung",
 };
 
-const CATEGORY_COLORS: Record<Memory["category"], string> = {
-  sleep: "#7B9EC8",
-  feeding: "#D4856A",
-  health: "#C8A96E",
-  development: "#4A7C6F",
-  general: "#9B7BB8",
-  mood: "#D4856A",
+const KATEGORIE_COLORS: Record<ErinnerungsKategorie, string> = {
+  bier:       COLORS.gold,
+  verspätung: COLORS.danger,
+  anekdote:   COLORS.blue,
+  strafe:     "#8B4513",
+  allgemein:  COLORS.textMuted,
+  stimmung:   "#6B3A8A",
+};
+
+const KATEGORIE_EMOJIS: Record<ErinnerungsKategorie, string> = {
+  bier:       "🍺",
+  verspätung: "⏱️",
+  anekdote:   "😄",
+  strafe:     "💰",
+  allgemein:  "📝",
+  stimmung:   "😊",
 };
 
 function formatDate(iso: string): string {
   const date = new Date(iso);
   const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  if (diffDays === 0)
-    return date.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+  const diffDays = Math.floor((now.getTime() - date.getTime()) / 86400000);
+  if (diffDays === 0) return date.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
   if (diffDays === 1) return "Gestern";
   if (diffDays < 7) return date.toLocaleDateString("de-DE", { weekday: "short" });
   return date.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "2-digit" });
 }
 
-export default function MemoriesTab() {
-  const [memories, setMemories] = useState<MemoryWithProfile[]>([]);
-  const [hasProfiles, setHasProfiles] = useState(false);
+export default function ChronikTab() {
+  const [erinnerungen, setErinnerungen] = useState<ErinnerungWithMember[]>([]);
+  const [hasMembers, setHasMembers] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
       async function load() {
-        const [babyProfiles, pregProfiles] = await Promise.all([
-          loadProfiles(),
-          loadPregnancyProfiles(),
-        ]);
+        const members = await loadMembers();
+        setHasMembers(members.length > 0);
 
-        setHasProfiles(babyProfiles.length > 0 || pregProfiles.length > 0);
-
-        const all: MemoryWithProfile[] = [];
-
-        for (const b of babyProfiles) {
-          const mems = await loadMemories(b.id);
-          for (const m of mems) {
-            all.push({ ...m, profileName: b.name, profileColor: b.avatarColor });
+        const all: ErinnerungWithMember[] = [];
+        for (const m of members) {
+          const erins = await loadErinnerungen(m.id);
+          for (const e of erins) {
+            all.push({ ...e, memberName: m.name, memberColor: m.avatarColor });
           }
         }
-
-        for (const p of pregProfiles) {
-          const mems = await loadMemories(p.id);
-          for (const m of mems) {
-            all.push({ ...m, profileName: p.nickname, profileColor: p.avatarColor });
-          }
-        }
-
-        all.sort(
-          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
-        setMemories(all);
+        all.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setErinnerungen(all);
       }
       load();
     }, [])
@@ -94,60 +83,54 @@ export default function MemoriesTab() {
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
-        <Text style={styles.title}>Gedächtnis</Text>
-        <Text style={styles.subtitle}>Was Mia über deine Familie weiß</Text>
+        <View style={styles.header}>
+          <HamburgerButton />
+          <View style={styles.headerTexts}>
+            <Text style={styles.headerTitle}>Chronik</Text>
+            <Text style={styles.headerSub}>Was Sepp über eure Runde weiß</Text>
+          </View>
+        </View>
 
-        {memories.map((mem) => {
-          const catColor = CATEGORY_COLORS[mem.category] ?? "#9B7BB8";
+        {erinnerungen.map((e) => {
+          const catColor = KATEGORIE_COLORS[e.category] ?? COLORS.textMuted;
+          const catEmoji = KATEGORIE_EMOJIS[e.category] ?? "📝";
           return (
-            <TouchableOpacity
-              key={mem.id}
-              style={styles.memoryCard}
-              onPress={() => router.push(`/memory/${mem.babyId}`)}
-              activeOpacity={0.85}
-            >
-              {/* Profile tag row */}
-              <View style={styles.memoryHeader}>
-                <View style={[styles.profileDot, { backgroundColor: mem.profileColor }]} />
-                <Text style={[styles.profileName, { color: mem.profileColor }]}>
-                  {mem.profileName}
-                </Text>
+            <View key={e.id} style={styles.card}>
+              <View style={styles.cardHeader}>
+                <View style={[styles.memberDot, { backgroundColor: e.memberColor }]} />
+                <Text style={[styles.memberName, { color: e.memberColor }]}>{e.memberName}</Text>
                 <View style={styles.headerRight}>
-                  <View style={[styles.categoryBadge, { backgroundColor: catColor + "22" }]}>
-                    <Text style={[styles.categoryText, { color: catColor }]}>
-                      {CATEGORY_LABELS[mem.category]}
+                  <View style={[styles.badge, { backgroundColor: catColor + "22" }]}>
+                    <Text style={styles.badgeEmoji}>{catEmoji}</Text>
+                    <Text style={[styles.badgeText, { color: catColor }]}>
+                      {KATEGORIE_LABELS[e.category]}
                     </Text>
                   </View>
-                  <Text style={styles.memoryDate}>{formatDate(mem.createdAt)}</Text>
+                  <Text style={styles.dateText}>{formatDate(e.createdAt)}</Text>
                 </View>
               </View>
-
-              {/* Content */}
-              <Text style={styles.memoryContent} numberOfLines={3}>
-                {mem.content}
-              </Text>
-            </TouchableOpacity>
+              <Text style={styles.cardContent} numberOfLines={4}>{e.content}</Text>
+            </View>
           );
         })}
 
-        {/* Empty state */}
-        {!hasProfiles && (
+        {!hasMembers && (
           <View style={styles.empty}>
-            <Text style={styles.emptyIcon}>🧠</Text>
+            <Text style={styles.emptyIcon}>📖</Text>
             <Text style={styles.emptyText}>
-              Noch kein Kind angelegt.{"\n"}Mia speichert beim Chatten automatisch wichtige Infos.
+              Noch kein Mitglied angelegt.{"\n"}Die Chronik füllt sich beim Chatten mit Sepp.
             </Text>
-            <TouchableOpacity style={styles.addBtn} onPress={() => router.push("/profile/new")}>
-              <Text style={styles.addBtnText}>Kind hinzufügen</Text>
+            <TouchableOpacity style={styles.addBtn} onPress={() => router.push("/member/new")}>
+              <Text style={styles.addBtnText}>Mitglied hinzufügen</Text>
             </TouchableOpacity>
           </View>
         )}
 
-        {hasProfiles && memories.length === 0 && (
+        {hasMembers && erinnerungen.length === 0 && (
           <View style={styles.empty}>
-            <Text style={styles.emptyIcon}>🧠</Text>
+            <Text style={styles.emptyIcon}>📖</Text>
             <Text style={styles.emptyText}>
-              Noch keine Erinnerungen.{"\n"}Mia speichert beim Chatten automatisch wichtige Infos.
+              Noch keine Einträge.{"\n"}Sepp merkt sich beim Chatten wichtige Dinge.
             </Text>
           </View>
         )}
@@ -158,67 +141,37 @@ export default function MemoriesTab() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#FDFAF6" },
+  safe: { flex: 1, backgroundColor: COLORS.background },
   content: { padding: 20, paddingBottom: 40 },
 
-  title: { fontSize: 28, fontWeight: "800", color: "#2D2A26", marginBottom: 4, paddingTop: 8 },
-  subtitle: { fontSize: 14, color: "#7A7269", marginBottom: 24 },
+  header: {
+    flexDirection: "row", alignItems: "center", gap: 12,
+    backgroundColor: COLORS.cardAlt, borderRadius: 20,
+    padding: 16, marginBottom: 16, ...SHADOWS.card,
+    borderWidth: 1, borderColor: COLORS.border,
+  },
+  headerTexts: { flex: 1 },
+  headerTitle: { fontSize: 18, fontWeight: "800", color: COLORS.textDark },
+  headerSub: { fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
 
-  memoryCard: {
-    backgroundColor: "#F0EBE3",
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 10,
-    gap: 8,
+  card: {
+    backgroundColor: COLORS.card, borderRadius: 14,
+    padding: 14, marginBottom: 10, gap: 8,
+    borderWidth: 1, borderColor: COLORS.border,
   },
-  memoryHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  profileDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  profileName: {
-    fontSize: 13,
-    fontWeight: "700",
-    flex: 1,
-  },
-  headerRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  categoryBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-  },
-  categoryText: {
-    fontSize: 11,
-    fontWeight: "700",
-  },
-  memoryDate: {
-    fontSize: 11,
-    color: "#B0A89A",
-  },
-  memoryContent: {
-    fontSize: 14,
-    color: "#2D2A26",
-    lineHeight: 20,
-  },
+  cardHeader: { flexDirection: "row", alignItems: "center", gap: 6 },
+  memberDot: { width: 8, height: 8, borderRadius: 4 },
+  memberName: { fontSize: 13, fontWeight: "700", flex: 1 },
+  headerRight: { flexDirection: "row", alignItems: "center", gap: 8 },
+  badge: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+  badgeEmoji: { fontSize: 11 },
+  badgeText: { fontSize: 11, fontWeight: "700" },
+  dateText: { fontSize: 11, color: COLORS.textLight },
+  cardContent: { fontSize: 14, color: COLORS.textDark, lineHeight: 20 },
 
   empty: { alignItems: "center", paddingTop: 48, gap: 12 },
   emptyIcon: { fontSize: 48 },
-  emptyText: { fontSize: 15, color: "#7A7269", textAlign: "center", lineHeight: 22 },
-  addBtn: {
-    backgroundColor: "#4A7C6F",
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    marginTop: 4,
-  },
+  emptyText: { fontSize: 15, color: COLORS.textMuted, textAlign: "center", lineHeight: 22 },
+  addBtn: { backgroundColor: COLORS.blue, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24, marginTop: 4 },
   addBtnText: { color: "#FFFFFF", fontWeight: "700", fontSize: 14 },
 });

@@ -1,283 +1,484 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { BabyProfile, ParentProfile, PregnancyProfile, ChatMessage, ChatSession, Memory, WeightLog, FeedingLog, SleepLog, MilestoneProgress } from "../types";
+import { MemberProfile, ChatMessage, ChatSession, BierLog, VerspätungLog, SchockLog, Wette, Erinnerung, StammtischVerordnung, StammtischTermin, Protokoll, KassenEintrag, StrafLog, StrafKategorie } from "../types";
 
-const PROFILES_KEY = "mia_profiles";
-const PARENT_PROFILES_KEY = "mia_parent_profiles";
+const MEMBERS_KEY = "st_members";
+const VERORDNUNG_KEY = "st_verordnung";
+const TERMINE_KEY = "st_termine";
+const AKTIVER_TERMIN_KEY = "st_aktiver_termin";
+const PROTOKOLLE_KEY = "st_protokolle";
+const KASSE_KEY = "st_kasse";
 
-// ─── Baby Profiles ────────────────────────────────────────────────────────────
+// ─── Member Profiles ──────────────────────────────────────────────────────────
 
-export async function saveProfiles(profiles: BabyProfile[]): Promise<void> {
-  await AsyncStorage.setItem(PROFILES_KEY, JSON.stringify(profiles));
+export async function saveMembers(members: MemberProfile[]): Promise<void> {
+  await AsyncStorage.setItem(MEMBERS_KEY, JSON.stringify(members));
 }
 
-export async function loadProfiles(): Promise<BabyProfile[]> {
-  const data = await AsyncStorage.getItem(PROFILES_KEY);
+export async function loadMembers(): Promise<MemberProfile[]> {
+  const data = await AsyncStorage.getItem(MEMBERS_KEY);
   if (!data) return [];
-  return JSON.parse(data) as BabyProfile[];
+  return JSON.parse(data) as MemberProfile[];
 }
 
-// ─── Parent Profiles ──────────────────────────────────────────────────────────
-
-export async function saveParentProfiles(profiles: ParentProfile[]): Promise<void> {
-  await AsyncStorage.setItem(PARENT_PROFILES_KEY, JSON.stringify(profiles));
-}
-
-export async function loadParentProfiles(): Promise<ParentProfile[]> {
-  const data = await AsyncStorage.getItem(PARENT_PROFILES_KEY);
-  if (!data) return [];
-  return JSON.parse(data) as ParentProfile[];
-}
-
-// ─── Pregnancy Profiles ───────────────────────────────────────────────────────
-
-const PREGNANCY_PROFILES_KEY = "mia_pregnancy_profiles";
-
-export async function savePregnancyProfiles(profiles: PregnancyProfile[]): Promise<void> {
-  await AsyncStorage.setItem(PREGNANCY_PROFILES_KEY, JSON.stringify(profiles));
-}
-
-export async function loadPregnancyProfiles(): Promise<PregnancyProfile[]> {
-  const data = await AsyncStorage.getItem(PREGNANCY_PROFILES_KEY);
-  if (!data) return [];
-  return JSON.parse(data) as PregnancyProfile[];
-}
-
-export async function migratePregnancyToBaby(
-  pregnancyId: string,
-  babyData: Omit<BabyProfile, "id" | "createdAt">
-): Promise<BabyProfile> {
-  const newBaby: BabyProfile = {
-    ...babyData,
-    id: Date.now().toString(),
-    createdAt: new Date().toISOString(),
-  };
-
-  // Save new baby profile
-  const babies = await loadProfiles();
-  await saveProfiles([...babies, newBaby]);
-
-  // Migrate sessions: move to new baby ID, update babyId field
-  const sessions = await loadSessions(pregnancyId);
-  const updatedSessions = sessions.map((s) => ({ ...s, babyId: newBaby.id }));
-  await saveSessions(newBaby.id, updatedSessions);
-  await AsyncStorage.removeItem(`mia_sessions_${pregnancyId}`);
-
-  // Migrate memories: move to new baby ID, update babyId field
-  const memories = await loadMemories(pregnancyId);
-  const updatedMemories = memories.map((m) => ({ ...m, babyId: newBaby.id }));
-  await saveMemories(newBaby.id, updatedMemories);
-  await AsyncStorage.removeItem(`mia_memories_${pregnancyId}`);
-
-  // Remove pregnancy profile (sessions/memories already moved, don't delete them)
-  const pregnancies = await loadPregnancyProfiles();
-  await savePregnancyProfiles(pregnancies.filter((p) => p.id !== pregnancyId));
-
-  return newBaby;
-}
-
-export async function deletePregnancyProfile(id: string): Promise<void> {
-  const profiles = await loadPregnancyProfiles();
-  await savePregnancyProfiles(profiles.filter((p) => p.id !== id));
+export async function deleteMember(id: string): Promise<void> {
+  const members = await loadMembers();
+  await saveMembers(members.filter((m) => m.id !== id));
   const sessions = await loadSessions(id);
-  await Promise.all(sessions.map((s) => AsyncStorage.removeItem(`mia_messages_${s.id}`)));
-  await AsyncStorage.removeItem(`mia_sessions_${id}`);
-  await AsyncStorage.removeItem(`mia_memories_${id}`);
+  await Promise.all(sessions.map((s) => AsyncStorage.removeItem(`st_messages_${s.id}`)));
+  await AsyncStorage.removeItem(`st_sessions_${id}`);
+  await AsyncStorage.removeItem(`st_erinnerungen_${id}`);
+  await AsyncStorage.removeItem(`st_bier_logs_${id}`);
+  await AsyncStorage.removeItem(`st_verspaetung_logs_${id}`);
+}
+
+// ─── Stammtischverordnung ─────────────────────────────────────────────────────
+
+export async function loadVerordnung(): Promise<StammtischVerordnung> {
+  const data = await AsyncStorage.getItem(VERORDNUNG_KEY);
+  if (!data) return { name: "Die Hellen", regeln: [] };
+  return JSON.parse(data) as StammtischVerordnung;
+}
+
+export async function saveVerordnung(v: StammtischVerordnung): Promise<void> {
+  await AsyncStorage.setItem(VERORDNUNG_KEY, JSON.stringify(v));
 }
 
 // ─── Chat Sessions ────────────────────────────────────────────────────────────
 
-export async function loadSessions(babyId: string): Promise<ChatSession[]> {
-  const data = await AsyncStorage.getItem(`mia_sessions_${babyId}`);
+export async function loadSessions(memberId: string): Promise<ChatSession[]> {
+  const data = await AsyncStorage.getItem(`st_sessions_${memberId}`);
   if (!data) return [];
   return JSON.parse(data) as ChatSession[];
 }
 
-export async function saveSessions(babyId: string, sessions: ChatSession[]): Promise<void> {
-  await AsyncStorage.setItem(`mia_sessions_${babyId}`, JSON.stringify(sessions));
+export async function saveSessions(memberId: string, sessions: ChatSession[]): Promise<void> {
+  await AsyncStorage.setItem(`st_sessions_${memberId}`, JSON.stringify(sessions));
 }
 
-export async function createSession(babyId: string): Promise<ChatSession> {
+export async function createSession(memberId: string): Promise<ChatSession> {
   const session: ChatSession = {
     id: Date.now().toString(),
-    babyId,
+    memberId,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     preview: "Neues Gespräch",
   };
-  const existing = await loadSessions(babyId);
-  await saveSessions(babyId, [session, ...existing]);
+  const existing = await loadSessions(memberId);
+  await saveSessions(memberId, [session, ...existing]);
   return session;
 }
 
 export async function updateSessionPreview(
-  babyId: string,
+  memberId: string,
   sessionId: string,
   preview: string
 ): Promise<void> {
-  const sessions = await loadSessions(babyId);
+  const sessions = await loadSessions(memberId);
   const updated = sessions.map((s) =>
     s.id === sessionId ? { ...s, preview, updatedAt: new Date().toISOString() } : s
   );
-  await saveSessions(babyId, updated);
+  await saveSessions(memberId, updated);
 }
 
-export async function deleteSession(babyId: string, sessionId: string): Promise<void> {
-  const sessions = await loadSessions(babyId);
-  await saveSessions(babyId, sessions.filter((s) => s.id !== sessionId));
-  await AsyncStorage.removeItem(`mia_messages_${sessionId}`);
+export async function deleteSession(memberId: string, sessionId: string): Promise<void> {
+  const sessions = await loadSessions(memberId);
+  await saveSessions(memberId, sessions.filter((s) => s.id !== sessionId));
+  await AsyncStorage.removeItem(`st_messages_${sessionId}`);
+}
+
+// ─── General Chat Sessions (shared, not per-member) ──────────────────────────
+
+const GENERAL_SESSIONS_KEY = "st_sessions_general";
+
+export async function loadGeneralSessions(): Promise<ChatSession[]> {
+  const data = await AsyncStorage.getItem(GENERAL_SESSIONS_KEY);
+  if (!data) return [];
+  return JSON.parse(data) as ChatSession[];
+}
+
+export async function saveGeneralSessions(sessions: ChatSession[]): Promise<void> {
+  await AsyncStorage.setItem(GENERAL_SESSIONS_KEY, JSON.stringify(sessions));
+}
+
+export async function createGeneralSession(): Promise<ChatSession> {
+  const session: ChatSession = {
+    id: `general_${Date.now()}`,
+    memberId: "general",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    preview: "Neues Gespräch",
+  };
+  const existing = await loadGeneralSessions();
+  await saveGeneralSessions([session, ...existing]);
+  return session;
+}
+
+export async function updateGeneralSessionPreview(sessionId: string, preview: string): Promise<void> {
+  const sessions = await loadGeneralSessions();
+  const updated = sessions.map((s) =>
+    s.id === sessionId ? { ...s, preview, updatedAt: new Date().toISOString() } : s
+  );
+  await saveGeneralSessions(updated);
+}
+
+export async function deleteGeneralSession(sessionId: string): Promise<void> {
+  const sessions = await loadGeneralSessions();
+  await saveGeneralSessions(sessions.filter((s) => s.id !== sessionId));
+  await AsyncStorage.removeItem(`st_messages_${sessionId}`);
 }
 
 // ─── Messages ─────────────────────────────────────────────────────────────────
 
 export async function saveMessages(sessionId: string, messages: ChatMessage[]): Promise<void> {
-  await AsyncStorage.setItem(`mia_messages_${sessionId}`, JSON.stringify(messages));
+  await AsyncStorage.setItem(`st_messages_${sessionId}`, JSON.stringify(messages));
 }
 
 export async function loadMessages(sessionId: string): Promise<ChatMessage[]> {
-  const data = await AsyncStorage.getItem(`mia_messages_${sessionId}`);
+  const data = await AsyncStorage.getItem(`st_messages_${sessionId}`);
   if (!data) return [];
   return JSON.parse(data) as ChatMessage[];
 }
 
-export async function deleteProfile(id: string): Promise<void> {
-  // Remove profile
-  const profiles = await loadProfiles();
-  await saveProfiles(profiles.filter((p) => p.id !== id));
-  // Remove all sessions + their messages
-  const sessions = await loadSessions(id);
-  await Promise.all(sessions.map((s) => AsyncStorage.removeItem(`mia_messages_${s.id}`)));
-  await AsyncStorage.removeItem(`mia_sessions_${id}`);
-  // Remove memories, weight logs
-  await AsyncStorage.removeItem(`mia_memories_${id}`);
-  await AsyncStorage.removeItem(`mia_weight_logs_${id}`);
-  await AsyncStorage.removeItem(`mia_feeding_logs_${id}`);
-  await AsyncStorage.removeItem(`mia_sleep_logs_${id}`);
-  await AsyncStorage.removeItem(`mia_active_timer_${id}`);
-  await AsyncStorage.removeItem(`mia_milestones_${id}`);
+// ─── Erinnerungen ─────────────────────────────────────────────────────────────
+
+export async function saveErinnerungen(memberId: string, erinnerungen: Erinnerung[]): Promise<void> {
+  await AsyncStorage.setItem(`st_erinnerungen_${memberId}`, JSON.stringify(erinnerungen));
 }
 
-export async function deleteParentProfile(id: string): Promise<void> {
-  const profiles = await loadParentProfiles();
-  await saveParentProfiles(profiles.filter((p) => p.id !== id));
-  await AsyncStorage.removeItem(`mia_memories_${id}`);
-}
-
-// ─── Memories ─────────────────────────────────────────────────────────────────
-
-export async function saveMemories(babyId: string, memories: Memory[]): Promise<void> {
-  await AsyncStorage.setItem(`mia_memories_${babyId}`, JSON.stringify(memories));
-}
-
-export async function loadMemories(babyId: string): Promise<Memory[]> {
-  const data = await AsyncStorage.getItem(`mia_memories_${babyId}`);
+export async function loadErinnerungen(memberId: string): Promise<Erinnerung[]> {
+  const data = await AsyncStorage.getItem(`st_erinnerungen_${memberId}`);
   if (!data) return [];
-  return JSON.parse(data) as Memory[];
+  return JSON.parse(data) as Erinnerung[];
 }
 
-// ─── Weight Logs ──────────────────────────────────────────────────────────────
+// ─── Bier-Logs ────────────────────────────────────────────────────────────────
 
-export async function loadWeightLogs(babyId: string): Promise<WeightLog[]> {
-  const data = await AsyncStorage.getItem(`mia_weight_logs_${babyId}`);
+export async function loadBierLogs(memberId: string): Promise<BierLog[]> {
+  const data = await AsyncStorage.getItem(`st_bier_logs_${memberId}`);
   if (!data) return [];
-  return JSON.parse(data) as WeightLog[];
+  return JSON.parse(data) as BierLog[];
 }
 
-export async function saveWeightLogs(babyId: string, logs: WeightLog[]): Promise<void> {
-  await AsyncStorage.setItem(`mia_weight_logs_${babyId}`, JSON.stringify(logs));
+export async function saveBierLogs(memberId: string, logs: BierLog[]): Promise<void> {
+  await AsyncStorage.setItem(`st_bier_logs_${memberId}`, JSON.stringify(logs));
 }
 
-export async function addWeightLog(
-  babyId: string,
-  weightGrams: number,
-  measuredAt: string,
-  note?: string
-): Promise<WeightLog> {
-  const log: WeightLog = { id: Date.now().toString(), babyId, weightGrams, measuredAt, note };
-  const existing = await loadWeightLogs(babyId);
-  const updated = [...existing, log].sort((a, b) => a.measuredAt.localeCompare(b.measuredAt));
-  await saveWeightLogs(babyId, updated);
+export async function addBierLog(
+  memberId: string,
+  entry: Omit<BierLog, "id" | "memberId">
+): Promise<BierLog> {
+  const log: BierLog = { ...entry, id: Date.now().toString(), memberId };
+  const existing = await loadBierLogs(memberId);
+  await saveBierLogs(memberId, [log, ...existing]);
   return log;
 }
 
-export async function deleteWeightLog(babyId: string, logId: string): Promise<void> {
-  const logs = await loadWeightLogs(babyId);
-  await saveWeightLogs(babyId, logs.filter((l) => l.id !== logId));
+export async function deleteBierLog(memberId: string, logId: string): Promise<void> {
+  const logs = await loadBierLogs(memberId);
+  await saveBierLogs(memberId, logs.filter((l) => l.id !== logId));
 }
 
-// ─── Feeding Logs ─────────────────────────────────────────────────────────────
+// ─── Verspätungs-Logs ─────────────────────────────────────────────────────────
 
-export async function loadFeedingLogs(babyId: string): Promise<FeedingLog[]> {
-  const data = await AsyncStorage.getItem(`mia_feeding_logs_${babyId}`);
+export async function loadVerspätungLogs(memberId: string): Promise<VerspätungLog[]> {
+  const data = await AsyncStorage.getItem(`st_verspaetung_logs_${memberId}`);
   if (!data) return [];
-  return JSON.parse(data) as FeedingLog[];
+  return JSON.parse(data) as VerspätungLog[];
 }
 
-export async function saveFeedingLogs(babyId: string, logs: FeedingLog[]): Promise<void> {
-  await AsyncStorage.setItem(`mia_feeding_logs_${babyId}`, JSON.stringify(logs));
+export async function saveVerspätungLogs(memberId: string, logs: VerspätungLog[]): Promise<void> {
+  await AsyncStorage.setItem(`st_verspaetung_logs_${memberId}`, JSON.stringify(logs));
 }
 
-export async function addFeedingLog(babyId: string, entry: Omit<FeedingLog, "id" | "babyId">): Promise<FeedingLog> {
-  const log: FeedingLog = { ...entry, id: Date.now().toString(), babyId };
-  const existing = await loadFeedingLogs(babyId);
-  await saveFeedingLogs(babyId, [log, ...existing]);
+export async function addVerspätungLog(
+  memberId: string,
+  entry: Omit<VerspätungLog, "id" | "memberId">
+): Promise<VerspätungLog> {
+  const log: VerspätungLog = { ...entry, id: Date.now().toString(), memberId };
+  const existing = await loadVerspätungLogs(memberId);
+  await saveVerspätungLogs(memberId, [log, ...existing]);
   return log;
 }
 
-export async function deleteFeedingLog(babyId: string, logId: string): Promise<void> {
-  const logs = await loadFeedingLogs(babyId);
-  await saveFeedingLogs(babyId, logs.filter((l) => l.id !== logId));
+export async function deleteVerspätungLog(memberId: string, logId: string): Promise<void> {
+  const logs = await loadVerspätungLogs(memberId);
+  await saveVerspätungLogs(memberId, logs.filter((l) => l.id !== logId));
 }
 
-// ─── Sleep Logs ───────────────────────────────────────────────────────────────
+// ─── Schock-Logs ──────────────────────────────────────────────────────────────
 
-export async function loadSleepLogs(babyId: string): Promise<SleepLog[]> {
-  const data = await AsyncStorage.getItem(`mia_sleep_logs_${babyId}`);
+export async function loadSchockLogs(memberId: string): Promise<SchockLog[]> {
+  const data = await AsyncStorage.getItem(`st_schock_logs_${memberId}`);
   if (!data) return [];
-  return JSON.parse(data) as SleepLog[];
+  return JSON.parse(data) as SchockLog[];
 }
 
-export async function saveSleepLogs(babyId: string, logs: SleepLog[]): Promise<void> {
-  await AsyncStorage.setItem(`mia_sleep_logs_${babyId}`, JSON.stringify(logs));
+export async function saveSchockLogs(memberId: string, logs: SchockLog[]): Promise<void> {
+  await AsyncStorage.setItem(`st_schock_logs_${memberId}`, JSON.stringify(logs));
 }
 
-export async function addSleepLog(babyId: string, entry: Omit<SleepLog, "id" | "babyId">): Promise<SleepLog> {
-  const log: SleepLog = { ...entry, id: Date.now().toString(), babyId };
-  const existing = await loadSleepLogs(babyId);
-  await saveSleepLogs(babyId, [log, ...existing]);
+export async function addSchockLog(
+  memberId: string,
+  entry: Omit<SchockLog, "id" | "memberId">
+): Promise<SchockLog> {
+  const log: SchockLog = { ...entry, id: Date.now().toString(), memberId };
+  const existing = await loadSchockLogs(memberId);
+  await saveSchockLogs(memberId, [log, ...existing]);
   return log;
 }
 
-export async function deleteSleepLog(babyId: string, logId: string): Promise<void> {
-  const logs = await loadSleepLogs(babyId);
-  await saveSleepLogs(babyId, logs.filter((l) => l.id !== logId));
+export async function deleteSchockLog(memberId: string, logId: string): Promise<void> {
+  const logs = await loadSchockLogs(memberId);
+  await saveSchockLogs(memberId, logs.filter((l) => l.id !== logId));
 }
 
-// ─── Milestone Progress ───────────────────────────────────────────────────────
+// ─── Wetten ───────────────────────────────────────────────────────────────────
 
-export async function loadMilestoneProgress(babyId: string): Promise<MilestoneProgress[]> {
-  const raw = await AsyncStorage.getItem(`mia_milestones_${babyId}`);
-  return raw ? JSON.parse(raw) : [];
+export async function loadWetten(memberId: string): Promise<Wette[]> {
+  const data = await AsyncStorage.getItem(`st_wetten_${memberId}`);
+  if (!data) return [];
+  return JSON.parse(data) as Wette[];
 }
 
-export async function saveMilestoneProgress(babyId: string, progress: MilestoneProgress[]): Promise<void> {
-  await AsyncStorage.setItem(`mia_milestones_${babyId}`, JSON.stringify(progress));
+export async function saveWetten(memberId: string, wetten: Wette[]): Promise<void> {
+  await AsyncStorage.setItem(`st_wetten_${memberId}`, JSON.stringify(wetten));
 }
 
-export async function setMilestoneStatus(
-  babyId: string,
-  milestoneId: string,
-  status: MilestoneProgress["status"]
-): Promise<MilestoneProgress[]> {
-  const existing = await loadMilestoneProgress(babyId);
-  const filtered = existing.filter((p) => p.milestoneId !== milestoneId);
-  const updated: MilestoneProgress[] = [
-    ...filtered,
-    {
-      milestoneId,
-      status,
-      achievedAt: status === "achieved" ? new Date().toISOString() : undefined,
-    },
-  ];
-  await saveMilestoneProgress(babyId, updated);
+export async function addWette(
+  memberId: string,
+  entry: Omit<Wette, "id" | "memberId">
+): Promise<Wette> {
+  const wette: Wette = { ...entry, id: Date.now().toString(), memberId };
+  const existing = await loadWetten(memberId);
+  await saveWetten(memberId, [wette, ...existing]);
+  return wette;
+}
+
+export async function updateWette(
+  memberId: string,
+  wetteId: string,
+  partial: Partial<Wette>
+): Promise<void> {
+  const wetten = await loadWetten(memberId);
+  await saveWetten(memberId, wetten.map((w) => (w.id === wetteId ? { ...w, ...partial } : w)));
+}
+
+export async function deleteWette(memberId: string, wetteId: string): Promise<void> {
+  const wetten = await loadWetten(memberId);
+  await saveWetten(memberId, wetten.filter((w) => w.id !== wetteId));
+}
+
+// ─── Stammtisch-Termine ───────────────────────────────────────────────────────
+
+export async function loadTermine(): Promise<StammtischTermin[]> {
+  const data = await AsyncStorage.getItem(TERMINE_KEY);
+  if (!data) return [];
+  return JSON.parse(data) as StammtischTermin[];
+}
+
+export async function saveTermine(termine: StammtischTermin[]): Promise<void> {
+  await AsyncStorage.setItem(TERMINE_KEY, JSON.stringify(termine));
+}
+
+export async function addTermin(entry: Omit<StammtischTermin, "id" | "createdAt" | "aktiv">): Promise<StammtischTermin> {
+  const termin: StammtischTermin = {
+    ...entry,
+    id: Date.now().toString(),
+    aktiv: false,
+    createdAt: new Date().toISOString(),
+  };
+  const existing = await loadTermine();
+  await saveTermine([...existing, termin].sort((a, b) => a.datum.localeCompare(b.datum)));
+  return termin;
+}
+
+export async function updateTermin(id: string, partial: Partial<StammtischTermin>): Promise<void> {
+  const termine = await loadTermine();
+  await saveTermine(termine.map((t) => (t.id === id ? { ...t, ...partial } : t)));
+}
+
+export async function deleteTermin(id: string): Promise<void> {
+  const termine = await loadTermine();
+  await saveTermine(termine.filter((t) => t.id !== id));
+}
+
+export async function loadAktiverTermin(): Promise<StammtischTermin | null> {
+  const data = await AsyncStorage.getItem(AKTIVER_TERMIN_KEY);
+  if (!data) return null;
+  return JSON.parse(data) as StammtischTermin;
+}
+
+export async function starteTermin(id: string): Promise<StammtischTermin> {
+  // Anderen aktiven Termin beenden
+  const alle = await loadTermine();
+  const now = new Date().toISOString();
+  const updated = alle.map((t) =>
+    t.aktiv ? { ...t, aktiv: false, endedAt: now } : t
+  );
+  const termin = updated.find((t) => t.id === id);
+  if (!termin) throw new Error("Termin nicht gefunden");
+  const aktiver = { ...termin, aktiv: true, startedAt: now };
+  const final = updated.map((t) => (t.id === id ? aktiver : t));
+  await saveTermine(final);
+  await AsyncStorage.setItem(AKTIVER_TERMIN_KEY, JSON.stringify(aktiver));
+  return aktiver;
+}
+
+export async function beendeTermin(id: string): Promise<void> {
+  const now = new Date().toISOString();
+  await updateTermin(id, { aktiv: false, endedAt: now });
+  await AsyncStorage.removeItem(AKTIVER_TERMIN_KEY);
+}
+
+// ─── Protokolle ───────────────────────────────────────────────────────────────
+
+export async function loadProtokolle(): Promise<Protokoll[]> {
+  const data = await AsyncStorage.getItem(PROTOKOLLE_KEY);
+  if (!data) return [];
+  return JSON.parse(data) as Protokoll[];
+}
+
+export async function loadProtokoll(terminId: string): Promise<Protokoll | null> {
+  const all = await loadProtokolle();
+  return all.find((p) => p.terminId === terminId) ?? null;
+}
+
+export async function saveProtokoll(
+  terminId: string,
+  inhalt: string,
+  titel?: string
+): Promise<Protokoll> {
+  const all = await loadProtokolle();
+  const existing = all.find((p) => p.terminId === terminId);
+  const now = new Date().toISOString();
+  if (existing) {
+    const updated: Protokoll = { ...existing, inhalt, titel, updatedAt: now };
+    await AsyncStorage.setItem(
+      PROTOKOLLE_KEY,
+      JSON.stringify(all.map((p) => (p.terminId === terminId ? updated : p)))
+    );
+    return updated;
+  }
+  const neu: Protokoll = {
+    id: Date.now().toString(),
+    terminId,
+    titel,
+    inhalt,
+    createdAt: now,
+    updatedAt: now,
+  };
+  await AsyncStorage.setItem(PROTOKOLLE_KEY, JSON.stringify([...all, neu]));
+  return neu;
+}
+
+export async function deleteProtokoll(terminId: string): Promise<void> {
+  const all = await loadProtokolle();
+  await AsyncStorage.setItem(
+    PROTOKOLLE_KEY,
+    JSON.stringify(all.filter((p) => p.terminId !== terminId))
+  );
+}
+
+// ─── Strafen ──────────────────────────────────────────────────────────────────
+
+export async function loadStrafLogs(memberId: string): Promise<StrafLog[]> {
+  const data = await AsyncStorage.getItem(`st_straf_logs_${memberId}`);
+  if (!data) return [];
+  return JSON.parse(data) as StrafLog[];
+}
+
+export async function saveStrafLogs(memberId: string, logs: StrafLog[]): Promise<void> {
+  await AsyncStorage.setItem(`st_straf_logs_${memberId}`, JSON.stringify(logs));
+}
+
+export async function addStrafLog(
+  memberId: string,
+  entry: Omit<StrafLog, "id" | "memberId">
+): Promise<StrafLog> {
+  const log: StrafLog = { ...entry, id: Date.now().toString(), memberId };
+  const existing = await loadStrafLogs(memberId);
+  await saveStrafLogs(memberId, [log, ...existing]);
+  return log;
+}
+
+export async function updateStrafLog(memberId: string, logId: string, partial: Partial<StrafLog>): Promise<void> {
+  const logs = await loadStrafLogs(memberId);
+  await saveStrafLogs(memberId, logs.map((l) => l.id === logId ? { ...l, ...partial } : l));
+}
+
+export async function deleteStrafLog(memberId: string, logId: string): Promise<void> {
+  const logs = await loadStrafLogs(memberId);
+  await saveStrafLogs(memberId, logs.filter((l) => l.id !== logId));
+}
+
+export async function loadAllStrafLogs(memberIds: string[]): Promise<StrafLog[]> {
+  const results = await Promise.all(memberIds.map((id) => loadStrafLogs(id)));
+  return results.flat();
+}
+
+// ─── Kasse ────────────────────────────────────────────────────────────────────
+
+export async function loadKasse(): Promise<KassenEintrag[]> {
+  const data = await AsyncStorage.getItem(KASSE_KEY);
+  if (!data) return [];
+  return JSON.parse(data) as KassenEintrag[];
+}
+
+export async function addKassenEintrag(
+  entry: Omit<KassenEintrag, "id">
+): Promise<KassenEintrag> {
+  const neu: KassenEintrag = { ...entry, id: Date.now().toString() };
+  const existing = await loadKasse();
+  await AsyncStorage.setItem(KASSE_KEY, JSON.stringify([neu, ...existing]));
+  return neu;
+}
+
+export async function updateKassenEintrag(id: string, partial: Partial<KassenEintrag>): Promise<void> {
+  const all = await loadKasse();
+  await AsyncStorage.setItem(KASSE_KEY, JSON.stringify(all.map((e) => e.id === id ? { ...e, ...partial } : e)));
+}
+
+export async function deleteKassenEintrag(id: string): Promise<void> {
+  const all = await loadKasse();
+  await AsyncStorage.setItem(KASSE_KEY, JSON.stringify(all.filter((e) => e.id !== id)));
+}
+
+export async function toggleAnwesenheit(terminId: string, memberId: string): Promise<string[]> {
+  const termine = await loadTermine();
+  const termin = termine.find((t) => t.id === terminId);
+  if (!termin) return [];
+  const current = termin.anwesenheit ?? [];
+  const updated = current.includes(memberId)
+    ? current.filter((id) => id !== memberId)
+    : [...current, memberId];
+  await updateTermin(terminId, { anwesenheit: updated });
   return updated;
+}
+
+export async function setAnwesenheitAll(terminId: string, memberIds: string[]): Promise<void> {
+  await updateTermin(terminId, { anwesenheit: memberIds });
+}
+
+export async function loadAgenda(terminId: string): Promise<string> {
+  const data = await AsyncStorage.getItem(`st_agenda_${terminId}`);
+  return data ?? "";
+}
+
+export async function saveAgenda(terminId: string, text: string): Promise<void> {
+  await AsyncStorage.setItem(`st_agenda_${terminId}`, text);
+}
+
+export async function setRsvpStatus(
+  terminId: string,
+  memberId: string,
+  status: "ja" | "nein" | null
+): Promise<void> {
+  const termine = await loadTermine();
+  const termin = termine.find((t) => t.id === terminId);
+  if (!termin) return;
+  const anwesenheit = (termin.anwesenheit ?? []).filter((id) => id !== memberId);
+  const absagen = (termin.absagen ?? []).filter((id) => id !== memberId);
+  if (status === "ja") anwesenheit.push(memberId);
+  if (status === "nein") absagen.push(memberId);
+  await updateTermin(terminId, { anwesenheit, absagen });
 }
