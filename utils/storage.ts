@@ -13,6 +13,8 @@ import {
   Protokoll,
   KassenEintrag,
   StrafLog,
+  ActivityActionType,
+  ActivityLogEntry,
 } from "../types";
 
 function nextId(): string {
@@ -1024,4 +1026,56 @@ export async function setRsvpStatus(
   if (status === "ja") anwesenheit.push(memberId);
   if (status === "nein") absagen.push(memberId);
   await updateTermin(terminId, { anwesenheit, absagen });
+}
+
+// ─── Activity-Feed ─────────────────────────────────────────────────────────────
+
+function rowToActivity(row: any): ActivityLogEntry {
+  return {
+    id: row.id,
+    createdAt: row.created_at,
+    actorMemberId: row.actor_member_id ?? undefined,
+    subjectMemberId: row.subject_member_id ?? undefined,
+    actionType: row.action_type,
+    terminId: row.termin_id ?? undefined,
+    refId: row.ref_id ?? undefined,
+    meta: row.meta ?? {},
+  };
+}
+
+export async function logActivity(entry: {
+  actorMemberId?: string;
+  subjectMemberId?: string;
+  actionType: ActivityActionType;
+  terminId?: string;
+  refId?: string;
+  meta?: Record<string, unknown>;
+}): Promise<ActivityLogEntry> {
+  const stammtischId = await getStammtischId();
+  const row = {
+    id: nextId(),
+    stammtisch_id: stammtischId,
+    created_at: new Date().toISOString(),
+    actor_member_id: entry.actorMemberId ?? null,
+    subject_member_id: entry.subjectMemberId ?? null,
+    action_type: entry.actionType,
+    termin_id: entry.terminId ?? null,
+    ref_id: entry.refId ?? null,
+    meta: entry.meta ?? {},
+  };
+  const { error } = await supabase.from("activity_log").insert(row);
+  if (error) throw error;
+  return rowToActivity(row);
+}
+
+export async function loadActivityFeed(limitCount = 100): Promise<ActivityLogEntry[]> {
+  const stammtischId = await getStammtischId();
+  const { data, error } = await supabase
+    .from("activity_log")
+    .select("*")
+    .eq("stammtisch_id", stammtischId)
+    .order("created_at", { ascending: false })
+    .limit(limitCount);
+  if (error) throw error;
+  return (data ?? []).map(rowToActivity);
 }
