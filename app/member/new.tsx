@@ -14,7 +14,7 @@ import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { MemberProfile } from "../../types";
-import { loadMembers, saveMembers } from "../../utils/storage";
+import { loadMembers, saveMembers, uploadAvatar } from "../../utils/storage";
 import { COLORS, AVATAR_COLORS, ROLLEN } from "../../constants/design";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
@@ -52,8 +52,10 @@ export default function NewMemberScreen() {
       Alert.alert("Name fehlt", "Bitte einen Namen eingeben.");
       return;
     }
+    const id = Date.now().toString();
+    const uploadedPhotoUri = photoUri ? await uploadAvatar(id, photoUri) : undefined;
     const newMember: MemberProfile = {
-      id: Date.now().toString(),
+      id,
       name: name.trim(),
       spitzname: spitzname.trim() || undefined,
       mitgliedSeit: mitgliedSeit.toISOString(),
@@ -62,7 +64,7 @@ export default function NewMemberScreen() {
       lieblingsgetraenk: lieblingsgetraenk.trim() || undefined,
       beruf: beruf.trim() || undefined,
       avatarColor,
-      photoUri,
+      photoUri: uploadedPhotoUri,
       notizen: notizen.trim() || undefined,
       createdAt: new Date().toISOString(),
     };
