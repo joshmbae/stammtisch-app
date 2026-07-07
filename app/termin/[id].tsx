@@ -53,6 +53,7 @@ import {
   saveAgenda,
   updateTermin,
   deleteTermin,
+  logActivity,
 } from "../../utils/storage";
 import { COLORS, SHADOWS } from "../../constants/design";
 import { useSession } from "../../contexts/SessionContext";
@@ -526,6 +527,14 @@ export default function TerminDetailScreen() {
       ...prev,
       [selectedSchockId]: [log, ...(prev[selectedSchockId] ?? [])],
     }));
+    await logActivity({
+      actorMemberId: activeMemberId ?? undefined,
+      subjectMemberId: selectedSchockId,
+      actionType: "schock_log_created",
+      terminId: termin.id,
+      refId: log.id,
+      meta: { typ },
+    });
   }
 
   async function handleDeleteSchock(memberId: string, logId: string) {
@@ -556,6 +565,14 @@ export default function TerminDetailScreen() {
       ...prev,
       [selectedSchockId]: [w, ...(prev[selectedSchockId] ?? [])],
     }));
+    await logActivity({
+      actorMemberId: activeMemberId ?? undefined,
+      subjectMemberId: selectedSchockId,
+      actionType: "wette_created",
+      terminId: termin.id,
+      refId: w.id,
+      meta: { gegenMemberId: wetteGegenId, betrag: w.betrag },
+    });
     setWetteBetrag("");
     setWetteGegenId(null);
     setShowWetteForm(false);
@@ -567,6 +584,17 @@ export default function TerminDetailScreen() {
       ...prev,
       [memberId]: (prev[memberId] ?? []).map((w) => w.id === wetteId ? { ...w, gewonnen } : w),
     }));
+    if (gewonnen !== undefined) {
+      const w = (wettenMap[memberId] ?? []).find((x) => x.id === wetteId);
+      await logActivity({
+        actorMemberId: activeMemberId ?? undefined,
+        subjectMemberId: memberId,
+        actionType: "wette_resolved",
+        terminId: termin?.id,
+        refId: wetteId,
+        meta: { gewonnen, betrag: w?.betrag ?? 0 },
+      });
+    }
   }
 
   async function handleDeleteWette(memberId: string, wetteId: string) {
@@ -605,6 +633,14 @@ export default function TerminDetailScreen() {
       ...prev,
       [strafMemberId]: [log, ...(prev[strafMemberId] ?? [])],
     }));
+    await logActivity({
+      actorMemberId: activeMemberId ?? undefined,
+      subjectMemberId: strafMemberId,
+      actionType: "straf_log_created",
+      terminId: termin.id,
+      refId: log.id,
+      meta: { kategorie: log.kategorie, betrag: log.betrag, notiz: log.notiz },
+    });
     setStrafKategorie(null);
     setStrafBetragOverride("");
     setStrafNotiz("");
@@ -617,6 +653,17 @@ export default function TerminDetailScreen() {
       ...prev,
       [memberId]: (prev[memberId] ?? []).map((l) => l.id === logId ? { ...l, beglichen: !current } : l),
     }));
+    if (!current) {
+      const log = (strafMap[memberId] ?? []).find((l) => l.id === logId);
+      await logActivity({
+        actorMemberId: activeMemberId ?? undefined,
+        subjectMemberId: memberId,
+        actionType: "straf_log_beglichen",
+        terminId: termin?.id,
+        refId: logId,
+        meta: { betrag: log?.betrag ?? 0 },
+      });
+    }
   }
 
   async function handleDeleteStraf(memberId: string, logId: string) {

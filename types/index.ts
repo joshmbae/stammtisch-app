@@ -175,6 +175,30 @@ export interface KassenEintrag {
   beglichen?: boolean;         // abendkosten: alle haben zurückgezahlt
 }
 
+// ─── Activity-Feed ────────────────────────────────────────────────────────────
+
+export type ActivityActionType =
+  | "straf_log_created"
+  | "straf_log_beglichen"
+  | "kasse_einnahme_created"
+  | "kasse_ausgabe_created"
+  | "abendkosten_created"
+  | "kasse_beglichen"
+  | "schock_log_created"
+  | "wette_created"
+  | "wette_resolved";
+
+export interface ActivityLogEntry {
+  id: string;
+  createdAt: string;
+  actorMemberId?: string;      // wer hat's eingetragen
+  subjectMemberId?: string;    // wen betrifft's
+  actionType: ActivityActionType;
+  terminId?: string;
+  refId?: string;              // id des betroffenen Datensatzes
+  meta: Record<string, any>;
+}
+
 // ─── Stammtischverordnung (Settings) ─────────────────────────────────────────
 
 export interface StammtischVerordnung {

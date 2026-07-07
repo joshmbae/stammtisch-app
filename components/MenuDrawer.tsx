@@ -22,6 +22,7 @@ const NAV_ITEMS = [
   { route: "/(tabs)/kalender", label: "Kalender",     icon: "calendar-outline",       activeIcon: "calendar" },
   { route: "/mitglieder",      label: "Mitglieder",   icon: "people-outline",         activeIcon: "people" },
   { route: "/(tabs)/chat",     label: "Der Sepp",     icon: "chatbubbles-outline",    activeIcon: "chatbubbles" },
+  { route: "/feed",            label: "Aktivität",    icon: "pulse-outline",          activeIcon: "pulse" },
   { route: "/kasse",           label: "Kasse",        icon: "wallet-outline",         activeIcon: "wallet" },
   { route: "/ranglisten",      label: "Ranglisten",   icon: "trophy-outline",         activeIcon: "trophy" },
   { route: "/protokolle",      label: "Protokolle",   icon: "document-text-outline",  activeIcon: "document-text" },

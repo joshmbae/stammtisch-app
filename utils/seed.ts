@@ -3,7 +3,8 @@
  * Generiert 2 Jahre Testdaten: 10 Mitglieder, ~52 Stammtische, Logs, Kasse, Protokolle
  */
 
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { supabase } from "./supabase";
+import { getStammtischId } from "./storage";
 import {
   MemberProfile,
   StammtischTermin,
@@ -53,11 +54,24 @@ function nextId(): string {
   return (++_idCounter).toString();
 }
 
+// ─── Batch-Insert-Helfer (PostgREST mag keine riesigen Payloads) ─────────────
+
+async function insertInBatches(table: string, rows: any[], batchSize = 500): Promise<void> {
+  for (let i = 0; i < rows.length; i += batchSize) {
+    const batch = rows.slice(i, i + batchSize);
+    const { error } = await supabase.from(table).insert(batch);
+    if (error) throw new Error(`Insert in ${table} fehlgeschlagen: ${error.message}`);
+  }
+}
+
 // ─── Hauptfunktion ────────────────────────────────────────────────────────────
 
 export async function seedTestData(): Promise<void> {
   _idCounter = 1_700_000_000_000;
   const rng = createRng(1337);
+  const stammtischId = await getStammtischId();
+
+  await clearAllData();
 
   // ── Mitglieder ──────────────────────────────────────────────────────────────
   const memberDefs: {
@@ -389,30 +403,137 @@ export async function seedTestData(): Promise<void> {
     });
   }
 
-  // ── In AsyncStorage schreiben ────────────────────────────────────────────────
-  await AsyncStorage.multiSet([
-    ["st_members",    JSON.stringify(members)],
-    ["st_verordnung", JSON.stringify(verordnung)],
-    ["st_termine",    JSON.stringify(termine)],
-    ["st_kasse",      JSON.stringify(kasse)],
-    ["st_protokolle", JSON.stringify(protokolle)],
-  ]);
+  // ── In Supabase schreiben ────────────────────────────────────────────────────
+  await insertInBatches(
+    "members",
+    members.map((m) => ({
+      id: m.id,
+      stammtisch_id: stammtischId,
+      name: m.name,
+      spitzname: m.spitzname ?? null,
+      mitglied_seit: m.mitgliedSeit,
+      rolle: m.rolle,
+      lieblingsgetraenk: m.lieblingsgetraenk ?? null,
+      beruf: m.beruf ?? null,
+      avatar_color: m.avatarColor,
+      created_at: m.createdAt,
+    }))
+  );
 
-  for (const m of members) {
-    await AsyncStorage.multiSet([
-      [`st_verspaetung_logs_${m.id}`, JSON.stringify(verspätungMap[m.id])],
-      [`st_schock_logs_${m.id}`,      JSON.stringify(schockMap[m.id])],
-      [`st_straf_logs_${m.id}`,       JSON.stringify(strafMap[m.id])],
-    ]);
-  }
+  const { error: vError } = await supabase.from("verordnung").update({
+    name: verordnung.name,
+    treffpunkt: verordnung.treffpunkt ?? null,
+    stammtisch_tag: verordnung.stammtischTag ?? null,
+    stammtischzeit: verordnung.stammtischzeit ?? null,
+    gruendungsjahr: verordnung.gruendungsjahr ?? null,
+    regeln: verordnung.regeln,
+    sonstiges: verordnung.sonstiges ?? null,
+  }).eq("stammtisch_id", stammtischId);
+  if (vError) throw new Error("Verordnung-Update fehlgeschlagen: " + vError.message);
+
+  await insertInBatches(
+    "termine",
+    termine.map((t) => ({
+      id: t.id,
+      stammtisch_id: stammtischId,
+      art: t.art,
+      titel: t.titel ?? null,
+      datum: t.datum,
+      start_zeit: t.startZeit ?? null,
+      end_zeit: t.endZeit ?? null,
+      ort: t.ort ?? null,
+      aktiv: false,
+      started_at: t.startedAt ?? null,
+      ended_at: t.endedAt ?? null,
+      created_at: t.createdAt,
+      anwesenheit: t.anwesenheit ?? [],
+    }))
+  );
+
+  await insertInBatches(
+    "protokolle",
+    protokolle.map((p) => ({
+      id: p.id,
+      termin_id: p.terminId,
+      titel: p.titel ?? null,
+      inhalt: p.inhalt,
+      created_at: p.createdAt,
+      updated_at: p.updatedAt,
+    }))
+  );
+
+  await insertInBatches(
+    "kasse",
+    kasse.map((k) => ({
+      id: k.id,
+      stammtisch_id: stammtischId,
+      typ: k.typ,
+      betrag: k.betrag,
+      beschreibung: k.beschreibung ?? null,
+      termin_id: k.terminId ?? null,
+      bezahlt_von: k.bezahltVon ?? null,
+      datum: k.datum,
+      beglichen: k.beglichen ?? null,
+    }))
+  );
+
+  const alleVerspätung = Object.values(verspätungMap).flat();
+  await insertInBatches(
+    "verspaetung_logs",
+    alleVerspätung.map((v) => ({
+      id: v.id,
+      member_id: v.memberId,
+      termin_id: v.terminId ?? null,
+      datum: v.datum,
+      minuten_verspaetet: v.minutenVerspätet,
+      grund: v.grund ?? null,
+    }))
+  );
+
+  const alleSchock = Object.values(schockMap).flat();
+  await insertInBatches(
+    "schock_logs",
+    alleSchock.map((s) => ({
+      id: s.id,
+      member_id: s.memberId,
+      termin_id: s.terminId ?? null,
+      typ: s.typ,
+      logged_at: s.loggedAt,
+    }))
+  );
+
+  const alleStraf = Object.values(strafMap).flat();
+  await insertInBatches(
+    "straf_logs",
+    alleStraf.map((s) => ({
+      id: s.id,
+      member_id: s.memberId,
+      termin_id: s.terminId ?? null,
+      kategorie: s.kategorie,
+      betrag: s.betrag,
+      notiz: s.notiz ?? null,
+      logged_at: s.loggedAt,
+      beglichen: s.beglichen,
+    }))
+  );
 }
 
 // ─── Alle Stammtisch-Daten löschen ────────────────────────────────────────────
 
 export async function clearAllData(): Promise<void> {
-  const allKeys = await AsyncStorage.getAllKeys();
-  const stKeys = allKeys.filter((k) => k.startsWith("st_"));
-  if (stKeys.length > 0) {
-    await AsyncStorage.multiRemove(stKeys);
-  }
+  const stammtischId = await getStammtischId();
+
+  await supabase.from("chat_sessions").delete().eq("stammtisch_id", stammtischId);
+  await supabase.from("kasse").delete().eq("stammtisch_id", stammtischId);
+  await supabase.from("termine").delete().eq("stammtisch_id", stammtischId);
+  await supabase.from("members").delete().eq("stammtisch_id", stammtischId);
+  await supabase.from("verordnung").update({
+    name: "Mein Stammtisch",
+    treffpunkt: null,
+    stammtisch_tag: null,
+    stammtischzeit: null,
+    gruendungsjahr: null,
+    regeln: [],
+    sonstiges: null,
+  }).eq("stammtisch_id", stammtischId);
 }
