@@ -23,6 +23,7 @@ export default function RootLayout() {
           <Stack.Screen name="protokolle" />
           <Stack.Screen name="protokoll/[terminId]" />
           <Stack.Screen name="kasse" />
+          <Stack.Screen name="strafen" />
           <Stack.Screen name="ranglisten" />
         </Stack>
       </MenuProvider>

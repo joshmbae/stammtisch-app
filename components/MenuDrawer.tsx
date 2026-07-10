@@ -24,6 +24,7 @@ const NAV_ITEMS = [
   { route: "/(tabs)/chat",     label: "Der Sepp",     icon: "chatbubbles-outline",    activeIcon: "chatbubbles" },
   { route: "/feed",            label: "Aktivität",    icon: "pulse-outline",          activeIcon: "pulse" },
   { route: "/kasse",           label: "Kasse",        icon: "wallet-outline",         activeIcon: "wallet" },
+  { route: "/strafen",         label: "Strafen",      icon: "cash-outline",           activeIcon: "cash" },
   { route: "/ranglisten",      label: "Ranglisten",   icon: "trophy-outline",         activeIcon: "trophy" },
   { route: "/protokolle",      label: "Protokolle",   icon: "document-text-outline",  activeIcon: "document-text" },
   { route: "/(tabs)/memories", label: "Chronik",      icon: "book-outline",           activeIcon: "book" },
