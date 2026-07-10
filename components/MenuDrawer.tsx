@@ -7,6 +7,7 @@ import {
   Animated,
   StyleSheet,
   Dimensions,
+  ScrollView,
 } from "react-native";
 import { router, usePathname } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -128,7 +129,7 @@ export function MenuDrawer() {
             <View style={styles.headerDivider} />
 
             {/* Nav Items */}
-            <View style={styles.navList}>
+            <ScrollView style={styles.navList} contentContainerStyle={styles.navListContent} showsVerticalScrollIndicator={false}>
               {NAV_ITEMS.map((item) => {
                 const isActive = pathname.startsWith(item.route.replace("(tabs)/", ""));
                 return (
@@ -154,7 +155,7 @@ export function MenuDrawer() {
                   </TouchableOpacity>
                 );
               })}
-            </View>
+            </ScrollView>
 
             {/* Footer */}
             <View style={styles.drawerFooter}>
@@ -243,8 +244,11 @@ const styles = StyleSheet.create({
 
   navList: {
     flex: 1,
+  },
+  navListContent: {
     paddingHorizontal: 12,
     paddingTop: 6,
+    paddingBottom: 12,
     gap: 2,
   },
   navItem: {
