@@ -18,6 +18,7 @@ import {
   SchockLog,
   StrafLog,
   KassenEintrag,
+  ActivityLogEntry,
 } from "../../types";
 import {
   loadMembers,
@@ -27,7 +28,9 @@ import {
   loadSchockLogs,
   loadStrafLogs,
   loadKasse,
+  loadActivityFeed,
 } from "../../utils/storage";
+import { renderActivity } from "../../utils/activityFeed";
 import { useSession } from "../../contexts/SessionContext";
 import { COLORS, SHADOWS } from "../../constants/design";
 import { HamburgerButton } from "../../components/HamburgerButton";
@@ -52,6 +55,16 @@ function formatDatumKurz(iso: string): string {
 
 function formatEuro(n: number): string {
   return n.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function formatActivityZeit(iso: string): string {
+  const date = new Date(iso);
+  const now = new Date();
+  const diffDays = Math.floor((now.getTime() - date.getTime()) / 86400000);
+  const time = date.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+  if (diffDays === 0) return `Heute, ${time}`;
+  if (diffDays === 1) return `Gestern, ${time}`;
+  return date.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }) + `, ${time}`;
 }
 
 function daysUntil(iso: string): number {
@@ -169,17 +182,19 @@ export default function HomeScreen() {
   const [memberStats, setMemberStats]         = useState<MemberStats[]>([]);
   const [kasse, setKasse]                     = useState<KassenEintrag[]>([]);
   const [terminCount, setTerminCount]         = useState(0);
+  const [lastActivity, setLastActivity]       = useState<ActivityLogEntry | null>(null);
 
   useFocusEffect(useCallback(() => { load(); }, []));
 
   async function load() {
-    const [ms, v, alle, kasseData] = await Promise.all([
-      loadMembers(), loadVerordnung(), loadTermine(), loadKasse(),
+    const [ms, v, alle, kasseData, activityFeed] = await Promise.all([
+      loadMembers(), loadVerordnung(), loadTermine(), loadKasse(), loadActivityFeed(1),
     ]);
 
     setVerordnung(v);
     setKasse(kasseData);
     setMembers(ms);
+    setLastActivity(activityFeed[0] ?? null);
 
     const today = new Date().toISOString().slice(0, 10);
     const upcoming = alle.filter((t) => t.datum >= today).sort((a, b) => a.datum.localeCompare(b.datum));
@@ -222,6 +237,9 @@ export default function HomeScreen() {
   const schockRang = [...memberStats].filter(s => s.schockAus > 0).sort((a, b) => b.schockAus - a.schockAus);
 
   const naechsterInStunden = naechsterTermin ? hoursUntil(naechsterTermin.datum, naechsterTermin.startZeit) : null;
+
+  const membersById = new Map(members.map((m) => [m.id, m]));
+  const lastActivityRendered = lastActivity ? renderActivity(lastActivity, membersById) : null;
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
@@ -366,6 +384,28 @@ export default function HomeScreen() {
             )}
           </TouchableOpacity>
         </View>
+
+        {/* ── Letzte Aktivität ── */}
+        <TouchableOpacity
+          style={styles.activityCard}
+          onPress={() => router.push("/feed")}
+          activeOpacity={0.88}
+        >
+          <View style={styles.activityIcon}>
+            <Text style={{ fontSize: 22 }}>{lastActivityRendered?.emoji ?? "📋"}</Text>
+          </View>
+          <View style={styles.activityTexts}>
+            <Text style={styles.activityTitle} numberOfLines={2}>
+              {lastActivityRendered?.text ?? "Noch keine Aktivität"}
+            </Text>
+            <Text style={styles.activitySub}>
+              {lastActivity
+                ? formatActivityZeit(lastActivity.createdAt) + (lastActivityRendered?.actorText ? ` · ${lastActivityRendered.actorText}` : "")
+                : "Strafen, Bezahlungen & Schock-Ergebnisse tauchen hier auf"}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={COLORS.textLight} />
+        </TouchableOpacity>
 
         {/* ── Die Runde ── */}
         {members.length > 0 && (
@@ -562,23 +602,20 @@ const styles = StyleSheet.create({
   quickValue: { fontSize: 20, fontWeight: "900", color: COLORS.textDark },
   quickLabel: { fontSize: 12, color: COLORS.textMuted, fontWeight: "600" },
 
-  // ── Sepp ─────────────────────────────────────────────────────────────────
-  seppCard: {
+  // ── Letzte Aktivität ────────────────────────────────────────────────────────
+  activityCard: {
     flexDirection: "row", alignItems: "center",
-    backgroundColor: COLORS.blue, borderRadius: 20,
-    padding: 18, marginBottom: 12, gap: 14, ...SHADOWS.card,
+    backgroundColor: COLORS.card, borderRadius: 20,
+    padding: 16, marginBottom: 12, gap: 12,
+    borderWidth: 1, borderColor: COLORS.border, ...SHADOWS.light,
   },
-  seppIcon: {
-    width: 48, height: 48, borderRadius: 24,
-    backgroundColor: "rgba(255,255,255,0.15)", alignItems: "center", justifyContent: "center",
+  activityIcon: {
+    width: 42, height: 42, borderRadius: 21,
+    backgroundColor: COLORS.background, alignItems: "center", justifyContent: "center",
   },
-  seppTexts: { flex: 1 },
-  seppTitle: { fontSize: 17, fontWeight: "800", color: "#FFFFFF", marginBottom: 3 },
-  seppSub: { fontSize: 13, color: "rgba(255,255,255,0.8)", lineHeight: 18 },
-  seppArrow: {
-    width: 34, height: 34, borderRadius: 17,
-    backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center",
-  },
+  activityTexts: { flex: 1 },
+  activityTitle: { fontSize: 14, fontWeight: "700", color: COLORS.textDark, lineHeight: 19 },
+  activitySub: { fontSize: 12, color: COLORS.textMuted, marginTop: 3 },
 
   // ── Die Runde ─────────────────────────────────────────────────────────────
   mitgliederCard: {
