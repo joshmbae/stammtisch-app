@@ -136,8 +136,8 @@ export async function seedTestData(): Promise<void> {
 
   // ── Verordnung ───────────────────────────────────────────────────────────────
   const verordnung: StammtischVerordnung = {
-    name: "Unser Stammtisch",
-    treffpunkt: "Stammlokal",
+    name: "Die Hellen",
+    treffpunkt: "Ayinger am Rotkreuzplatz",
     stammtischTag: "Jeden ersten Donnerstag im Monat",
     stammtischzeit: "19:30 Uhr",
     gruendungsjahr: "2024",
