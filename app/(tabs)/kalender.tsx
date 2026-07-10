@@ -13,6 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { showAlert } from "../../utils/alert";
 import { StammtischTermin, TerminArt, MemberProfile } from "../../types";
 import {
   loadTermine,
@@ -319,7 +320,7 @@ function NeuerTerminForm({ initialDate, onSave, onCancel }: {
 
   async function speichern() {
     if ((isVeranstaltung || isGeburtstag) && !titel.trim()) {
-      Alert.alert("Bitte Titel angeben");
+      showAlert("Bitte Titel angeben");
       return;
     }
     await addTermin({
@@ -507,7 +508,7 @@ export default function KalenderTab() {
   }
 
   async function handleDelete(id: string) {
-    Alert.alert("Eintrag löschen?", "Dieser Eintrag wird entfernt.", [
+    showAlert("Eintrag löschen?", "Dieser Eintrag wird entfernt.", [
       { text: "Abbrechen", style: "cancel" },
       { text: "Löschen", style: "destructive", onPress: async () => { await deleteTermin(id); await load(); } },
     ]);

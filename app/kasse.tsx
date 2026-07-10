@@ -14,6 +14,7 @@ import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import Swipeable from "react-native-gesture-handler/Swipeable";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { showAlert } from "../utils/alert";
 import { KassenEintrag, KassenEintragTyp, MemberProfile } from "../types";
 import {
   loadKasse,
@@ -140,11 +141,11 @@ export default function KasseScreen() {
   async function handleSubmit() {
     const parsed = parseFloat(betrag.replace(",", "."));
     if (isNaN(parsed) || parsed <= 0) {
-      Alert.alert("Ungültiger Betrag", "Bitte einen positiven Betrag eingeben.");
+      showAlert("Ungültiger Betrag", "Bitte einen positiven Betrag eingeben.");
       return;
     }
     if (activeForm === "abendkosten" && !bezahltVon) {
-      Alert.alert("Wer hat gezahlt?", "Bitte ein Mitglied auswählen.");
+      showAlert("Wer hat gezahlt?", "Bitte ein Mitglied auswählen.");
       return;
     }
     const eintrag = await addKassenEintrag({

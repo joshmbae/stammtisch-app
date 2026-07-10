@@ -13,6 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
+import { showAlert } from "../../../utils/alert";
 import { MemberProfile } from "../../../types";
 import { loadMembers, saveMembers, uploadAvatar } from "../../../utils/storage";
 import { COLORS, AVATAR_COLORS, ROLLEN } from "../../../constants/design";
@@ -53,7 +54,7 @@ export default function EditMemberScreen() {
   async function pickPhoto() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert("Kein Zugriff", "Bitte erlaube den Zugriff auf die Fotobibliothek in den Einstellungen.");
+      showAlert("Kein Zugriff", "Bitte erlaube den Zugriff auf die Fotobibliothek in den Einstellungen.");
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -67,7 +68,7 @@ export default function EditMemberScreen() {
 
   async function save() {
     if (!name.trim()) {
-      Alert.alert("Name fehlt", "Bitte einen Namen eingeben.");
+      showAlert("Name fehlt", "Bitte einen Namen eingeben.");
       return;
     }
     const uploadedPhotoUri =

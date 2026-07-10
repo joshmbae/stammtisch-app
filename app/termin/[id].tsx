@@ -16,6 +16,7 @@ import { router, useLocalSearchParams, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import Swipeable from "react-native-gesture-handler/Swipeable";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { showAlert } from "../../utils/alert";
 import {
   MemberProfile,
   StammtischTermin,
@@ -114,7 +115,7 @@ function MemberRow({
   function submit() {
     const m = parseInt(minuten, 10);
     if (isNaN(m) || m <= 0) {
-      Alert.alert("Ungültig", "Bitte eine gültige Minutenzahl eingeben.");
+      showAlert("Ungültig", "Bitte eine gültige Minutenzahl eingeben.");
       return;
     }
     onAddVerspätung(m, grund.trim() || undefined);
@@ -547,12 +548,12 @@ export default function TerminDetailScreen() {
 
   async function handleAddWette() {
     if (!selectedSchockId || !wetteGegenId || !termin) {
-      Alert.alert("Fehlt", "Bitte einen Gegner auswählen.");
+      showAlert("Fehlt", "Bitte einen Gegner auswählen.");
       return;
     }
     const betrag = parseFloat(wetteBetrag.replace(",", "."));
     if (isNaN(betrag) || betrag <= 0) {
-      Alert.alert("Ungültig", "Bitte einen gültigen Betrag eingeben.");
+      showAlert("Ungültig", "Bitte einen gültigen Betrag eingeben.");
       return;
     }
     const w = await addWette(selectedSchockId, {
@@ -678,7 +679,7 @@ export default function TerminDetailScreen() {
 
   async function handleDelete() {
     if (!termin) return;
-    Alert.alert("Termin löschen?", "Dieser Termin wird unwiderruflich gelöscht.", [
+    showAlert("Termin löschen?", "Dieser Termin wird unwiderruflich gelöscht.", [
       { text: "Abbrechen", style: "cancel" },
       {
         text: "Löschen", style: "destructive", onPress: async () => {

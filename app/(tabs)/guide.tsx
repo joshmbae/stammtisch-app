@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { showAlert } from "../../utils/alert";
 import { StammtischVerordnung } from "../../types";
 import { loadVerordnung, saveVerordnung } from "../../utils/storage";
 import { seedTestData, clearAllData } from "../../utils/seed";
@@ -25,9 +26,9 @@ export default function EinstellungenScreen() {
   const [seeding, setSeeding] = useState(false);
 
   async function handleSeed() {
-    Alert.alert(
+    showAlert(
       "Testdaten laden?",
-      "Bestehende Daten werden überschrieben. 10 Mitglieder, ~52 Stammtische und 2 Jahre Logs werden angelegt.",
+      "Bestehende Daten werden überschrieben. 11 Mitglieder, monatliche Stammtische seit Oktober 2024 und alle Logs werden angelegt.",
       [
         { text: "Abbrechen", style: "cancel" },
         {
@@ -37,9 +38,9 @@ export default function EinstellungenScreen() {
             setSeeding(true);
             try {
               await seedTestData();
-              Alert.alert("Fertig! 🍺", "Testdaten wurden geladen. Du kannst die App jetzt erkunden.");
+              showAlert("Fertig! 🍺", "Testdaten wurden geladen. Du kannst die App jetzt erkunden.");
             } catch (e) {
-              Alert.alert("Fehler", "Testdaten konnten nicht geladen werden.");
+              showAlert("Fehler", "Testdaten konnten nicht geladen werden.");
             } finally {
               setSeeding(false);
             }
@@ -50,7 +51,7 @@ export default function EinstellungenScreen() {
   }
 
   async function handleClear() {
-    Alert.alert(
+    showAlert(
       "Alle Daten löschen?",
       "Sämtliche Mitglieder, Termine und Logs werden unwiderruflich gelöscht.",
       [
@@ -62,7 +63,7 @@ export default function EinstellungenScreen() {
             setSeeding(true);
             try {
               await clearAllData();
-              Alert.alert("Gelöscht", "Alle Stammtisch-Daten wurden entfernt.");
+              showAlert("Gelöscht", "Alle Stammtisch-Daten wurden entfernt.");
             } finally {
               setSeeding(false);
             }
@@ -87,7 +88,7 @@ export default function EinstellungenScreen() {
   async function speichern() {
     await saveVerordnung(verordnung);
     setDirty(false);
-    Alert.alert("Gespeichert", "Die Stammtischverordnung wurde gespeichert.");
+    showAlert("Gespeichert", "Die Stammtischverordnung wurde gespeichert.");
   }
 
   function regelHinzufügen() {
@@ -263,7 +264,7 @@ export default function EinstellungenScreen() {
         <Text style={[styles.sectionTitle, { marginTop: 32 }]}>🧪 Entwickler</Text>
         <View style={styles.devCard}>
           <Text style={styles.devHint}>
-            Lädt 10 Mitglieder, ~52 Stammtische und 2 Jahre Logs (Verspätungen, Schocken, Strafen, Kasse, Protokolle) als realistische Testdaten.
+            Lädt 11 Mitglieder, monatliche Stammtische seit Oktober 2024 und alle Logs (Verspätungen, Schocken, Strafen, Kasse, Protokolle) als realistische Testdaten.
           </Text>
           <TouchableOpacity
             style={[styles.devBtn, styles.devBtnPrimary, seeding && styles.devBtnDisabled]}

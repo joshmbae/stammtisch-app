@@ -10,6 +10,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { showAlert } from "../utils/alert";
 import { MemberProfile } from "../types";
 import { loadMembers, deleteMember } from "../utils/storage";
 import { COLORS, SHADOWS } from "../constants/design";
@@ -25,7 +26,7 @@ export default function MitgliederScreen() {
   );
 
   async function handleDelete(m: MemberProfile) {
-    Alert.alert(
+    showAlert(
       `${m.name} entfernen?`,
       "Alle Daten dieses Mitglieds werden gelöscht. Das kann nicht rückgängig gemacht werden.",
       [

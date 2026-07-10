@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { showAlert } from "../../utils/alert";
 import { StammtischTermin, Protokoll } from "../../types";
 import {
   loadTermine,
@@ -93,7 +94,7 @@ export default function ProtokollEditor() {
 
   async function handleSave() {
     if (!inhalt.trim()) {
-      Alert.alert("Leer", "Bitte mindestens den Inhalt eintragen.");
+      showAlert("Leer", "Bitte mindestens den Inhalt eintragen.");
       return;
     }
     setSaving(true);
@@ -105,7 +106,7 @@ export default function ProtokollEditor() {
   }
 
   async function handleDelete() {
-    Alert.alert(
+    showAlert(
       "Protokoll löschen?",
       "Das Protokoll wird unwiderruflich gelöscht.",
       [
