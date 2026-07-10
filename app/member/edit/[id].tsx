@@ -14,7 +14,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { MemberProfile } from "../../../types";
-import { loadMembers, saveMembers } from "../../../utils/storage";
+import { loadMembers, saveMembers, uploadAvatar } from "../../../utils/storage";
 import { COLORS, AVATAR_COLORS, ROLLEN } from "../../../constants/design";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
@@ -70,6 +70,8 @@ export default function EditMemberScreen() {
       Alert.alert("Name fehlt", "Bitte einen Namen eingeben.");
       return;
     }
+    const uploadedPhotoUri =
+      photoUri && !photoUri.startsWith("http") ? await uploadAvatar(id, photoUri) : photoUri;
     const members = await loadMembers();
     const updated = members.map((m) =>
       m.id === id
@@ -83,7 +85,7 @@ export default function EditMemberScreen() {
             lieblingsgetraenk: lieblingsgetraenk.trim() || undefined,
             beruf: beruf.trim() || undefined,
             avatarColor,
-            photoUri,
+            photoUri: uploadedPhotoUri,
             notizen: notizen.trim() || undefined,
           }
         : m

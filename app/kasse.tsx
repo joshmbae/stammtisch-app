@@ -21,9 +21,11 @@ import {
   updateKassenEintrag,
   deleteKassenEintrag,
   loadMembers,
+  logActivity,
 } from "../utils/storage";
 import { COLORS, SHADOWS } from "../constants/design";
 import { HamburgerButton } from "../components/HamburgerButton";
+import { useSession } from "../contexts/SessionContext";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -95,6 +97,7 @@ function EintragRow({
 type FormTyp = KassenEintragTyp | null;
 
 export default function KasseScreen() {
+  const { activeMemberId } = useSession();
   const [eintraege, setEintraege] = useState<KassenEintrag[]>([]);
   const [members, setMembers] = useState<MemberProfile[]>([]);
   const [activeForm, setActiveForm] = useState<FormTyp>(null);
@@ -153,6 +156,15 @@ export default function KasseScreen() {
       datum: new Date().toISOString(),
     });
     setEintraege((prev) => [eintrag, ...prev]);
+    await logActivity({
+      actorMemberId: activeMemberId ?? undefined,
+      subjectMemberId: eintrag.bezahltVon,
+      actionType:
+        eintrag.typ === "abendkosten" ? "abendkosten_created" :
+        eintrag.typ === "einnahme" ? "kasse_einnahme_created" : "kasse_ausgabe_created",
+      refId: eintrag.id,
+      meta: { betrag: eintrag.betrag, beschreibung: eintrag.beschreibung },
+    });
     closeForm();
   }
 
@@ -164,6 +176,16 @@ export default function KasseScreen() {
   async function handleToggleBeglichen(id: string, current: boolean) {
     await updateKassenEintrag(id, { beglichen: !current });
     setEintraege((prev) => prev.map((e) => e.id === id ? { ...e, beglichen: !current } : e));
+    if (!current) {
+      const e = eintraege.find((x) => x.id === id);
+      await logActivity({
+        actorMemberId: activeMemberId ?? undefined,
+        subjectMemberId: e?.bezahltVon,
+        actionType: "kasse_beglichen",
+        refId: id,
+        meta: { betrag: e?.betrag ?? 0 },
+      });
+    }
   }
 
   const saldoPositiv = saldo >= 0;
