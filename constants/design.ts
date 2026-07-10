@@ -83,8 +83,12 @@ export const ROLLEN = [
   "Kassenwart",
   "Bierwart",
   "Eventmanager",
+  "Vize-Eventmanager",
   "Reserviermeister",
+  "Vize-Reserviermeister",
   "Kameramann",
+  "Foto-Beauftragter",
+  "Reiseminister",
   "Mitglied",
   "Gast",
 ] as const;
