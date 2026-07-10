@@ -402,7 +402,7 @@ export default function TerminDetailScreen() {
   const [protokoll, setProtokoll] = useState<Protokoll | null>(null);
 
   // Tabs
-  const [activeTab, setActiveTab] = useState<"anwesenheit" | "schocken" | "protokoll">("anwesenheit");
+  const [activeTab, setActiveTab] = useState<"anwesenheit" | "strafen" | "schocken" | "agenda" | "protokoll">("anwesenheit");
 
   // Agenda
   const [agendaText, setAgendaText] = useState("");
@@ -925,8 +925,14 @@ export default function TerminDetailScreen() {
 
           {/* ── Tabs ── */}
           <View style={styles.tabBar}>
-            {(["anwesenheit", "schocken", "protokoll"] as const).map((tab) => {
-              const labels = { anwesenheit: "Anwesenheit", schocken: "Schocken", protokoll: "Protokoll" };
+            {(["anwesenheit", "strafen", "schocken", "agenda", "protokoll"] as const).map((tab) => {
+              const meta: Record<typeof tab, { label: string; icon: keyof typeof Ionicons.glyphMap }> = {
+                anwesenheit: { label: "Anwes.",  icon: "people-outline" },
+                strafen:     { label: "Strafen",  icon: "cash-outline" },
+                schocken:    { label: "Schocken", icon: "dice-outline" },
+                agenda:      { label: "Agenda",   icon: "list-outline" },
+                protokoll:   { label: "Protokoll", icon: "document-text-outline" },
+              };
               const isActive = activeTab === tab;
               return (
                 <TouchableOpacity
@@ -934,15 +940,16 @@ export default function TerminDetailScreen() {
                   style={[styles.tabBtn, isActive && styles.tabBtnActive]}
                   onPress={() => setActiveTab(tab)}
                 >
-                  <Text style={[styles.tabBtnText, isActive && styles.tabBtnTextActive]}>
-                    {labels[tab]}
+                  <Ionicons name={meta[tab].icon} size={17} color={isActive ? "#FFFFFF" : COLORS.textMuted} />
+                  <Text style={[styles.tabBtnText, isActive && styles.tabBtnTextActive]} numberOfLines={1}>
+                    {meta[tab].label}
                   </Text>
                 </TouchableOpacity>
               );
             })}
           </View>
 
-          {/* ── Tab: Anwesenheit & Strafen ── */}
+          {/* ── Tab: Anwesenheit ── */}
           {activeTab === "anwesenheit" && (
             <>
               {/* Stats bar */}
@@ -991,9 +998,13 @@ export default function TerminDetailScreen() {
                   />
                 );
               })}
+            </>
+          )}
 
-              {/* Strafen */}
-              <View style={[styles.sectionHeader, { marginTop: 16 }]}>
+          {/* ── Tab: Strafen ── */}
+          {activeTab === "strafen" && (
+            <>
+              <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>💰 Strafen</Text>
                 {totalStrafOffen > 0 && (
                   <Text style={[styles.sectionBadge, { color: COLORS.danger, backgroundColor: COLORS.danger + "12" }]}>
@@ -1334,27 +1345,27 @@ export default function TerminDetailScreen() {
             </>
           )}
 
+          {/* ── Tab: Agenda ── */}
+          {activeTab === "agenda" && (
+            <View style={styles.protokollCard}>
+              <View style={styles.protokollHeader}>
+                <Ionicons name="list-outline" size={18} color={COLORS.gold} />
+                <Text style={[styles.protokollTitel, { color: COLORS.gold }]}>Agenda</Text>
+              </View>
+              <TextInput
+                style={styles.agendaInput}
+                value={agendaText}
+                onChangeText={(t) => { setAgendaText(t); saveAgenda(id, t); }}
+                placeholder={"Punkte für heute Abend...\n- Thema 1\n- Thema 2"}
+                placeholderTextColor={COLORS.textLight}
+                multiline
+                textAlignVertical="top"
+              />
+            </View>
+          )}
+
           {/* ── Tab: Protokoll ── */}
           {activeTab === "protokoll" && (
-            <>
-              {/* Agenda */}
-              <View style={styles.protokollCard}>
-                <View style={styles.protokollHeader}>
-                  <Ionicons name="list-outline" size={18} color={COLORS.gold} />
-                  <Text style={[styles.protokollTitel, { color: COLORS.gold }]}>Agenda</Text>
-                </View>
-                <TextInput
-                  style={styles.agendaInput}
-                  value={agendaText}
-                  onChangeText={(t) => { setAgendaText(t); saveAgenda(id, t); }}
-                  placeholder={"Punkte für heute Abend...\n- Thema 1\n- Thema 2"}
-                  placeholderTextColor={COLORS.textLight}
-                  multiline
-                  textAlignVertical="top"
-                />
-              </View>
-
-              {/* Protokoll */}
               <TouchableOpacity
                 style={styles.protokollCard}
                 onPress={() => router.push(`/protokoll/${id}`)}
@@ -1384,7 +1395,6 @@ export default function TerminDetailScreen() {
                   </View>
                 )}
               </TouchableOpacity>
-            </>
           )}
 
         </ScrollView>
@@ -1421,10 +1431,10 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: COLORS.border,
   },
   tabBtn: {
-    flex: 1, paddingVertical: 9, borderRadius: 10, alignItems: "center",
+    flex: 1, paddingVertical: 8, borderRadius: 10, alignItems: "center", gap: 2,
   },
   tabBtnActive: { backgroundColor: COLORS.blue },
-  tabBtnText: { fontSize: 13, fontWeight: "600", color: COLORS.textMuted },
+  tabBtnText: { fontSize: 10, fontWeight: "600", color: COLORS.textMuted },
   tabBtnTextActive: { color: "#FFFFFF", fontWeight: "700" },
 
   sectionHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 },
