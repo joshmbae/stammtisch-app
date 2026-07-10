@@ -219,7 +219,7 @@ export default function HomeScreen() {
   const gruendungsjahr = verordnung?.gruendungsjahr ? parseInt(verordnung.gruendungsjahr) : null;
   const jahre = gruendungsjahr ? new Date().getFullYear() - gruendungsjahr : null;
 
-  const schockRang = [...memberStats].filter(s => s.niederlagen + s.schockAus > 0).sort((a, b) => (b.niederlagen + b.schockAus) - (a.niederlagen + a.schockAus));
+  const schockRang = [...memberStats].filter(s => s.schockAus > 0).sort((a, b) => b.schockAus - a.schockAus);
 
   const naechsterInStunden = naechsterTermin ? hoursUntil(naechsterTermin.datum, naechsterTermin.startZeit) : null;
 
