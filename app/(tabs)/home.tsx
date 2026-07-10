@@ -386,26 +386,29 @@ export default function HomeScreen() {
         </View>
 
         {/* ── Letzte Aktivität ── */}
-        <TouchableOpacity
-          style={styles.activityCard}
-          onPress={() => router.push("/feed")}
-          activeOpacity={0.88}
-        >
-          <View style={styles.activityIcon}>
-            <Text style={{ fontSize: 22 }}>{lastActivityRendered?.emoji ?? "📋"}</Text>
-          </View>
-          <View style={styles.activityTexts}>
-            <Text style={styles.activityTitle} numberOfLines={2}>
-              {lastActivityRendered?.text ?? "Noch keine Aktivität"}
-            </Text>
-            <Text style={styles.activitySub}>
-              {lastActivity
-                ? formatActivityZeit(lastActivity.createdAt) + (lastActivityRendered?.actorText ? ` · ${lastActivityRendered.actorText}` : "")
-                : "Strafen, Bezahlungen & Schock-Ergebnisse tauchen hier auf"}
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color={COLORS.textLight} />
-        </TouchableOpacity>
+        <View style={styles.activityCard}>
+          <Text style={styles.activityHeader}>📋 Letzte Aktivität</Text>
+          <TouchableOpacity
+            style={styles.activityRow}
+            onPress={() => router.push("/feed")}
+            activeOpacity={0.88}
+          >
+            <View style={styles.activityIcon}>
+              <Text style={{ fontSize: 22 }}>{lastActivityRendered?.emoji ?? "📋"}</Text>
+            </View>
+            <View style={styles.activityTexts}>
+              <Text style={styles.activityTitle} numberOfLines={2}>
+                {lastActivityRendered?.text ?? "Noch keine Aktivität"}
+              </Text>
+              <Text style={styles.activitySub}>
+                {lastActivity
+                  ? formatActivityZeit(lastActivity.createdAt) + (lastActivityRendered?.actorText ? ` · ${lastActivityRendered.actorText}` : "")
+                  : "Strafen, Bezahlungen & Schock-Ergebnisse tauchen hier auf"}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={COLORS.textLight} />
+          </TouchableOpacity>
+        </View>
 
         {/* ── Die Runde ── */}
         {members.length > 0 && (
@@ -604,11 +607,12 @@ const styles = StyleSheet.create({
 
   // ── Letzte Aktivität ────────────────────────────────────────────────────────
   activityCard: {
-    flexDirection: "row", alignItems: "center",
     backgroundColor: COLORS.card, borderRadius: 20,
-    padding: 16, marginBottom: 12, gap: 12,
+    padding: 16, marginBottom: 12,
     borderWidth: 1, borderColor: COLORS.border, ...SHADOWS.light,
   },
+  activityHeader: { fontSize: 13, fontWeight: "800", color: COLORS.textMid, letterSpacing: 0.2, marginBottom: 10 },
+  activityRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   activityIcon: {
     width: 42, height: 42, borderRadius: 21,
     backgroundColor: COLORS.background, alignItems: "center", justifyContent: "center",
