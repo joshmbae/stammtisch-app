@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { showAlert } from "../../utils/alert";
 import { StammtischVerordnung } from "../../types";
 import { loadVerordnung, saveVerordnung } from "../../utils/storage";
@@ -19,11 +20,25 @@ import { seedTestData, clearAllData } from "../../utils/seed";
 import { COLORS, SHADOWS } from "../../constants/design";
 import { HamburgerButton } from "../../components/HamburgerButton";
 
+/** Parst "YYYY" oder "YYYY-MM" (legacy: nur Jahr -> Januar). */
+function parseGruendung(value?: string): Date {
+  const match = value?.match(/^(\d{4})(?:-(\d{2}))?/);
+  if (!match) return new Date();
+  const jahr = parseInt(match[1], 10);
+  const monat = match[2] ? parseInt(match[2], 10) - 1 : 0;
+  return new Date(jahr, monat, 1);
+}
+
+function formatGruendungMonat(value?: string): string {
+  return parseGruendung(value).toLocaleDateString("de-DE", { month: "long", year: "numeric" });
+}
+
 export default function EinstellungenScreen() {
   const [verordnung, setVerordnung] = useState<StammtischVerordnung>({ name: "Die Hellen", regeln: [] });
   const [dirty, setDirty] = useState(false);
   const [neueRegel, setNeueRegel] = useState("");
   const [seeding, setSeeding] = useState(false);
+  const [showGruendungPicker, setShowGruendungPicker] = useState(false);
 
   async function handleSeed() {
     showAlert(
@@ -195,15 +210,27 @@ export default function EinstellungenScreen() {
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.fieldLabel}>Gründungsjahr</Text>
-          <TextInput
-            style={styles.input}
-            value={verordnung.gruendungsjahr ?? ""}
-            onChangeText={(t) => update({ gruendungsjahr: t })}
-            placeholder="z.B. 2018"
-            placeholderTextColor={COLORS.textLight}
-            keyboardType="number-pad"
-          />
+          <Text style={styles.fieldLabel}>Gegründet</Text>
+          <TouchableOpacity style={styles.dateBtn} onPress={() => setShowGruendungPicker(true)}>
+            <Ionicons name="calendar-outline" size={18} color={COLORS.blue} />
+            <Text style={[styles.dateBtnText, !verordnung.gruendungsjahr && { color: COLORS.textLight }]}>
+              {verordnung.gruendungsjahr ? formatGruendungMonat(verordnung.gruendungsjahr) : "Monat & Jahr auswählen"}
+            </Text>
+          </TouchableOpacity>
+          {showGruendungPicker && (
+            <DateTimePicker
+              value={parseGruendung(verordnung.gruendungsjahr)}
+              mode="date"
+              maximumDate={new Date()}
+              onChange={(_, date) => {
+                setShowGruendungPicker(false);
+                if (date) {
+                  const jahrMonat = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+                  update({ gruendungsjahr: jahrMonat });
+                }
+              }}
+            />
+          )}
         </View>
 
         {/* Regeln */}
@@ -340,6 +367,12 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border,
     paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: COLORS.textDark,
   },
+  dateBtn: {
+    flexDirection: "row", alignItems: "center", gap: 8,
+    backgroundColor: COLORS.background, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border,
+    paddingHorizontal: 12, paddingVertical: 10,
+  },
+  dateBtnText: { fontSize: 14, color: COLORS.textDark, fontWeight: "600" },
 
   regelRow: {
     flexDirection: "row", alignItems: "flex-start", gap: 8,

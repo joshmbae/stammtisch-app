@@ -140,7 +140,7 @@ export async function seedTestData(): Promise<void> {
     treffpunkt: "Ayinger am Rotkreuzplatz",
     stammtischTag: "Jeden ersten Donnerstag im Monat",
     stammtischzeit: "19:30 Uhr",
-    gruendungsjahr: "2024",
+    gruendungsjahr: "2024-10",
     regeln: [
       "Entschuldigtes Fehlen (bis 23:59 Uhr Vortag oder triftiger Grund): 10 €.",
       "Unentschuldigtes Fehlen: 50 €.",
