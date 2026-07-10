@@ -18,8 +18,10 @@ import { MemberProfile } from "../../types";
 import { loadMembers, saveMembers, uploadAvatar } from "../../utils/storage";
 import { COLORS, AVATAR_COLORS, ROLLEN } from "../../constants/design";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { useSession } from "../../contexts/SessionContext";
 
 export default function NewMemberScreen() {
+  const { activeMemberId, setActiveSession } = useSession();
   const [name, setName] = useState("");
   const [spitzname, setSpitzname] = useState("");
   const [rolle, setRolle] = useState<MemberProfile["rolle"]>("Mitglied");
@@ -71,7 +73,13 @@ export default function NewMemberScreen() {
     };
     const existing = await loadMembers();
     await saveMembers([...existing, newMember]);
-    router.back();
+    if (!activeMemberId) {
+      // Onboarding: noch niemand aktiv -> direkt als neues Mitglied weiter in die App
+      await setActiveSession(newMember.id);
+      router.replace("/(tabs)/home");
+    } else {
+      router.back();
+    }
   }
 
   return (
