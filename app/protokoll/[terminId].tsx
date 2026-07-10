@@ -20,7 +20,9 @@ import {
   loadProtokoll,
   saveProtokoll,
   deleteProtokoll,
+  logActivity,
 } from "../../utils/storage";
+import { useSession } from "../../contexts/SessionContext";
 import { COLORS, SHADOWS } from "../../constants/design";
 
 function formatDatum(iso: string): string {
@@ -43,6 +45,7 @@ function formatUpdated(iso: string): string {
 }
 
 export default function ProtokollEditor() {
+  const { activeMemberId } = useSession();
   const { terminId } = useLocalSearchParams<{ terminId: string }>();
   const [termin, setTermin] = useState<StammtischTermin | null>(null);
   const [protokoll, setProtokoll] = useState<Protokoll | null>(null);
@@ -103,6 +106,12 @@ export default function ProtokollEditor() {
     setProtokoll(saved);
     setDirty(false);
     setSaving(false);
+    await logActivity({
+      actorMemberId: activeMemberId ?? undefined,
+      actionType: "protokoll_updated",
+      terminId,
+      refId: saved.id,
+    });
   }
 
   async function handleDelete() {

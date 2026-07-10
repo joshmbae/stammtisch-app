@@ -80,7 +80,7 @@ export function renderActivity(
     case "wette_created":
       return {
         emoji: "🤝",
-        text: `${subjectName} hat gegen ${displayName(membersById.get(meta.gegenMemberId))} gewettet (${formatEuro(Number(meta.betrag ?? 0))})`,
+        text: `${subjectName} hat auf ${displayName(membersById.get(meta.gegenMemberId))} gewettet (${formatEuro(Number(meta.betrag ?? 0))})`,
         actorText: eingetragenVon,
       };
     case "wette_resolved":
@@ -88,6 +88,21 @@ export function renderActivity(
         emoji: meta.gewonnen ? "🏆" : "😔",
         text: `Wette ${meta.gewonnen ? "gewonnen" : "verloren"}: ${subjectName} (${formatEuro(Number(meta.betrag ?? 0))})`,
         actorText: eingetragenVon,
+      };
+    case "protokoll_updated":
+      return {
+        emoji: "📝",
+        text: `${actorName} hat das Protokoll aktualisiert`,
+      };
+    case "termin_zusage":
+      return {
+        emoji: "✅",
+        text: `${subjectName} hat zugesagt`,
+      };
+    case "termin_absage":
+      return {
+        emoji: "❌",
+        text: `${subjectName} hat abgesagt`,
       };
     default:
       return { emoji: "📋", text: `${subjectName ?? actorName}: ${entry.actionType}` };

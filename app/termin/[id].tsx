@@ -731,6 +731,14 @@ export default function TerminDetailScreen() {
     const updated = await loadTermine();
     const fresh = updated.find((t) => t.id === termin.id) ?? null;
     if (fresh) setTermin(fresh);
+    if (status === "ja" || status === "nein") {
+      await logActivity({
+        actorMemberId: activeMemberId,
+        subjectMemberId: activeMemberId,
+        actionType: status === "ja" ? "termin_zusage" : "termin_absage",
+        terminId: termin.id,
+      });
+    }
   }
 
   // ── Not found ───────────────────────────────────────────────────────────────

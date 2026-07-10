@@ -186,7 +186,10 @@ export type ActivityActionType =
   | "kasse_beglichen"
   | "schock_log_created"
   | "wette_created"
-  | "wette_resolved";
+  | "wette_resolved"
+  | "protokoll_updated"
+  | "termin_zusage"
+  | "termin_absage";
 
 export interface ActivityLogEntry {
   id: string;
