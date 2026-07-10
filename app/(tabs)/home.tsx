@@ -346,9 +346,9 @@ export default function HomeScreen() {
               </View>
               <View style={styles.myStatDivider} />
               <View style={styles.myStatBox}>
-                <Text style={styles.myStatEmoji}>🎲</Text>
-                <Text style={styles.myStatValue}>{myStats.niederlagen + myStats.schockAus}</Text>
-                <Text style={styles.myStatLabel}>Schock-Nl.</Text>
+                <Text style={styles.myStatEmoji}>💥</Text>
+                <Text style={styles.myStatValue}>{myStats.schockAus}</Text>
+                <Text style={styles.myStatLabel}>Schock-Aus</Text>
               </View>
             </View>
           </TouchableOpacity>
