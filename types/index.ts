@@ -11,7 +11,7 @@ export interface MemberProfile {
   spitzname?: string;
   mitgliedSeit: string;
   geburtsdatum?: string;                     // ISO date "1990-03-15"
-  rolle: "Stammtischkönig" | "Schriftführer" | "Kassenwart" | "Bierwart" | "Eventmanager" | "Reserviermeister" | "Kameramann" | "Mitglied" | "Gast";
+  rolle: "Stammtischkönig" | "Schriftführer" | "Kassenwart" | "Bierwart" | "Eventmanager" | "Vize-Eventmanager" | "Reserviermeister" | "Vize-Reserviermeister" | "Kameramann" | "Foto-Beauftragter" | "Reiseminister" | "Mitglied" | "Gast";
   lieblingsgetraenk?: string;
   beruf?: string;
   avatarColor: string;
