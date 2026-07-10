@@ -10,7 +10,6 @@ export default function RootLayout() {
         <MenuDrawer />
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="index" />
-          <Stack.Screen name="onboarding" />
           <Stack.Screen name="mitglied-waehlen" />
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="chat/[id]" />
