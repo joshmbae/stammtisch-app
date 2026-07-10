@@ -1,4 +1,3 @@
-import "../global.css";
 import { Stack } from "expo-router";
 import { MenuProvider } from "../contexts/MenuContext";
 import { SessionProvider } from "../contexts/SessionContext";
