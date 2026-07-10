@@ -367,24 +367,6 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* ── Frag den Sepp ── */}
-        <TouchableOpacity
-          style={styles.seppCard}
-          onPress={() => router.push("/(tabs)/chat")}
-          activeOpacity={0.88}
-        >
-          <View style={styles.seppIcon}><Text style={{ fontSize: 26 }}>🧔</Text></View>
-          <View style={styles.seppTexts}>
-            <Text style={styles.seppTitle}>Frag den Sepp</Text>
-            <Text style={styles.seppSub}>
-              {activeMember ? `Dein persönlicher Stammtisch-Experte` : "Regeln, Bier, Traditionen — er weiß alles"}
-            </Text>
-          </View>
-          <View style={styles.seppArrow}>
-            <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
-          </View>
-        </TouchableOpacity>
-
         {/* ── Die Runde ── */}
         {members.length > 0 && (
           <View style={styles.mitgliederCard}>
