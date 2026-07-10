@@ -10,6 +10,16 @@ app.use(express.json());
 
 const client = new Anthropic.default({ apiKey: process.env.ANTHROPIC_API_KEY });
 
+const APP_SHARED_SECRET = process.env.APP_SHARED_SECRET;
+
+app.use((req, res, next) => {
+  if (!APP_SHARED_SECRET) return next();
+  if (req.get("x-app-secret") !== APP_SHARED_SECRET) {
+    return res.status(401).json({ error: "unauthorized" });
+  }
+  next();
+});
+
 app.post("/chat", async (req, res) => {
   const { messages, member, erinnerungen, alleMitglieder, verordnung, protokolle } = req.body;
 
