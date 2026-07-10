@@ -433,6 +433,30 @@ export default function HomeScreen() {
           </View>
         )}
 
+        {/* ── Schock-Aus Rangliste ── */}
+        {schockRang.length > 0 && (
+          <View style={styles.rangCard}>
+            <View style={styles.rangCardHeader}>
+              <Text style={styles.rangCardTitle}>🎲 Schock-Aus Rangliste</Text>
+              <TouchableOpacity onPress={() => router.push("/ranglisten")}>
+                <Text style={styles.rangCardLink}>Alle →</Text>
+              </TouchableOpacity>
+            </View>
+            {schockRang.slice(0, 3).map((s, i) => (
+              <RangRow key={s.member.id} rank={i} member={s.member}
+                value={`${s.schockAus}`} valueLabel="Schock-Aus"
+                sub={s.niederlagen > 0 ? `+ ${s.niederlagen} Niederlagen` : undefined} />
+            ))}
+          </View>
+        )}
+
+        {memberStats.length > 0 && schockRang.length === 0 && (
+          <TouchableOpacity style={styles.rangLinkCard} onPress={() => router.push("/ranglisten")}>
+            <Text style={styles.rangLinkText}>🏆 Alle Ranglisten ansehen</Text>
+            <Ionicons name="chevron-forward" size={16} color={COLORS.blue} />
+          </TouchableOpacity>
+        )}
+
         {/* ── Stammtisch-Infos ── */}
         {(gruendungsjahr || members.length > 0 || terminCount > 0) && (
           <View style={styles.faktenCard}>
@@ -468,30 +492,6 @@ export default function HomeScreen() {
               )}
             </View>
           </View>
-        )}
-
-        {/* ── Schock-Aus Rangliste ── */}
-        {schockRang.length > 0 && (
-          <View style={styles.rangCard}>
-            <View style={styles.rangCardHeader}>
-              <Text style={styles.rangCardTitle}>🎲 Schock-Aus Rangliste</Text>
-              <TouchableOpacity onPress={() => router.push("/ranglisten")}>
-                <Text style={styles.rangCardLink}>Alle →</Text>
-              </TouchableOpacity>
-            </View>
-            {schockRang.slice(0, 3).map((s, i) => (
-              <RangRow key={s.member.id} rank={i} member={s.member}
-                value={`${s.schockAus}`} valueLabel="Schock-Aus"
-                sub={s.niederlagen > 0 ? `+ ${s.niederlagen} Niederlagen` : undefined} />
-            ))}
-          </View>
-        )}
-
-        {memberStats.length > 0 && schockRang.length === 0 && (
-          <TouchableOpacity style={styles.rangLinkCard} onPress={() => router.push("/ranglisten")}>
-            <Text style={styles.rangLinkText}>🏆 Alle Ranglisten ansehen</Text>
-            <Ionicons name="chevron-forward" size={16} color={COLORS.blue} />
-          </TouchableOpacity>
         )}
 
         {/* ── Leer-Zustand ── */}
