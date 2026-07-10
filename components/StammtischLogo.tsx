@@ -7,11 +7,9 @@ interface Props {
 export default function StammtischLogo({ size = 58 }: Props) {
   return (
     <Image
-      source={require("../assets/logo.jpg")}
-      style={[
-        styles.image,
-        { width: size, height: size, borderRadius: size * 0.28 },
-      ]}
+      source={require("../assets/logo.png")}
+      resizeMode="contain"
+      style={[styles.image, { width: size, height: size }]}
     />
   );
 }
@@ -19,9 +17,9 @@ export default function StammtischLogo({ size = 58 }: Props) {
 const styles = StyleSheet.create({
   image: {
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 3,
   },
 });
