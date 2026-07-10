@@ -19,6 +19,7 @@ import {
   updateStrafLog,
   deleteStrafLog,
   logActivity,
+  addKassenEintrag,
 } from "../utils/storage";
 import { COLORS, SHADOWS } from "../constants/design";
 import { HamburgerButton } from "../components/HamburgerButton";
@@ -75,6 +76,15 @@ export default function StrafenScreen() {
     await updateStrafLog(log.memberId, log.id, { beglichen: next });
     setLogs((prev) => prev.map((l) => l.id === log.id ? { ...l, beglichen: next } : l));
     if (next) {
+      const member = membersById.get(log.memberId);
+      const kat = katMeta(log.kategorie);
+      await addKassenEintrag({
+        typ: "einnahme",
+        betrag: log.betrag,
+        beschreibung: `Strafe beglichen: ${member?.name ?? "Unbekannt"} – ${kat?.label ?? log.kategorie}`,
+        terminId: log.terminId,
+        datum: new Date().toISOString(),
+      });
       await logActivity({
         actorMemberId: activeMemberId ?? undefined,
         subjectMemberId: log.memberId,

@@ -55,6 +55,7 @@ import {
   updateTermin,
   deleteTermin,
   logActivity,
+  addKassenEintrag,
 } from "../../utils/storage";
 import { COLORS, SHADOWS } from "../../constants/design";
 import { useSession } from "../../contexts/SessionContext";
@@ -656,6 +657,15 @@ export default function TerminDetailScreen() {
     }));
     if (!current) {
       const log = (strafMap[memberId] ?? []).find((l) => l.id === logId);
+      const member = members.find((m) => m.id === memberId);
+      const kat = STRAF_KATEGORIEN.find((k) => k.key === log?.kategorie);
+      await addKassenEintrag({
+        typ: "einnahme",
+        betrag: log?.betrag ?? 0,
+        beschreibung: `Strafe beglichen: ${member?.name ?? "Unbekannt"} – ${kat?.label ?? log?.kategorie ?? ""}`,
+        terminId: termin?.id,
+        datum: new Date().toISOString(),
+      });
       await logActivity({
         actorMemberId: activeMemberId ?? undefined,
         subjectMemberId: memberId,
