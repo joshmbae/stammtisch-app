@@ -212,14 +212,6 @@ export default function ProtokollEditor() {
             textAlignVertical="top"
             autoCorrect
           />
-
-          {/* Hinweis für Sepp */}
-          <View style={styles.seppHint}>
-            <Text style={styles.seppHintEmoji}>🧔</Text>
-            <Text style={styles.seppHintText}>
-              Sepp kennt den Inhalt dieses Protokolls und kann darauf eingehen.
-            </Text>
-          </View>
         </ScrollView>
       </SafeAreaView>
     </KeyboardAvoidingView>
@@ -293,12 +285,4 @@ const styles = StyleSheet.create({
     ...SHADOWS.light,
   },
 
-  seppHint: {
-    flexDirection: "row", alignItems: "center", gap: 10,
-    backgroundColor: COLORS.blue + "10",
-    borderRadius: 12, padding: 12,
-    borderWidth: 1, borderColor: COLORS.blue + "22",
-  },
-  seppHintEmoji: { fontSize: 20 },
-  seppHintText: { flex: 1, fontSize: 12, color: COLORS.blue, lineHeight: 17 },
 });

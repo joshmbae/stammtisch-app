@@ -655,7 +655,6 @@ export async function seedTestData(): Promise<void> {
 export async function clearAllData(): Promise<void> {
   const stammtischId = await getStammtischId();
 
-  await supabase.from("chat_sessions").delete().eq("stammtisch_id", stammtischId);
   await supabase.from("kasse").delete().eq("stammtisch_id", stammtischId);
   await supabase.from("termine").delete().eq("stammtisch_id", stammtischId);
   await supabase.from("members").delete().eq("stammtisch_id", stammtischId);

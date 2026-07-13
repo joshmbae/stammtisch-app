@@ -1,10 +1,3 @@
-export interface ChatMessage {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  timestamp: string;
-}
-
 export interface MemberProfile {
   id: string;
   name: string;
@@ -18,14 +11,6 @@ export interface MemberProfile {
   photoUri?: string;
   notizen?: string;
   createdAt: string;
-}
-
-export interface ChatSession {
-  id: string;
-  memberId: string;
-  createdAt: string;
-  updatedAt: string;
-  preview: string;
 }
 
 // ─── Stammtisch-Termin ────────────────────────────────────────────────────────
@@ -48,20 +33,6 @@ export interface StammtischTermin {
   createdAt: string;
   anwesenheit?: string[];                   // memberId-Liste der Anwesenden (Zusagen)
   absagen?: string[];                        // memberId-Liste der Absagen
-}
-
-// ─── Bier-Logs ────────────────────────────────────────────────────────────────
-
-export type BierTyp = "helles" | "weißbier" | "dunkles" | "radler" | "maß" | "sonstiges";
-
-export interface BierLog {
-  id: string;
-  memberId: string;
-  terminId?: string;
-  bierTyp: BierTyp;
-  anzahl: number;
-  loggedAt: string;
-  note?: string;
 }
 
 // ─── Verspätungs-Logs ─────────────────────────────────────────────────────────
@@ -97,18 +68,6 @@ export interface Wette {
   betrag: number;           // in Euro
   loggedAt: string;
   gewonnen?: boolean;       // undefined = offen
-}
-
-// ─── Stammtisch-Erinnerungen ──────────────────────────────────────────────────
-
-export type ErinnerungsKategorie = "bier" | "verspätung" | "anekdote" | "strafe" | "allgemein" | "stimmung";
-
-export interface Erinnerung {
-  id: string;
-  memberId: string;
-  content: string;
-  category: ErinnerungsKategorie;
-  createdAt: string;
 }
 
 // ─── Protokoll ────────────────────────────────────────────────────────────────

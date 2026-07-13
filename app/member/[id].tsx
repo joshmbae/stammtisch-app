@@ -17,7 +17,6 @@ import {
   SchockLog,
   StrafLog,
   STRAF_KATEGORIEN,
-  Erinnerung,
   StammtischVerordnung,
   StammtischTermin,
 } from "../../types";
@@ -26,10 +25,8 @@ import {
   loadVerspätungLogs,
   loadSchockLogs,
   loadStrafLogs,
-  loadErinnerungen,
   loadVerordnung,
   loadTermine,
-  createSession,
 } from "../../utils/storage";
 import { COLORS, SHADOWS } from "../../constants/design";
 import { formatEuro, getInitial } from "../../utils/format";
@@ -124,7 +121,6 @@ export default function MemberDetailScreen() {
   const [verspätungLogs, setVerspätungLogs] = useState<VerspätungLog[]>([]);
   const [schockLogs, setSchockLogs] = useState<SchockLog[]>([]);
   const [strafLogs, setStrafLogs] = useState<StrafLog[]>([]);
-  const [erinnerungen, setErinnerungen] = useState<Erinnerung[]>([]);
   const [verordnung, setVerordnung] = useState<StammtischVerordnung | null>(null);
   const [termine, setTermine] = useState<StammtischTermin[]>([]);
   const [showAllTermine, setShowAllTermine] = useState(false);
@@ -132,12 +128,11 @@ export default function MemberDetailScreen() {
   useFocusEffect(
     useCallback(() => {
       async function load() {
-        const [members, vl, sl, stl, er, v, ts] = await Promise.all([
+        const [members, vl, sl, stl, v, ts] = await Promise.all([
           loadMembers(),
           loadVerspätungLogs(id),
           loadSchockLogs(id),
           loadStrafLogs(id),
-          loadErinnerungen(id),
           loadVerordnung(),
           loadTermine(),
         ]);
@@ -145,7 +140,6 @@ export default function MemberDetailScreen() {
         setVerspätungLogs(vl);
         setSchockLogs(sl);
         setStrafLogs(stl);
-        setErinnerungen(er);
         setVerordnung(v);
         // Sort termine newest first
         setTermine([...ts].sort((a, b) => b.datum.localeCompare(a.datum)));
@@ -153,11 +147,6 @@ export default function MemberDetailScreen() {
       load();
     }, [id])
   );
-
-  async function startChat() {
-    const session = await createSession(id);
-    router.push(`/chat/${session.id}?memberId=${id}`);
-  }
 
   if (!member) return null;
 
@@ -204,13 +193,6 @@ export default function MemberDetailScreen() {
               <Text style={[styles.rolleBadgeText, { color: member.avatarColor }]}>{member.rolle}</Text>
             </View>
           </View>
-          <TouchableOpacity
-            style={[styles.chatBtn, { backgroundColor: member.avatarColor }]}
-            onPress={startChat}
-          >
-            <Ionicons name="chatbubble-ellipses" size={16} color="#FFFFFF" />
-            <Text style={styles.chatBtnText}>Sepp</Text>
-          </TouchableOpacity>
         </View>
 
         {/* Info */}
@@ -337,22 +319,6 @@ export default function MemberDetailScreen() {
           </View>
         )}
 
-        {/* Was Sepp weiß */}
-        {erinnerungen.length > 0 && (
-          <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Was Sepp weiß</Text>
-            {erinnerungen.slice(0, 5).map((e) => (
-              <View key={e.id} style={styles.erinnerungRow}>
-                <View style={[styles.erinnerungDot, { backgroundColor: member.avatarColor }]} />
-                <Text style={styles.erinnerungText} numberOfLines={2}>{e.content}</Text>
-              </View>
-            ))}
-            {erinnerungen.length > 5 && (
-              <Text style={styles.moreErinnerungen}>+{erinnerungen.length - 5} weitere in der Chronik</Text>
-            )}
-          </View>
-        )}
-
       </ScrollView>
     </SafeAreaView>
   );
@@ -386,8 +352,6 @@ const styles = StyleSheet.create({
   heroSpitzname: { fontSize: 13, color: COLORS.textMuted, fontStyle: "italic" },
   rolleBadge: { alignSelf: "flex-start", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10, borderWidth: 1 },
   rolleBadgeText: { fontSize: 12, fontWeight: "700" },
-  chatBtn: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20 },
-  chatBtnText: { color: "#FFFFFF", fontSize: 13, fontWeight: "700" },
 
   card: {
     backgroundColor: COLORS.card, borderRadius: 16, padding: 16, marginBottom: 12,
@@ -429,9 +393,4 @@ const styles = StyleSheet.create({
     paddingTop: 12, marginTop: 4,
   },
   showMoreText: { fontSize: 13, fontWeight: "600", color: COLORS.blue },
-
-  erinnerungRow: { flexDirection: "row", alignItems: "flex-start", gap: 8, marginBottom: 8 },
-  erinnerungDot: { width: 6, height: 6, borderRadius: 3, marginTop: 7 },
-  erinnerungText: { flex: 1, fontSize: 13, color: COLORS.textMid, lineHeight: 19 },
-  moreErinnerungen: { fontSize: 12, color: COLORS.textLight, marginTop: 4, fontStyle: "italic" },
 });

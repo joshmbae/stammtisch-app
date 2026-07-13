@@ -92,16 +92,3 @@ export const ROLLEN = [
   "Mitglied",
   "Gast",
 ] as const;
-
-// ─── Bier-Typen ───────────────────────────────────────────────────────────────
-
-export const BIER_TYPEN = [
-  { key: "helles",    label: "Helles",    emoji: "🍺", color: "#F5C842" },
-  { key: "weißbier",  label: "Weißbier",  emoji: "🍺", color: "#E8D5A0" },
-  { key: "dunkles",   label: "Dunkles",   emoji: "🍺", color: "#8B4513" },
-  { key: "radler",    label: "Radler",    emoji: "🍋", color: "#A8D870" },
-  { key: "maß",       label: "Maß",       emoji: "🍺", color: "#D4A017" },
-  { key: "sonstiges", label: "Sonstiges", emoji: "🥤", color: "#9B8B6E" },
-] as const;
-
-export type BierTypKey = typeof BIER_TYPEN[number]["key"];

@@ -28,8 +28,6 @@ const NAV_ITEMS = [
   { route: "/strafen",         label: "Strafen",      icon: "cash-outline",           activeIcon: "cash" },
   { route: "/ranglisten",      label: "Ranglisten",   icon: "trophy-outline",         activeIcon: "trophy" },
   { route: "/protokolle",      label: "Protokolle",   icon: "document-text-outline",  activeIcon: "document-text" },
-  { route: "/(tabs)/chat",     label: "Der Sepp",     icon: "chatbubbles-outline",    activeIcon: "chatbubbles" },
-  { route: "/(tabs)/memories", label: "Chronik",      icon: "book-outline",           activeIcon: "book" },
   { route: "/satzung",         label: "Satzung",        icon: "document-text-outline",  activeIcon: "document-text" },
   { route: "/(tabs)/guide",    label: "Einstellungen", icon: "settings-outline",       activeIcon: "settings" },
 ] as const;
