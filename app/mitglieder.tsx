@@ -15,6 +15,7 @@ import { MemberProfile } from "../types";
 import { loadMembers, deleteMember } from "../utils/storage";
 import { COLORS, SHADOWS } from "../constants/design";
 import { HamburgerButton } from "../components/HamburgerButton";
+import { getInitial } from "../utils/format";
 
 export default function MitgliederScreen() {
   const [members, setMembers] = useState<MemberProfile[]>([]);
@@ -80,7 +81,7 @@ export default function MitgliederScreen() {
               activeOpacity={0.85}
             >
               <View style={[styles.avatar, { backgroundColor: m.avatarColor }]}>
-                <Text style={styles.avatarLetter}>{m.name.charAt(0).toUpperCase()}</Text>
+                <Text style={styles.avatarLetter}>{getInitial(m.name)}</Text>
               </View>
               <View style={styles.memberInfo}>
                 <Text style={styles.memberName}>{m.name}{m.spitzname ? ` „${m.spitzname}"` : ""}</Text>

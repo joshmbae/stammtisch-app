@@ -32,6 +32,7 @@ import {
   createSession,
 } from "../../utils/storage";
 import { COLORS, SHADOWS } from "../../constants/design";
+import { formatEuro, getInitial } from "../../utils/format";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -46,10 +47,6 @@ function formatDatumKurz(iso: string): string {
   return new Date(iso + "T00:00:00").toLocaleDateString("de-DE", {
     weekday: "short", day: "2-digit", month: "short", year: "2-digit",
   });
-}
-
-function formatEuro(n: number): string {
-  return n.toLocaleString("de-DE", { minimumFractionDigits: 2 });
 }
 
 // ─── Termin History Row ───────────────────────────────────────────────────────
@@ -197,7 +194,7 @@ export default function MemberDetailScreen() {
             <Image source={{ uri: member.photoUri }} style={styles.heroAvatar} />
           ) : (
             <View style={[styles.heroAvatarPlaceholder, { backgroundColor: member.avatarColor }]}>
-              <Text style={styles.heroAvatarLetter}>{member.name.charAt(0).toUpperCase()}</Text>
+              <Text style={styles.heroAvatarLetter}>{getInitial(member.name)}</Text>
             </View>
           )}
           <View style={styles.heroInfo}>

@@ -15,6 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useMenu } from "../contexts/MenuContext";
 import { useSession } from "../contexts/SessionContext";
 import { COLORS } from "../constants/design";
+import { getInitial } from "../utils/format";
 
 const DRAWER_WIDTH = Math.min(Dimensions.get("window").width * 0.78, 300);
 
@@ -103,7 +104,7 @@ export function MenuDrawer() {
                 <View style={styles.memberInfo}>
                   <View style={[styles.memberAvatar, { backgroundColor: activeMember.avatarColor }]}>
                     <Text style={styles.memberAvatarLetter}>
-                      {activeMember.name.charAt(0).toUpperCase()}
+                      {getInitial(activeMember.name)}
                     </Text>
                   </View>
                   <View style={{ flex: 1 }}>

@@ -27,12 +27,9 @@ import {
 import { COLORS, SHADOWS } from "../constants/design";
 import { HamburgerButton } from "../components/HamburgerButton";
 import { useSession } from "../contexts/SessionContext";
+import { formatEuro, getInitial } from "../utils/format";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function formatEuro(n: number): string {
-  return n.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
 
 function formatDatum(iso: string): string {
   return new Date(iso).toLocaleDateString("de-DE", {
@@ -308,7 +305,7 @@ export default function KasseScreen() {
                         ) : (
                           <View style={[styles.chipAvatarFallback, { backgroundColor: bezahltVon === m.id ? "rgba(255,255,255,0.3)" : m.avatarColor + "33" }]}>
                             <Text style={{ fontSize: 11, fontWeight: "700", color: bezahltVon === m.id ? "#FFF" : m.avatarColor }}>
-                              {m.name.charAt(0).toUpperCase()}
+                              {getInitial(m.name)}
                             </Text>
                           </View>
                         )}

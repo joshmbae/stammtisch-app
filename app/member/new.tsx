@@ -19,6 +19,7 @@ import { loadMembers, saveMembers, uploadAvatar } from "../../utils/storage";
 import { COLORS, AVATAR_COLORS, ROLLEN } from "../../constants/design";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useSession } from "../../contexts/SessionContext";
+import { getInitial } from "../../utils/format";
 
 export default function NewMemberScreen() {
   const { activeMemberId, setActiveSession } = useSession();
@@ -103,7 +104,7 @@ export default function NewMemberScreen() {
                 <Image source={{ uri: photoUri }} style={styles.avatarPreview} />
               ) : (
                 <View style={[styles.avatarPreview, { backgroundColor: avatarColor }]}>
-                  <Text style={styles.avatarPreviewText}>{name ? name.charAt(0).toUpperCase() : "?"}</Text>
+                  <Text style={styles.avatarPreviewText}>{name ? getInitial(name) : "?"}</Text>
                 </View>
               )}
               <View style={styles.avatarCameraBtn}>

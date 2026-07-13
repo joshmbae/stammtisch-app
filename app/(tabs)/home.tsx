@@ -35,6 +35,7 @@ import { useSession } from "../../contexts/SessionContext";
 import { COLORS, SHADOWS } from "../../constants/design";
 import { HamburgerButton } from "../../components/HamburgerButton";
 import StammtischLogo from "../../components/StammtischLogo";
+import { formatEuro, getInitial, gruendungsDauer, formatDauer, formatGruendungMonat } from "../../utils/format";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -51,37 +52,6 @@ function formatDatumKurz(iso: string): string {
   return new Date(iso + "T00:00:00").toLocaleDateString("de-DE", {
     weekday: "short", day: "2-digit", month: "short",
   });
-}
-
-function formatEuro(n: number): string {
-  return n.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
-/** Parst "YYYY" oder "YYYY-MM" und liefert die vergangene Zeit als Jahre + Monate. */
-function gruendungsDauer(gruendungsjahr: string): { jahre: number; monate: number } | null {
-  const match = gruendungsjahr.match(/^(\d{4})(?:-(\d{2}))?/);
-  if (!match) return null;
-  const jahr = parseInt(match[1], 10);
-  const monat = match[2] ? parseInt(match[2], 10) - 1 : 0;
-  const start = new Date(jahr, monat, 1);
-  const now = new Date();
-  const totalMonate = Math.max(0, (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth()));
-  return { jahre: Math.floor(totalMonate / 12), monate: totalMonate % 12 };
-}
-
-function formatDauer(d: { jahre: number; monate: number }): string {
-  const parts: string[] = [];
-  if (d.jahre > 0) parts.push(`${d.jahre} ${d.jahre === 1 ? "Jahr" : "Jahre"}`);
-  if (d.monate > 0 || d.jahre === 0) parts.push(`${d.monate} ${d.monate === 1 ? "Monat" : "Monate"}`);
-  return parts.join(" ");
-}
-
-function formatGruendungMonat(gruendungsjahr: string): string {
-  const match = gruendungsjahr.match(/^(\d{4})(?:-(\d{2}))?/);
-  if (!match) return gruendungsjahr;
-  const jahr = parseInt(match[1], 10);
-  const monat = match[2] ? parseInt(match[2], 10) - 1 : 0;
-  return new Date(jahr, monat, 1).toLocaleDateString("de-DE", { month: "long", year: "numeric" });
 }
 
 function formatActivityZeit(iso: string): string {
@@ -143,7 +113,7 @@ function MemberBubble({ member, isActive }: { member: MemberProfile; isActive: b
         {member.photoUri ? (
           <Image source={{ uri: member.photoUri }} style={styles.bubbleImg} />
         ) : (
-          <Text style={styles.bubbleLetter}>{member.name.charAt(0).toUpperCase()}</Text>
+          <Text style={styles.bubbleLetter}>{getInitial(member.name)}</Text>
         )}
         {isActive && <View style={styles.bubbleActiveDot} />}
       </View>
@@ -171,7 +141,7 @@ function RangRow({ rank, member, value, valueLabel, sub }: {
         <Image source={{ uri: member.photoUri }} style={styles.rangAvatar} />
       ) : (
         <View style={[styles.rangAvatar, { backgroundColor: member.avatarColor, alignItems: "center", justifyContent: "center" }]}>
-          <Text style={{ fontSize: 13, fontWeight: "700", color: "#FFF" }}>{member.name.charAt(0).toUpperCase()}</Text>
+          <Text style={{ fontSize: 13, fontWeight: "700", color: "#FFF" }}>{getInitial(member.name)}</Text>
         </View>
       )}
       <View style={styles.rangInfo}>
@@ -288,7 +258,7 @@ export default function HomeScreen() {
               {activeMember.photoUri ? (
                 <Image source={{ uri: activeMember.photoUri }} style={styles.myAvatarImg} />
               ) : (
-                <Text style={styles.myAvatarLetter}>{activeMember.name.charAt(0).toUpperCase()}</Text>
+                <Text style={styles.myAvatarLetter}>{getInitial(activeMember.name)}</Text>
               )}
             </TouchableOpacity>
           ) : (

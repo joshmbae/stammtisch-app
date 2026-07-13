@@ -17,6 +17,7 @@ import { showAlert } from "../../../utils/alert";
 import { MemberProfile } from "../../../types";
 import { loadMembers, saveMembers, uploadAvatar } from "../../../utils/storage";
 import { COLORS, AVATAR_COLORS, ROLLEN } from "../../../constants/design";
+import { getInitial } from "../../../utils/format";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
 export default function EditMemberScreen() {
@@ -115,7 +116,7 @@ export default function EditMemberScreen() {
                 <Image source={{ uri: photoUri }} style={styles.avatarPreview} />
               ) : (
                 <View style={[styles.avatarPreview, { backgroundColor: avatarColor }]}>
-                  <Text style={styles.avatarPreviewText}>{name ? name.charAt(0).toUpperCase() : "?"}</Text>
+                  <Text style={styles.avatarPreviewText}>{name ? getInitial(name) : "?"}</Text>
                 </View>
               )}
               <View style={styles.avatarCameraBtn}>

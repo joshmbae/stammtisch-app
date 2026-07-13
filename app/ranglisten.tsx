@@ -27,10 +27,7 @@ import {
 } from "../utils/storage";
 import { COLORS, SHADOWS } from "../constants/design";
 import { HamburgerButton } from "../components/HamburgerButton";
-
-function formatEuro(n: number): string {
-  return n.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
+import { formatEuro, getInitial } from "../utils/format";
 
 interface MemberStats {
   member: MemberProfile;
@@ -58,7 +55,7 @@ function RangRow({ rank, member, value, valueLabel, sub }: {
         <Image source={{ uri: member.photoUri }} style={styles.rangAvatar} />
       ) : (
         <View style={[styles.rangAvatar, { backgroundColor: member.avatarColor, alignItems: "center", justifyContent: "center" }]}>
-          <Text style={{ fontSize: 13, fontWeight: "700", color: "#FFF" }}>{member.name.charAt(0).toUpperCase()}</Text>
+          <Text style={{ fontSize: 13, fontWeight: "700", color: "#FFF" }}>{getInitial(member.name)}</Text>
         </View>
       )}
       <View style={styles.rangInfo}>

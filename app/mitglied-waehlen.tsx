@@ -14,6 +14,7 @@ import { loadMembers } from "../utils/storage";
 import { useSession } from "../contexts/SessionContext";
 import { COLORS, SHADOWS } from "../constants/design";
 import StammtischLogo from "../components/StammtischLogo";
+import { getInitial } from "../utils/format";
 
 export default function MitgliedWaehlenScreen() {
   const [members, setMembers] = useState<MemberProfile[]>([]);
@@ -53,7 +54,7 @@ export default function MitgliedWaehlenScreen() {
                   {m.photoUri ? (
                     <Image source={{ uri: m.photoUri }} style={styles.avatarImg} />
                   ) : (
-                    <Text style={styles.avatarLetter}>{m.name.charAt(0).toUpperCase()}</Text>
+                    <Text style={styles.avatarLetter}>{getInitial(m.name)}</Text>
                   )}
                 </View>
                 <Text style={styles.cardName} numberOfLines={1}>{m.name}</Text>

@@ -1,7 +1,8 @@
 import { ActivityLogEntry, MemberProfile, STRAF_KATEGORIEN } from "../types";
+import { formatEuro as formatEuroBase } from "./format";
 
 function formatEuro(n: number): string {
-  return n.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
+  return formatEuroBase(n) + " €";
 }
 
 function displayName(m: MemberProfile | undefined): string {

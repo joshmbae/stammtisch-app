@@ -59,6 +59,7 @@ import {
 } from "../../utils/storage";
 import { COLORS, SHADOWS } from "../../constants/design";
 import { useSession } from "../../contexts/SessionContext";
+import { getInitial } from "../../utils/format";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -141,7 +142,7 @@ function MemberRow({
             <Image source={{ uri: member.photoUri }} style={styles.memberAvatar} />
           ) : (
             <View style={[styles.memberAvatar, { backgroundColor: member.avatarColor, alignItems: "center", justifyContent: "center" }]}>
-              <Text style={styles.memberAvatarLetter}>{member.name.charAt(0).toUpperCase()}</Text>
+              <Text style={styles.memberAvatarLetter}>{getInitial(member.name)}</Text>
             </View>
           )}
           <View style={styles.memberInfo}>
@@ -245,7 +246,7 @@ function MemberRow({
         <View style={[styles.memberAvatarSmall, { backgroundColor: member.avatarColor, alignItems: "center", justifyContent: "center" }]}>
           {member.photoUri
             ? <Image source={{ uri: member.photoUri }} style={styles.memberAvatarSmall} />
-            : <Text style={styles.memberAvatarLetterSmall}>{member.name.charAt(0).toUpperCase()}</Text>
+            : <Text style={styles.memberAvatarLetterSmall}>{getInitial(member.name)}</Text>
           }
         </View>
 
@@ -1026,7 +1027,7 @@ export default function TerminDetailScreen() {
                         <Image source={{ uri: m.photoUri }} style={styles.chipAvatar} />
                       ) : (
                         <View style={[styles.chipAvatar, { backgroundColor: isSelected ? "rgba(255,255,255,0.35)" : m.avatarColor, alignItems: "center", justifyContent: "center" }]}>
-                          <Text style={{ fontSize: 11, fontWeight: "700", color: "#FFF" }}>{m.name.charAt(0).toUpperCase()}</Text>
+                          <Text style={{ fontSize: 11, fontWeight: "700", color: "#FFF" }}>{getInitial(m.name)}</Text>
                         </View>
                       )}
                       <Text style={[styles.chipText, isSelected && { color: "#FFFFFF" }]}>{m.spitzname ?? m.name.split(" ")[0]}</Text>
@@ -1182,7 +1183,7 @@ export default function TerminDetailScreen() {
                           alignItems: "center", justifyContent: "center",
                         }]}>
                           <Text style={{ fontSize: 11, fontWeight: "700", color: "#FFF" }}>
-                            {m.name.charAt(0).toUpperCase()}
+                            {getInitial(m.name)}
                           </Text>
                         </View>
                       )}
