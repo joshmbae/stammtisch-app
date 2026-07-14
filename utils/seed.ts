@@ -284,9 +284,14 @@ export async function seedTestData(): Promise<void> {
 
   for (const termin of termine) {
     const isEvent = termin.art === "veranstaltung";
+    const isFuture = new Date(termin.datum) > today;
     const attendingIds = termin.anwesenheit!;
     const attending = members.filter((m) => attendingIds.includes(m.id));
     const absent = members.filter((m) => !attendingIds.includes(m.id));
+
+    // Zukünftige Termine dürfen Zusagen (Anwesenheit) haben, aber noch keine
+    // Strafen oder Schock-Stats — die entstehen erst, wenn der Termin stattfand.
+    if (isFuture) continue;
 
     // Verspätung (ca. 20 % der Anwesenden, keine Verspätung bei Veranstaltungen)
     if (!isEvent) {
