@@ -21,6 +21,7 @@
       }
     },
     "android": {
+      "package": "com.diehellen.stammtischapp",
       "adaptiveIcon": {
         "backgroundColor": "#1A4480",
         "foregroundImage": "./assets/android-icon-foreground.png",
