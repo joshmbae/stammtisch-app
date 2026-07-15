@@ -30,6 +30,8 @@ import {
 } from "../../utils/storage";
 import { COLORS, SHADOWS } from "../../constants/design";
 import { formatEuro, getInitial } from "../../utils/format";
+import PinPrompt from "../../components/PinPrompt";
+import { verifyPin } from "../../utils/pin";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -124,6 +126,8 @@ export default function MemberDetailScreen() {
   const [verordnung, setVerordnung] = useState<StammtischVerordnung | null>(null);
   const [termine, setTermine] = useState<StammtischTermin[]>([]);
   const [showAllTermine, setShowAllTermine] = useState(false);
+  const [pinPromptVisible, setPinPromptVisible] = useState(false);
+  const [pinError, setPinError] = useState<string | undefined>(undefined);
 
   useFocusEffect(
     useCallback(() => {
@@ -150,6 +154,27 @@ export default function MemberDetailScreen() {
 
   if (!member) return null;
 
+  function handleEditPress() {
+    if (!member) return;
+    if (!member.pinHash) {
+      router.push(`/member/edit/${id}`);
+      return;
+    }
+    setPinError(undefined);
+    setPinPromptVisible(true);
+  }
+
+  async function handlePinVerify(pin: string) {
+    if (!member?.pinHash) return;
+    const ok = await verifyPin(member.id, pin, member.pinHash);
+    if (!ok) {
+      setPinError("Falscher PIN.");
+      return;
+    }
+    setPinPromptVisible(false);
+    router.push(`/member/edit/${id}`);
+  }
+
   // ── Lifetime stats ──────────────────────────────────────────────────────────
   const verspätungGesamt = verspätungLogs.reduce((s, l) => s + l.minutenVerspätet, 0);
   const niederlagenGesamt = schockLogs.filter((l) => l.typ === "niederlage").length;
@@ -172,7 +197,7 @@ export default function MemberDetailScreen() {
             <Text style={styles.backText}>‹</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle} numberOfLines={1}>{member.name}</Text>
-          <TouchableOpacity onPress={() => router.push(`/member/edit/${id}`)} style={styles.editBtn}>
+          <TouchableOpacity onPress={handleEditPress} style={styles.editBtn}>
             <Ionicons name="pencil-outline" size={18} color={COLORS.blue} />
           </TouchableOpacity>
         </View>
@@ -320,6 +345,15 @@ export default function MemberDetailScreen() {
         )}
 
       </ScrollView>
+
+      <PinPrompt
+        visible={pinPromptVisible}
+        mode="verify"
+        memberName={member.name}
+        error={pinError}
+        onCancel={() => setPinPromptVisible(false)}
+        onSubmit={handlePinVerify}
+      />
     </SafeAreaView>
   );
 }

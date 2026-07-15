@@ -16,9 +16,13 @@ import { loadMembers, deleteMember } from "../utils/storage";
 import { COLORS, SHADOWS } from "../constants/design";
 import { HamburgerButton } from "../components/HamburgerButton";
 import { getInitial } from "../utils/format";
+import PinPrompt from "../components/PinPrompt";
+import { verifyPin } from "../utils/pin";
 
 export default function MitgliederScreen() {
   const [members, setMembers] = useState<MemberProfile[]>([]);
+  const [pinTarget, setPinTarget] = useState<MemberProfile | null>(null);
+  const [pinError, setPinError] = useState<string | undefined>(undefined);
 
   useFocusEffect(
     useCallback(() => {
@@ -26,7 +30,7 @@ export default function MitgliederScreen() {
     }, [])
   );
 
-  async function handleDelete(m: MemberProfile) {
+  function confirmAndDelete(m: MemberProfile) {
     showAlert(
       `${m.name} entfernen?`,
       "Alle Daten dieses Mitglieds werden gelöscht. Das kann nicht rückgängig gemacht werden.",
@@ -42,6 +46,27 @@ export default function MitgliederScreen() {
         },
       ]
     );
+  }
+
+  function handleDelete(m: MemberProfile) {
+    if (m.pinHash) {
+      setPinError(undefined);
+      setPinTarget(m);
+      return;
+    }
+    confirmAndDelete(m);
+  }
+
+  async function handlePinVerify(pin: string) {
+    if (!pinTarget?.pinHash) return;
+    const ok = await verifyPin(pinTarget.id, pin, pinTarget.pinHash);
+    if (!ok) {
+      setPinError("Falscher PIN.");
+      return;
+    }
+    const target = pinTarget;
+    setPinTarget(null);
+    confirmAndDelete(target);
   }
 
   return (
@@ -106,6 +131,15 @@ export default function MitgliederScreen() {
         )}
 
       </ScrollView>
+
+      <PinPrompt
+        visible={!!pinTarget}
+        mode="verify"
+        memberName={pinTarget?.name}
+        error={pinError}
+        onCancel={() => setPinTarget(null)}
+        onSubmit={handlePinVerify}
+      />
     </SafeAreaView>
   );
 }

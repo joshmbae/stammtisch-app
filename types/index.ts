@@ -11,6 +11,7 @@ export interface MemberProfile {
   photoUri?: string;
   notizen?: string;
   createdAt: string;
+  pinHash?: string;                          // gehashter 4-stelliger PIN zum Schutz des Profils vor fremden Änderungen/Löschen
 }
 
 // ─── Stammtisch-Termin ────────────────────────────────────────────────────────

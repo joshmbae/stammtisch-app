@@ -10,14 +10,17 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { MemberProfile } from "../types";
-import { loadMembers } from "../utils/storage";
+import { loadMembers, setMemberPin } from "../utils/storage";
 import { useSession } from "../contexts/SessionContext";
 import { COLORS, SHADOWS } from "../constants/design";
 import StammtischLogo from "../components/StammtischLogo";
 import { getInitial } from "../utils/format";
+import PinPrompt from "../components/PinPrompt";
+import { hashPin } from "../utils/pin";
 
 export default function MitgliedWaehlenScreen() {
   const [members, setMembers] = useState<MemberProfile[]>([]);
+  const [pendingMember, setPendingMember] = useState<MemberProfile | null>(null);
   const { setActiveSession } = useSession();
 
   useEffect(() => {
@@ -25,7 +28,21 @@ export default function MitgliedWaehlenScreen() {
   }, []);
 
   async function handleSelect(member: MemberProfile) {
+    if (!member.pinHash) {
+      // Erstes Auswählen dieses Profils: PIN-Vergabe ist Pflicht, bevor die Session startet.
+      setPendingMember(member);
+      return;
+    }
     await setActiveSession(member.id);
+    router.replace("/(tabs)/home");
+  }
+
+  async function handleSetPin(pin: string) {
+    if (!pendingMember) return;
+    const pinHash = await hashPin(pendingMember.id, pin);
+    await setMemberPin(pendingMember.id, pinHash);
+    await setActiveSession(pendingMember.id);
+    setPendingMember(null);
     router.replace("/(tabs)/home");
   }
 
@@ -93,6 +110,14 @@ export default function MitgliedWaehlenScreen() {
         </TouchableOpacity>
 
       </ScrollView>
+
+      <PinPrompt
+        visible={!!pendingMember}
+        mode="set"
+        memberName={pendingMember?.name}
+        onCancel={() => setPendingMember(null)}
+        onSubmit={handleSetPin}
+      />
     </SafeAreaView>
   );
 }

@@ -45,6 +45,7 @@ function rowToMember(row: any): MemberProfile {
     photoUri: row.photo_url ?? undefined,
     notizen: row.notizen ?? undefined,
     createdAt: row.created_at,
+    pinHash: row.pin_hash ?? undefined,
   };
 }
 
@@ -63,6 +64,7 @@ function memberToRow(m: MemberProfile, stammtischId: string) {
     photo_url: m.photoUri ?? null,
     notizen: m.notizen ?? null,
     created_at: m.createdAt,
+    pin_hash: m.pinHash ?? null,
   };
 }
 
@@ -96,6 +98,11 @@ export async function saveMembers(members: MemberProfile[]): Promise<void> {
 
 export async function deleteMember(id: string): Promise<void> {
   const { error } = await supabase.from("members").delete().eq("id", id);
+  if (error) throw error;
+}
+
+export async function setMemberPin(memberId: string, pinHash: string): Promise<void> {
+  const { error } = await supabase.from("members").update({ pin_hash: pinHash }).eq("id", memberId);
   if (error) throw error;
 }
 
