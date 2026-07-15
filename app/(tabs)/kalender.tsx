@@ -23,7 +23,7 @@ import {
 } from "../../utils/storage";
 import { COLORS, SHADOWS } from "../../constants/design";
 import { HamburgerButton } from "../../components/HamburgerButton";
-import { toLocalIsoDate } from "../../utils/date";
+import { toLocalIsoDate, toTimeString, parseTimeString } from "../../utils/date";
 
 // ─── Konstanten ───────────────────────────────────────────────────────────────
 
@@ -306,8 +306,10 @@ function NeuerTerminForm({ initialDate, onSave, onCancel }: {
   const [datumBis, setDatumBis] = useState<Date | null>(null);
   const [showDate, setShowDate] = useState(false);
   const [showDateBis, setShowDateBis] = useState(false);
-  const [startZeit, setStartZeit] = useState("");
-  const [endZeit, setEndZeit] = useState("");
+  const [startZeit, setStartZeit] = useState<Date | null>(null);
+  const [endZeit, setEndZeit] = useState<Date | null>(null);
+  const [showStartZeit, setShowStartZeit] = useState(false);
+  const [showEndZeit, setShowEndZeit] = useState(false);
   const [ort, setOrt] = useState("");
   const [notizen, setNotizen] = useState("");
 
@@ -329,8 +331,8 @@ function NeuerTerminForm({ initialDate, onSave, onCancel }: {
       titel: titel.trim() || undefined,
       datum: localIso(datum),
       datumBis: datumBis ? localIso(datumBis) : undefined,
-      startZeit: startZeit.trim() || undefined,
-      endZeit: endZeit.trim() || undefined,
+      startZeit: startZeit ? toTimeString(startZeit) : undefined,
+      endZeit: endZeit ? toTimeString(endZeit) : undefined,
       ort: ort.trim() || undefined,
       notizen: notizen.trim() || undefined,
     });
@@ -421,21 +423,35 @@ function NeuerTerminForm({ initialDate, onSave, onCancel }: {
       {/* Zeiten (nicht bei Geburtstag) */}
       {!isGeburtstag && (
         <View style={styles.zeitRow}>
-          <TextInput
-            style={[styles.input, { flex: 1 }]}
-            value={startZeit}
-            onChangeText={setStartZeit}
-            placeholder="Von (19:30)"
-            placeholderTextColor={COLORS.textLight}
-          />
-          <TextInput
-            style={[styles.input, { flex: 1 }]}
-            value={endZeit}
-            onChangeText={setEndZeit}
-            placeholder="Bis (23:00)"
-            placeholderTextColor={COLORS.textLight}
-          />
+          <TouchableOpacity style={[styles.dateBtn, { flex: 1 }]} onPress={() => setShowStartZeit(true)}>
+            <Ionicons name="time-outline" size={16} color={COLORS.blue} />
+            <Text style={[styles.dateBtnText, { color: startZeit ? COLORS.textDark : COLORS.textLight }]}>
+              {startZeit ? `Von: ${toTimeString(startZeit)}` : "Von (optional)"}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.dateBtn, { flex: 1 }]} onPress={() => setShowEndZeit(true)}>
+            <Ionicons name="time-outline" size={16} color={COLORS.blue} />
+            <Text style={[styles.dateBtnText, { color: endZeit ? COLORS.textDark : COLORS.textLight }]}>
+              {endZeit ? `Bis: ${toTimeString(endZeit)}` : "Bis (optional)"}
+            </Text>
+          </TouchableOpacity>
         </View>
+      )}
+      {showStartZeit && (
+        <DateTimePicker
+          value={startZeit ?? parseTimeString("19:30")}
+          mode="time"
+          is24Hour
+          onChange={(_, d) => { setShowStartZeit(false); if (d) setStartZeit(d); }}
+        />
+      )}
+      {showEndZeit && (
+        <DateTimePicker
+          value={endZeit ?? parseTimeString("23:00")}
+          mode="time"
+          is24Hour
+          onChange={(_, d) => { setShowEndZeit(false); if (d) setEndZeit(d); }}
+        />
       )}
 
       {/* Ort (nicht bei Geburtstag) */}

@@ -60,6 +60,7 @@ import {
 import { COLORS, SHADOWS } from "../../constants/design";
 import { useSession } from "../../contexts/SessionContext";
 import { getInitial } from "../../utils/format";
+import { toTimeString, parseTimeString } from "../../utils/date";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -423,11 +424,13 @@ export default function TerminDetailScreen() {
   const [showEditForm, setShowEditForm] = useState(false);
   const [editTitel, setEditTitel] = useState("");
   const [editDatum, setEditDatum] = useState(new Date());
-  const [editStartZeit, setEditStartZeit] = useState("");
-  const [editEndZeit, setEditEndZeit] = useState("");
+  const [editStartZeit, setEditStartZeit] = useState<Date | null>(null);
+  const [editEndZeit, setEditEndZeit] = useState<Date | null>(null);
   const [editOrt, setEditOrt] = useState("");
   const [editNotizen, setEditNotizen] = useState("");
   const [showEditDatePicker, setShowEditDatePicker] = useState(false);
+  const [showEditStartZeit, setShowEditStartZeit] = useState(false);
+  const [showEditEndZeit, setShowEditEndZeit] = useState(false);
 
   // Schocken
   const [schockMap, setSchockMap] = useState<Record<string, SchockLog[]>>({});
@@ -707,8 +710,8 @@ export default function TerminDetailScreen() {
     if (!termin) return;
     setEditTitel(termin.titel ?? "");
     setEditDatum(new Date((termin.datum) + "T00:00:00"));
-    setEditStartZeit(termin.startZeit ?? "");
-    setEditEndZeit(termin.endZeit ?? "");
+    setEditStartZeit(termin.startZeit ? parseTimeString(termin.startZeit) : null);
+    setEditEndZeit(termin.endZeit ? parseTimeString(termin.endZeit) : null);
     setEditOrt(termin.ort ?? "");
     setEditNotizen(termin.notizen ?? "");
     setShowEditForm(true);
@@ -723,8 +726,8 @@ export default function TerminDetailScreen() {
     await updateTermin(termin.id, {
       titel: editTitel.trim() || undefined,
       datum: localIso(editDatum),
-      startZeit: editStartZeit.trim() || undefined,
-      endZeit: editEndZeit.trim() || undefined,
+      startZeit: editStartZeit ? toTimeString(editStartZeit) : undefined,
+      endZeit: editEndZeit ? toTimeString(editEndZeit) : undefined,
       ort: editOrt.trim() || undefined,
       notizen: editNotizen.trim() || undefined,
     });
@@ -889,13 +892,39 @@ export default function TerminDetailScreen() {
               <View style={styles.editRow}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.editLabel}>Von</Text>
-                  <TextInput style={styles.editInput} value={editStartZeit} onChangeText={setEditStartZeit} placeholder="19:30" placeholderTextColor={COLORS.textLight} />
+                  <TouchableOpacity style={styles.editDateBtn} onPress={() => setShowEditStartZeit(true)}>
+                    <Ionicons name="time-outline" size={15} color={COLORS.blue} />
+                    <Text style={[styles.editDateBtnText, { color: editStartZeit ? COLORS.textDark : COLORS.textLight }]}>
+                      {editStartZeit ? toTimeString(editStartZeit) : "optional"}
+                    </Text>
+                  </TouchableOpacity>
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.editLabel}>Bis</Text>
-                  <TextInput style={styles.editInput} value={editEndZeit} onChangeText={setEditEndZeit} placeholder="23:00" placeholderTextColor={COLORS.textLight} />
+                  <TouchableOpacity style={styles.editDateBtn} onPress={() => setShowEditEndZeit(true)}>
+                    <Ionicons name="time-outline" size={15} color={COLORS.blue} />
+                    <Text style={[styles.editDateBtnText, { color: editEndZeit ? COLORS.textDark : COLORS.textLight }]}>
+                      {editEndZeit ? toTimeString(editEndZeit) : "optional"}
+                    </Text>
+                  </TouchableOpacity>
                 </View>
               </View>
+              {showEditStartZeit && (
+                <DateTimePicker
+                  value={editStartZeit ?? parseTimeString("19:30")}
+                  mode="time"
+                  is24Hour
+                  onChange={(_, d) => { setShowEditStartZeit(false); if (d) setEditStartZeit(d); }}
+                />
+              )}
+              {showEditEndZeit && (
+                <DateTimePicker
+                  value={editEndZeit ?? parseTimeString("23:00")}
+                  mode="time"
+                  is24Hour
+                  onChange={(_, d) => { setShowEditEndZeit(false); if (d) setEditEndZeit(d); }}
+                />
+              )}
 
               <Text style={styles.editLabel}>Ort</Text>
               <TextInput
