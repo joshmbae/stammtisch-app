@@ -885,6 +885,7 @@ export default function TerminDetailScreen() {
                 <DateTimePicker
                   value={editDatum}
                   mode="date"
+                  display={Platform.OS === "ios" ? "spinner" : "default"}
                   onChange={(_, d) => { setShowEditDatePicker(false); if (d) setEditDatum(d); }}
                 />
               )}
@@ -913,6 +914,7 @@ export default function TerminDetailScreen() {
                 <DateTimePicker
                   value={editStartZeit ?? parseTimeString("19:30")}
                   mode="time"
+                  display={Platform.OS === "ios" ? "spinner" : "default"}
                   is24Hour
                   onChange={(_, d) => { setShowEditStartZeit(false); if (d) setEditStartZeit(d); }}
                 />
@@ -921,6 +923,7 @@ export default function TerminDetailScreen() {
                 <DateTimePicker
                   value={editEndZeit ?? parseTimeString("23:00")}
                   mode="time"
+                  display={Platform.OS === "ios" ? "spinner" : "default"}
                   is24Hour
                   onChange={(_, d) => { setShowEditEndZeit(false); if (d) setEditEndZeit(d); }}
                 />

@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Alert,
   Image,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
@@ -180,6 +181,7 @@ export default function EditMemberScreen() {
             <DateTimePicker
               value={mitgliedSeit}
               mode="date"
+              display={Platform.OS === "ios" ? "spinner" : "default"}
               maximumDate={new Date()}
               onChange={(_, date) => { setShowDatePicker(false); if (date) setMitgliedSeit(date); }}
             />
@@ -205,6 +207,7 @@ export default function EditMemberScreen() {
             <DateTimePicker
               value={geburtsdatum ?? new Date(1990, 0, 1)}
               mode="date"
+              display={Platform.OS === "ios" ? "spinner" : "default"}
               maximumDate={new Date()}
               onChange={(_, date) => { setShowBirthdayPicker(false); if (date) setGeburtsdatum(date); }}
             />

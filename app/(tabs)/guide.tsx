@@ -8,6 +8,7 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
@@ -221,6 +222,7 @@ export default function EinstellungenScreen() {
             <DateTimePicker
               value={parseGruendung(verordnung.gruendungsjahr)}
               mode="date"
+              display={Platform.OS === "ios" ? "spinner" : "default"}
               maximumDate={new Date()}
               onChange={(_, date) => {
                 setShowGruendungPicker(false);

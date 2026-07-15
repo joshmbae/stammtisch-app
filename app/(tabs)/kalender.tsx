@@ -8,6 +8,7 @@ import {
   TextInput,
   Alert,
   Dimensions,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, router } from "expo-router";
@@ -391,6 +392,7 @@ function NeuerTerminForm({ initialDate, onSave, onCancel }: {
         <DateTimePicker
           value={datum}
           mode="date"
+          display={Platform.OS === "ios" ? "spinner" : "default"}
           onChange={(_, d) => { setShowDate(false); if (d) setDatum(d); }}
         />
       )}
@@ -415,6 +417,7 @@ function NeuerTerminForm({ initialDate, onSave, onCancel }: {
         <DateTimePicker
           value={datumBis ?? datum}
           mode="date"
+          display={Platform.OS === "ios" ? "spinner" : "default"}
           minimumDate={datum}
           onChange={(_, d) => { setShowDateBis(false); if (d) setDatumBis(d); }}
         />
@@ -441,6 +444,7 @@ function NeuerTerminForm({ initialDate, onSave, onCancel }: {
         <DateTimePicker
           value={startZeit ?? parseTimeString("19:30")}
           mode="time"
+          display={Platform.OS === "ios" ? "spinner" : "default"}
           is24Hour
           onChange={(_, d) => { setShowStartZeit(false); if (d) setStartZeit(d); }}
         />
@@ -449,6 +453,7 @@ function NeuerTerminForm({ initialDate, onSave, onCancel }: {
         <DateTimePicker
           value={endZeit ?? parseTimeString("23:00")}
           mode="time"
+          display={Platform.OS === "ios" ? "spinner" : "default"}
           is24Hour
           onChange={(_, d) => { setShowEndZeit(false); if (d) setEndZeit(d); }}
         />
