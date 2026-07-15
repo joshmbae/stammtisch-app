@@ -17,6 +17,7 @@ import {
   StammtischVerordnung,
 } from "../types";
 import { AVATAR_COLORS } from "../constants/design";
+import { toLocalIsoDate } from "./date";
 
 // ─── Seeded PRNG (deterministisch, reproduzierbar) ────────────────────────────
 
@@ -166,7 +167,7 @@ export async function seedTestData(): Promise<void> {
   while (true) {
     const d = firstThursday(y, mIdx);
     if (d > today) break;
-    const datum = d.toISOString().slice(0, 10);
+    const datum = toLocalIsoDate(d);
     termine.push({
       id: nextId(),
       art: "stammtisch",
@@ -186,7 +187,7 @@ export async function seedTestData(): Promise<void> {
   // Zukünftige Stammtische (nächste 6, ohne Anwesenheitsdaten)
   for (let i = 0; i < 6; i++) {
     const d = firstThursday(y, mIdx);
-    const datum = d.toISOString().slice(0, 10);
+    const datum = toLocalIsoDate(d);
     termine.push({
       id: nextId(),
       art: "stammtisch",

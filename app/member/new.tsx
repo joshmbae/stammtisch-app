@@ -20,6 +20,7 @@ import { COLORS, AVATAR_COLORS, ROLLEN } from "../../constants/design";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useSession } from "../../contexts/SessionContext";
 import { getInitial } from "../../utils/format";
+import { toLocalIsoDate } from "../../utils/date";
 
 export default function NewMemberScreen() {
   const { activeMemberId, setActiveSession } = useSession();
@@ -63,7 +64,7 @@ export default function NewMemberScreen() {
       name: name.trim(),
       spitzname: spitzname.trim() || undefined,
       mitgliedSeit: mitgliedSeit.toISOString(),
-      geburtsdatum: geburtsdatum ? geburtsdatum.toISOString().slice(0, 10) : undefined,
+      geburtsdatum: geburtsdatum ? toLocalIsoDate(geburtsdatum) : undefined,
       rolle,
       lieblingsgetraenk: lieblingsgetraenk.trim() || undefined,
       beruf: beruf.trim() || undefined,

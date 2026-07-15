@@ -36,6 +36,7 @@ import { COLORS, SHADOWS } from "../../constants/design";
 import { HamburgerButton } from "../../components/HamburgerButton";
 import StammtischLogo from "../../components/StammtischLogo";
 import { formatEuro, getInitial, gruendungsDauer, formatDauer, formatGruendungMonat } from "../../utils/format";
+import { toLocalIsoDate } from "../../utils/date";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -193,7 +194,7 @@ export default function HomeScreen() {
     setMembers(ms);
     setLastActivity(activityFeed[0] ?? null);
 
-    const today = new Date().toISOString().slice(0, 10);
+    const today = toLocalIsoDate(new Date());
     const upcoming = alle.filter((t) => t.datum >= today).sort((a, b) => a.datum.localeCompare(b.datum));
     const past = alle.filter((t) => t.datum < today).sort((a, b) => b.datum.localeCompare(a.datum));
     setNaechsterTermin(upcoming[0] ?? null);

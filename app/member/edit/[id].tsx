@@ -18,6 +18,7 @@ import { MemberProfile } from "../../../types";
 import { loadMembers, saveMembers, uploadAvatar } from "../../../utils/storage";
 import { COLORS, AVATAR_COLORS, ROLLEN } from "../../../constants/design";
 import { getInitial } from "../../../utils/format";
+import { toLocalIsoDate } from "../../../utils/date";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
 export default function EditMemberScreen() {
@@ -82,7 +83,7 @@ export default function EditMemberScreen() {
             name: name.trim(),
             spitzname: spitzname.trim() || undefined,
             mitgliedSeit: mitgliedSeit.toISOString(),
-            geburtsdatum: geburtsdatum ? geburtsdatum.toISOString().slice(0, 10) : undefined,
+            geburtsdatum: geburtsdatum ? toLocalIsoDate(geburtsdatum) : undefined,
             rolle,
             lieblingsgetraenk: lieblingsgetraenk.trim() || undefined,
             beruf: beruf.trim() || undefined,

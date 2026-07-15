@@ -23,6 +23,7 @@ import {
 } from "../../utils/storage";
 import { COLORS, SHADOWS } from "../../constants/design";
 import { HamburgerButton } from "../../components/HamburgerButton";
+import { toLocalIsoDate } from "../../utils/date";
 
 // ─── Konstanten ───────────────────────────────────────────────────────────────
 
@@ -44,7 +45,7 @@ function isoDate(year: number, month: number, day: number): string {
 }
 
 function todayIso(): string {
-  return new Date().toISOString().slice(0, 10);
+  return toLocalIsoDate(new Date());
 }
 
 function getMonthGrid(year: number, month: number): (number | null)[][] {
