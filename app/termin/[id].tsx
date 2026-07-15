@@ -9,6 +9,7 @@ import {
   Image,
   TextInput,
   Platform,
+  KeyboardAvoidingView,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -810,6 +811,11 @@ export default function TerminDetailScreen() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={0}
+      >
       <SafeAreaView style={styles.safe} edges={["top"]}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
@@ -1432,6 +1438,7 @@ export default function TerminDetailScreen() {
 
         </ScrollView>
       </SafeAreaView>
+      </KeyboardAvoidingView>
     </GestureHandlerRootView>
   );
 }

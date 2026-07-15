@@ -9,6 +9,7 @@ import {
   Alert,
   Dimensions,
   Platform,
+  KeyboardAvoidingView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, router } from "expo-router";
@@ -556,6 +557,7 @@ export default function KalenderTab() {
   const isCurrentMonth = viewYear === today.getFullYear() && viewMonth === today.getMonth();
 
   return (
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={0}>
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
@@ -673,6 +675,7 @@ export default function KalenderTab() {
 
       </ScrollView>
     </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 }
 

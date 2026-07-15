@@ -8,6 +8,8 @@ import {
   TextInput,
   Alert,
   Image,
+  Platform,
+  KeyboardAvoidingView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
@@ -190,6 +192,7 @@ export default function KasseScreen() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={0}>
       <SafeAreaView style={styles.safe} edges={["top"]}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
@@ -421,6 +424,7 @@ export default function KasseScreen() {
 
         </ScrollView>
       </SafeAreaView>
+      </KeyboardAvoidingView>
     </GestureHandlerRootView>
   );
 }
