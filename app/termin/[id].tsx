@@ -542,6 +542,29 @@ export default function TerminDetailScreen() {
       refId: log.id,
       meta: { typ },
     });
+
+    if (typ === "niederlage") {
+      const schockKat = STRAF_KATEGORIEN.find((k) => k.key === "schock_niederlage")!;
+      const strafLog = await addStrafLog(selectedSchockId, {
+        kategorie: schockKat.key,
+        betrag: schockKat.betrag,
+        terminId: termin.id,
+        loggedAt: new Date().toISOString(),
+        beglichen: false,
+      });
+      setStrafMap((prev) => ({
+        ...prev,
+        [selectedSchockId]: [strafLog, ...(prev[selectedSchockId] ?? [])],
+      }));
+      await logActivity({
+        actorMemberId: activeMemberId ?? undefined,
+        subjectMemberId: selectedSchockId,
+        actionType: "straf_log_created",
+        terminId: termin.id,
+        refId: strafLog.id,
+        meta: { kategorie: strafLog.kategorie, betrag: strafLog.betrag },
+      });
+    }
   }
 
   async function handleDeleteSchock(memberId: string, logId: string) {
@@ -1085,7 +1108,12 @@ export default function TerminDetailScreen() {
                           style={[styles.strafKatBtn, isSelected && styles.strafKatBtnActive]}
                           onPress={() => {
                             setStrafKategorie(isSelected ? null : kat);
-                            setStrafBetragOverride(kat.betrag > 0 ? String(kat.betrag).replace(".", ",") : "");
+                            if (kat.key === "spaet_entschuldigt" && strafMemberId) {
+                              const minuten = (verspätungMap[strafMemberId] ?? []).reduce((s, l) => s + l.minutenVerspätet, 0);
+                              setStrafBetragOverride(minuten >= 30 ? String(kat.betrag).replace(".", ",") : "0");
+                            } else {
+                              setStrafBetragOverride(kat.betrag > 0 ? String(kat.betrag).replace(".", ",") : "");
+                            }
                             setStrafNotiz("");
                             setShowStrafForm(!isSelected);
                           }}
@@ -1110,6 +1138,11 @@ export default function TerminDetailScreen() {
                       </Text>
                       {strafKategorie.beschreibung && (
                         <Text style={styles.strafFormHint}>{strafKategorie.beschreibung}</Text>
+                      )}
+                      {strafKategorie.key === "spaet_entschuldigt" && strafMemberId && (
+                        <Text style={styles.strafFormHint}>
+                          Getrackte Verspätung: {(verspätungMap[strafMemberId] ?? []).reduce((s, l) => s + l.minutenVerspätet, 0)} Min.
+                        </Text>
                       )}
                       <View style={styles.strafFormRow}>
                         <View style={{ flex: 1 }}>

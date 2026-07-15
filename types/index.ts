@@ -91,6 +91,7 @@ export type StrafKategorie =
   | "spaet_15min"
   | "spaet_30min"
   | "maennlicher_gast"
+  | "schock_niederlage"
   | "sonstiges";
 
 export const STRAF_KATEGORIEN: {
@@ -106,6 +107,7 @@ export const STRAF_KATEGORIEN: {
   { key: "spaet_15min",           label: "Zu spät 15–30 Min.",    betrag: 5,   emoji: "⏱️", beschreibung: "Unentschuldigt – Trinkspruch ab 1 Min., 5 € ab 15 Min." },
   { key: "spaet_30min",           label: "Zu spät >30 Min.",      betrag: 10,  emoji: "⏱️", beschreibung: "Unentschuldigt" },
   { key: "maennlicher_gast",      label: "Männl. Gast",           betrag: 20,  emoji: "👨", beschreibung: "Pro Gast – weibliche Gäste nur am Valentinsstammtisch" },
+  { key: "schock_niederlage",     label: "Schock-Niederlage",     betrag: 5,   emoji: "🎲", beschreibung: "Wird automatisch bei jeder Schock-Niederlage eingetragen" },
   { key: "sonstiges",             label: "Sonstiges",             betrag: 0,   emoji: "💰" },
 ];
 
