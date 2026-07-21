@@ -57,12 +57,15 @@ export async function findStammtischByName(
 }
 
 export async function createStammtisch(name: string, passwordHash: string): Promise<{ id: string }> {
-  const id = nextId();
-  const { error } = await supabase
+  // stammtische.id ist uuid (DB-Default gen_random_uuid()) — anders als die
+  // text-Ids der übrigen Tabellen, daher hier keine nextId() übergeben.
+  const { data, error } = await supabase
     .from("stammtische")
-    .insert({ id, name: name.trim(), password_hash: passwordHash });
-  if (error) throw new Error("Stammtisch konnte nicht angelegt werden: " + error.message);
-  return { id };
+    .insert({ name: name.trim(), password_hash: passwordHash })
+    .select("id")
+    .single();
+  if (error || !data) throw new Error("Stammtisch konnte nicht angelegt werden: " + error?.message);
+  return { id: data.id as string };
 }
 
 // ─── Member Profiles ──────────────────────────────────────────────────────────
