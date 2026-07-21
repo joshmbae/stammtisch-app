@@ -17,16 +17,52 @@ function nextId(): string {
   return Date.now().toString() + Math.random().toString(36).slice(2, 8);
 }
 
-// ─── Stammtisch (Multi-Tenant-Vorbereitung, Phase 1: genau ein Stammtisch) ────
+// ─── Stammtisch (Multi-Tenant) ────────────────────────────────────────────────
 
 let cachedStammtischId: string | null = null;
 
+/** Wird beim App-Start (bzw. bei Anlegen/Beitreten) von StammtischContext gesetzt. */
+export function setActiveStammtischId(id: string): void {
+  cachedStammtischId = id;
+}
+
 export async function getStammtischId(): Promise<string> {
-  if (cachedStammtischId) return cachedStammtischId;
-  const { data, error } = await supabase.from("stammtische").select("id").limit(1).single();
-  if (error || !data) throw new Error("Kein Stammtisch gefunden: " + error?.message);
-  cachedStammtischId = data.id as string;
+  if (!cachedStammtischId) {
+    throw new Error("Kein aktiver Stammtisch gesetzt — Routing hätte das vorher auflösen müssen.");
+  }
   return cachedStammtischId;
+}
+
+/**
+ * Fallback für bestehende Installationen: gibt die Id zurück, wenn die
+ * `stammtische`-Tabelle genau eine Zeile hat (der Prod-Stand vor Multi-
+ * Stammtisch-Unterstützung), sonst null.
+ */
+export async function getLegacySingleStammtischId(): Promise<string | null> {
+  const { data, error } = await supabase.from("stammtische").select("id");
+  if (error || !data || data.length !== 1) return null;
+  return data[0].id as string;
+}
+
+export async function findStammtischByName(
+  name: string
+): Promise<{ id: string; name: string; passwordHash: string | null } | null> {
+  const { data, error } = await supabase
+    .from("stammtische")
+    .select("id, name, password_hash")
+    .ilike("name", name.trim());
+  if (error || !data || data.length === 0) return null;
+  const row = data[0];
+  return { id: row.id, name: row.name, passwordHash: row.password_hash ?? null };
+}
+
+export async function createStammtisch(name: string, passwordHash: string): Promise<{ id: string }> {
+  const id = nextId();
+  const { error } = await supabase
+    .from("stammtische")
+    .insert({ id, name: name.trim(), password_hash: passwordHash });
+  if (error) throw new Error("Stammtisch konnte nicht angelegt werden: " + error.message);
+  return { id };
 }
 
 // ─── Member Profiles ──────────────────────────────────────────────────────────

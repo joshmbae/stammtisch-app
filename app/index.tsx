@@ -1,12 +1,14 @@
 import { View, ActivityIndicator } from "react-native";
 import { Redirect } from "expo-router";
 import { useSession } from "../contexts/SessionContext";
+import { useStammtisch } from "../contexts/StammtischContext";
 import { COLORS } from "../constants/design";
 
 export default function Index() {
+  const { stammtischId, stammtischLoaded } = useStammtisch();
   const { activeMemberId, sessionLoaded } = useSession();
 
-  if (!sessionLoaded) {
+  if (!stammtischLoaded || (!!stammtischId && !sessionLoaded)) {
     return (
       <View style={{ flex: 1, backgroundColor: COLORS.background, alignItems: "center", justifyContent: "center" }}>
         <ActivityIndicator color={COLORS.blue} />
@@ -14,6 +16,7 @@ export default function Index() {
     );
   }
 
+  if (!stammtischId) return <Redirect href="/stammtisch-waehlen" />;
   if (!activeMemberId) return <Redirect href="/mitglied-waehlen" />;
   return <Redirect href="/(tabs)/home" />;
 }

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { MemberProfile } from "../types";
 import { loadMembers } from "../utils/storage";
+import { useStammtisch } from "./StammtischContext";
 
 const SESSION_KEY = "st_active_member";
 
@@ -28,8 +29,21 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [activeMemberId, setActiveMemberId] = useState<string | null>(null);
   const [activeMember, setActiveMember] = useState<MemberProfile | null>(null);
   const [sessionLoaded, setSessionLoaded] = useState(false);
+  const { stammtischId, stammtischLoaded } = useStammtisch();
 
-  useEffect(() => { reloadSession(); }, []);
+  useEffect(() => {
+    // Erst laden, wenn der Stammtisch aufgelöst ist — loadMembers() braucht
+    // eine gültige getStammtischId(), sonst kein Ziel-Stammtisch bekannt
+    // (z. B. frischer Install ohne Auswahl -> Chooser-Screen übernimmt).
+    if (!stammtischLoaded) return;
+    if (!stammtischId) {
+      setActiveMemberId(null);
+      setActiveMember(null);
+      setSessionLoaded(true);
+      return;
+    }
+    reloadSession();
+  }, [stammtischLoaded, stammtischId]);
 
   async function reloadSession() {
     const id = await AsyncStorage.getItem(SESSION_KEY);
