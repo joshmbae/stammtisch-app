@@ -12,6 +12,7 @@ import { router } from "expo-router";
 import { MemberProfile } from "../types";
 import { loadMembers, setMemberPin } from "../utils/storage";
 import { useSession } from "../contexts/SessionContext";
+import { useStammtisch } from "../contexts/StammtischContext";
 import { COLORS, SHADOWS } from "../constants/design";
 import StammtischLogo from "../components/StammtischLogo";
 import { getInitial } from "../utils/format";
@@ -21,7 +22,14 @@ import { hashPin } from "../utils/pin";
 export default function MitgliedWaehlenScreen() {
   const [members, setMembers] = useState<MemberProfile[]>([]);
   const [pendingMember, setPendingMember] = useState<MemberProfile | null>(null);
-  const { setActiveSession } = useSession();
+  const { setActiveSession, clearSession } = useSession();
+  const { stammtischName, clearStammtisch } = useStammtisch();
+
+  async function handleStammtischWechseln() {
+    await clearSession();
+    await clearStammtisch();
+    router.replace("/stammtisch-waehlen");
+  }
 
   useEffect(() => {
     loadMembers().then(setMembers);
@@ -54,7 +62,9 @@ export default function MitgliedWaehlenScreen() {
         <View style={styles.header}>
           <StammtischLogo size={52} />
           <Text style={styles.title}>Wer bist du?</Text>
-          <Text style={styles.subtitle}>Wähl dein Profil um loszulegen</Text>
+          <Text style={styles.subtitle}>
+            {stammtischName ? `Stammtisch „${stammtischName}" · Wähl dein Profil` : "Wähl dein Profil um loszulegen"}
+          </Text>
         </View>
 
         {/* Mitglieder-Karten */}
@@ -107,6 +117,14 @@ export default function MitgliedWaehlenScreen() {
           activeOpacity={0.75}
         >
           <Text style={styles.gastText}>Als Gast fortfahren</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.gastBtn}
+          onPress={handleStammtischWechseln}
+          activeOpacity={0.75}
+        >
+          <Text style={styles.gastText}>Stammtisch wechseln</Text>
         </TouchableOpacity>
 
       </ScrollView>
