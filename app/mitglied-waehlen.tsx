@@ -15,6 +15,7 @@ import { useSession } from "../contexts/SessionContext";
 import { useStammtisch } from "../contexts/StammtischContext";
 import { COLORS, SHADOWS } from "../constants/design";
 import StammtischLogo from "../components/StammtischLogo";
+import LoadingSpinner from "../components/LoadingSpinner";
 import { getInitial } from "../utils/format";
 import PinPrompt from "../components/PinPrompt";
 import { hashPin } from "../utils/pin";
@@ -22,6 +23,7 @@ import { hashPin } from "../utils/pin";
 export default function MitgliedWaehlenScreen() {
   const [members, setMembers] = useState<MemberProfile[]>([]);
   const [pendingMember, setPendingMember] = useState<MemberProfile | null>(null);
+  const [loading, setLoading] = useState(true);
   const { setActiveSession, clearSession } = useSession();
   const { stammtischName, clearStammtisch } = useStammtisch();
 
@@ -32,7 +34,7 @@ export default function MitgliedWaehlenScreen() {
   }
 
   useEffect(() => {
-    loadMembers().then(setMembers);
+    loadMembers().then((ms) => { setMembers(ms); setLoading(false); });
   }, []);
 
   async function handleSelect(member: MemberProfile) {
@@ -56,6 +58,7 @@ export default function MitgliedWaehlenScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
+      {loading ? <LoadingSpinner /> : (
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
         {/* Header */}
@@ -128,6 +131,7 @@ export default function MitgliedWaehlenScreen() {
         </TouchableOpacity>
 
       </ScrollView>
+      )}
 
       <PinPrompt
         visible={!!pendingMember}

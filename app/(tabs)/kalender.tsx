@@ -25,6 +25,7 @@ import {
 } from "../../utils/storage";
 import { COLORS, SHADOWS } from "../../constants/design";
 import { HamburgerButton } from "../../components/HamburgerButton";
+import LoadingSpinner from "../../components/LoadingSpinner";
 import { toLocalIsoDate, toTimeString, parseTimeString } from "../../utils/date";
 
 // ─── Konstanten ───────────────────────────────────────────────────────────────
@@ -502,6 +503,7 @@ export default function KalenderTab() {
   const [selectedDay, setSelectedDay] = useState<string | null>(todayIso());
   const [termine, setTermine] = useState<StammtischTermin[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   async function load() {
     const [ts, members] = await Promise.all([loadTermine(), loadMembers()]);
@@ -509,6 +511,7 @@ export default function KalenderTab() {
       .filter((m) => m.geburtsdatum)
       .map(memberBirthdayEvent);
     setTermine([...ts, ...birthdayEvents]);
+    setLoading(false);
   }
 
   useFocusEffect(useCallback(() => { load(); }, []));
@@ -559,6 +562,7 @@ export default function KalenderTab() {
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={0}>
     <SafeAreaView style={styles.safe} edges={["top"]}>
+      {loading ? <LoadingSpinner /> : (
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
         {/* ── Header ── */}
@@ -674,6 +678,7 @@ export default function KalenderTab() {
         )}
 
       </ScrollView>
+      )}
     </SafeAreaView>
     </KeyboardAvoidingView>
   );

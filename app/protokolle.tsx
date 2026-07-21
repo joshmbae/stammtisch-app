@@ -13,6 +13,7 @@ import { Protokoll, StammtischTermin } from "../types";
 import { loadProtokolle, loadTermine } from "../utils/storage";
 import { COLORS, SHADOWS } from "../constants/design";
 import { HamburgerButton } from "../components/HamburgerButton";
+import LoadingSpinner from "../components/LoadingSpinner";
 
 type ProtokollMitTermin = Protokoll & {
   termin: StammtischTermin | null;
@@ -37,6 +38,7 @@ function formatUpdated(iso: string): string {
 
 export default function ProtokollListeScreen() {
   const [items, setItems] = useState<ProtokollMitTermin[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useFocusEffect(
     useCallback(() => {
@@ -47,6 +49,7 @@ export default function ProtokollListeScreen() {
           .map((p) => ({ ...p, termin: terminMap[p.terminId] ?? null }))
           .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
         setItems(merged);
+        setLoading(false);
       }
       load();
     }, [])
@@ -54,6 +57,7 @@ export default function ProtokollListeScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
+      {loading ? <LoadingSpinner /> : (
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
         <View style={styles.header}>
@@ -115,6 +119,7 @@ export default function ProtokollListeScreen() {
           })
         )}
       </ScrollView>
+      )}
     </SafeAreaView>
   );
 }

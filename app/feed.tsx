@@ -8,6 +8,7 @@ import { renderActivity } from "../utils/activityFeed";
 import { formatActivityZeit } from "../utils/date";
 import { COLORS, SHADOWS } from "../constants/design";
 import { HamburgerButton } from "../components/HamburgerButton";
+import LoadingSpinner from "../components/LoadingSpinner";
 
 function FeedRow({
   entry,
@@ -42,6 +43,7 @@ function FeedRow({
 export default function FeedScreen() {
   const [entries, setEntries] = useState<ActivityLogEntry[]>([]);
   const [members, setMembers] = useState<MemberProfile[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useFocusEffect(
     useCallback(() => {
@@ -49,6 +51,7 @@ export default function FeedScreen() {
         const [feed, ms] = await Promise.all([loadActivityFeed(200), loadMembers()]);
         setEntries(feed);
         setMembers(ms);
+        setLoading(false);
       }
       load();
     }, [])
@@ -58,6 +61,7 @@ export default function FeedScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
+      {loading ? <LoadingSpinner /> : (
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <HamburgerButton />
@@ -81,6 +85,7 @@ export default function FeedScreen() {
           </View>
         )}
       </ScrollView>
+      )}
     </SafeAreaView>
   );
 }

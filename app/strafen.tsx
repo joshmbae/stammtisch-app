@@ -23,6 +23,7 @@ import {
 } from "../utils/storage";
 import { COLORS, SHADOWS } from "../constants/design";
 import { HamburgerButton } from "../components/HamburgerButton";
+import LoadingSpinner from "../components/LoadingSpinner";
 import { useSession } from "../contexts/SessionContext";
 import { formatEuro, getInitial } from "../utils/format";
 
@@ -46,6 +47,7 @@ export default function StrafenScreen() {
   const [members, setMembers] = useState<MemberProfile[]>([]);
   const [filterMemberId, setFilterMemberId] = useState<string | null>(null);
   const [showBeglichen, setShowBeglichen] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useFocusEffect(
     useCallback(() => {
@@ -54,6 +56,7 @@ export default function StrafenScreen() {
         setMembers(ms);
         const all = await loadAllStrafLogs(ms.map((m) => m.id));
         setLogs(all.sort((a, b) => b.loggedAt.localeCompare(a.loggedAt)));
+        setLoading(false);
       }
       load();
     }, [])
@@ -101,6 +104,7 @@ export default function StrafenScreen() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaView style={styles.safe} edges={["top"]}>
+        {loading ? <LoadingSpinner /> : (
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
           {/* Header */}
@@ -227,6 +231,7 @@ export default function StrafenScreen() {
           )}
 
         </ScrollView>
+        )}
       </SafeAreaView>
     </GestureHandlerRootView>
   );

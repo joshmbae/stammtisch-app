@@ -24,6 +24,7 @@ import {
 } from "../../utils/storage";
 import { useSession } from "../../contexts/SessionContext";
 import { COLORS, SHADOWS } from "../../constants/design";
+import LoadingSpinner from "../../components/LoadingSpinner";
 
 function formatDatum(iso: string): string {
   return new Date(iso + "T00:00:00").toLocaleDateString("de-DE", {
@@ -53,6 +54,7 @@ export default function ProtokollEditor() {
   const [inhalt, setInhalt] = useState("");
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
   const autoSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useFocusEffect(
@@ -70,6 +72,7 @@ export default function ProtokollEditor() {
           setInhalt(existing.inhalt);
         }
         setDirty(false);
+        setLoading(false);
       }
       load();
     }, [terminId])
@@ -167,6 +170,7 @@ export default function ProtokollEditor() {
           </View>
         </View>
 
+        {loading ? <LoadingSpinner /> : (
         <ScrollView
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
@@ -213,6 +217,7 @@ export default function ProtokollEditor() {
             autoCorrect
           />
         </ScrollView>
+        )}
       </SafeAreaView>
     </KeyboardAvoidingView>
   );

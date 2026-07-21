@@ -21,6 +21,7 @@ import { loadVerordnung, saveVerordnung } from "../../utils/storage";
 import { seedTestData, clearAllData } from "../../utils/seed";
 import { COLORS, SHADOWS } from "../../constants/design";
 import { HamburgerButton } from "../../components/HamburgerButton";
+import LoadingSpinner from "../../components/LoadingSpinner";
 
 /** Parst "YYYY" oder "YYYY-MM" (legacy: nur Jahr -> Januar). */
 function parseGruendung(value?: string): Date {
@@ -41,6 +42,7 @@ export default function EinstellungenScreen() {
   const [neueRegel, setNeueRegel] = useState("");
   const [seeding, setSeeding] = useState(false);
   const [showGruendungPicker, setShowGruendungPicker] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   async function handleSeed() {
     showAlert(
@@ -92,7 +94,7 @@ export default function EinstellungenScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      loadVerordnung().then(setVerordnung);
+      loadVerordnung().then((v) => { setVerordnung(v); setLoading(false); });
       setDirty(false);
     }, [])
   );
@@ -122,6 +124,7 @@ export default function EinstellungenScreen() {
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={0}>
     <SafeAreaView style={styles.safe} edges={["top"]}>
+      {loading ? <LoadingSpinner /> : (
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
         <View style={styles.header}>
@@ -292,6 +295,7 @@ export default function EinstellungenScreen() {
         </View>
 
       </ScrollView>
+      )}
     </SafeAreaView>
     </KeyboardAvoidingView>
   );

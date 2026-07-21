@@ -28,6 +28,7 @@ import {
 } from "../utils/storage";
 import { COLORS, SHADOWS } from "../constants/design";
 import { HamburgerButton } from "../components/HamburgerButton";
+import LoadingSpinner from "../components/LoadingSpinner";
 import { useSession } from "../contexts/SessionContext";
 import { formatEuro, getInitial } from "../utils/format";
 
@@ -118,6 +119,7 @@ export default function KasseScreen() {
   const [members, setMembers] = useState<MemberProfile[]>([]);
   const [activeForm, setActiveForm] = useState<FormTyp>(null);
   const [showBeglichen, setShowBeglichen] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // Form state
   const [betrag, setBetrag] = useState("");
@@ -131,6 +133,7 @@ export default function KasseScreen() {
         const [k, ms] = await Promise.all([loadKasse(), loadMembers()]);
         setEintraege(k);
         setMembers(ms);
+        setLoading(false);
       }
       load();
     }, [])
@@ -246,6 +249,7 @@ export default function KasseScreen() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={0}>
       <SafeAreaView style={styles.safe} edges={["top"]}>
+        {loading ? <LoadingSpinner /> : (
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
           {/* Header */}
@@ -552,6 +556,7 @@ export default function KasseScreen() {
           ) : null}
 
         </ScrollView>
+        )}
       </SafeAreaView>
       </KeyboardAvoidingView>
     </GestureHandlerRootView>

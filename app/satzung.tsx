@@ -11,6 +11,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { HamburgerButton } from "../components/HamburgerButton";
+import LoadingSpinner from "../components/LoadingSpinner";
 import { StammtischVerordnung } from "../types";
 import { loadVerordnung } from "../utils/storage";
 import { COLORS, SHADOWS } from "../constants/design";
@@ -18,10 +19,11 @@ import { gruendungsDauer, formatDauer, formatGruendungMonat } from "../utils/for
 
 export default function SatzungScreen() {
   const [verordnung, setVerordnung] = useState<StammtischVerordnung>({ name: "Die Hellen", regeln: [] });
+  const [loading, setLoading] = useState(true);
 
   useFocusEffect(
     useCallback(() => {
-      loadVerordnung().then(setVerordnung);
+      loadVerordnung().then((v) => { setVerordnung(v); setLoading(false); });
     }, [])
   );
 
@@ -30,6 +32,7 @@ export default function SatzungScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
+      {loading ? <LoadingSpinner /> : (
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
         {/* Header */}
@@ -137,6 +140,7 @@ export default function SatzungScreen() {
         )}
 
       </ScrollView>
+      )}
     </SafeAreaView>
   );
 }

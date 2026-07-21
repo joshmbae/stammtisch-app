@@ -31,6 +31,7 @@ import {
 import { COLORS, SHADOWS } from "../../constants/design";
 import { formatEuro, getInitial } from "../../utils/format";
 import PinPrompt from "../../components/PinPrompt";
+import LoadingSpinner from "../../components/LoadingSpinner";
 import { verifyPin } from "../../utils/pin";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -128,6 +129,7 @@ export default function MemberDetailScreen() {
   const [showAllTermine, setShowAllTermine] = useState(false);
   const [pinPromptVisible, setPinPromptVisible] = useState(false);
   const [pinError, setPinError] = useState<string | undefined>(undefined);
+  const [loading, setLoading] = useState(true);
 
   useFocusEffect(
     useCallback(() => {
@@ -147,11 +149,13 @@ export default function MemberDetailScreen() {
         setVerordnung(v);
         // Sort termine newest first
         setTermine([...ts].sort((a, b) => b.datum.localeCompare(a.datum)));
+        setLoading(false);
       }
       load();
     }, [id])
   );
 
+  if (loading) return <LoadingSpinner />;
   if (!member) return null;
 
   function handleEditPress() {

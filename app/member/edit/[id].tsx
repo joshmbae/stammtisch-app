@@ -20,6 +20,7 @@ import { MemberProfile } from "../../../types";
 import { loadMembers, saveMembers, uploadAvatar } from "../../../utils/storage";
 import { COLORS, AVATAR_COLORS, ROLLEN } from "../../../constants/design";
 import { getInitial } from "../../../utils/format";
+import LoadingSpinner from "../../../components/LoadingSpinner";
 import { toLocalIsoDate } from "../../../utils/date";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
@@ -37,11 +38,12 @@ export default function EditMemberScreen() {
   const [avatarColor, setAvatarColor] = useState(AVATAR_COLORS[0]);
   const [photoUri, setPhotoUri] = useState<string | undefined>(undefined);
   const [notizen, setNotizen] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadMembers().then((members) => {
       const m = members.find((x) => x.id === id);
-      if (!m) return;
+      if (!m) { setLoading(false); return; }
       setName(m.name);
       setSpitzname(m.spitzname ?? "");
       setRolle(m.rolle);
@@ -52,6 +54,7 @@ export default function EditMemberScreen() {
       setAvatarColor(m.avatarColor);
       setPhotoUri(m.photoUri);
       setNotizen(m.notizen ?? "");
+      setLoading(false);
     });
   }, [id]);
 
@@ -102,6 +105,7 @@ export default function EditMemberScreen() {
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={0}>
     <SafeAreaView style={styles.safe} edges={["top"]}>
+      {loading ? <LoadingSpinner /> : (
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
         <View style={styles.header}>
@@ -245,6 +249,7 @@ export default function EditMemberScreen() {
         </TouchableOpacity>
 
       </ScrollView>
+      )}
     </SafeAreaView>
     </KeyboardAvoidingView>
   );

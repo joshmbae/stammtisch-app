@@ -62,6 +62,7 @@ import { COLORS, SHADOWS } from "../../constants/design";
 import { useSession } from "../../contexts/SessionContext";
 import { getInitial } from "../../utils/format";
 import { toTimeString, parseTimeString } from "../../utils/date";
+import LoadingSpinner from "../../components/LoadingSpinner";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -440,6 +441,7 @@ export default function TerminDetailScreen() {
   const [showWetteForm, setShowWetteForm] = useState(false);
   const [wetteBetrag, setWetteBetrag] = useState("");
   const [wetteGegenId, setWetteGegenId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useFocusEffect(
     useCallback(() => { load(); }, [id])
@@ -451,7 +453,7 @@ export default function TerminDetailScreen() {
     setTermin(t);
     setMembers(ms);
     setVerordnung(v);
-    if (!t || ms.length === 0) return;
+    if (!t || ms.length === 0) { setLoading(false); return; }
 
     const proto = await loadProtokoll(t.id);
     setProtokoll(proto);
@@ -484,6 +486,7 @@ export default function TerminDetailScreen() {
     setWettenMap(wMap);
     setStrafMap(stMap);
     setStrafMemberId((prev) => prev ?? ms[0]?.id ?? null);
+    setLoading(false);
   }
 
   // ── Anwesenheit & Verspätung handlers ──────────────────────────────────────
@@ -779,7 +782,9 @@ export default function TerminDetailScreen() {
     }
   }
 
-  // ── Not found ───────────────────────────────────────────────────────────────
+  // ── Loading / Not found ─────────────────────────────────────────────────────
+
+  if (loading) return <LoadingSpinner />;
 
   if (!termin) {
     return (

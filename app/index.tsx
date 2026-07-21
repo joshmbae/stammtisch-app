@@ -3,6 +3,7 @@ import { Redirect } from "expo-router";
 import { useSession } from "../contexts/SessionContext";
 import { useStammtisch } from "../contexts/StammtischContext";
 import { COLORS } from "../constants/design";
+import StammtischLogo from "../components/StammtischLogo";
 
 export default function Index() {
   const { stammtischId, stammtischLoaded } = useStammtisch();
@@ -10,7 +11,8 @@ export default function Index() {
 
   if (!stammtischLoaded || (!!stammtischId && !sessionLoaded)) {
     return (
-      <View style={{ flex: 1, backgroundColor: COLORS.background, alignItems: "center", justifyContent: "center" }}>
+      <View style={{ flex: 1, backgroundColor: COLORS.background, alignItems: "center", justifyContent: "center", gap: 20 }}>
+        <StammtischLogo size={52} />
         <ActivityIndicator color={COLORS.blue} />
       </View>
     );

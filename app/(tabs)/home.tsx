@@ -35,6 +35,7 @@ import { useSession } from "../../contexts/SessionContext";
 import { COLORS, SHADOWS } from "../../constants/design";
 import { HamburgerButton } from "../../components/HamburgerButton";
 import StammtischLogo from "../../components/StammtischLogo";
+import LoadingSpinner from "../../components/LoadingSpinner";
 import { formatEuro, getInitial, gruendungsDauer, formatDauer, formatGruendungMonat } from "../../utils/format";
 import { toLocalIsoDate, formatActivityZeit } from "../../utils/date";
 
@@ -171,6 +172,7 @@ export default function HomeScreen() {
   const [kasse, setKasse]                     = useState<KassenEintrag[]>([]);
   const [terminCount, setTerminCount]         = useState(0);
   const [lastActivity, setLastActivity]       = useState<ActivityLogEntry | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useFocusEffect(useCallback(() => { load(); }, []));
 
@@ -191,7 +193,7 @@ export default function HomeScreen() {
     setLetzterTermin(past[0] ?? null);
     setTerminCount(alle.length);
 
-    if (ms.length === 0) { setMemberStats([]); return; }
+    if (ms.length === 0) { setMemberStats([]); setLoading(false); return; }
 
     const stats = await Promise.all(ms.map(async (m) => {
       const [vLogs, sLogs, stLogs]: [VerspätungLog[], SchockLog[], StrafLog[]] = await Promise.all([
@@ -209,6 +211,7 @@ export default function HomeScreen() {
       };
     }));
     setMemberStats(stats);
+    setLoading(false);
   }
 
   // ── Derived ───────────────────────────────────────────────────────────────
@@ -231,6 +234,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
+      {loading ? <LoadingSpinner /> : (
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
         {/* ── Header ── */}
@@ -503,6 +507,7 @@ export default function HomeScreen() {
         )}
 
       </ScrollView>
+      )}
     </SafeAreaView>
   );
 }

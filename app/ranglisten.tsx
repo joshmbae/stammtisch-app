@@ -27,6 +27,7 @@ import {
 } from "../utils/storage";
 import { COLORS, SHADOWS } from "../constants/design";
 import { HamburgerButton } from "../components/HamburgerButton";
+import LoadingSpinner from "../components/LoadingSpinner";
 import { formatEuro, getInitial } from "../utils/format";
 
 interface MemberStats {
@@ -74,6 +75,7 @@ export default function RanglistenScreen() {
   const [memberStats, setMemberStats] = useState<MemberStats[]>([]);
   const [verordnung, setVerordnung] = useState<StammtischVerordnung | null>(null);
   const [terminCount, setTerminCount] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   useFocusEffect(useCallback(() => { load(); }, []));
 
@@ -81,7 +83,7 @@ export default function RanglistenScreen() {
     const [ms, v, alle] = await Promise.all([loadMembers(), loadVerordnung(), loadTermine()]);
     setVerordnung(v);
     setTerminCount(alle.length);
-    if (ms.length === 0) { setMemberStats([]); return; }
+    if (ms.length === 0) { setMemberStats([]); setLoading(false); return; }
 
     const stats = await Promise.all(ms.map(async (m) => {
       const [vLogs, sLogs, stLogs]: [VerspätungLog[], SchockLog[], StrafLog[]] = await Promise.all([
@@ -99,6 +101,7 @@ export default function RanglistenScreen() {
       };
     }));
     setMemberStats(stats);
+    setLoading(false);
   }
 
   const teilnahmeRang  = [...memberStats].sort((a, b) => b.anwesenheitCount - a.anwesenheitCount);
@@ -109,6 +112,7 @@ export default function RanglistenScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
+      {loading ? <LoadingSpinner /> : (
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
         <View style={styles.header}>
@@ -191,6 +195,7 @@ export default function RanglistenScreen() {
         )}
 
       </ScrollView>
+      )}
     </SafeAreaView>
   );
 }

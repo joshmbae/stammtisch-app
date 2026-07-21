@@ -16,6 +16,7 @@ import { MemberProfile } from "../types";
 import { loadMembers, deleteMember } from "../utils/storage";
 import { COLORS, SHADOWS } from "../constants/design";
 import { HamburgerButton } from "../components/HamburgerButton";
+import LoadingSpinner from "../components/LoadingSpinner";
 import { getInitial } from "../utils/format";
 import PinPrompt from "../components/PinPrompt";
 import { verifyPin } from "../utils/pin";
@@ -24,10 +25,11 @@ export default function MitgliederScreen() {
   const [members, setMembers] = useState<MemberProfile[]>([]);
   const [pinTarget, setPinTarget] = useState<MemberProfile | null>(null);
   const [pinError, setPinError] = useState<string | undefined>(undefined);
+  const [loading, setLoading] = useState(true);
 
   useFocusEffect(
     useCallback(() => {
-      loadMembers().then(setMembers);
+      loadMembers().then((ms) => { setMembers(ms); setLoading(false); });
     }, [])
   );
 
@@ -72,6 +74,7 @@ export default function MitgliederScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
+      {loading ? <LoadingSpinner /> : (
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
         {/* Header */}
@@ -136,6 +139,7 @@ export default function MitgliederScreen() {
         )}
 
       </ScrollView>
+      )}
 
       <PinPrompt
         visible={!!pinTarget}
