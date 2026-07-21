@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
@@ -106,7 +107,11 @@ export default function MitgliederScreen() {
               activeOpacity={0.85}
             >
               <View style={[styles.avatar, { backgroundColor: m.avatarColor }]}>
-                <Text style={styles.avatarLetter}>{getInitial(m.name)}</Text>
+                {m.photoUri ? (
+                  <Image source={{ uri: m.photoUri }} style={styles.avatarImg} />
+                ) : (
+                  <Text style={styles.avatarLetter}>{getInitial(m.name)}</Text>
+                )}
               </View>
               <View style={styles.memberInfo}>
                 <Text style={styles.memberName}>{m.name}{m.spitzname ? ` „${m.spitzname}"` : ""}</Text>
@@ -177,7 +182,8 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: COLORS.border, ...SHADOWS.light, overflow: "hidden",
   },
   memberCardInner: { flex: 1, flexDirection: "row", alignItems: "center", gap: 12, padding: 14 },
-  avatar: { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center" },
+  avatar: { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center", overflow: "hidden" },
+  avatarImg: { width: 48, height: 48, borderRadius: 24 },
   avatarLetter: { fontSize: 20, fontWeight: "700", color: "#FFFFFF" },
   memberInfo: { flex: 1 },
   memberName: { fontSize: 15, fontWeight: "700", color: COLORS.textDark },
