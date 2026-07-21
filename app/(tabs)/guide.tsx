@@ -12,7 +12,7 @@ import {
   KeyboardAvoidingView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router, useFocusEffect } from "expo-router";
+import { useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { showAlert } from "../../utils/alert";
@@ -131,38 +131,6 @@ export default function EinstellungenScreen() {
             <Text style={styles.headerSub}>Stammtischverordnung & Verwaltung</Text>
           </View>
         </View>
-
-        {/* ── Satzung ansehen ── */}
-        <TouchableOpacity
-          style={styles.mitgliederCard}
-          onPress={() => router.push("/satzung")}
-          activeOpacity={0.85}
-        >
-          <View style={styles.mitgliederIcon}>
-            <Text style={{ fontSize: 24 }}>📜</Text>
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.mitgliederTitle}>Satzung ansehen</Text>
-            <Text style={styles.mitgliederSub}>Regeln, Infos & Verordnung</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color={COLORS.textLight} />
-        </TouchableOpacity>
-
-        {/* ── Mitglieder verwalten ── */}
-        <TouchableOpacity
-          style={styles.mitgliederCard}
-          onPress={() => router.push("/mitglieder")}
-          activeOpacity={0.85}
-        >
-          <View style={styles.mitgliederIcon}>
-            <Text style={{ fontSize: 24 }}>🧔</Text>
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.mitgliederTitle}>Mitglieder verwalten</Text>
-            <Text style={styles.mitgliederSub}>Hinzufügen, bearbeiten, entfernen</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color={COLORS.textLight} />
-        </TouchableOpacity>
 
         {/* ── Stammtischverordnung ── */}
         <Text style={styles.sectionTitle}>📜 Stammtischverordnung</Text>
@@ -342,18 +310,6 @@ const styles = StyleSheet.create({
   headerTexts: { flex: 1 },
   headerTitle: { fontSize: 18, fontWeight: "800", color: COLORS.textDark },
   headerSub: { fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
-
-  mitgliederCard: {
-    flexDirection: "row", alignItems: "center", gap: 14,
-    backgroundColor: COLORS.card, borderRadius: 16, padding: 16, marginBottom: 24,
-    borderWidth: 1.5, borderColor: COLORS.blue + "44", ...SHADOWS.light,
-  },
-  mitgliederIcon: {
-    width: 48, height: 48, borderRadius: 24,
-    backgroundColor: COLORS.goldBg, alignItems: "center", justifyContent: "center",
-  },
-  mitgliederTitle: { fontSize: 16, fontWeight: "700", color: COLORS.textDark },
-  mitgliederSub: { fontSize: 13, color: COLORS.textMuted, marginTop: 2 },
 
   sectionTitle: {
     fontSize: 15, fontWeight: "800", color: COLORS.textDark,
