@@ -134,7 +134,9 @@ export interface KassenEintrag {
   terminId?: string;
   bezahltVon?: string;         // memberId — nur bei abendkosten
   datum: string;               // ISO datetime
-  beglichen?: boolean;         // abendkosten: alle haben zurückgezahlt
+  beglichen?: boolean;         // Altbestand ohne teilnehmerIds: alle haben zurückgezahlt
+  teilnehmerIds?: string[];    // abendkosten: wer war dabei (inkl. Zahler) — Grundlage der Kostenteilung
+  beglichenIds?: string[];     // abendkosten: welche Teilnehmer (außer Zahler) ihren Anteil schon zurückgezahlt haben
 }
 
 // ─── Activity-Feed ────────────────────────────────────────────────────────────

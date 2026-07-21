@@ -682,6 +682,8 @@ function rowToKassenEintrag(row: any): KassenEintrag {
     bezahltVon: row.bezahlt_von ?? undefined,
     datum: row.datum,
     beglichen: row.beglichen ?? undefined,
+    teilnehmerIds: row.teilnehmer_ids ?? undefined,
+    beglichenIds: row.beglichen_ids ?? undefined,
   };
 }
 
@@ -711,6 +713,8 @@ export async function addKassenEintrag(
     bezahlt_von: neu.bezahltVon ?? null,
     datum: neu.datum,
     beglichen: neu.beglichen ?? null,
+    teilnehmer_ids: neu.teilnehmerIds ?? null,
+    beglichen_ids: neu.beglichenIds ?? null,
   });
   if (error) throw error;
   return neu;
@@ -725,6 +729,8 @@ export async function updateKassenEintrag(id: string, partial: Partial<KassenEin
   if (partial.bezahltVon !== undefined) patch.bezahlt_von = partial.bezahltVon ?? null;
   if (partial.datum !== undefined) patch.datum = partial.datum;
   if (partial.beglichen !== undefined) patch.beglichen = partial.beglichen ?? null;
+  if (partial.teilnehmerIds !== undefined) patch.teilnehmer_ids = partial.teilnehmerIds ?? null;
+  if (partial.beglichenIds !== undefined) patch.beglichen_ids = partial.beglichenIds ?? null;
   const { error } = await supabase.from("kasse").update(patch).eq("id", id);
   if (error) throw error;
 }

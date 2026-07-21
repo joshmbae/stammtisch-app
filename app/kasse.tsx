@@ -39,6 +39,22 @@ function formatDatum(iso: string): string {
   });
 }
 
+/** Schuldner einer Abendkosten-Rechnung: alle Teilnehmer außer dem Zahler. */
+function schuldnerVon(e: KassenEintrag): string[] {
+  return (e.teilnehmerIds ?? []).filter((id) => id !== e.bezahltVon);
+}
+
+/** Ob eine Abendkosten-Rechnung komplett beglichen ist — für Altbestand ohne
+ *  teilnehmerIds bleibt der einfache beglichen-Schalter maßgeblich. */
+function isEintragBeglichen(e: KassenEintrag): boolean {
+  if (e.teilnehmerIds && e.teilnehmerIds.length > 0) {
+    const schuldner = schuldnerVon(e);
+    if (schuldner.length === 0) return true;
+    return schuldner.every((id) => (e.beglichenIds ?? []).includes(id));
+  }
+  return !!e.beglichen;
+}
+
 const TYP_META: Record<KassenEintragTyp, { label: string; emoji: string; color: string; bg: string }> = {
   einnahme:     { label: "Einnahme",    emoji: "➕", color: COLORS.success,  bg: "#EDF7F2" },
   ausgabe:      { label: "Ausgabe",     emoji: "➖", color: COLORS.danger,   bg: "#FDF0EF" },
@@ -107,6 +123,7 @@ export default function KasseScreen() {
   const [betrag, setBetrag] = useState("");
   const [beschreibung, setBeschreibung] = useState("");
   const [bezahltVon, setBezahltVon] = useState<string | null>(null);
+  const [teilnehmerIds, setTeilnehmerIds] = useState<string[]>([]);
 
   useFocusEffect(
     useCallback(() => {
@@ -130,7 +147,12 @@ export default function KasseScreen() {
     setBetrag("");
     setBeschreibung("");
     setBezahltVon(null);
+    setTeilnehmerIds([]);
     setActiveForm(typ);
+  }
+
+  function toggleTeilnehmer(memberId: string) {
+    setTeilnehmerIds((prev) => prev.includes(memberId) ? prev.filter((id) => id !== memberId) : [...prev, memberId]);
   }
 
   function closeForm() {
@@ -147,6 +169,14 @@ export default function KasseScreen() {
       showAlert("Wer hat gezahlt?", "Bitte ein Mitglied auswählen.");
       return;
     }
+    if (activeForm === "abendkosten" && teilnehmerIds.length === 0) {
+      showAlert("Wer war dabei?", "Bitte auswählen, wer an der Rechnung beteiligt war.");
+      return;
+    }
+    // Zahler hat immer auch selbst teilgenommen, auch wenn man vergisst, ihn extra anzutippen.
+    const finalTeilnehmer = bezahltVon && !teilnehmerIds.includes(bezahltVon)
+      ? [...teilnehmerIds, bezahltVon]
+      : teilnehmerIds;
     const eintrag = await addKassenEintrag({
       typ: activeForm!,
       betrag: parsed,
@@ -154,6 +184,8 @@ export default function KasseScreen() {
       bezahltVon: activeForm === "abendkosten" ? bezahltVon ?? undefined : undefined,
       terminId: undefined,
       datum: new Date().toISOString(),
+      teilnehmerIds: activeForm === "abendkosten" ? finalTeilnehmer : undefined,
+      beglichenIds: activeForm === "abendkosten" ? [] : undefined,
     });
     setEintraege((prev) => [eintrag, ...prev]);
     await logActivity({
@@ -184,6 +216,26 @@ export default function KasseScreen() {
         actionType: "kasse_beglichen",
         refId: id,
         meta: { betrag: e?.betrag ?? 0 },
+      });
+    }
+  }
+
+  async function handleToggleTeilnehmerBeglichen(entryId: string, memberId: string) {
+    const e = eintraege.find((x) => x.id === entryId);
+    if (!e) return;
+    const current = e.beglichenIds ?? [];
+    const wirdBeglichen = !current.includes(memberId);
+    const next = wirdBeglichen ? [...current, memberId] : current.filter((id) => id !== memberId);
+    await updateKassenEintrag(entryId, { beglichenIds: next });
+    setEintraege((prev) => prev.map((x) => x.id === entryId ? { ...x, beglichenIds: next } : x));
+    if (wirdBeglichen) {
+      const anteil = e.teilnehmerIds && e.teilnehmerIds.length > 0 ? e.betrag / e.teilnehmerIds.length : e.betrag;
+      await logActivity({
+        actorMemberId: activeMemberId ?? undefined,
+        subjectMemberId: memberId,
+        actionType: "kasse_beglichen",
+        refId: entryId,
+        meta: { betrag: anteil },
       });
     }
   }
@@ -321,6 +373,43 @@ export default function KasseScreen() {
                 </View>
               )}
 
+              {activeForm === "abendkosten" && (
+                <View style={styles.formRow}>
+                  <Text style={styles.formLabel}>Wer war dabei?</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.memberChipsScroll}>
+                    {members.map((m) => {
+                      const selected = teilnehmerIds.includes(m.id);
+                      return (
+                        <TouchableOpacity
+                          key={m.id}
+                          style={[styles.memberChip, selected && { backgroundColor: m.avatarColor, borderColor: m.avatarColor }]}
+                          onPress={() => toggleTeilnehmer(m.id)}
+                          activeOpacity={0.8}
+                        >
+                          {m.photoUri ? (
+                            <Image source={{ uri: m.photoUri }} style={styles.chipAvatar} />
+                          ) : (
+                            <View style={[styles.chipAvatarFallback, { backgroundColor: selected ? "rgba(255,255,255,0.3)" : m.avatarColor + "33" }]}>
+                              <Text style={{ fontSize: 11, fontWeight: "700", color: selected ? "#FFF" : m.avatarColor }}>
+                                {getInitial(m.name)}
+                              </Text>
+                            </View>
+                          )}
+                          <Text style={[styles.chipName, selected && { color: "#FFFFFF" }]}>
+                            {m.name.split(" ")[0]}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
+                  {teilnehmerIds.length > 0 && (
+                    <Text style={styles.teilnehmerHint}>
+                      Anteil pro Person: {formatEuro(parseFloat(betrag.replace(",", ".") || "0") / (bezahltVon && !teilnehmerIds.includes(bezahltVon) ? teilnehmerIds.length + 1 : teilnehmerIds.length))} €
+                    </Text>
+                  )}
+                </View>
+              )}
+
               <View style={styles.formBtns}>
                 <TouchableOpacity style={styles.cancelBtn} onPress={closeForm} activeOpacity={0.8}>
                   <Text style={styles.cancelBtnText}>Abbrechen</Text>
@@ -342,17 +431,21 @@ export default function KasseScreen() {
             <View style={styles.section}>
               <View style={styles.sectionTitleRow}>
                 <Text style={styles.sectionTitle}>🍺 Stammtischrechnung</Text>
-                {abendkostenEintraege.some((e) => e.beglichen) && (
+                {abendkostenEintraege.some(isEintragBeglichen) && (
                   <TouchableOpacity onPress={() => setShowBeglichen((v) => !v)}>
                     <Text style={styles.sectionToggle}>
-                      {showBeglichen ? "Bezahlte ausblenden" : `+ ${abendkostenEintraege.filter((e) => e.beglichen).length} bezahlt`}
+                      {showBeglichen ? "Bezahlte ausblenden" : `+ ${abendkostenEintraege.filter(isEintragBeglichen).length} bezahlt`}
                     </Text>
                   </TouchableOpacity>
                 )}
               </View>
-              {abendkostenEintraege.filter((e) => !e.beglichen || showBeglichen).map((e) => {
+              {abendkostenEintraege.filter((e) => !isEintragBeglichen(e) || showBeglichen).map((e) => {
                 const zahler = members.find((m) => m.id === e.bezahltVon);
                 const meta = TYP_META.abendkosten;
+                const beglichen = isEintragBeglichen(e);
+                const hatTeilnehmer = !!e.teilnehmerIds && e.teilnehmerIds.length > 0;
+                const schuldner = schuldnerVon(e);
+                const anteil = hatTeilnehmer ? e.betrag / e.teilnehmerIds!.length : e.betrag;
                 return (
                   <Swipeable
                     key={e.id}
@@ -364,36 +457,72 @@ export default function KasseScreen() {
                     overshootRight={false}
                   >
                     <View style={[
-                      styles.eintragRow,
-                      { borderLeftColor: e.beglichen ? COLORS.success : meta.color },
-                      e.beglichen && { backgroundColor: "#F8FDF9" },
+                      styles.abendkostenCard,
+                      { borderLeftColor: beglichen ? COLORS.success : meta.color },
+                      beglichen && { backgroundColor: "#F8FDF9" },
                     ]}>
-                      <View style={[styles.eintragIcon, { backgroundColor: e.beglichen ? COLORS.success + "15" : meta.bg }]}>
-                        <Text style={{ fontSize: 18 }}>{e.beglichen ? "✅" : meta.emoji}</Text>
+                      <View style={styles.eintragRowInner}>
+                        <View style={[styles.eintragIcon, { backgroundColor: beglichen ? COLORS.success + "15" : meta.bg }]}>
+                          <Text style={{ fontSize: 18 }}>{beglichen ? "✅" : meta.emoji}</Text>
+                        </View>
+                        <View style={styles.eintragMeta}>
+                          <Text style={styles.eintragTypLabel}>{meta.label}</Text>
+                          {zahler ? <Text style={styles.eintragZahler}>vorgestreckt: {zahler.name}</Text> : null}
+                          {hatTeilnehmer && (
+                            <Text style={styles.eintragDatum}>{e.teilnehmerIds!.length} Personen · {formatEuro(anteil)} €/Person</Text>
+                          )}
+                          <Text style={styles.eintragDatum}>{formatDatum(e.datum)}</Text>
+                        </View>
+                        <Text style={[
+                          styles.eintragBetrag,
+                          { color: beglichen ? COLORS.textLight : COLORS.gold },
+                          beglichen && { textDecorationLine: "line-through" },
+                        ]}>
+                          {formatEuro(e.betrag)} €
+                        </Text>
+                        {!hatTeilnehmer && (
+                          <TouchableOpacity
+                            onPress={() => handleToggleBeglichen(e.id, !!e.beglichen)}
+                            activeOpacity={0.8}
+                            style={{ paddingLeft: 8 }}
+                          >
+                            <Ionicons
+                              name={e.beglichen ? "checkmark-circle" : "ellipse-outline"}
+                              size={22}
+                              color={e.beglichen ? COLORS.success : COLORS.border}
+                            />
+                          </TouchableOpacity>
+                        )}
                       </View>
-                      <View style={styles.eintragMeta}>
-                        <Text style={styles.eintragTypLabel}>{meta.label}</Text>
-                        {zahler ? <Text style={styles.eintragZahler}>vorgestreckt: {zahler.name}</Text> : null}
-                        <Text style={styles.eintragDatum}>{formatDatum(e.datum)}</Text>
-                      </View>
-                      <Text style={[
-                        styles.eintragBetrag,
-                        { color: e.beglichen ? COLORS.textLight : COLORS.gold },
-                        e.beglichen && { textDecorationLine: "line-through" },
-                      ]}>
-                        {formatEuro(e.betrag)} €
-                      </Text>
-                      <TouchableOpacity
-                        onPress={() => handleToggleBeglichen(e.id, !!e.beglichen)}
-                        activeOpacity={0.8}
-                        style={{ paddingLeft: 8 }}
-                      >
-                        <Ionicons
-                          name={e.beglichen ? "checkmark-circle" : "ellipse-outline"}
-                          size={22}
-                          color={e.beglichen ? COLORS.success : COLORS.border}
-                        />
-                      </TouchableOpacity>
+
+                      {hatTeilnehmer && schuldner.length > 0 && (
+                        <View style={styles.schuldnerList}>
+                          {schuldner.map((id) => {
+                            const m = members.find((mm) => mm.id === id);
+                            const bezahlt = (e.beglichenIds ?? []).includes(id);
+                            return (
+                              <TouchableOpacity
+                                key={id}
+                                style={styles.schuldnerRow}
+                                onPress={() => handleToggleTeilnehmerBeglichen(e.id, id)}
+                                activeOpacity={0.75}
+                              >
+                                <Text style={[styles.schuldnerName, bezahlt && styles.schuldnerNameBeglichen]}>
+                                  {m?.name ?? "Unbekannt"}
+                                </Text>
+                                <Text style={[styles.schuldnerBetrag, bezahlt && { color: COLORS.textLight }]}>
+                                  {formatEuro(anteil)} €
+                                </Text>
+                                <Ionicons
+                                  name={bezahlt ? "checkmark-circle" : "ellipse-outline"}
+                                  size={18}
+                                  color={bezahlt ? COLORS.success : COLORS.border}
+                                />
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </View>
+                      )}
                     </View>
                   </Swipeable>
                 );
@@ -494,6 +623,7 @@ const styles = StyleSheet.create({
   chipAvatar: { width: 22, height: 22, borderRadius: 11 },
   chipAvatarFallback: { width: 22, height: 22, borderRadius: 11, alignItems: "center", justifyContent: "center" },
   chipName: { fontSize: 13, fontWeight: "600", color: COLORS.textMid },
+  teilnehmerHint: { fontSize: 12, color: COLORS.textMuted, marginTop: 8 },
 
   formBtns: { flexDirection: "row", gap: 10, marginTop: 4 },
   cancelBtn: {
@@ -525,6 +655,17 @@ const styles = StyleSheet.create({
   eintragZahler: { fontSize: 12, color: COLORS.blue, marginTop: 1, fontWeight: "600" },
   eintragDatum: { fontSize: 11, color: COLORS.textLight, marginTop: 2 },
   eintragBetrag: { fontSize: 16, fontWeight: "800", minWidth: 80, textAlign: "right" },
+
+  abendkostenCard: {
+    backgroundColor: COLORS.card, borderRadius: 14, padding: 12, marginBottom: 8,
+    borderWidth: 1, borderColor: COLORS.border, borderLeftWidth: 3, ...SHADOWS.light,
+  },
+  eintragRowInner: { flexDirection: "row", alignItems: "center", gap: 12 },
+  schuldnerList: { marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: COLORS.border, gap: 6 },
+  schuldnerRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  schuldnerName: { flex: 1, fontSize: 13, fontWeight: "600", color: COLORS.textDark },
+  schuldnerNameBeglichen: { textDecorationLine: "line-through", color: COLORS.textLight },
+  schuldnerBetrag: { fontSize: 13, fontWeight: "700", color: COLORS.gold },
 
   deleteAction: {
     backgroundColor: COLORS.danger, borderRadius: 14, marginBottom: 8,
