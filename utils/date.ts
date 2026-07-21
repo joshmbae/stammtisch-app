@@ -22,3 +22,20 @@ export function parseTimeString(time: string): Date {
   d.setHours(hours || 0, minutes || 0, 0, 0);
   return d;
 }
+
+/** Formatiert einen ISO-Zeitstempel für den Aktivitäts-Feed als "Heute"/"Gestern"/Datum + Uhrzeit.
+ *  Vergleicht Kalendertage (nicht rollierende 24h-Fenster), damit z.B. ein Eintrag von
+ *  23:50 Uhr gestern schon kurz nach Mitternacht als "Gestern" statt "Heute" erscheint. */
+export function formatActivityZeit(iso: string): string {
+  const date = new Date(iso);
+  const now = new Date();
+  const time = date.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+
+  const dateDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const nowDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const diffDays = Math.round((nowDay.getTime() - dateDay.getTime()) / 86400000);
+
+  if (diffDays === 0) return `Heute, ${time}`;
+  if (diffDays === 1) return `Gestern, ${time}`;
+  return date.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }) + `, ${time}`;
+}

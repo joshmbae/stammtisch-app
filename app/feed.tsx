@@ -5,18 +5,9 @@ import { useFocusEffect } from "expo-router";
 import { ActivityLogEntry, MemberProfile } from "../types";
 import { loadActivityFeed, loadMembers } from "../utils/storage";
 import { renderActivity } from "../utils/activityFeed";
+import { formatActivityZeit } from "../utils/date";
 import { COLORS, SHADOWS } from "../constants/design";
 import { HamburgerButton } from "../components/HamburgerButton";
-
-function formatZeit(iso: string): string {
-  const date = new Date(iso);
-  const now = new Date();
-  const diffDays = Math.floor((now.getTime() - date.getTime()) / 86400000);
-  const time = date.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
-  if (diffDays === 0) return `Heute, ${time}`;
-  if (diffDays === 1) return `Gestern, ${time}`;
-  return date.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }) + `, ${time}`;
-}
 
 function FeedRow({
   entry,
@@ -40,7 +31,7 @@ function FeedRow({
       <View style={styles.rowBody}>
         <Text style={styles.rowText}>{rendered.text}</Text>
         <Text style={styles.rowMeta}>
-          {formatZeit(entry.createdAt)}
+          {formatActivityZeit(entry.createdAt)}
           {rendered.actorText ? ` · ${rendered.actorText}` : ""}
         </Text>
       </View>

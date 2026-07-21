@@ -36,7 +36,7 @@ import { COLORS, SHADOWS } from "../../constants/design";
 import { HamburgerButton } from "../../components/HamburgerButton";
 import StammtischLogo from "../../components/StammtischLogo";
 import { formatEuro, getInitial, gruendungsDauer, formatDauer, formatGruendungMonat } from "../../utils/format";
-import { toLocalIsoDate } from "../../utils/date";
+import { toLocalIsoDate, formatActivityZeit } from "../../utils/date";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -53,16 +53,6 @@ function formatDatumKurz(iso: string): string {
   return new Date(iso + "T00:00:00").toLocaleDateString("de-DE", {
     weekday: "short", day: "2-digit", month: "short",
   });
-}
-
-function formatActivityZeit(iso: string): string {
-  const date = new Date(iso);
-  const now = new Date();
-  const diffDays = Math.floor((now.getTime() - date.getTime()) / 86400000);
-  const time = date.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
-  if (diffDays === 0) return `Heute, ${time}`;
-  if (diffDays === 1) return `Gestern, ${time}`;
-  return date.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }) + `, ${time}`;
 }
 
 function daysUntil(iso: string): number {
