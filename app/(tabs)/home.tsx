@@ -303,10 +303,10 @@ export default function HomeScreen() {
         )}
 
         {/* ── Meine Bilanz ── */}
-        {myStats && (
+        {myStats && activeMember && (
           <TouchableOpacity
-            style={[styles.myStatsCard, { borderColor: activeMember!.avatarColor + "55" }]}
-            onPress={() => router.push(`/member/${activeMember!.id}`)}
+            style={[styles.myStatsCard, { borderColor: activeMember.avatarColor + "55" }]}
+            onPress={() => router.push(`/member/${activeMember.id}`)}
             activeOpacity={0.88}
           >
             <Text style={styles.myStatsTitle}>Meine Bilanz</Text>

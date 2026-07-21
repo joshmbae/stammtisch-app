@@ -15,7 +15,6 @@ export default function RootLayout() {
             <Stack.Screen name="stammtisch-waehlen" />
             <Stack.Screen name="mitglied-waehlen" />
             <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="chat/[id]" />
             <Stack.Screen name="member/new" />
             <Stack.Screen name="member/[id]" />
             <Stack.Screen name="member/edit/[id]" />
