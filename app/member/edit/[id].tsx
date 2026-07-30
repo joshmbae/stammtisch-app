@@ -22,7 +22,7 @@ import { COLORS, AVATAR_COLORS, ROLLEN } from "../../../constants/design";
 import { getInitial } from "../../../utils/format";
 import LoadingSpinner from "../../../components/LoadingSpinner";
 import { toLocalIsoDate } from "../../../utils/date";
-import DateTimePicker from "@react-native-community/datetimepicker";
+import InlineDateTimePicker from "../../../components/InlineDateTimePicker";
 
 export default function EditMemberScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -184,12 +184,12 @@ export default function EditMemberScreen() {
             </Text>
           </TouchableOpacity>
           {showDatePicker && (
-            <DateTimePicker
+            <InlineDateTimePicker
               value={mitgliedSeit}
               mode="date"
-              display={Platform.OS === "ios" ? "spinner" : "default"}
               maximumDate={new Date()}
-              onChange={(_, date) => { setShowDatePicker(false); if (date) setMitgliedSeit(date); }}
+              onChange={setMitgliedSeit}
+              onClose={() => setShowDatePicker(false)}
             />
           )}
         </View>
@@ -210,12 +210,12 @@ export default function EditMemberScreen() {
             )}
           </TouchableOpacity>
           {showBirthdayPicker && (
-            <DateTimePicker
+            <InlineDateTimePicker
               value={geburtsdatum ?? new Date(1990, 0, 1)}
               mode="date"
-              display={Platform.OS === "ios" ? "spinner" : "default"}
               maximumDate={new Date()}
-              onChange={(_, date) => { setShowBirthdayPicker(false); if (date) setGeburtsdatum(date); }}
+              onChange={setGeburtsdatum}
+              onClose={() => setShowBirthdayPicker(false)}
             />
           )}
         </View>

@@ -14,7 +14,6 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import DateTimePicker from "@react-native-community/datetimepicker";
 import { showAlert } from "../../utils/alert";
 import { StammtischVerordnung } from "../../types";
 import { loadVerordnung, saveVerordnung } from "../../utils/storage";
@@ -22,6 +21,7 @@ import { seedTestData, clearAllData } from "../../utils/seed";
 import { COLORS, SHADOWS } from "../../constants/design";
 import { HamburgerButton } from "../../components/HamburgerButton";
 import LoadingSpinner from "../../components/LoadingSpinner";
+import InlineDateTimePicker from "../../components/InlineDateTimePicker";
 
 /** Parst "YYYY" oder "YYYY-MM" (legacy: nur Jahr -> Januar). */
 function parseGruendung(value?: string): Date {
@@ -192,18 +192,15 @@ export default function EinstellungenScreen() {
             </Text>
           </TouchableOpacity>
           {showGruendungPicker && (
-            <DateTimePicker
+            <InlineDateTimePicker
               value={parseGruendung(verordnung.gruendungsjahr)}
               mode="date"
-              display={Platform.OS === "ios" ? "spinner" : "default"}
               maximumDate={new Date()}
-              onChange={(_, date) => {
-                setShowGruendungPicker(false);
-                if (date) {
-                  const jahrMonat = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-                  update({ gruendungsjahr: jahrMonat });
-                }
+              onChange={(date) => {
+                const jahrMonat = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+                update({ gruendungsjahr: jahrMonat });
               }}
+              onClose={() => setShowGruendungPicker(false)}
             />
           )}
         </View>

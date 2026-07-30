@@ -14,7 +14,6 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import DateTimePicker from "@react-native-community/datetimepicker";
 import { showAlert } from "../../utils/alert";
 import { StammtischTermin, TerminArt, MemberProfile } from "../../types";
 import {
@@ -26,6 +25,7 @@ import {
 import { COLORS, SHADOWS } from "../../constants/design";
 import { HamburgerButton } from "../../components/HamburgerButton";
 import LoadingSpinner from "../../components/LoadingSpinner";
+import InlineDateTimePicker from "../../components/InlineDateTimePicker";
 import { toLocalIsoDate, toTimeString, parseTimeString } from "../../utils/date";
 
 // ─── Konstanten ───────────────────────────────────────────────────────────────
@@ -391,11 +391,11 @@ function NeuerTerminForm({ initialDate, onSave, onCancel }: {
         </Text>
       </TouchableOpacity>
       {showDate && (
-        <DateTimePicker
+        <InlineDateTimePicker
           value={datum}
           mode="date"
-          display={Platform.OS === "ios" ? "spinner" : "default"}
-          onChange={(_, d) => { setShowDate(false); if (d) setDatum(d); }}
+          onChange={setDatum}
+          onClose={() => setShowDate(false)}
         />
       )}
 
@@ -416,12 +416,12 @@ function NeuerTerminForm({ initialDate, onSave, onCancel }: {
         </TouchableOpacity>
       )}
       {showDateBis && (
-        <DateTimePicker
+        <InlineDateTimePicker
           value={datumBis ?? datum}
           mode="date"
-          display={Platform.OS === "ios" ? "spinner" : "default"}
           minimumDate={datum}
-          onChange={(_, d) => { setShowDateBis(false); if (d) setDatumBis(d); }}
+          onChange={setDatumBis}
+          onClose={() => setShowDateBis(false)}
         />
       )}
 
@@ -443,21 +443,21 @@ function NeuerTerminForm({ initialDate, onSave, onCancel }: {
         </View>
       )}
       {showStartZeit && (
-        <DateTimePicker
+        <InlineDateTimePicker
           value={startZeit ?? parseTimeString("19:30")}
           mode="time"
-          display={Platform.OS === "ios" ? "spinner" : "default"}
           is24Hour
-          onChange={(_, d) => { setShowStartZeit(false); if (d) setStartZeit(d); }}
+          onChange={setStartZeit}
+          onClose={() => setShowStartZeit(false)}
         />
       )}
       {showEndZeit && (
-        <DateTimePicker
+        <InlineDateTimePicker
           value={endZeit ?? parseTimeString("23:00")}
           mode="time"
-          display={Platform.OS === "ios" ? "spinner" : "default"}
           is24Hour
-          onChange={(_, d) => { setShowEndZeit(false); if (d) setEndZeit(d); }}
+          onChange={setEndZeit}
+          onClose={() => setShowEndZeit(false)}
         />
       )}
 
