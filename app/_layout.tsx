@@ -27,6 +27,9 @@ export default function RootLayout() {
               <Stack.Screen name="kasse" />
               <Stack.Screen name="strafen" />
               <Stack.Screen name="ranglisten" />
+              <Stack.Screen name="spiele" />
+              <Stack.Screen name="spiel/new" />
+              <Stack.Screen name="spiel/[id]" />
             </Stack>
           </MenuProvider>
         </SessionProvider>

@@ -13,12 +13,12 @@ import {
   Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useFocusEffect } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { showAlert } from "../../utils/alert";
-import { StammtischVerordnung } from "../../types";
-import { loadVerordnung, saveVerordnung, uploadStammtischLogo } from "../../utils/storage";
+import { StammtischVerordnung, Spiel, SPIEL_VORLAGEN } from "../../types";
+import { loadVerordnung, saveVerordnung, uploadStammtischLogo, loadSpiele, instantiateSpielVorlage } from "../../utils/storage";
 import { seedTestData, clearAllData } from "../../utils/seed";
 import { COLORS, SHADOWS } from "../../constants/design";
 import { HamburgerButton } from "../../components/HamburgerButton";
@@ -47,7 +47,37 @@ export default function EinstellungenScreen() {
   const [seeding, setSeeding] = useState(false);
   const [showGruendungPicker, setShowGruendungPicker] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [spiele, setSpiele] = useState<Spiel[]>([]);
+  const [activatingSpiel, setActivatingSpiel] = useState<string | null>(null);
   const { stammtischId } = useStammtisch();
+
+  async function handleSelectSpiel(spiel: Spiel | null) {
+    setActivatingSpiel(spiel?.id ?? "none");
+    try {
+      const updated = { ...verordnung, aktivesSpielId: spiel?.id };
+      await saveVerordnung(updated);
+      setVerordnung(updated);
+      setDirty(false);
+    } finally {
+      setActivatingSpiel(null);
+    }
+  }
+
+  async function handleActivateVorlage(vorlage: (typeof SPIEL_VORLAGEN)[number]) {
+    setActivatingSpiel(vorlage.name);
+    try {
+      const spiel = await instantiateSpielVorlage(vorlage);
+      setSpiele((prev) => [...prev, spiel]);
+      const updated = { ...verordnung, aktivesSpielId: spiel.id };
+      await saveVerordnung(updated);
+      setVerordnung(updated);
+      setDirty(false);
+    } catch {
+      showAlert("Fehler", "Spiel-Vorlage konnte nicht angelegt werden.");
+    } finally {
+      setActivatingSpiel(null);
+    }
+  }
 
   async function pickLogo() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -128,7 +158,11 @@ export default function EinstellungenScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      loadVerordnung().then((v) => { setVerordnung(v); setLoading(false); });
+      Promise.all([loadVerordnung(), loadSpiele()]).then(([v, s]) => {
+        setVerordnung(v);
+        setSpiele(s);
+        setLoading(false);
+      });
       setDirty(false);
     }, [])
   );
@@ -296,6 +330,62 @@ export default function EinstellungenScreen() {
           </View>
         </View>
 
+        {/* Aktives Spiel */}
+        <Text style={styles.sectionTitle}>🎲 Aktives Spiel</Text>
+        <View style={styles.card}>
+          <TouchableOpacity
+            style={[styles.spielRow, !verordnung.aktivesSpielId && styles.spielRowActive]}
+            onPress={() => handleSelectSpiel(null)}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.spielRowEmoji}>🚫</Text>
+            <Text style={styles.spielRowLabel}>Kein Spiel</Text>
+            {activatingSpiel === "none" ? (
+              <ActivityIndicator size="small" color={COLORS.blue} />
+            ) : !verordnung.aktivesSpielId ? (
+              <Ionicons name="checkmark-circle" size={20} color={COLORS.blue} />
+            ) : null}
+          </TouchableOpacity>
+
+          {spiele.map((s) => (
+            <TouchableOpacity
+              key={s.id}
+              style={[styles.spielRow, verordnung.aktivesSpielId === s.id && styles.spielRowActive]}
+              onPress={() => handleSelectSpiel(s)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.spielRowEmoji}>{s.emoji ?? "🎮"}</Text>
+              <Text style={styles.spielRowLabel}>{s.name}</Text>
+              {activatingSpiel === s.id ? (
+                <ActivityIndicator size="small" color={COLORS.blue} />
+              ) : verordnung.aktivesSpielId === s.id ? (
+                <Ionicons name="checkmark-circle" size={20} color={COLORS.blue} />
+              ) : null}
+            </TouchableOpacity>
+          ))}
+
+          {SPIEL_VORLAGEN.filter((v) => !spiele.some((s) => s.name === v.name)).map((v) => (
+            <TouchableOpacity
+              key={v.name}
+              style={styles.spielRow}
+              onPress={() => handleActivateVorlage(v)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.spielRowEmoji}>{v.emoji}</Text>
+              <Text style={styles.spielRowLabel}>{v.name}</Text>
+              {activatingSpiel === v.name ? (
+                <ActivityIndicator size="small" color={COLORS.blue} />
+              ) : (
+                <Text style={styles.spielRowHint}>+ Vorlage</Text>
+              )}
+            </TouchableOpacity>
+          ))}
+
+          <TouchableOpacity style={styles.spielManageLink} onPress={() => router.push("/spiele")}>
+            <Text style={styles.spielManageLinkText}>Spiele verwalten →</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Sonstiges */}
         <View style={styles.card}>
           <Text style={styles.fieldLabel}>Sonstige Anmerkungen</Text>
@@ -425,6 +515,17 @@ const styles = StyleSheet.create({
     width: 42, height: 42, borderRadius: 21,
     backgroundColor: COLORS.blue, alignItems: "center", justifyContent: "center", flexShrink: 0,
   },
+
+  spielRow: {
+    flexDirection: "row", alignItems: "center", gap: 10,
+    paddingVertical: 10, paddingHorizontal: 4, borderRadius: 10,
+  },
+  spielRowActive: { backgroundColor: COLORS.blue + "10" },
+  spielRowEmoji: { fontSize: 20, width: 26, textAlign: "center" },
+  spielRowLabel: { flex: 1, fontSize: 14, fontWeight: "600", color: COLORS.textDark },
+  spielRowHint: { fontSize: 12, fontWeight: "700", color: COLORS.blue },
+  spielManageLink: { marginTop: 6, paddingVertical: 6 },
+  spielManageLinkText: { fontSize: 13, fontWeight: "700", color: COLORS.blue },
 
   saveBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
