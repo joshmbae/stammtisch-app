@@ -76,20 +76,16 @@ export function renderActivity(
         text: `Kassen-Eintrag gelöscht: ${meta.beschreibung ?? "Sonstiges"} (${formatEuro(Number(meta.betrag ?? 0))})`,
         actorText: eingetragenVon,
       };
-    case "schock_log_created":
+    case "spiel_log_created":
       return {
-        emoji: meta.typ === "schock_aus" ? "💥" : "🎲",
-        text: meta.typ === "schock_aus"
-          ? `${subjectName} hat ein Schock-Aus geworfen`
-          : `${subjectName} hat beim Schocken verloren`,
+        emoji: meta.ereignisEmoji ?? meta.spielEmoji ?? "🎮",
+        text: `${subjectName} — ${meta.spielName ?? "Spiel"}: ${meta.ereignisLabel ?? "Ereignis"}`,
         actorText: eingetragenVon,
       };
-    case "schock_log_deleted":
+    case "spiel_log_deleted":
       return {
         emoji: "🗑️",
-        text: meta.typ === "schock_aus"
-          ? `Schock-Aus von ${subjectName} gelöscht`
-          : `Niederlage von ${subjectName} gelöscht`,
+        text: `${meta.spielName ?? "Spiel"} (${meta.ereignisLabel ?? "Ereignis"}) von ${subjectName} gelöscht`,
         actorText: eingetragenVon,
       };
     case "wette_created":
