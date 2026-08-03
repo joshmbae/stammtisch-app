@@ -10,11 +10,12 @@ import {
   MemberProfile,
   StammtischTermin,
   VerspätungLog,
-  SchockLog,
+  SpielLog,
   StrafLog,
   KassenEintrag,
   Protokoll,
   StammtischVerordnung,
+  SPIEL_VORLAGEN,
 } from "../types";
 import { AVATAR_COLORS } from "../constants/design";
 import { toLocalIsoDate } from "./date";
@@ -263,15 +264,52 @@ export async function seedTestData(): Promise<void> {
     }
   );
 
+  // ── Spiel "Schocken" (aus Vorlage instanziiert) ─────────────────────────────
+  const schockenVorlage = SPIEL_VORLAGEN.find((v) => v.name === "Schocken")!;
+  const schockenSpielId = nextId();
+  const schockenEreignisTypen = schockenVorlage.ereignisTypen.map((et, i) => ({
+    id: nextId(),
+    spielId: schockenSpielId,
+    label: et.label,
+    emoji: et.emoji,
+    reihenfolge: i + 1,
+    strafKategorie: et.strafKategorie,
+    strafBetrag: et.strafBetrag,
+  }));
+  const niederlageEreignisId = schockenEreignisTypen.find((e) => e.label === "Niederlage")!.id;
+  const schockAusEreignisId = schockenEreignisTypen.find((e) => e.label === "Schock-Aus")!.id;
+
   // ── Logs pro Termin ──────────────────────────────────────────────────────────
   const verspätungMap: Record<string, VerspätungLog[]> = {};
-  const schockMap:     Record<string, SchockLog[]>     = {};
+  const spielMap:      Record<string, SpielLog[]>      = {};
   const strafMap:      Record<string, StrafLog[]>      = {};
 
   for (const m of members) {
     verspätungMap[m.id] = [];
-    schockMap[m.id]     = [];
+    spielMap[m.id]      = [];
     strafMap[m.id]      = [];
+  }
+
+  /** Loggt eine Schock-Niederlage inkl. der automatisch gekoppelten Strafe (wie handleLogSpielEreignis zur Laufzeit). */
+  function logNiederlage(memberId: string, terminId: string, loggedAt: string) {
+    const strafKat = schockenEreignisTypen.find((e) => e.id === niederlageEreignisId)!;
+    const strafLog: StrafLog = {
+      id: nextId(), memberId, terminId,
+      kategorie: strafKat.strafKategorie!, betrag: strafKat.strafBetrag ?? 0,
+      loggedAt, beglichen: false,
+    };
+    strafMap[memberId].push(strafLog);
+    spielMap[memberId].push({
+      id: nextId(), memberId, spielId: schockenSpielId, ereignisTypId: niederlageEreignisId,
+      terminId, strafLogId: strafLog.id, loggedAt,
+    });
+  }
+
+  function logSchockAus(memberId: string, terminId: string, loggedAt: string) {
+    spielMap[memberId].push({
+      id: nextId(), memberId, spielId: schockenSpielId, ereignisTypId: schockAusEreignisId,
+      terminId, loggedAt,
+    });
   }
 
   const späteGründe = [
@@ -345,13 +383,12 @@ export async function seedTestData(): Promise<void> {
           if (badSchocker.has(key)) pool.push(m);
         }
         const loser = rng.pick(pool);
-        schockMap[loser.id].push({
-          id: nextId(),
-          memberId: loser.id,
-          terminId: termin.id,
-          typ: rng.bool(0.12) ? "schock_aus" : "niederlage",
-          loggedAt: termin.datum + `T${20 + r}:00:00.000Z`,
-        });
+        const loggedAt = termin.datum + `T${20 + r}:00:00.000Z`;
+        if (rng.bool(0.12)) {
+          logSchockAus(loser.id, termin.id, loggedAt);
+        } else {
+          logNiederlage(loser.id, termin.id, loggedAt);
+        }
       }
     }
   }
@@ -385,7 +422,7 @@ export async function seedTestData(): Promise<void> {
   // Fixup: Jens & Josh müssen die zwei höchsten Niederlagen-Zahlen haben
   const niederlagenCount: Record<string, number> = {};
   for (const def of memberDefs) {
-    niederlagenCount[def.key] = schockMap[byKey[def.key].id].filter((l) => l.typ === "niederlage").length;
+    niederlagenCount[def.key] = spielMap[byKey[def.key].id].filter((l) => l.ereignisTypId === niederlageEreignisId).length;
   }
   {
     const top2 = () =>
@@ -397,10 +434,7 @@ export async function seedTestData(): Promise<void> {
       const lower = niederlagenCount.jens <= niederlagenCount.josh ? "jens" : "josh";
       const m = byKey[lower];
       const t = rng.pick(stammtischTermine.length ? stammtischTermine : termine);
-      schockMap[m.id].push({
-        id: nextId(), memberId: m.id, terminId: t.id, typ: "niederlage",
-        loggedAt: t.datum + "T21:30:00.000Z",
-      });
+      logNiederlage(m.id, t.id, t.datum + "T21:30:00.000Z");
       niederlagenCount[lower]++;
     }
   }
@@ -408,7 +442,7 @@ export async function seedTestData(): Promise<void> {
   // Fixup: Niklas muss die meisten Schock-Aus haben
   const schockAusCount: Record<string, number> = {};
   for (const def of memberDefs) {
-    schockAusCount[def.key] = schockMap[byKey[def.key].id].filter((l) => l.typ === "schock_aus").length;
+    schockAusCount[def.key] = spielMap[byKey[def.key].id].filter((l) => l.ereignisTypId === schockAusEreignisId).length;
   }
   ensureStrictMax(
     schockAusCount,
@@ -416,10 +450,7 @@ export async function seedTestData(): Promise<void> {
     memberDefs.filter((d) => d.key !== "niklas").map((d) => d.key),
     () => {
       const t = rng.pick(stammtischTermine.length ? stammtischTermine : termine);
-      schockMap[byKey.niklas.id].push({
-        id: nextId(), memberId: byKey.niklas.id, terminId: t.id, typ: "schock_aus",
-        loggedAt: t.datum + "T22:00:00.000Z",
-      });
+      logSchockAus(byKey.niklas.id, t.id, t.datum + "T22:00:00.000Z");
       schockAusCount.niklas++;
       return true;
     }
@@ -559,6 +590,27 @@ export async function seedTestData(): Promise<void> {
     }))
   );
 
+  await insertInBatches("spiele", [{
+    id: schockenSpielId,
+    stammtisch_id: stammtischId,
+    name: schockenVorlage.name,
+    emoji: schockenVorlage.emoji,
+    created_at: GRUENDUNG + "T10:00:00.000Z",
+  }]);
+
+  await insertInBatches(
+    "spiel_ereignis_typen",
+    schockenEreignisTypen.map((et) => ({
+      id: et.id,
+      spiel_id: et.spielId,
+      label: et.label,
+      emoji: et.emoji ?? null,
+      reihenfolge: et.reihenfolge,
+      straf_kategorie: et.strafKategorie ?? null,
+      straf_betrag: et.strafBetrag ?? null,
+    }))
+  );
+
   const { error: vError } = await supabase.from("verordnung").update({
     name: verordnung.name,
     treffpunkt: verordnung.treffpunkt ?? null,
@@ -567,6 +619,7 @@ export async function seedTestData(): Promise<void> {
     gruendungsjahr: verordnung.gruendungsjahr ?? null,
     regeln: verordnung.regeln,
     sonstiges: verordnung.sonstiges ?? null,
+    aktives_spiel_id: schockenSpielId,
   }).eq("stammtisch_id", stammtischId);
   if (vError) throw new Error("Verordnung-Update fehlgeschlagen: " + vError.message);
 
@@ -629,18 +682,7 @@ export async function seedTestData(): Promise<void> {
     }))
   );
 
-  const alleSchock = Object.values(schockMap).flat();
-  await insertInBatches(
-    "schock_logs",
-    alleSchock.map((s) => ({
-      id: s.id,
-      member_id: s.memberId,
-      termin_id: s.terminId ?? null,
-      typ: s.typ,
-      logged_at: s.loggedAt,
-    }))
-  );
-
+  // straf_logs muss vor spiel_logs eingefügt werden, da spiel_logs.straf_log_id darauf verweist.
   const alleStraf = Object.values(strafMap).flat();
   await insertInBatches(
     "straf_logs",
@@ -655,6 +697,20 @@ export async function seedTestData(): Promise<void> {
       beglichen: s.beglichen,
     }))
   );
+
+  const alleSpielLogs = Object.values(spielMap).flat();
+  await insertInBatches(
+    "spiel_logs",
+    alleSpielLogs.map((s) => ({
+      id: s.id,
+      member_id: s.memberId,
+      spiel_id: s.spielId,
+      ereignis_typ_id: s.ereignisTypId,
+      termin_id: s.terminId ?? null,
+      straf_log_id: s.strafLogId ?? null,
+      logged_at: s.loggedAt,
+    }))
+  );
 }
 
 // ─── Alle Stammtisch-Daten löschen ────────────────────────────────────────────
@@ -665,6 +721,7 @@ export async function clearAllData(): Promise<void> {
   await supabase.from("kasse").delete().eq("stammtisch_id", stammtischId);
   await supabase.from("termine").delete().eq("stammtisch_id", stammtischId);
   await supabase.from("members").delete().eq("stammtisch_id", stammtischId);
+  await supabase.from("spiele").delete().eq("stammtisch_id", stammtischId);
   await supabase.from("verordnung").update({
     name: "Mein Stammtisch",
     treffpunkt: null,
@@ -673,5 +730,6 @@ export async function clearAllData(): Promise<void> {
     gruendungsjahr: null,
     regeln: [],
     sonstiges: null,
+    aktives_spiel_id: null,
   }).eq("stammtisch_id", stammtischId);
 }
