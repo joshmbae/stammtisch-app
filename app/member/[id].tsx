@@ -14,7 +14,9 @@ import { Ionicons } from "@expo/vector-icons";
 import {
   MemberProfile,
   VerspätungLog,
-  SchockLog,
+  SpielLog,
+  Spiel,
+  SpielEreignisTyp,
   StrafLog,
   STRAF_KATEGORIEN,
   StammtischVerordnung,
@@ -23,7 +25,9 @@ import {
 import {
   loadMembers,
   loadVerspätungLogs,
-  loadSchockLogs,
+  loadSpiele,
+  loadEreignisTypen,
+  loadSpielLogs,
   loadStrafLogs,
   loadVerordnung,
   loadTermine,
@@ -55,15 +59,13 @@ function TerminHistoryRow({
   termin,
   anwesend,
   verspätungMin,
-  niederlagen,
-  schockAus,
+  spielChips,
   strafen,
 }: {
   termin: StammtischTermin;
   anwesend: boolean;
   verspätungMin: number;
-  niederlagen: number;
-  schockAus: number;
+  spielChips: { key: string; emoji: string; count: number }[];
   strafen: StrafLog[];
 }) {
   const strafSumme = strafen.reduce((s, l) => s + l.betrag, 0);
@@ -88,16 +90,11 @@ function TerminHistoryRow({
               <Text style={styles.historyChipText}>⏱️ {verspätungMin} Min.</Text>
             </View>
           )}
-          {niederlagen > 0 && (
-            <View style={[styles.historyChip, { backgroundColor: "#F5F0FF" }]}>
-              <Text style={[styles.historyChipText, { color: "#6B3A8A" }]}>💀 {niederlagen}</Text>
+          {spielChips.map((c) => (
+            <View key={c.key} style={[styles.historyChip, { backgroundColor: COLORS.blue + "12" }]}>
+              <Text style={[styles.historyChipText, { color: COLORS.blue }]}>{c.emoji} {c.count}</Text>
             </View>
-          )}
-          {schockAus > 0 && (
-            <View style={[styles.historyChip, { backgroundColor: "#FFF0F0" }]}>
-              <Text style={[styles.historyChipText, { color: COLORS.danger }]}>🎲 {schockAus}</Text>
-            </View>
-          )}
+          ))}
           {strafSumme > 0 && (
             <View style={[styles.historyChip, { backgroundColor: "#FFF3D6" }]}>
               <Text style={[styles.historyChipText, { color: COLORS.gold }]}>
@@ -105,7 +102,7 @@ function TerminHistoryRow({
               </Text>
             </View>
           )}
-          {verspätungMin === 0 && niederlagen === 0 && schockAus === 0 && strafSumme === 0 && (
+          {verspätungMin === 0 && spielChips.length === 0 && strafSumme === 0 && (
             <Text style={styles.historyClean}>✓ Dabei</Text>
           )}
         </View>
@@ -122,7 +119,8 @@ export default function MemberDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [member, setMember] = useState<MemberProfile | null>(null);
   const [verspätungLogs, setVerspätungLogs] = useState<VerspätungLog[]>([]);
-  const [schockLogs, setSchockLogs] = useState<SchockLog[]>([]);
+  const [spielLogs, setSpielLogs] = useState<SpielLog[]>([]);
+  const [spiele, setSpiele] = useState<{ spiel: Spiel; ereignisTypen: SpielEreignisTyp[] }[]>([]);
   const [strafLogs, setStrafLogs] = useState<StrafLog[]>([]);
   const [verordnung, setVerordnung] = useState<StammtischVerordnung | null>(null);
   const [termine, setTermine] = useState<StammtischTermin[]>([]);
@@ -134,17 +132,22 @@ export default function MemberDetailScreen() {
   useFocusEffect(
     useCallback(() => {
       async function load() {
-        const [members, vl, sl, stl, v, ts] = await Promise.all([
+        const [members, vl, spl, stl, v, ts, alleSpiele] = await Promise.all([
           loadMembers(),
           loadVerspätungLogs(id),
-          loadSchockLogs(id),
+          loadSpielLogs(id),
           loadStrafLogs(id),
           loadVerordnung(),
           loadTermine(),
+          loadSpiele(),
         ]);
+        const spieleMitTypen = await Promise.all(
+          alleSpiele.map(async (spiel) => ({ spiel, ereignisTypen: await loadEreignisTypen(spiel.id) }))
+        );
         setMember(members.find((m) => m.id === id) ?? null);
         setVerspätungLogs(vl);
-        setSchockLogs(sl);
+        setSpielLogs(spl);
+        setSpiele(spieleMitTypen);
         setStrafLogs(stl);
         setVerordnung(v);
         // Sort termine newest first
@@ -181,8 +184,12 @@ export default function MemberDetailScreen() {
 
   // ── Lifetime stats ──────────────────────────────────────────────────────────
   const verspätungGesamt = verspätungLogs.reduce((s, l) => s + l.minutenVerspätet, 0);
-  const niederlagenGesamt = schockLogs.filter((l) => l.typ === "niederlage").length;
-  const schockAusGesamt = schockLogs.filter((l) => l.typ === "schock_aus").length;
+  const spielStatsGesamt = spiele.flatMap(({ spiel, ereignisTypen }) => ereignisTypen.map((et) => ({
+    key: spiel.id + ":" + et.id,
+    emoji: et.emoji ?? "🎯",
+    label: et.label,
+    count: spielLogs.filter((l) => l.spielId === spiel.id && l.ereignisTypId === et.id).length,
+  }))).filter((s) => s.count > 0);
   const strafGesamt = strafLogs.reduce((s, l) => s + l.betrag, 0);
   const strafOffen = strafLogs.filter((l) => !l.beglichen).reduce((s, l) => s + l.betrag, 0);
   const anwesenheitCount = termine.filter((t) => (t.anwesenheit ?? []).includes(id)).length;
@@ -279,20 +286,13 @@ export default function MemberDetailScreen() {
                 <Text style={styles.statLabel}>Min. zu spät</Text>
               </View>
             )}
-            {niederlagenGesamt > 0 && (
-              <View style={styles.statBox}>
-                <Text style={styles.statEmoji}>💀</Text>
-                <Text style={[styles.statValue, { color: "#6B3A8A" }]}>{niederlagenGesamt}</Text>
-                <Text style={styles.statLabel}>Niederlagen</Text>
+            {spielStatsGesamt.map((s) => (
+              <View key={s.key} style={styles.statBox}>
+                <Text style={styles.statEmoji}>{s.emoji}</Text>
+                <Text style={[styles.statValue, { color: COLORS.blue }]}>{s.count}</Text>
+                <Text style={styles.statLabel}>{s.label}</Text>
               </View>
-            )}
-            {schockAusGesamt > 0 && (
-              <View style={styles.statBox}>
-                <Text style={styles.statEmoji}>🎲</Text>
-                <Text style={[styles.statValue, { color: COLORS.danger }]}>{schockAusGesamt}</Text>
-                <Text style={styles.statLabel}>Schock-Aus</Text>
-              </View>
-            )}
+            ))}
             {strafGesamt > 0 && (
               <View style={styles.statBox}>
                 <Text style={styles.statEmoji}>💰</Text>
@@ -315,8 +315,11 @@ export default function MemberDetailScreen() {
               const tVerspätung = verspätungLogs
                 .filter((l) => l.terminId === t.id)
                 .reduce((s, l) => s + l.minutenVerspätet, 0);
-              const tNiederlagen = schockLogs.filter((l) => l.terminId === t.id && l.typ === "niederlage").length;
-              const tSchockAus = schockLogs.filter((l) => l.terminId === t.id && l.typ === "schock_aus").length;
+              const tSpielChips = spiele.flatMap(({ spiel, ereignisTypen }) => ereignisTypen.map((et) => ({
+                key: spiel.id + ":" + et.id,
+                emoji: et.emoji ?? "🎯",
+                count: spielLogs.filter((l) => l.terminId === t.id && l.spielId === spiel.id && l.ereignisTypId === et.id).length,
+              }))).filter((c) => c.count > 0);
               const tStrafen = strafLogs.filter((l) => l.terminId === t.id);
               return (
                 <TerminHistoryRow
@@ -324,8 +327,7 @@ export default function MemberDetailScreen() {
                   termin={t}
                   anwesend={(t.anwesenheit ?? []).includes(id)}
                   verspätungMin={tVerspätung}
-                  niederlagen={tNiederlagen}
-                  schockAus={tSchockAus}
+                  spielChips={tSpielChips}
                   strafen={tStrafen}
                 />
               );

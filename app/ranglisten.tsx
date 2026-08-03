@@ -14,7 +14,9 @@ import {
   MemberProfile,
   StammtischVerordnung,
   VerspätungLog,
-  SchockLog,
+  SpielLog,
+  Spiel,
+  SpielEreignisTyp,
   StrafLog,
 } from "../types";
 import {
@@ -22,7 +24,9 @@ import {
   loadVerordnung,
   loadTermine,
   loadVerspätungLogs,
-  loadSchockLogs,
+  loadSpiele,
+  loadEreignisTypen,
+  loadSpielLogs,
   loadStrafLogs,
 } from "../utils/storage";
 import { COLORS, SHADOWS } from "../constants/design";
@@ -35,8 +39,7 @@ interface MemberStats {
   anwesenheitCount: number;
   anwesenheitPct: number;
   verspätungMin: number;
-  niederlagen: number;
-  schockAus: number;
+  spielLogs: SpielLog[];
   strafGesamt: number;
   strafOffen: number;
 }
@@ -71,8 +74,14 @@ function RangRow({ rank, member, value, valueLabel, sub }: {
   );
 }
 
+interface SpielMitTypen {
+  spiel: Spiel;
+  ereignisTypen: SpielEreignisTyp[];
+}
+
 export default function RanglistenScreen() {
   const [memberStats, setMemberStats] = useState<MemberStats[]>([]);
+  const [spiele, setSpiele] = useState<SpielMitTypen[]>([]);
   const [verordnung, setVerordnung] = useState<StammtischVerordnung | null>(null);
   const [terminCount, setTerminCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -80,22 +89,27 @@ export default function RanglistenScreen() {
   useFocusEffect(useCallback(() => { load(); }, []));
 
   async function load() {
-    const [ms, v, alle] = await Promise.all([loadMembers(), loadVerordnung(), loadTermine()]);
+    const [ms, v, alle, alleSpiele] = await Promise.all([loadMembers(), loadVerordnung(), loadTermine(), loadSpiele()]);
     setVerordnung(v);
     setTerminCount(alle.length);
+
+    const spieleMitTypen = await Promise.all(
+      alleSpiele.map(async (spiel) => ({ spiel, ereignisTypen: await loadEreignisTypen(spiel.id) }))
+    );
+    setSpiele(spieleMitTypen);
+
     if (ms.length === 0) { setMemberStats([]); setLoading(false); return; }
 
     const stats = await Promise.all(ms.map(async (m) => {
-      const [vLogs, sLogs, stLogs]: [VerspätungLog[], SchockLog[], StrafLog[]] = await Promise.all([
-        loadVerspätungLogs(m.id), loadSchockLogs(m.id), loadStrafLogs(m.id),
+      const [vLogs, spLogs, stLogs]: [VerspätungLog[], SpielLog[], StrafLog[]] = await Promise.all([
+        loadVerspätungLogs(m.id), loadSpielLogs(m.id), loadStrafLogs(m.id),
       ]);
       const anwesenheitCount = alle.filter((t) => (t.anwesenheit ?? []).includes(m.id)).length;
       const anwesenheitPct = alle.length > 0 ? Math.round((anwesenheitCount / alle.length) * 100) : 0;
       return {
         member: m, anwesenheitCount, anwesenheitPct,
         verspätungMin: vLogs.reduce((s, l) => s + l.minutenVerspätet, 0),
-        niederlagen: sLogs.filter((l) => l.typ === "niederlage").length,
-        schockAus: sLogs.filter((l) => l.typ === "schock_aus").length,
+        spielLogs: spLogs,
         strafGesamt: stLogs.reduce((s, l) => s + l.betrag, 0),
         strafOffen: stLogs.filter((l) => !l.beglichen).reduce((s, l) => s + l.betrag, 0),
       };
@@ -106,9 +120,17 @@ export default function RanglistenScreen() {
 
   const teilnahmeRang  = [...memberStats].sort((a, b) => b.anwesenheitCount - a.anwesenheitCount);
   const verspätungRang = [...memberStats].filter(s => s.verspätungMin > 0).sort((a, b) => b.verspätungMin - a.verspätungMin);
-  const schockAusRang  = [...memberStats].filter(s => s.schockAus > 0).sort((a, b) => b.schockAus - a.schockAus);
-  const niederlagenRang = [...memberStats].filter(s => s.niederlagen > 0).sort((a, b) => b.niederlagen - a.niederlagen);
   const strafRang      = [...memberStats].filter(s => s.strafGesamt > 0).sort((a, b) => b.strafGesamt - a.strafGesamt);
+
+  const spielRanglisten = spiele.flatMap(({ spiel, ereignisTypen }) =>
+    ereignisTypen.map((et) => ({
+      spiel, ereignisTyp: et,
+      rang: [...memberStats]
+        .map((s) => ({ member: s.member, count: s.spielLogs.filter((l) => l.spielId === spiel.id && l.ereignisTypId === et.id).length }))
+        .filter((s) => s.count > 0)
+        .sort((a, b) => b.count - a.count),
+    }))
+  ).filter((r) => r.rang.length > 0);
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
@@ -119,7 +141,7 @@ export default function RanglistenScreen() {
           <HamburgerButton />
           <View style={styles.headerTexts}>
             <Text style={styles.headerTitle}>Ranglisten</Text>
-            <Text style={styles.headerSub}>Schocken, Verspätungen & Strafen</Text>
+            <Text style={styles.headerSub}>Spiele, Verspätungen & Strafen</Text>
           </View>
         </View>
 
@@ -141,29 +163,19 @@ export default function RanglistenScreen() {
               ))}
             </View>
 
-            {/* Schock-Aus */}
-            {schockAusRang.length > 0 && (
-              <View style={styles.rangCard}>
-                <Text style={styles.rangCardTitle}>🎲 Schock-Aus Rangliste</Text>
-                <Text style={styles.rangCardSub}>Wer hat am meisten Schock-Aus geworfen</Text>
-                {schockAusRang.map((s, i) => (
+            {/* Spiele (generisch, pro Spiel + Ereignistyp) */}
+            {spielRanglisten.map(({ spiel, ereignisTyp, rang }) => (
+              <View key={ereignisTyp.id} style={styles.rangCard}>
+                <Text style={styles.rangCardTitle}>
+                  {spiel.emoji ?? "🎮"} {spiel.name} — {ereignisTyp.label}-Rangliste
+                </Text>
+                <Text style={styles.rangCardSub}>Wer hat am meisten „{ereignisTyp.label}"</Text>
+                {rang.map((s, i) => (
                   <RangRow key={s.member.id} rank={i} member={s.member}
-                    value={`${s.schockAus}`} valueLabel="Schock-Aus" />
+                    value={`${s.count}`} valueLabel={ereignisTyp.label} />
                 ))}
               </View>
-            )}
-
-            {/* Niederlagen */}
-            {niederlagenRang.length > 0 && (
-              <View style={styles.rangCard}>
-                <Text style={styles.rangCardTitle}>💀 Niederlagen-Rangliste</Text>
-                <Text style={styles.rangCardSub}>Wer hat am meisten Runden gezahlt</Text>
-                {niederlagenRang.map((s, i) => (
-                  <RangRow key={s.member.id} rank={i} member={s.member}
-                    value={`${s.niederlagen}`} valueLabel="Niederlagen" />
-                ))}
-              </View>
-            )}
+            ))}
 
             {/* Verspätung */}
             {verspätungRang.length > 0 && (

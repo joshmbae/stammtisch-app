@@ -15,7 +15,9 @@ import {
   StammtischVerordnung,
   StammtischTermin,
   VerspätungLog,
-  SchockLog,
+  SpielLog,
+  Spiel,
+  SpielEreignisTyp,
   StrafLog,
   KassenEintrag,
   ActivityLogEntry,
@@ -25,7 +27,9 @@ import {
   loadVerordnung,
   loadTermine,
   loadVerspätungLogs,
-  loadSchockLogs,
+  loadSpiele,
+  loadEreignisTypen,
+  loadSpielLogs,
   loadStrafLogs,
   loadKasse,
   loadActivityFeed,
@@ -155,10 +159,14 @@ interface MemberStats {
   anwesenheitCount: number;
   anwesenheitPct: number;
   verspätungMin: number;
-  niederlagen: number;
-  schockAus: number;
+  spielLogs: SpielLog[];
   strafGesamt: number;
   strafOffen: number;
+}
+
+interface SpielMitTypen {
+  spiel: Spiel;
+  ereignisTypen: SpielEreignisTyp[];
 }
 
 export default function HomeScreen() {
@@ -169,6 +177,7 @@ export default function HomeScreen() {
   const [letzterTermin, setLetzterTermin]     = useState<StammtischTermin | null>(null);
   const [members, setMembers]                 = useState<MemberProfile[]>([]);
   const [memberStats, setMemberStats]         = useState<MemberStats[]>([]);
+  const [spiele, setSpiele]                   = useState<SpielMitTypen[]>([]);
   const [kasse, setKasse]                     = useState<KassenEintrag[]>([]);
   const [terminCount, setTerminCount]         = useState(0);
   const [lastActivity, setLastActivity]       = useState<ActivityLogEntry | null>(null);
@@ -177,14 +186,19 @@ export default function HomeScreen() {
   useFocusEffect(useCallback(() => { load(); }, []));
 
   async function load() {
-    const [ms, v, alle, kasseData, activityFeed] = await Promise.all([
-      loadMembers(), loadVerordnung(), loadTermine(), loadKasse(), loadActivityFeed(1),
+    const [ms, v, alle, kasseData, activityFeed, alleSpiele] = await Promise.all([
+      loadMembers(), loadVerordnung(), loadTermine(), loadKasse(), loadActivityFeed(1), loadSpiele(),
     ]);
 
     setVerordnung(v);
     setKasse(kasseData);
     setMembers(ms);
     setLastActivity(activityFeed[0] ?? null);
+
+    const spieleMitTypen = await Promise.all(
+      alleSpiele.map(async (spiel) => ({ spiel, ereignisTypen: await loadEreignisTypen(spiel.id) }))
+    );
+    setSpiele(spieleMitTypen);
 
     const today = toLocalIsoDate(new Date());
     const upcoming = alle.filter((t) => t.datum >= today).sort((a, b) => a.datum.localeCompare(b.datum));
@@ -196,16 +210,15 @@ export default function HomeScreen() {
     if (ms.length === 0) { setMemberStats([]); setLoading(false); return; }
 
     const stats = await Promise.all(ms.map(async (m) => {
-      const [vLogs, sLogs, stLogs]: [VerspätungLog[], SchockLog[], StrafLog[]] = await Promise.all([
-        loadVerspätungLogs(m.id), loadSchockLogs(m.id), loadStrafLogs(m.id),
+      const [vLogs, spLogs, stLogs]: [VerspätungLog[], SpielLog[], StrafLog[]] = await Promise.all([
+        loadVerspätungLogs(m.id), loadSpielLogs(m.id), loadStrafLogs(m.id),
       ]);
       const anwesenheitCount = alle.filter((t) => (t.anwesenheit ?? []).includes(m.id)).length;
       const anwesenheitPct = alle.length > 0 ? Math.round((anwesenheitCount / alle.length) * 100) : 0;
       return {
         member: m, anwesenheitCount, anwesenheitPct,
         verspätungMin: vLogs.reduce((s, l) => s + l.minutenVerspätet, 0),
-        niederlagen: sLogs.filter((l) => l.typ === "niederlage").length,
-        schockAus: sLogs.filter((l) => l.typ === "schock_aus").length,
+        spielLogs: spLogs,
         strafGesamt: stLogs.reduce((s, l) => s + l.betrag, 0),
         strafOffen: stLogs.filter((l) => !l.beglichen).reduce((s, l) => s + l.betrag, 0),
       };
@@ -225,7 +238,21 @@ export default function HomeScreen() {
   const gruendungsjahr = verordnung?.gruendungsjahr ?? null;
   const dauer = gruendungsjahr ? gruendungsDauer(gruendungsjahr) : null;
 
-  const schockRang = [...memberStats].filter(s => s.schockAus > 0).sort((a, b) => b.schockAus - a.schockAus);
+  // Zeigt automatisch die (Spiel, Ereignistyp)-Kombination mit den meisten Einträgen
+  const spielTotals = spiele.flatMap(({ spiel, ereignisTypen }) => ereignisTypen.map((et) => ({
+    spiel, ereignisTyp: et,
+    total: memberStats.reduce((s, ms) => s + ms.spielLogs.filter((l) => l.spielId === spiel.id && l.ereignisTypId === et.id).length, 0),
+  })));
+  const topSpielStat = spielTotals.filter((s) => s.total > 0).sort((a, b) => b.total - a.total)[0] ?? null;
+  const spielRang = topSpielStat
+    ? [...memberStats]
+        .map((s) => ({ member: s.member, count: s.spielLogs.filter((l) => l.spielId === topSpielStat.spiel.id && l.ereignisTypId === topSpielStat.ereignisTyp.id).length }))
+        .filter((s) => s.count > 0)
+        .sort((a, b) => b.count - a.count)
+    : [];
+  const myTopSpielCount = topSpielStat
+    ? (myStats?.spielLogs.filter((l) => l.spielId === topSpielStat.spiel.id && l.ereignisTypId === topSpielStat.ereignisTyp.id).length ?? 0)
+    : 0;
 
   const naechsterInStunden = naechsterTermin ? hoursUntil(naechsterTermin.datum, naechsterTermin.startZeit) : null;
   const naechsterZusagen = naechsterTermin?.anwesenheit?.length ?? 0;
@@ -345,12 +372,16 @@ export default function HomeScreen() {
                 </Text>
                 <Text style={styles.myStatLabel}>{myStats.strafOffen > 0 ? "Offen" : "Beglichen"}</Text>
               </View>
-              <View style={styles.myStatDivider} />
-              <View style={styles.myStatBox}>
-                <Text style={styles.myStatEmoji}>🎲</Text>
-                <Text style={styles.myStatValue}>{myStats.schockAus}</Text>
-                <Text style={styles.myStatLabel}>Schock-Aus</Text>
-              </View>
+              {topSpielStat && (
+                <>
+                  <View style={styles.myStatDivider} />
+                  <View style={styles.myStatBox}>
+                    <Text style={styles.myStatEmoji}>{topSpielStat.ereignisTyp.emoji ?? "🎮"}</Text>
+                    <Text style={styles.myStatValue}>{myTopSpielCount}</Text>
+                    <Text style={styles.myStatLabel} numberOfLines={1}>{topSpielStat.ereignisTyp.label}</Text>
+                  </View>
+                </>
+              )}
             </View>
           </TouchableOpacity>
         )}
@@ -416,30 +447,31 @@ export default function HomeScreen() {
               <Text style={styles.activitySub}>
                 {lastActivity
                   ? formatActivityZeit(lastActivity.createdAt) + (lastActivityRendered?.actorText ? ` · ${lastActivityRendered.actorText}` : "")
-                  : "Strafen, Bezahlungen & Schock-Ergebnisse tauchen hier auf"}
+                  : "Strafen, Bezahlungen & Spiel-Ergebnisse tauchen hier auf"}
               </Text>
             </View>
           </TouchableOpacity>
         </View>
 
-        {/* ── Schock-Aus Rangliste ── */}
-        {schockRang.length > 0 && (
+        {/* ── Top-Spiel-Rangliste ── */}
+        {topSpielStat && spielRang.length > 0 && (
           <View style={styles.rangCard}>
             <View style={styles.rangCardHeader}>
-              <Text style={styles.rangCardTitle}>🎲 Schock-Aus Rangliste</Text>
+              <Text style={styles.rangCardTitle}>
+                {topSpielStat.spiel.emoji ?? "🎮"} {topSpielStat.spiel.name} — {topSpielStat.ereignisTyp.label}
+              </Text>
               <TouchableOpacity onPress={() => router.push("/ranglisten")}>
                 <Text style={styles.rangCardLink}>Alle →</Text>
               </TouchableOpacity>
             </View>
-            {schockRang.slice(0, 3).map((s, i) => (
+            {spielRang.slice(0, 3).map((s, i) => (
               <RangRow key={s.member.id} rank={i} member={s.member}
-                value={`${s.schockAus}`} valueLabel="Schock-Aus"
-                sub={s.niederlagen > 0 ? `+ ${s.niederlagen} Niederlagen` : undefined} />
+                value={`${s.count}`} valueLabel={topSpielStat.ereignisTyp.label} />
             ))}
           </View>
         )}
 
-        {memberStats.length > 0 && schockRang.length === 0 && (
+        {memberStats.length > 0 && !(topSpielStat && spielRang.length > 0) && (
           <TouchableOpacity style={styles.rangLinkCard} onPress={() => router.push("/ranglisten")}>
             <Text style={styles.rangLinkText}>🏆 Alle Ranglisten ansehen</Text>
             <Ionicons name="chevron-forward" size={16} color={COLORS.blue} />
