@@ -49,18 +49,6 @@ export interface VerspätungLog {
   grund?: string;
 }
 
-// ─── Schock-Logs ──────────────────────────────────────────────────────────────
-
-export type SchockTyp = "niederlage" | "schock_aus";
-
-export interface SchockLog {
-  id: string;
-  memberId: string;
-  terminId?: string;
-  typ: SchockTyp;
-  loggedAt: string;
-}
-
 // ─── Wetten ───────────────────────────────────────────────────────────────────
 
 export interface Wette {
@@ -94,6 +82,7 @@ export type StrafKategorie =
   | "spaet_30min"
   | "maennlicher_gast"
   | "schock_niederlage"
+  | "spiel_ereignis"
   | "wette_verloren"
   | "sonstiges";
 
@@ -111,6 +100,7 @@ export const STRAF_KATEGORIEN: {
   { key: "spaet_30min",           label: "Zu spät >30 Min.",      betrag: 10,  emoji: "⏱️", beschreibung: "Unentschuldigt" },
   { key: "maennlicher_gast",      label: "Männl. Gast",           betrag: 20,  emoji: "👨", beschreibung: "Pro Gast – weibliche Gäste nur am Valentinsstammtisch" },
   { key: "schock_niederlage",     label: "Schock-Niederlage",     betrag: 5,   emoji: "🎲", beschreibung: "Wird automatisch bei jeder Schock-Niederlage eingetragen" },
+  { key: "spiel_ereignis",        label: "Spiel-Ereignis",        betrag: 0,   emoji: "🎮", beschreibung: "Wird automatisch bei einem konfigurierten Spiel-Ereignis eingetragen" },
   { key: "wette_verloren",        label: "Verlorene Wette",        betrag: 0,   emoji: "🤝", beschreibung: "Wird automatisch bei einer verlorenen Wette eingetragen, Betrag = Wetteinsatz" },
   { key: "sonstiges",             label: "Sonstiges",             betrag: 0,   emoji: "💰" },
 ];
@@ -125,6 +115,66 @@ export interface StrafLog {
   loggedAt: string;
   beglichen: boolean;
 }
+
+// ─── Spiele ───────────────────────────────────────────────────────────────────
+
+export interface Spiel {
+  id: string;
+  name: string;
+  emoji?: string;
+  createdAt: string;
+}
+
+export interface SpielEreignisTyp {
+  id: string;
+  spielId: string;
+  label: string;
+  emoji?: string;
+  reihenfolge: number;              // 1-4, Anzeigereihenfolge der Buttons
+  strafKategorie?: StrafKategorie;  // optionale Kopplung an eine Strafe
+  strafBetrag?: number;             // in Euro — nur relevant wenn strafKategorie gesetzt
+}
+
+export interface SpielLog {
+  id: string;
+  memberId: string;
+  spielId: string;
+  ereignisTypId: string;
+  terminId?: string;
+  strafLogId?: string;              // gesetzt, wenn dieser Log automatisch eine Strafe erzeugt hat
+  loggedAt: string;
+}
+
+export const SPIEL_VORLAGEN: {
+  name: string;
+  emoji: string;
+  ereignisTypen: { label: string; emoji: string; strafKategorie?: StrafKategorie; strafBetrag?: number }[];
+}[] = [
+  {
+    name: "Schocken",
+    emoji: "🎲",
+    ereignisTypen: [
+      { label: "Niederlage", emoji: "💀", strafKategorie: "schock_niederlage", strafBetrag: 5 },
+      { label: "Schock-Aus", emoji: "🎲" },
+    ],
+  },
+  {
+    name: "Skat",
+    emoji: "🃏",
+    ereignisTypen: [
+      { label: "Verloren", emoji: "🃏", strafKategorie: "spiel_ereignis", strafBetrag: 3 },
+      { label: "Schwarz gespielt", emoji: "🖤" },
+    ],
+  },
+  {
+    name: "Kegeln",
+    emoji: "🎳",
+    ereignisTypen: [
+      { label: "Nullwurf", emoji: "😅", strafKategorie: "spiel_ereignis", strafBetrag: 2 },
+      { label: "Alle Neune", emoji: "🎳" },
+    ],
+  },
+];
 
 // ─── Kasse ────────────────────────────────────────────────────────────────────
 
@@ -154,8 +204,8 @@ export type ActivityActionType =
   | "abendkosten_created"
   | "kasse_beglichen"
   | "kasse_eintrag_deleted"
-  | "schock_log_created"
-  | "schock_log_deleted"
+  | "spiel_log_created"
+  | "spiel_log_deleted"
   | "wette_created"
   | "wette_resolved"
   | "wette_deleted"
@@ -185,4 +235,5 @@ export interface StammtischVerordnung {
   gruendungsjahr?: string;
   regeln: string[];
   sonstiges?: string;
+  aktivesSpielId?: string;
 }

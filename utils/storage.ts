@@ -2,7 +2,6 @@ import { supabase } from "./supabase";
 import {
   MemberProfile,
   VerspätungLog,
-  SchockLog,
   Wette,
   StammtischVerordnung,
   StammtischTermin,
@@ -11,6 +10,9 @@ import {
   StrafLog,
   ActivityActionType,
   ActivityLogEntry,
+  Spiel,
+  SpielEreignisTyp,
+  SpielLog,
 } from "../types";
 
 function nextId(): string {
@@ -188,6 +190,7 @@ function rowToVerordnung(row: any): StammtischVerordnung {
     gruendungsjahr: row.gruendungsjahr ?? undefined,
     regeln: row.regeln ?? [],
     sonstiges: row.sonstiges ?? undefined,
+    aktivesSpielId: row.aktives_spiel_id ?? undefined,
   };
 }
 
@@ -214,6 +217,7 @@ export async function saveVerordnung(v: StammtischVerordnung): Promise<void> {
     gruendungsjahr: v.gruendungsjahr ?? null,
     regeln: v.regeln ?? [],
     sonstiges: v.sonstiges ?? null,
+    aktives_spiel_id: v.aktivesSpielId ?? null,
   });
   if (error) throw error;
 }
@@ -279,62 +283,173 @@ export async function deleteVerspätungLog(memberId: string, logId: string): Pro
   if (error) throw error;
 }
 
-// ─── Schock-Logs ──────────────────────────────────────────────────────────────
+// ─── Spiele ───────────────────────────────────────────────────────────────────
 
-function rowToSchockLog(row: any): SchockLog {
+function rowToSpiel(row: any): Spiel {
+  return {
+    id: row.id,
+    name: row.name,
+    emoji: row.emoji ?? undefined,
+    createdAt: row.created_at,
+  };
+}
+
+export async function loadSpiele(): Promise<Spiel[]> {
+  const stammtischId = await getStammtischId();
+  const { data, error } = await supabase
+    .from("spiele")
+    .select("*")
+    .eq("stammtisch_id", stammtischId)
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return (data ?? []).map(rowToSpiel);
+}
+
+export async function addSpiel(entry: Omit<Spiel, "id" | "createdAt">): Promise<Spiel> {
+  const stammtischId = await getStammtischId();
+  const spiel: Spiel = { ...entry, id: nextId(), createdAt: new Date().toISOString() };
+  const { error } = await supabase.from("spiele").insert({
+    id: spiel.id,
+    stammtisch_id: stammtischId,
+    name: spiel.name,
+    emoji: spiel.emoji ?? null,
+    created_at: spiel.createdAt,
+  });
+  if (error) throw error;
+  return spiel;
+}
+
+export async function updateSpiel(id: string, partial: Partial<Spiel>): Promise<void> {
+  const patch: Record<string, unknown> = {};
+  if (partial.name !== undefined) patch.name = partial.name;
+  if (partial.emoji !== undefined) patch.emoji = partial.emoji ?? null;
+  const { error } = await supabase.from("spiele").update(patch).eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteSpiel(id: string): Promise<void> {
+  const { error } = await supabase.from("spiele").delete().eq("id", id);
+  if (error) throw error;
+}
+
+function rowToSpielEreignisTyp(row: any): SpielEreignisTyp {
+  return {
+    id: row.id,
+    spielId: row.spiel_id,
+    label: row.label,
+    emoji: row.emoji ?? undefined,
+    reihenfolge: row.reihenfolge,
+    strafKategorie: row.straf_kategorie ?? undefined,
+    strafBetrag: row.straf_betrag != null ? Number(row.straf_betrag) : undefined,
+  };
+}
+
+export async function loadEreignisTypen(spielId: string): Promise<SpielEreignisTyp[]> {
+  const { data, error } = await supabase
+    .from("spiel_ereignis_typen")
+    .select("*")
+    .eq("spiel_id", spielId)
+    .order("reihenfolge", { ascending: true });
+  if (error) throw error;
+  return (data ?? []).map(rowToSpielEreignisTyp);
+}
+
+export async function addEreignisTyp(
+  spielId: string,
+  entry: Omit<SpielEreignisTyp, "id" | "spielId">
+): Promise<SpielEreignisTyp> {
+  const typ: SpielEreignisTyp = { ...entry, id: nextId(), spielId };
+  const { error } = await supabase.from("spiel_ereignis_typen").insert({
+    id: typ.id,
+    spiel_id: spielId,
+    label: typ.label,
+    emoji: typ.emoji ?? null,
+    reihenfolge: typ.reihenfolge,
+    straf_kategorie: typ.strafKategorie ?? null,
+    straf_betrag: typ.strafBetrag ?? null,
+  });
+  if (error) throw error;
+  return typ;
+}
+
+export async function updateEreignisTyp(id: string, partial: Partial<SpielEreignisTyp>): Promise<void> {
+  const patch: Record<string, unknown> = {};
+  if (partial.label !== undefined) patch.label = partial.label;
+  if (partial.emoji !== undefined) patch.emoji = partial.emoji ?? null;
+  if (partial.reihenfolge !== undefined) patch.reihenfolge = partial.reihenfolge;
+  if (partial.strafKategorie !== undefined) patch.straf_kategorie = partial.strafKategorie ?? null;
+  if (partial.strafBetrag !== undefined) patch.straf_betrag = partial.strafBetrag ?? null;
+  const { error } = await supabase.from("spiel_ereignis_typen").update(patch).eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteEreignisTyp(id: string): Promise<void> {
+  const { error } = await supabase.from("spiel_ereignis_typen").delete().eq("id", id);
+  if (error) throw error;
+}
+
+function rowToSpielLog(row: any): SpielLog {
   return {
     id: row.id,
     memberId: row.member_id,
+    spielId: row.spiel_id,
+    ereignisTypId: row.ereignis_typ_id,
     terminId: row.termin_id ?? undefined,
-    typ: row.typ,
+    strafLogId: row.straf_log_id ?? undefined,
     loggedAt: row.logged_at,
   };
 }
 
-export async function loadSchockLogs(memberId: string): Promise<SchockLog[]> {
+export async function loadSpielLogs(memberId: string): Promise<SpielLog[]> {
   const { data, error } = await supabase
-    .from("schock_logs")
+    .from("spiel_logs")
     .select("*")
     .eq("member_id", memberId)
     .order("logged_at", { ascending: false });
   if (error) throw error;
-  return (data ?? []).map(rowToSchockLog);
+  return (data ?? []).map(rowToSpielLog);
 }
 
-export async function saveSchockLogs(memberId: string, logs: SchockLog[]): Promise<void> {
-  const { error: delError } = await supabase.from("schock_logs").delete().eq("member_id", memberId);
-  if (delError) throw delError;
-  if (logs.length === 0) return;
-  const rows = logs.map((l) => ({
-    id: l.id,
-    member_id: memberId,
-    termin_id: l.terminId ?? null,
-    typ: l.typ,
-    logged_at: l.loggedAt,
-  }));
-  const { error } = await supabase.from("schock_logs").insert(rows);
-  if (error) throw error;
-}
-
-export async function addSchockLog(
+export async function addSpielLog(
   memberId: string,
-  entry: Omit<SchockLog, "id" | "memberId">
-): Promise<SchockLog> {
-  const log: SchockLog = { ...entry, id: nextId(), memberId };
-  const { error } = await supabase.from("schock_logs").insert({
+  entry: Omit<SpielLog, "id" | "memberId">
+): Promise<SpielLog> {
+  const log: SpielLog = { ...entry, id: nextId(), memberId };
+  const { error } = await supabase.from("spiel_logs").insert({
     id: log.id,
     member_id: memberId,
+    spiel_id: log.spielId,
+    ereignis_typ_id: log.ereignisTypId,
     termin_id: log.terminId ?? null,
-    typ: log.typ,
+    straf_log_id: log.strafLogId ?? null,
     logged_at: log.loggedAt,
   });
   if (error) throw error;
   return log;
 }
 
-export async function deleteSchockLog(memberId: string, logId: string): Promise<void> {
-  const { error } = await supabase.from("schock_logs").delete().eq("id", logId);
+export async function deleteSpielLog(memberId: string, logId: string): Promise<void> {
+  const { error } = await supabase.from("spiel_logs").delete().eq("id", logId);
   if (error) throw error;
+}
+
+export async function instantiateSpielVorlage(vorlage: {
+  name: string;
+  emoji: string;
+  ereignisTypen: { label: string; emoji: string; strafKategorie?: SpielEreignisTyp["strafKategorie"]; strafBetrag?: number }[];
+}): Promise<Spiel> {
+  const spiel = await addSpiel({ name: vorlage.name, emoji: vorlage.emoji });
+  for (let i = 0; i < vorlage.ereignisTypen.length; i++) {
+    const et = vorlage.ereignisTypen[i];
+    await addEreignisTyp(spiel.id, {
+      label: et.label,
+      emoji: et.emoji,
+      reihenfolge: i + 1,
+      strafKategorie: et.strafKategorie,
+      strafBetrag: et.strafBetrag,
+    });
+  }
+  return spiel;
 }
 
 // ─── Wetten ───────────────────────────────────────────────────────────────────
