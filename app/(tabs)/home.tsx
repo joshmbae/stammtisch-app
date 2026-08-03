@@ -228,6 +228,10 @@ export default function HomeScreen() {
   const schockRang = [...memberStats].filter(s => s.schockAus > 0).sort((a, b) => b.schockAus - a.schockAus);
 
   const naechsterInStunden = naechsterTermin ? hoursUntil(naechsterTermin.datum, naechsterTermin.startZeit) : null;
+  const naechsterZusagen = naechsterTermin?.anwesenheit?.length ?? 0;
+  const naechsterAbsagen = naechsterTermin?.absagen?.length ?? 0;
+  const naechsterOffen = Math.max(0, members.length - naechsterZusagen - naechsterAbsagen);
+  const naechsterZusagePct = members.length > 0 ? Math.round((naechsterZusagen / members.length) * 100) : 0;
 
   const membersById = new Map(members.map((m) => [m.id, m]));
   const lastActivityRendered = lastActivity ? renderActivity(lastActivity, membersById) : null;
@@ -240,9 +244,9 @@ export default function HomeScreen() {
         {/* ── Header ── */}
         <View style={styles.header}>
           <HamburgerButton />
-          <StammtischLogo size={40} />
+          <StammtischLogo size={40} uri={verordnung?.logoUrl} />
           <View style={styles.headerCenter}>
-            <Text style={styles.headerStammtisch}>{verordnung?.name ?? "Die Hellen"}</Text>
+            <Text style={styles.headerStammtisch}>{verordnung?.name ?? "Mein Stammtisch"}</Text>
             <Text style={styles.headerGreeting}>{greeting}</Text>
           </View>
           {activeMember ? (
@@ -301,6 +305,11 @@ export default function HomeScreen() {
                     {naechsterInStunden === 0 ? "Jetzt!" : naechsterInStunden < 24 ? "Std." : naechsterInStunden < 48 ? "Tag" : "Tage"}
                   </Text>
                 </View>
+                {members.length > 0 && (
+                  <Text style={styles.countdownRsvp} numberOfLines={1}>
+                    ✅ {naechsterZusagePct}% zugesagt{naechsterOffen > 0 ? ` · ${naechsterOffen} offen` : " · alle abgestimmt"}
+                  </Text>
+                )}
               </TouchableOpacity>
             )}
           </View>
@@ -338,7 +347,7 @@ export default function HomeScreen() {
               </View>
               <View style={styles.myStatDivider} />
               <View style={styles.myStatBox}>
-                <Text style={styles.myStatEmoji}>💥</Text>
+                <Text style={styles.myStatEmoji}>🎲</Text>
                 <Text style={styles.myStatValue}>{myStats.schockAus}</Text>
                 <Text style={styles.myStatLabel}>Schock-Aus</Text>
               </View>
@@ -349,8 +358,8 @@ export default function HomeScreen() {
         {/* ── Kassenstand + Nächster Geburtstag ── */}
         <View style={styles.quickRow}>
           <TouchableOpacity style={styles.quickCard} onPress={() => router.push("/kasse")} activeOpacity={0.85}>
-            <Text style={[styles.quickValue, { color: saldoPositiv ? COLORS.success : COLORS.danger }]}>
-              {saldoPositiv ? "+" : "−"}{formatEuro(Math.abs(saldo))} €
+            <Text style={[styles.quickValue, { fontSize: 24, color: saldoPositiv ? COLORS.success : COLORS.danger }]}>
+              {saldoPositiv ? "+" : "−"}{Math.round(Math.abs(saldo)).toLocaleString("de-DE")} €
             </Text>
             <Text style={styles.quickLabel}>💰 Kassenstand</Text>
           </TouchableOpacity>
@@ -361,10 +370,17 @@ export default function HomeScreen() {
           >
             {nextBirthday ? (
               <>
-                <Text style={[styles.quickValue, { fontSize: 22 }]}>🎂</Text>
+                <View style={[styles.quickBirthdayAvatar, { backgroundColor: nextBirthday.member.avatarColor }]}>
+                  {nextBirthday.member.photoUri ? (
+                    <Image source={{ uri: nextBirthday.member.photoUri }} style={styles.quickBirthdayImg} />
+                  ) : (
+                    <Text style={styles.quickBirthdayLetter}>{getInitial(nextBirthday.member.name)}</Text>
+                  )}
+                  <View style={styles.quickBirthdayBadge}>
+                    <Text style={{ fontSize: 12 }}>🎂</Text>
+                  </View>
+                </View>
                 <Text style={[styles.quickLabel, { textAlign: "center" }]}>
-                  {nextBirthday.member.spitzname ?? nextBirthday.member.name.split(" ")[0]}
-                  {"\n"}
                   {nextBirthday.daysUntil === 0 ? "Heute! 🎉" : nextBirthday.daysUntil === 1 ? "Morgen" : `in ${nextBirthday.daysUntil} Tagen`}
                 </Text>
               </>
@@ -379,7 +395,12 @@ export default function HomeScreen() {
 
         {/* ── Letzte Aktivität ── */}
         <View style={styles.activityCard}>
-          <Text style={styles.activityHeader}>📋 Letzte Aktivität</Text>
+          <View style={styles.activityCardHeader}>
+            <Text style={styles.activityHeader}>📋 Letzte Aktivität</Text>
+            <TouchableOpacity onPress={() => router.push("/feed")}>
+              <Text style={styles.activityLink}>Alle →</Text>
+            </TouchableOpacity>
+          </View>
           <TouchableOpacity
             style={styles.activityRow}
             onPress={() => router.push("/feed")}
@@ -398,32 +419,8 @@ export default function HomeScreen() {
                   : "Strafen, Bezahlungen & Schock-Ergebnisse tauchen hier auf"}
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={COLORS.textLight} />
           </TouchableOpacity>
         </View>
-
-        {/* ── Die Runde ── */}
-        {members.length > 0 && (
-          <View style={styles.mitgliederCard}>
-            <View style={styles.mitgliederHeader}>
-              <Text style={styles.mitgliederTitle}>👥 Die Runde</Text>
-              <TouchableOpacity onPress={() => router.push("/mitglieder")}>
-                <Text style={styles.mitgliederLink}>Alle →</Text>
-              </TouchableOpacity>
-            </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.bubbleRow}>
-              {members.map((m) => (
-                <MemberBubble key={m.id} member={m} isActive={m.id === activeMemberId} />
-              ))}
-              <TouchableOpacity style={styles.bubbleWrap} onPress={() => router.push("/member/new")} activeOpacity={0.8}>
-                <View style={styles.bubbleAdd}>
-                  <Ionicons name="add" size={22} color={COLORS.textMuted} />
-                </View>
-                <Text style={styles.bubbleName}>Neu</Text>
-              </TouchableOpacity>
-            </ScrollView>
-          </View>
-        )}
 
         {/* ── Schock-Aus Rangliste ── */}
         {schockRang.length > 0 && (
@@ -447,6 +444,29 @@ export default function HomeScreen() {
             <Text style={styles.rangLinkText}>🏆 Alle Ranglisten ansehen</Text>
             <Ionicons name="chevron-forward" size={16} color={COLORS.blue} />
           </TouchableOpacity>
+        )}
+
+        {/* ── Die Runde ── */}
+        {members.length > 0 && (
+          <View style={styles.mitgliederCard}>
+            <View style={styles.mitgliederHeader}>
+              <Text style={styles.mitgliederTitle}>👥 Die Runde</Text>
+              <TouchableOpacity onPress={() => router.push("/mitglieder")}>
+                <Text style={styles.mitgliederLink}>Alle →</Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.bubbleRow}>
+              {members.map((m) => (
+                <MemberBubble key={m.id} member={m} isActive={m.id === activeMemberId} />
+              ))}
+              <TouchableOpacity style={styles.bubbleWrap} onPress={() => router.push("/member/new")} activeOpacity={0.8}>
+                <View style={styles.bubbleAdd}>
+                  <Ionicons name="add" size={22} color={COLORS.textMuted} />
+                </View>
+                <Text style={styles.bubbleName}>Neu</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
         )}
 
         {/* ── Stammtisch-Infos ── */}
@@ -489,7 +509,7 @@ export default function HomeScreen() {
         {/* ── Leer-Zustand ── */}
         {memberStats.length === 0 && (
           <View style={styles.onboardingCard}>
-            <Text style={styles.onboardingTitle}>Willkommen bei „Die Hellen" 🍺</Text>
+            <Text style={styles.onboardingTitle}>Willkommen bei „{verordnung?.name ?? "deinem Stammtisch"}" 🍺</Text>
             <Text style={styles.onboardingText}>
               Leg die Stammtischrunde an — trag alle Mitglieder ein und definier die Stammtischverordnung.
             </Text>
@@ -561,6 +581,7 @@ const styles = StyleSheet.create({
   countdownNumRow: { flexDirection: "row", alignItems: "baseline", gap: 4, marginTop: 10 },
   countdownNum: { fontSize: 40, fontWeight: "900", color: COLORS.gold, lineHeight: 44 },
   countdownUnit: { fontSize: 14, fontWeight: "700", color: "rgba(255,255,255,0.7)" },
+  countdownRsvp: { fontSize: 11, fontWeight: "600", color: "rgba(255,255,255,0.6)", marginTop: 8 },
 
   letzterCard: {
     flex: 1,
@@ -580,7 +601,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.card, borderRadius: 18, padding: 14, marginBottom: 12,
     borderWidth: 1.5, ...SHADOWS.light,
   },
-  myStatsTitle: { fontSize: 13, fontWeight: "800", color: COLORS.textDark, marginBottom: 12, letterSpacing: -0.1 },
+  myStatsTitle: { fontSize: 14, fontWeight: "800", color: COLORS.textDark, marginBottom: 12, letterSpacing: -0.2 },
   myStatsRow: { flexDirection: "row", alignItems: "center" },
   myStatBox: { flex: 1, alignItems: "center", gap: 3 },
   myStatDivider: { width: 1, height: 36, backgroundColor: COLORS.border },
@@ -591,12 +612,25 @@ const styles = StyleSheet.create({
   // ── Quick: Kasse + Geburtstag ─────────────────────────────────────────────
   quickRow: { flexDirection: "row", gap: 10, marginBottom: 12 },
   quickCard: {
-    flex: 1, backgroundColor: COLORS.card, borderRadius: 16, padding: 14,
-    alignItems: "center", justifyContent: "center", gap: 4,
+    flex: 1, backgroundColor: COLORS.card, borderRadius: 16,
+    paddingVertical: 16, paddingHorizontal: 14,
+    alignItems: "center", justifyContent: "center", gap: 6,
     borderWidth: 1, borderColor: COLORS.border, ...SHADOWS.light,
   },
   quickValue: { fontSize: 20, fontWeight: "900", color: COLORS.textDark },
   quickLabel: { fontSize: 12, color: COLORS.textMuted, fontWeight: "600" },
+  quickBirthdayAvatar: {
+    width: 48, height: 48, borderRadius: 24,
+    alignItems: "center", justifyContent: "center",
+  },
+  quickBirthdayImg: { width: 48, height: 48, borderRadius: 24 },
+  quickBirthdayLetter: { fontSize: 18, fontWeight: "700", color: "#FFFFFF" },
+  quickBirthdayBadge: {
+    position: "absolute", bottom: -4, right: -4,
+    width: 22, height: 22, borderRadius: 11,
+    backgroundColor: COLORS.card, alignItems: "center", justifyContent: "center",
+    borderWidth: 1.5, borderColor: COLORS.border,
+  },
 
   // ── Letzte Aktivität ────────────────────────────────────────────────────────
   activityCard: {
@@ -604,7 +638,9 @@ const styles = StyleSheet.create({
     padding: 16, marginBottom: 12,
     borderWidth: 1, borderColor: COLORS.border, ...SHADOWS.light,
   },
-  activityHeader: { fontSize: 13, fontWeight: "800", color: COLORS.textMid, letterSpacing: 0.2, marginBottom: 10 },
+  activityCardHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
+  activityHeader: { fontSize: 14, fontWeight: "800", color: COLORS.textDark, letterSpacing: -0.2 },
+  activityLink: { fontSize: 13, fontWeight: "700", color: COLORS.blue },
   activityRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   activityIcon: {
     width: 42, height: 42, borderRadius: 21,
@@ -620,7 +656,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: COLORS.border, ...SHADOWS.light,
   },
   mitgliederHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
-  mitgliederTitle: { fontSize: 14, fontWeight: "800", color: COLORS.textDark },
+  mitgliederTitle: { fontSize: 14, fontWeight: "800", color: COLORS.textDark, letterSpacing: -0.2 },
   mitgliederLink: { fontSize: 13, color: COLORS.blue, fontWeight: "700" },
   bubbleRow: { gap: 12, paddingHorizontal: 2 },
   bubbleWrap: { alignItems: "center", gap: 5, width: 52 },

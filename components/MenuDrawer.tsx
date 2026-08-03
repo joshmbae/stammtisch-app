@@ -11,9 +11,10 @@ import {
 } from "react-native";
 import { router, usePathname } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { useMenu } from "../contexts/MenuContext";
 import { useSession } from "../contexts/SessionContext";
+import { useStammtisch } from "../contexts/StammtischContext";
 import { COLORS } from "../constants/design";
 import { getInitial } from "../utils/format";
 
@@ -35,6 +36,7 @@ const NAV_ITEMS = [
 export function MenuDrawer() {
   const { menuOpen, closeMenu } = useMenu();
   const { activeMember } = useSession();
+  const { stammtischName } = useStammtisch();
   const pathname = usePathname();
   const [modalVisible, setModalVisible] = useState(false);
   const slideAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
@@ -86,6 +88,14 @@ export function MenuDrawer() {
       onRequestClose={closeMenu}
       statusBarTranslucent
     >
+      {/*
+        Eigener, verschachtelter SafeAreaProvider: Modal rendert seinen Inhalt
+        auf einer eigenen nativen Oberfläche, die vom äußeren Provider (siehe
+        app/_layout.tsx) nicht automatisch neu vermessen wird — ohne das hier
+        bleiben die Insets teils auf einem veralteten Stand vom letzten
+        Screen-Layout hängen (Header rutscht unter Notch/Dynamic Island).
+      */}
+      <SafeAreaProvider>
       <View style={styles.root}>
         {/* Backdrop */}
         <Animated.View style={[styles.backdrop, { opacity: fadeAnim }]}>
@@ -109,13 +119,13 @@ export function MenuDrawer() {
                     <Text style={styles.drawerTitle}>{activeMember.name}</Text>
                     <Text style={styles.drawerSub}>
                       {activeMember.spitzname ? `„${activeMember.spitzname}" · ` : ""}
-                      {activeMember.rolle}
+                      {activeMember.rollen.join(", ")}
                     </Text>
                   </View>
                 </View>
               ) : (
                 <View>
-                  <Text style={styles.drawerTitle}>🍺 Die Hellen</Text>
+                  <Text style={styles.drawerTitle}>🍺 {stammtischName ?? "Mein Stammtisch"}</Text>
                   <Text style={styles.drawerSub}>Stammtisch-App</Text>
                 </View>
               )}
@@ -172,6 +182,7 @@ export function MenuDrawer() {
           </SafeAreaView>
         </Animated.View>
       </View>
+      </SafeAreaProvider>
     </Modal>
   );
 }

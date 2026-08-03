@@ -10,18 +10,21 @@ import {
   ActivityIndicator,
   Platform,
   KeyboardAvoidingView,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import { showAlert } from "../../utils/alert";
 import { StammtischVerordnung } from "../../types";
-import { loadVerordnung, saveVerordnung } from "../../utils/storage";
+import { loadVerordnung, saveVerordnung, uploadStammtischLogo } from "../../utils/storage";
 import { seedTestData, clearAllData } from "../../utils/seed";
 import { COLORS, SHADOWS } from "../../constants/design";
 import { HamburgerButton } from "../../components/HamburgerButton";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import InlineDateTimePicker from "../../components/InlineDateTimePicker";
+import { useStammtisch } from "../../contexts/StammtischContext";
 
 /** Parst "YYYY" oder "YYYY-MM" (legacy: nur Jahr -> Januar). */
 function parseGruendung(value?: string): Date {
@@ -37,12 +40,43 @@ function formatGruendungMonat(value?: string): string {
 }
 
 export default function EinstellungenScreen() {
-  const [verordnung, setVerordnung] = useState<StammtischVerordnung>({ name: "Die Hellen", regeln: [] });
+  const [verordnung, setVerordnung] = useState<StammtischVerordnung>({ name: "Mein Stammtisch", regeln: [] });
+  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [neueRegel, setNeueRegel] = useState("");
   const [seeding, setSeeding] = useState(false);
   const [showGruendungPicker, setShowGruendungPicker] = useState(false);
   const [loading, setLoading] = useState(true);
+  const { stammtischId } = useStammtisch();
+
+  async function pickLogo() {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      showAlert("Kein Zugriff", "Bitte erlaube den Zugriff auf die Fotobibliothek in den Einstellungen.");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: "images",
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (result.canceled) return;
+    if (!stammtischId) return;
+    setUploadingLogo(true);
+    try {
+      const url = await uploadStammtischLogo(stammtischId, result.assets[0].uri);
+      update({ logoUrl: url });
+    } catch {
+      showAlert("Fehler", "Logo konnte nicht hochgeladen werden.");
+    } finally {
+      setUploadingLogo(false);
+    }
+  }
+
+  function removeLogo() {
+    update({ logoUrl: undefined });
+  }
 
   async function handleSeed() {
     showAlert(
@@ -137,6 +171,33 @@ export default function EinstellungenScreen() {
 
         {/* ── Stammtischverordnung ── */}
         <Text style={styles.sectionTitle}>📜 Stammtischverordnung</Text>
+
+        <View style={styles.card}>
+          <Text style={styles.fieldLabel}>Stammtisch-Logo</Text>
+          <View style={styles.logoRow}>
+            <View style={styles.logoPreview}>
+              {verordnung.logoUrl ? (
+                <Image source={{ uri: verordnung.logoUrl }} style={styles.logoImg} resizeMode="contain" />
+              ) : (
+                <Ionicons name="image-outline" size={26} color={COLORS.textLight} />
+              )}
+            </View>
+            <View style={styles.logoActions}>
+              <TouchableOpacity style={styles.logoBtn} onPress={pickLogo} disabled={uploadingLogo}>
+                {uploadingLogo ? (
+                  <ActivityIndicator size="small" color={COLORS.blue} />
+                ) : (
+                  <Text style={styles.logoBtnText}>{verordnung.logoUrl ? "Logo ändern" : "Logo hochladen"}</Text>
+                )}
+              </TouchableOpacity>
+              {verordnung.logoUrl && (
+                <TouchableOpacity onPress={removeLogo}>
+                  <Text style={styles.logoRemoveText}>Entfernen</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        </View>
 
         <View style={styles.card}>
           <Text style={styles.fieldLabel}>Name des Stammtischs</Text>
@@ -335,6 +396,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12, paddingVertical: 10,
   },
   dateBtnText: { fontSize: 14, color: COLORS.textDark, fontWeight: "600" },
+
+  logoRow: { flexDirection: "row", alignItems: "center", gap: 14 },
+  logoPreview: {
+    width: 56, height: 56, borderRadius: 14, backgroundColor: COLORS.background,
+    alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: COLORS.border, overflow: "hidden",
+  },
+  logoImg: { width: 56, height: 56 },
+  logoActions: { gap: 6 },
+  logoBtn: {
+    backgroundColor: COLORS.background, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border,
+    paddingHorizontal: 14, paddingVertical: 8, alignSelf: "flex-start", minWidth: 120, alignItems: "center",
+  },
+  logoBtnText: { fontSize: 13, fontWeight: "700", color: COLORS.blue },
+  logoRemoveText: { fontSize: 12, color: COLORS.danger, fontWeight: "600" },
 
   regelRow: {
     flexDirection: "row", alignItems: "flex-start", gap: 8,

@@ -29,7 +29,7 @@ export default function NewMemberScreen() {
   const { activeMemberId, setActiveSession } = useSession();
   const [name, setName] = useState("");
   const [spitzname, setSpitzname] = useState("");
-  const [rolle, setRolle] = useState<MemberProfile["rolle"]>("Mitglied");
+  const [rollen, setRollen] = useState<MemberProfile["rollen"]>(["Mitglied"]);
   const [lieblingsgetraenk, setLieblingsgetraenk] = useState("");
   const [beruf, setBeruf] = useState("");
   const [mitgliedSeit, setMitgliedSeit] = useState(new Date());
@@ -76,7 +76,7 @@ export default function NewMemberScreen() {
       spitzname: spitzname.trim() || undefined,
       mitgliedSeit: mitgliedSeit.toISOString(),
       geburtsdatum: geburtsdatum ? toLocalIsoDate(geburtsdatum) : undefined,
-      rolle,
+      rollen,
       lieblingsgetraenk: lieblingsgetraenk.trim() || undefined,
       beruf: beruf.trim() || undefined,
       avatarColor,
@@ -169,17 +169,24 @@ export default function NewMemberScreen() {
 
         {/* Rolle */}
         <View style={styles.card}>
-          <Text style={styles.fieldLabel}>Rolle am Stammtisch</Text>
+          <Text style={styles.fieldLabel}>Rolle(n) am Stammtisch</Text>
           <View style={styles.rollenGrid}>
-            {ROLLEN.map((r) => (
-              <TouchableOpacity
-                key={r}
-                style={[styles.rolleChip, rolle === r && { backgroundColor: COLORS.blue, borderColor: COLORS.blue }]}
-                onPress={() => setRolle(r)}
-              >
-                <Text style={[styles.rolleChipText, rolle === r && { color: "#FFFFFF" }]}>{r}</Text>
-              </TouchableOpacity>
-            ))}
+            {ROLLEN.map((r) => {
+              const selected = rollen.includes(r);
+              return (
+                <TouchableOpacity
+                  key={r}
+                  style={[styles.rolleChip, selected && { backgroundColor: COLORS.blue, borderColor: COLORS.blue }]}
+                  onPress={() => setRollen((prev) =>
+                    prev.includes(r)
+                      ? (prev.length > 1 ? prev.filter((x) => x !== r) : prev)
+                      : [...prev, r]
+                  )}
+                >
+                  <Text style={[styles.rolleChipText, selected && { color: "#FFFFFF" }]}>{r}</Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
 

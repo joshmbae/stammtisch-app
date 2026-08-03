@@ -95,7 +95,7 @@ export default function MitgliederScreen() {
         {members.length === 0 && (
           <View style={styles.empty}>
             <Text style={styles.emptyIcon}>🧔</Text>
-            <Text style={styles.emptyText}>Noch keine Mitglieder.{"\n"}Die Hellen warten auf euch!</Text>
+            <Text style={styles.emptyText}>Noch keine Mitglieder.{"\n"}Euer Stammtisch wartet auf euch!</Text>
             <TouchableOpacity style={styles.emptyAddBtn} onPress={() => router.push("/member/new")}>
               <Text style={styles.emptyAddBtnText}>Erstes Mitglied anlegen</Text>
             </TouchableOpacity>
@@ -118,7 +118,7 @@ export default function MitgliederScreen() {
               </View>
               <View style={styles.memberInfo}>
                 <Text style={styles.memberName}>{m.name}{m.spitzname ? ` „${m.spitzname}"` : ""}</Text>
-                <Text style={styles.memberSub}>{m.rolle}{m.lieblingsgetraenk ? ` · ${m.lieblingsgetraenk}` : ""}</Text>
+                <Text style={styles.memberSub}>{m.rollen.join(", ")}{m.lieblingsgetraenk ? ` · ${m.lieblingsgetraenk}` : ""}</Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color={COLORS.textLight} />
             </TouchableOpacity>

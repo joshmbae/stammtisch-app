@@ -25,6 +25,7 @@ import {
   deleteKassenEintrag,
   loadMembers,
   logActivity,
+  loadActivityFeed,
 } from "../utils/storage";
 import { COLORS, SHADOWS } from "../constants/design";
 import { HamburgerButton } from "../components/HamburgerButton";
@@ -66,16 +67,21 @@ const TYP_META: Record<KassenEintragTyp, { label: string; emoji: string; color: 
 
 function EintragRow({
   eintrag,
-  members,
+  actorName,
   onDelete,
 }: {
   eintrag: KassenEintrag;
-  members: MemberProfile[];
+  actorName?: string;
   onDelete: () => void;
 }) {
   const meta = TYP_META[eintrag.typ];
-  const zahler = eintrag.bezahltVon ? members.find((m) => m.id === eintrag.bezahltVon) : null;
   const isPositive = eintrag.typ === "einnahme";
+  const headline = eintrag.beschreibung?.trim() || meta.label;
+  const subParts = [
+    formatDatum(eintrag.datum),
+    eintrag.beschreibung ? meta.label : null,
+    actorName ? `von ${actorName}` : null,
+  ].filter(Boolean);
 
   function renderRight() {
     return (
@@ -92,14 +98,8 @@ function EintragRow({
           <Text style={{ fontSize: 18 }}>{meta.emoji}</Text>
         </View>
         <View style={styles.eintragMeta}>
-          <Text style={styles.eintragTypLabel}>{meta.label}</Text>
-          {eintrag.beschreibung ? (
-            <Text style={styles.eintragDesc} numberOfLines={1}>{eintrag.beschreibung}</Text>
-          ) : null}
-          {zahler ? (
-            <Text style={styles.eintragZahler}>Gezahlt von: {zahler.name}</Text>
-          ) : null}
-          <Text style={styles.eintragDatum}>{formatDatum(eintrag.datum)}</Text>
+          <Text style={styles.eintragHeadline} numberOfLines={1}>{headline}</Text>
+          <Text style={styles.eintragSub}>{subParts.join(" · ")}</Text>
         </View>
         <Text style={[styles.eintragBetrag, { color: isPositive ? COLORS.success : COLORS.danger }]}>
           {isPositive ? "+" : "−"}{formatEuro(eintrag.betrag)} €
@@ -117,6 +117,7 @@ export default function KasseScreen() {
   const { activeMemberId } = useSession();
   const [eintraege, setEintraege] = useState<KassenEintrag[]>([]);
   const [members, setMembers] = useState<MemberProfile[]>([]);
+  const [actorByRefId, setActorByRefId] = useState<Map<string, string>>(new Map());
   const [activeForm, setActiveForm] = useState<FormTyp>(null);
   const [showBeglichen, setShowBeglichen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -130,9 +131,19 @@ export default function KasseScreen() {
   useFocusEffect(
     useCallback(() => {
       async function load() {
-        const [k, ms] = await Promise.all([loadKasse(), loadMembers()]);
+        const [k, ms, activity] = await Promise.all([loadKasse(), loadMembers(), loadActivityFeed(300)]);
         setEintraege(k);
         setMembers(ms);
+        const map = new Map<string, string>();
+        for (const a of activity) {
+          if (
+            (a.actionType === "kasse_einnahme_created" || a.actionType === "kasse_ausgabe_created") &&
+            a.refId && a.actorMemberId
+          ) {
+            map.set(a.refId, a.actorMemberId);
+          }
+        }
+        setActorByRefId(map);
         setLoading(false);
       }
       load();
@@ -547,14 +558,18 @@ export default function KasseScreen() {
           {kassenEintraege.length > 0 ? (
             <View style={styles.section}>
               <Text style={[styles.sectionTitle, { marginBottom: 10 }]}>📋 Verlauf</Text>
-              {kassenEintraege.map((e) => (
-                <EintragRow
-                  key={e.id}
-                  eintrag={e}
-                  members={members}
-                  onDelete={() => handleDelete(e.id)}
-                />
-              ))}
+              {kassenEintraege.map((e) => {
+                const actorId = actorByRefId.get(e.id);
+                const actor = actorId ? members.find((m) => m.id === actorId) : undefined;
+                return (
+                  <EintragRow
+                    key={e.id}
+                    eintrag={e}
+                    actorName={actor?.spitzname ?? actor?.name.split(" ")[0]}
+                    onDelete={() => handleDelete(e.id)}
+                  />
+                );
+              })}
             </View>
           ) : abendkostenEintraege.length === 0 ? (
             <View style={styles.emptyState}>
@@ -668,6 +683,8 @@ const styles = StyleSheet.create({
   eintragDesc: { fontSize: 12, color: COLORS.textMuted, marginTop: 1 },
   eintragZahler: { fontSize: 12, color: COLORS.blue, marginTop: 1, fontWeight: "600" },
   eintragDatum: { fontSize: 11, color: COLORS.textLight, marginTop: 2 },
+  eintragHeadline: { fontSize: 14, fontWeight: "700", color: COLORS.textDark },
+  eintragSub: { fontSize: 11, color: COLORS.textMuted, marginTop: 2 },
   eintragBetrag: { fontSize: 16, fontWeight: "800", minWidth: 80, textAlign: "right" },
 
   abendkostenCard: {

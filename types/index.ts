@@ -1,10 +1,12 @@
+export type Rolle = "Stammtischkönig" | "Schriftführer" | "Kassenwart" | "Bierwart" | "Eventmanager" | "Vize-Eventmanager" | "Reserviermeister" | "Vize-Reserviermeister" | "Kameramann" | "Foto-Beauftragter" | "Reiseminister" | "Mitglied" | "Gast";
+
 export interface MemberProfile {
   id: string;
   name: string;
   spitzname?: string;
   mitgliedSeit: string;
   geburtsdatum?: string;                     // ISO date "1990-03-15"
-  rolle: "Stammtischkönig" | "Schriftführer" | "Kassenwart" | "Bierwart" | "Eventmanager" | "Vize-Eventmanager" | "Reserviermeister" | "Vize-Reserviermeister" | "Kameramann" | "Foto-Beauftragter" | "Reiseminister" | "Mitglied" | "Gast";
+  rollen: Rolle[];                           // mind. 1 Rolle
   lieblingsgetraenk?: string;
   beruf?: string;
   avatarColor: string;
@@ -92,6 +94,7 @@ export type StrafKategorie =
   | "spaet_30min"
   | "maennlicher_gast"
   | "schock_niederlage"
+  | "wette_verloren"
   | "sonstiges";
 
 export const STRAF_KATEGORIEN: {
@@ -108,6 +111,7 @@ export const STRAF_KATEGORIEN: {
   { key: "spaet_30min",           label: "Zu spät >30 Min.",      betrag: 10,  emoji: "⏱️", beschreibung: "Unentschuldigt" },
   { key: "maennlicher_gast",      label: "Männl. Gast",           betrag: 20,  emoji: "👨", beschreibung: "Pro Gast – weibliche Gäste nur am Valentinsstammtisch" },
   { key: "schock_niederlage",     label: "Schock-Niederlage",     betrag: 5,   emoji: "🎲", beschreibung: "Wird automatisch bei jeder Schock-Niederlage eingetragen" },
+  { key: "wette_verloren",        label: "Verlorene Wette",        betrag: 0,   emoji: "🤝", beschreibung: "Wird automatisch bei einer verlorenen Wette eingetragen, Betrag = Wetteinsatz" },
   { key: "sonstiges",             label: "Sonstiges",             betrag: 0,   emoji: "💰" },
 ];
 
@@ -174,6 +178,7 @@ export interface ActivityLogEntry {
 
 export interface StammtischVerordnung {
   name: string;
+  logoUrl?: string;
   treffpunkt?: string;
   stammtischTag?: string;
   stammtischzeit?: string;

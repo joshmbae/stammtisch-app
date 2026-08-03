@@ -9,8 +9,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
-import { MemberProfile } from "../types";
-import { loadMembers } from "../utils/storage";
+import { MemberProfile, StammtischVerordnung } from "../types";
+import { loadMembers, loadVerordnung } from "../utils/storage";
 import { useSession } from "../contexts/SessionContext";
 import { useStammtisch } from "../contexts/StammtischContext";
 import { COLORS, SHADOWS } from "../constants/design";
@@ -22,6 +22,7 @@ import { verifyPin } from "../utils/pin";
 
 export default function MitgliedWaehlenScreen() {
   const [members, setMembers] = useState<MemberProfile[]>([]);
+  const [verordnung, setVerordnung] = useState<StammtischVerordnung | null>(null);
   const [loading, setLoading] = useState(true);
   const [pendingMember, setPendingMember] = useState<MemberProfile | null>(null);
   const [pinError, setPinError] = useState<string | undefined>(undefined);
@@ -35,7 +36,11 @@ export default function MitgliedWaehlenScreen() {
   }
 
   useEffect(() => {
-    loadMembers().then((ms) => { setMembers(ms); setLoading(false); });
+    Promise.all([loadMembers(), loadVerordnung()]).then(([ms, v]) => {
+      setMembers(ms);
+      setVerordnung(v);
+      setLoading(false);
+    });
   }, []);
 
   async function handleSelect(member: MemberProfile) {
@@ -67,7 +72,7 @@ export default function MitgliedWaehlenScreen() {
 
         {/* Header */}
         <View style={styles.header}>
-          <StammtischLogo size={52} />
+          <StammtischLogo size={52} uri={verordnung?.logoUrl} />
           <Text style={styles.title}>Wer bist du?</Text>
           <Text style={styles.subtitle}>
             {stammtischName ? `Stammtisch „${stammtischName}" · Wähl dein Profil` : "Wähl dein Profil um loszulegen"}
@@ -96,7 +101,7 @@ export default function MitgliedWaehlenScreen() {
                   <Text style={styles.cardSpitz} numberOfLines={1}>„{m.spitzname}"</Text>
                 ) : null}
                 <View style={[styles.rolleBadge, { backgroundColor: m.avatarColor + "22" }]}>
-                  <Text style={[styles.rolleText, { color: m.avatarColor }]}>{m.rolle}</Text>
+                  <Text style={[styles.rolleText, { color: m.avatarColor }]} numberOfLines={1}>{m.rollen.join(", ")}</Text>
                 </View>
               </TouchableOpacity>
             ))}

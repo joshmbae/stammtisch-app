@@ -82,7 +82,7 @@ function rowToMember(row: any): MemberProfile {
     spitzname: row.spitzname ?? undefined,
     mitgliedSeit: row.mitglied_seit,
     geburtsdatum: row.geburtsdatum ?? undefined,
-    rolle: row.rolle,
+    rollen: row.rollen ?? (row.rolle ? [row.rolle] : ["Mitglied"]),
     lieblingsgetraenk: row.lieblingsgetraenk ?? undefined,
     beruf: row.beruf ?? undefined,
     avatarColor: row.avatar_color,
@@ -101,7 +101,8 @@ function memberToRow(m: MemberProfile, stammtischId: string) {
     spitzname: m.spitzname ?? null,
     mitglied_seit: m.mitgliedSeit,
     geburtsdatum: m.geburtsdatum ?? null,
-    rolle: m.rolle,
+    rolle: m.rollen[0],
+    rollen: m.rollen,
     lieblingsgetraenk: m.lieblingsgetraenk ?? null,
     beruf: m.beruf ?? null,
     avatar_color: m.avatarColor,
@@ -160,11 +161,27 @@ export async function uploadAvatar(memberId: string, localUri: string): Promise<
   return data.publicUrl;
 }
 
+/** Lädt ein lokales Bild als Stammtisch-Logo hoch und gibt die öffentliche URL zurück. */
+export async function uploadStammtischLogo(stammtischId: string, localUri: string): Promise<string> {
+  const response = await fetch(localUri);
+  const arrayBuffer = await response.arrayBuffer();
+  const ext = localUri.split(".").pop()?.split("?")[0] || "jpg";
+  const path = `stammtisch-logo_${stammtischId}_${Date.now()}.${ext}`;
+  const { error } = await supabase.storage.from("avatars").upload(path, arrayBuffer, {
+    contentType: `image/${ext === "jpg" ? "jpeg" : ext}`,
+    upsert: true,
+  });
+  if (error) throw error;
+  const { data } = supabase.storage.from("avatars").getPublicUrl(path);
+  return data.publicUrl;
+}
+
 // ─── Stammtischverordnung ─────────────────────────────────────────────────────
 
 function rowToVerordnung(row: any): StammtischVerordnung {
   return {
     name: row.name,
+    logoUrl: row.logo_url ?? undefined,
     treffpunkt: row.treffpunkt ?? undefined,
     stammtischTag: row.stammtisch_tag ?? undefined,
     stammtischzeit: row.stammtischzeit ?? undefined,
@@ -190,6 +207,7 @@ export async function saveVerordnung(v: StammtischVerordnung): Promise<void> {
   const { error } = await supabase.from("verordnung").upsert({
     stammtisch_id: stammtischId,
     name: v.name,
+    logo_url: v.logoUrl ?? null,
     treffpunkt: v.treffpunkt ?? null,
     stammtisch_tag: v.stammtischTag ?? null,
     stammtischzeit: v.stammtischzeit ?? null,

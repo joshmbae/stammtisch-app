@@ -1,9 +1,9 @@
 {
   "expo": {
-    "name": "Die Hellen",
+    "name": "DeinStammtisch",
     "slug": "stammtisch-app",
     "scheme": "stammtisch-app",
-    "version": "1.0.1",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -23,7 +23,7 @@
     "android": {
       "package": "com.diehellen.stammtischapp",
       "adaptiveIcon": {
-        "backgroundColor": "#1A4480",
+        "backgroundColor": "#F8E8D0",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },

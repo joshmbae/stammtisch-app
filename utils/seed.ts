@@ -106,19 +106,19 @@ export async function seedTestData(): Promise<void> {
   const memberDefs: {
     key: string;
     name: string;
-    rolle: MemberProfile["rolle"];
+    rollen: MemberProfile["rollen"];
   }[] = [
-    { key: "max",     name: "Max",     rolle: "Stammtischkönig" },
-    { key: "tobi",    name: "Tobi",    rolle: "Kassenwart" },
-    { key: "bene",    name: "Bene",    rolle: "Foto-Beauftragter" },
-    { key: "basti",   name: "Basti",   rolle: "Reiseminister" },
-    { key: "simon",   name: "Simon",   rolle: "Reserviermeister" },
-    { key: "matthis", name: "Matthis", rolle: "Eventmanager" },
-    { key: "jens",    name: "Jens",    rolle: "Vize-Eventmanager" },
-    { key: "josh",    name: "Josh",    rolle: "Vize-Reserviermeister" },
-    { key: "tom",     name: "Tom",     rolle: "Mitglied" },
-    { key: "jan",     name: "Jan",     rolle: "Mitglied" },
-    { key: "niklas",  name: "Niklas",  rolle: "Mitglied" },
+    { key: "max",     name: "Max",     rollen: ["Stammtischkönig"] },
+    { key: "tobi",    name: "Tobi",    rollen: ["Kassenwart"] },
+    { key: "bene",    name: "Bene",    rollen: ["Foto-Beauftragter"] },
+    { key: "basti",   name: "Basti",   rollen: ["Reiseminister"] },
+    { key: "simon",   name: "Simon",   rollen: ["Reserviermeister"] },
+    { key: "matthis", name: "Matthis", rollen: ["Eventmanager"] },
+    { key: "jens",    name: "Jens",    rollen: ["Vize-Eventmanager"] },
+    { key: "josh",    name: "Josh",    rollen: ["Vize-Reserviermeister"] },
+    { key: "tom",     name: "Tom",     rollen: ["Mitglied"] },
+    { key: "jan",     name: "Jan",     rollen: ["Mitglied"] },
+    { key: "niklas",  name: "Niklas",  rollen: ["Mitglied"] },
   ];
 
   const GRUENDUNG = "2024-10-01";
@@ -126,7 +126,7 @@ export async function seedTestData(): Promise<void> {
   const members: MemberProfile[] = memberDefs.map((def, i) => ({
     id: nextId(),
     name: def.name,
-    rolle: def.rolle,
+    rollen: def.rollen,
     avatarColor: AVATAR_COLORS[i % AVATAR_COLORS.length],
     mitgliedSeit: GRUENDUNG,
     createdAt: new Date(GRUENDUNG + "T10:00:00").toISOString(),
@@ -550,7 +550,8 @@ export async function seedTestData(): Promise<void> {
       name: m.name,
       spitzname: m.spitzname ?? null,
       mitglied_seit: m.mitgliedSeit,
-      rolle: m.rolle,
+      rolle: m.rollen[0],
+      rollen: m.rollen,
       lieblingsgetraenk: m.lieblingsgetraenk ?? null,
       beruf: m.beruf ?? null,
       avatar_color: m.avatarColor,

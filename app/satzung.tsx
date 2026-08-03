@@ -18,7 +18,7 @@ import { COLORS, SHADOWS } from "../constants/design";
 import { gruendungsDauer, formatDauer, formatGruendungMonat } from "../utils/format";
 
 export default function SatzungScreen() {
-  const [verordnung, setVerordnung] = useState<StammtischVerordnung>({ name: "Die Hellen", regeln: [] });
+  const [verordnung, setVerordnung] = useState<StammtischVerordnung>({ name: "Mein Stammtisch", regeln: [] });
   const [loading, setLoading] = useState(true);
 
   useFocusEffect(

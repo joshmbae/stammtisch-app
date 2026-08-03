@@ -11,12 +11,12 @@ import {
   Platform,
   KeyboardAvoidingView,
 } from "react-native";
-import DateTimePicker from "@react-native-community/datetimepicker";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import Swipeable from "react-native-gesture-handler/Swipeable";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import InlineDateTimePicker from "../../components/InlineDateTimePicker";
 import { showAlert } from "../../utils/alert";
 import {
   MemberProfile,
@@ -272,7 +272,7 @@ function MemberRow({
             styles.rsvpPillText,
             { color: rsvpStatus === "ja" ? COLORS.success : rsvpStatus === "nein" ? COLORS.danger : COLORS.textLight },
           ]}>
-            {rsvpStatus === "ja" ? "Zusagt" : rsvpStatus === "nein" ? "Absagt" : "Offen"}
+            {rsvpStatus === "ja" ? "Zugesagt" : rsvpStatus === "nein" ? "Abgesagt" : "Offen"}
           </Text>
         </View>
 
@@ -341,18 +341,22 @@ function MemberRow({
 function WetteCard({
   wette,
   gegner,
+  bettor,
   onGewonnen,
   onVerloren,
   onDelete,
 }: {
   wette: Wette;
   gegner: MemberProfile | undefined;
+  bettor?: MemberProfile;
   onGewonnen: () => void;
   onVerloren: () => void;
   onDelete: () => void;
 }) {
   const isOffen = wette.gewonnen === undefined;
   const gewonnen = wette.gewonnen === true;
+  const gegnerName = `${gegner?.name ?? "Unbekannt"}${gegner?.spitzname ? ` „${gegner.spitzname}"` : ""}`;
+  const bettorName = bettor ? (bettor.spitzname ?? bettor.name.split(" ")[0]) : undefined;
 
   return (
     <View style={[styles.wetteCard, gewonnen && styles.wetteCardGewonnen, !isOffen && !gewonnen && styles.wetteCardVerloren]}>
@@ -362,7 +366,7 @@ function WetteCard({
         </View>
         <View style={styles.wetteInfo}>
           <Text style={styles.wetteTitel}>
-            Auf: {gegner?.name ?? "Unbekannt"}{gegner?.spitzname ? ` „${gegner.spitzname}"` : ""}
+            {bettorName ? `${bettorName} auf ${gegnerName}` : `Auf: ${gegnerName}`}
           </Text>
           <Text style={styles.wetteBetrag}>{formatBetrag(wette.betrag)}</Text>
         </View>
@@ -402,7 +406,7 @@ export default function TerminDetailScreen() {
 
   const [termin, setTermin] = useState<StammtischTermin | null>(null);
   const [members, setMembers] = useState<MemberProfile[]>([]);
-  const [verordnung, setVerordnung] = useState<StammtischVerordnung>({ name: "Die Hellen", regeln: [] });
+  const [verordnung, setVerordnung] = useState<StammtischVerordnung>({ name: "Mein Stammtisch", regeln: [] });
   const [protokoll, setProtokoll] = useState<Protokoll | null>(null);
 
   // Tabs
@@ -636,6 +640,30 @@ export default function TerminDetailScreen() {
         refId: wetteId,
         meta: { gewonnen, betrag: w?.betrag ?? 0 },
       });
+
+      if (gewonnen === false && w) {
+        const gegner = members.find((x) => x.id === w.gegenMemberId);
+        const strafLog = await addStrafLog(memberId, {
+          kategorie: "wette_verloren",
+          betrag: w.betrag,
+          notiz: gegner ? `gegen ${gegner.name}` : undefined,
+          terminId: termin?.id,
+          loggedAt: new Date().toISOString(),
+          beglichen: false,
+        });
+        setStrafMap((prev) => ({
+          ...prev,
+          [memberId]: [strafLog, ...(prev[memberId] ?? [])],
+        }));
+        await logActivity({
+          actorMemberId: activeMemberId ?? undefined,
+          subjectMemberId: memberId,
+          actionType: "straf_log_created",
+          terminId: termin?.id,
+          refId: strafLog.id,
+          meta: { kategorie: strafLog.kategorie, betrag: strafLog.betrag, notiz: strafLog.notiz },
+        });
+      }
     }
   }
 
@@ -840,6 +868,9 @@ export default function TerminDetailScreen() {
   const offenIds = members
     .map((m) => m.id)
     .filter((mid) => !anwesenheit.includes(mid) && !absagenIds.includes(mid));
+  const membersForAnwesenheit = activeMemberId
+    ? [...members].sort((a, b) => (a.id === activeMemberId ? -1 : b.id === activeMemberId ? 1 : 0))
+    : members;
 
   const totalVerspätung = Object.values(verspätungMap).flat().reduce((s, l) => s + l.minutenVerspätet, 0);
   const allSchock = Object.values(schockMap).flat();
@@ -851,11 +882,14 @@ export default function TerminDetailScreen() {
   const selNiederlagen = selSchock.filter((l) => l.typ === "niederlage").length;
   const selSchockAus = selSchock.filter((l) => l.typ === "schock_aus").length;
   const offeneWetten = selWetten.filter((w) => w.gewonnen === undefined);
-  const abgeschlosseneWetten = selWetten.filter((w) => w.gewonnen !== undefined);
   const otherMembers = members.filter((m) => m.id !== selectedSchockId);
 
   const schockFeed = Object.entries(schockMap)
     .flatMap(([memberId, logs]) => logs.map((l) => ({ ...l, memberId })))
+    .sort((a, b) => new Date(b.loggedAt).getTime() - new Date(a.loggedAt).getTime());
+
+  const wettenFeed = Object.entries(wettenMap)
+    .flatMap(([memberId, wetten]) => wetten.map((w) => ({ ...w, memberId })))
     .sort((a, b) => new Date(b.loggedAt).getTime() - new Date(a.loggedAt).getTime());
 
   const strafSelMember = members.find((m) => m.id === strafMemberId);
@@ -884,7 +918,11 @@ export default function TerminDetailScreen() {
           <View style={styles.headerCard}>
             <View style={styles.headerTop}>
               <View style={[styles.typIcon, { backgroundColor: isStammtisch ? COLORS.blue + "18" : "#6B3A8A18" }]}>
-                <Text style={{ fontSize: 28 }}>{isStammtisch ? "🍺" : "🎉"}</Text>
+                {isStammtisch && verordnung.logoUrl ? (
+                  <Image source={{ uri: verordnung.logoUrl }} style={styles.typLogo} resizeMode="contain" />
+                ) : (
+                  <Text style={{ fontSize: 28 }}>{isStammtisch ? "🍺" : "🎉"}</Text>
+                )}
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.terminTitel}>
@@ -943,11 +981,11 @@ export default function TerminDetailScreen() {
                 </Text>
               </TouchableOpacity>
               {showEditDatePicker && (
-                <DateTimePicker
+                <InlineDateTimePicker
                   value={editDatum}
                   mode="date"
-                  display={Platform.OS === "ios" ? "spinner" : "default"}
-                  onChange={(_, d) => { setShowEditDatePicker(false); if (d) setEditDatum(d); }}
+                  onChange={setEditDatum}
+                  onClose={() => setShowEditDatePicker(false)}
                 />
               )}
 
@@ -972,21 +1010,21 @@ export default function TerminDetailScreen() {
                 </View>
               </View>
               {showEditStartZeit && (
-                <DateTimePicker
+                <InlineDateTimePicker
                   value={editStartZeit ?? parseTimeString("19:30")}
                   mode="time"
-                  display={Platform.OS === "ios" ? "spinner" : "default"}
                   is24Hour
-                  onChange={(_, d) => { setShowEditStartZeit(false); if (d) setEditStartZeit(d); }}
+                  onChange={setEditStartZeit}
+                  onClose={() => setShowEditStartZeit(false)}
                 />
               )}
               {showEditEndZeit && (
-                <DateTimePicker
+                <InlineDateTimePicker
                   value={editEndZeit ?? parseTimeString("23:00")}
                   mode="time"
-                  display={Platform.OS === "ios" ? "spinner" : "default"}
                   is24Hour
-                  onChange={(_, d) => { setShowEditEndZeit(false); if (d) setEditEndZeit(d); }}
+                  onChange={setEditEndZeit}
+                  onClose={() => setShowEditEndZeit(false)}
                 />
               )}
 
@@ -1073,8 +1111,8 @@ export default function TerminDetailScreen() {
                 )}
               </View>
 
-              {/* Member rows with integrated RSVP */}
-              {members.map((m) => {
+              {/* Member rows with integrated RSVP — eigenes Profil immer zuoberst */}
+              {membersForAnwesenheit.map((m) => {
                 const mRsvp = anwesenheit.includes(m.id) ? "ja" : absagenIds.includes(m.id) ? "nein" : null;
                 return (
                   <MemberRow
@@ -1227,8 +1265,8 @@ export default function TerminDetailScreen() {
                         <View style={[styles.strafFeedRow, log.beglichen && styles.strafFeedRowBeglichen]}>
                           <Text style={styles.strafFeedEmoji}>{kat?.emoji ?? "💰"}</Text>
                           <View style={{ flex: 1 }}>
-                            <Text style={styles.strafFeedLabel}>{kat?.label ?? log.kategorie}</Text>
-                            <Text style={styles.strafFeedMember}>{m?.name ?? "Unbekannt"}{log.notiz ? ` · ${log.notiz}` : ""}</Text>
+                            <Text style={styles.strafFeedMember}>{m?.name ?? "Unbekannt"}</Text>
+                            <Text style={styles.strafFeedLabel}>{kat?.label ?? log.kategorie}{log.notiz ? ` · ${log.notiz}` : ""}</Text>
                           </View>
                           <View style={styles.strafFeedRight}>
                             <Text style={[styles.strafFeedBetrag, log.beglichen && { textDecorationLine: "line-through", color: COLORS.textLight }]}>
@@ -1311,9 +1349,9 @@ export default function TerminDetailScreen() {
                       <Text style={[styles.schockStatValue, { color: COLORS.danger }]}>{selSchockAus}</Text>
                       <Text style={styles.schockStatLabel}>Schock-Aus</Text>
                     </View>
-                    <View style={[styles.schockStatBox, { borderColor: "#6B3A8A44" }]}>
+                    <View style={[styles.schockStatBox, { borderColor: COLORS.gold + "44" }]}>
                       <Text style={styles.schockStatEmoji}>🤝</Text>
-                      <Text style={[styles.schockStatValue, { color: "#6B3A8A" }]}>{offeneWetten.length}</Text>
+                      <Text style={[styles.schockStatValue, { color: COLORS.gold }]}>{offeneWetten.length}</Text>
                       <Text style={styles.schockStatLabel}>Off. Wetten</Text>
                     </View>
                   </View>
@@ -1337,7 +1375,7 @@ export default function TerminDetailScreen() {
                     style={[styles.wetteToggleBtn, showWetteForm && { backgroundColor: COLORS.blue }]}
                     onPress={() => setShowWetteForm((v) => !v)}
                   >
-                    <Ionicons name={showWetteForm ? "close" : "add"} size={16} color={showWetteForm ? "#FFFFFF" : "#6B3A8A"} />
+                    <Ionicons name={showWetteForm ? "close" : "add"} size={16} color={showWetteForm ? "#FFFFFF" : COLORS.gold} />
                     <Text style={[styles.wetteToggleText, showWetteForm && { color: "#FFFFFF" }]}>
                       {showWetteForm ? "Abbrechen" : "Wette einloggen"}
                     </Text>
@@ -1380,39 +1418,23 @@ export default function TerminDetailScreen() {
                     </View>
                   )}
 
-                  {offeneWetten.length > 0 && (
-                    <>
-                      <Text style={styles.subSectionLabel}>🤝 Offene Wetten</Text>
-                      {offeneWetten.map((w) => (
-                        <WetteCard
-                          key={w.id}
-                          wette={w}
-                          gegner={members.find((m) => m.id === w.gegenMemberId)}
-                          onGewonnen={() => handleWetteErgebnis(selectedSchockId!, w.id, true)}
-                          onVerloren={() => handleWetteErgebnis(selectedSchockId!, w.id, false)}
-                          onDelete={() => handleDeleteWette(selectedSchockId!, w.id)}
-                        />
-                      ))}
-                    </>
-                  )}
+                </>
+              )}
 
-                  {abgeschlosseneWetten.length > 0 && (
-                    <>
-                      <Text style={styles.subSectionLabel}>📋 Abgeschlossene Wetten</Text>
-                      {abgeschlosseneWetten
-                        .sort((a, b) => new Date(b.loggedAt).getTime() - new Date(a.loggedAt).getTime())
-                        .map((w) => (
-                          <WetteCard
-                            key={w.id}
-                            wette={w}
-                            gegner={members.find((m) => m.id === w.gegenMemberId)}
-                            onGewonnen={() => handleWetteErgebnis(selectedSchockId!, w.id, undefined)}
-                            onVerloren={() => handleWetteErgebnis(selectedSchockId!, w.id, undefined)}
-                            onDelete={() => handleDeleteWette(selectedSchockId!, w.id)}
-                          />
-                        ))}
-                    </>
-                  )}
+              {wettenFeed.length > 0 && (
+                <>
+                  <Text style={styles.subSectionLabel}>🤝 Wetten-Verlauf dieses Abends</Text>
+                  {wettenFeed.map((w) => (
+                    <WetteCard
+                      key={w.id}
+                      wette={w}
+                      gegner={members.find((m) => m.id === w.gegenMemberId)}
+                      bettor={members.find((m) => m.id === w.memberId)}
+                      onGewonnen={() => handleWetteErgebnis(w.memberId, w.id, w.gewonnen === undefined ? true : undefined)}
+                      onVerloren={() => handleWetteErgebnis(w.memberId, w.id, w.gewonnen === undefined ? false : undefined)}
+                      onDelete={() => handleDeleteWette(w.memberId, w.id)}
+                    />
+                  ))}
                 </>
               )}
 
@@ -1436,8 +1458,8 @@ export default function TerminDetailScreen() {
                         <View style={[styles.schockFeedRow, log.typ === "schock_aus" && styles.schockFeedRowAus]}>
                           <Text style={styles.schockFeedEmoji}>{log.typ === "schock_aus" ? "🎲" : "💀"}</Text>
                           <View style={{ flex: 1 }}>
-                            <Text style={styles.schockFeedText}>{log.typ === "schock_aus" ? "Schock-Aus" : "Niederlage"}</Text>
                             <Text style={styles.schockFeedMember}>{m?.name ?? "Unbekannt"}</Text>
+                            <Text style={styles.schockFeedText}>{log.typ === "schock_aus" ? "Schock-Aus" : "Niederlage"}</Text>
                           </View>
                           <Text style={styles.schockFeedTime}>{formatTime(log.loggedAt)}</Text>
                         </View>
@@ -1522,7 +1544,8 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: COLORS.border, ...SHADOWS.card,
   },
   headerTop: { flexDirection: "row", alignItems: "flex-start", gap: 14 },
-  typIcon: { width: 52, height: 52, borderRadius: 26, alignItems: "center", justifyContent: "center" },
+  typIcon: { width: 52, height: 52, borderRadius: 26, alignItems: "center", justifyContent: "center", overflow: "hidden" },
+  typLogo: { width: 36, height: 36 },
   terminTitel: { fontSize: 18, fontWeight: "800", color: COLORS.textDark, marginBottom: 3 },
   terminDatum: { fontSize: 13, color: COLORS.blue, fontWeight: "600", marginBottom: 4 },
   terminMeta: { fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
@@ -1685,9 +1708,9 @@ const styles = StyleSheet.create({
   wetteToggleBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
     paddingVertical: 10, borderRadius: 12, marginBottom: 12,
-    backgroundColor: "#F5F0FF", borderWidth: 1.5, borderColor: "#6B3A8A44",
+    backgroundColor: COLORS.goldBg, borderWidth: 1.5, borderColor: COLORS.gold + "44",
   },
-  wetteToggleText: { fontSize: 13, fontWeight: "700", color: "#6B3A8A" },
+  wetteToggleText: { fontSize: 13, fontWeight: "700", color: COLORS.gold },
   wetteForm: {
     backgroundColor: COLORS.card, borderRadius: 16, padding: 16, marginBottom: 12,
     borderWidth: 1, borderColor: COLORS.border, ...SHADOWS.light,
@@ -1714,7 +1737,7 @@ const styles = StyleSheet.create({
   gegnerText: { fontSize: 13, fontWeight: "600", color: COLORS.textDark },
   wetteSubmitBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-    backgroundColor: "#6B3A8A", borderRadius: 12, paddingVertical: 12,
+    backgroundColor: COLORS.gold, borderRadius: 12, paddingVertical: 12,
   },
   wetteSubmitText: { color: "#FFFFFF", fontWeight: "700", fontSize: 14 },
 
@@ -1731,7 +1754,7 @@ const styles = StyleSheet.create({
   },
   wetteInfo: { flex: 1 },
   wetteTitel: { fontSize: 13, fontWeight: "700", color: COLORS.textDark },
-  wetteBetrag: { fontSize: 12, color: "#6B3A8A", fontWeight: "700", marginTop: 2 },
+  wetteBetrag: { fontSize: 12, color: COLORS.gold, fontWeight: "700", marginTop: 2 },
   wetteTime: { fontSize: 11, color: COLORS.textLight },
   wetteActions: { flexDirection: "row", gap: 8, marginTop: 10 },
   wetteGewonnenBtn: {
@@ -1755,8 +1778,8 @@ const styles = StyleSheet.create({
   },
   schockFeedRowAus: { backgroundColor: "#FFF0F0" },
   schockFeedEmoji: { fontSize: 18 },
-  schockFeedText: { fontSize: 13, fontWeight: "700", color: COLORS.textDark },
-  schockFeedMember: { fontSize: 11, color: COLORS.textMuted, marginTop: 1 },
+  schockFeedText: { fontSize: 11, color: COLORS.textMuted, marginTop: 1 },
+  schockFeedMember: { fontSize: 13, fontWeight: "700", color: COLORS.textDark },
   schockFeedTime: { fontSize: 11, color: COLORS.textLight },
 
   deleteSwipeSmall: {
@@ -1817,8 +1840,8 @@ const styles = StyleSheet.create({
   },
   strafFeedRowBeglichen: { borderLeftColor: COLORS.success, backgroundColor: "#F8FDF9" },
   strafFeedEmoji: { fontSize: 18 },
-  strafFeedLabel: { fontSize: 13, fontWeight: "700", color: COLORS.textDark },
-  strafFeedMember: { fontSize: 11, color: COLORS.textMuted, marginTop: 1 },
+  strafFeedLabel: { fontSize: 11, color: COLORS.textMuted, marginTop: 1 },
+  strafFeedMember: { fontSize: 13, fontWeight: "700", color: COLORS.textDark },
   strafFeedRight: { alignItems: "flex-end", gap: 4 },
   strafFeedBetrag: { fontSize: 15, fontWeight: "800", color: COLORS.danger },
   strafBegleichenBtn: { padding: 2 },

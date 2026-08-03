@@ -93,8 +93,10 @@ export default function StammtischWaehlenScreen() {
 
           <View style={styles.header}>
             <StammtischLogo size={52} />
-            <Text style={styles.title}>Willkommen!</Text>
-            <Text style={styles.subtitle}>Tritt deinem Stammtisch bei oder leg einen neuen an</Text>
+            <Text style={styles.title}>Hey! 👋</Text>
+            <Text style={styles.subtitle}>
+              Schön, dass du da bist. Leg euren Stammtisch an oder tritt einem bei — danach verwaltet ihr Kasse, Termine, Zusagen, Strafen und mehr an einem Ort.
+            </Text>
           </View>
 
           <View style={styles.toggleRow}>

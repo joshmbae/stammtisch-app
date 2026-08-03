@@ -219,7 +219,7 @@ export default function MemberDetailScreen() {
             <Text style={styles.heroName}>{member.name}</Text>
             {member.spitzname && <Text style={styles.heroSpitzname}>„{member.spitzname}"</Text>}
             <View style={[styles.rolleBadge, { backgroundColor: member.avatarColor + "22", borderColor: member.avatarColor + "66" }]}>
-              <Text style={[styles.rolleBadgeText, { color: member.avatarColor }]}>{member.rolle}</Text>
+              <Text style={[styles.rolleBadgeText, { color: member.avatarColor }]}>{member.rollen.join(", ")}</Text>
             </View>
           </View>
         </View>

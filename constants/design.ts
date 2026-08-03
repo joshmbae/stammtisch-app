@@ -1,5 +1,5 @@
 // ─── Stammtisch Design System ─────────────────────────────────────────────────
-// "Die Hellen" — Bayrisches Stammtisch-Design
+// DeinStammtisch — Bayrisches Stammtisch-Design
 // Farbpalette: Bayrisch Blau + Bier-Gold + warmes Holz
 
 export const COLORS = {
