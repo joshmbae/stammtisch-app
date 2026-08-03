@@ -22,7 +22,9 @@ import {
   MemberProfile,
   StammtischTermin,
   VerspätungLog,
-  SchockLog,
+  Spiel,
+  SpielEreignisTyp,
+  SpielLog,
   Wette,
   StammtischVerordnung,
   Protokoll,
@@ -35,9 +37,11 @@ import {
   loadVerspätungLogs,
   addVerspätungLog,
   deleteVerspätungLog,
-  loadSchockLogs,
-  addSchockLog,
-  deleteSchockLog,
+  loadSpiele,
+  loadEreignisTypen,
+  loadSpielLogs,
+  addSpielLog,
+  deleteSpielLog,
   loadWetten,
   addWette,
   updateWette,
@@ -410,7 +414,7 @@ export default function TerminDetailScreen() {
   const [protokoll, setProtokoll] = useState<Protokoll | null>(null);
 
   // Tabs
-  const [activeTab, setActiveTab] = useState<"anwesenheit" | "strafen" | "schocken" | "agenda" | "protokoll">("anwesenheit");
+  const [activeTab, setActiveTab] = useState<"anwesenheit" | "strafen" | "spiel" | "wetten" | "agenda" | "protokoll">("anwesenheit");
 
   // Agenda
   const [agendaText, setAgendaText] = useState("");
@@ -438,10 +442,15 @@ export default function TerminDetailScreen() {
   const [showEditStartZeit, setShowEditStartZeit] = useState(false);
   const [showEditEndZeit, setShowEditEndZeit] = useState(false);
 
-  // Schocken
-  const [schockMap, setSchockMap] = useState<Record<string, SchockLog[]>>({});
+  // Spiel (generisch)
+  const [aktivesSpiel, setAktivesSpiel] = useState<Spiel | null>(null);
+  const [aktiveEreignisTypen, setAktiveEreignisTypen] = useState<SpielEreignisTyp[]>([]);
+  const [spielLogMap, setSpielLogMap] = useState<Record<string, SpielLog[]>>({});
+  const [selectedSpielMemberId, setSelectedSpielMemberId] = useState<string | null>(null);
+
+  // Wetten
   const [wettenMap, setWettenMap] = useState<Record<string, Wette[]>>({});
-  const [selectedSchockId, setSelectedSchockId] = useState<string | null>(null);
+  const [selectedWetteMemberId, setSelectedWetteMemberId] = useState<string | null>(null);
   const [showWetteForm, setShowWetteForm] = useState(false);
   const [wetteBetrag, setWetteBetrag] = useState("");
   const [wetteGegenId, setWetteGegenId] = useState<string | null>(null);
@@ -465,28 +474,39 @@ export default function TerminDetailScreen() {
     const agenda = await loadAgenda(t.id);
     setAgendaText(agenda);
 
-    setSelectedSchockId((prev) => prev ?? ms[0]?.id ?? null);
+    setSelectedSpielMemberId((prev) => prev ?? ms[0]?.id ?? null);
+    setSelectedWetteMemberId((prev) => prev ?? ms[0]?.id ?? null);
+
+    let spiel: Spiel | null = null;
+    let ereignisTypen: SpielEreignisTyp[] = [];
+    if (v.aktivesSpielId) {
+      const alleSpiele = await loadSpiele();
+      spiel = alleSpiele.find((s) => s.id === v.aktivesSpielId) ?? null;
+      if (spiel) ereignisTypen = await loadEreignisTypen(spiel.id);
+    }
+    setAktivesSpiel(spiel);
+    setAktiveEreignisTypen(ereignisTypen);
 
     const memberData = await Promise.all(ms.map(async (m) => ({
       memberId: m.id,
       verspätungen: (await loadVerspätungLogs(m.id)).filter((l) => l.terminId === t.id),
-      schockLogs: (await loadSchockLogs(m.id)).filter((l) => l.terminId === t.id),
+      spielLogs: (await loadSpielLogs(m.id)).filter((l) => l.terminId === t.id && (!spiel || l.spielId === spiel.id)),
       wetten: (await loadWetten(m.id)).filter((l) => l.terminId === t.id),
       strafLogs: (await loadStrafLogs(m.id)).filter((l) => l.terminId === t.id),
     })));
 
     const vMap: Record<string, VerspätungLog[]> = {};
-    const sMap: Record<string, SchockLog[]> = {};
+    const spMap: Record<string, SpielLog[]> = {};
     const wMap: Record<string, Wette[]> = {};
     const stMap: Record<string, StrafLog[]> = {};
-    memberData.forEach(({ memberId, verspätungen, schockLogs, wetten, strafLogs }) => {
+    memberData.forEach(({ memberId, verspätungen, spielLogs, wetten, strafLogs }) => {
       vMap[memberId] = verspätungen;
-      sMap[memberId] = schockLogs;
+      spMap[memberId] = spielLogs;
       wMap[memberId] = wetten;
       stMap[memberId] = strafLogs;
     });
     setVerspätungMap(vMap);
-    setSchockMap(sMap);
+    setSpielLogMap(spMap);
     setWettenMap(wMap);
     setStrafMap(stMap);
     setStrafMemberId((prev) => prev ?? ms[0]?.id ?? null);
@@ -528,71 +548,107 @@ export default function TerminDetailScreen() {
     }));
   }
 
-  // ── Schocken handlers ───────────────────────────────────────────────────────
+  // ── Spiel handlers ──────────────────────────────────────────────────────────
 
-  async function handleLogSchock(typ: "niederlage" | "schock_aus") {
-    if (!selectedSchockId || !termin) return;
-    const log = await addSchockLog(selectedSchockId, {
-      typ,
-      loggedAt: new Date().toISOString(),
-      terminId: termin.id,
-    });
-    setSchockMap((prev) => ({
-      ...prev,
-      [selectedSchockId]: [log, ...(prev[selectedSchockId] ?? [])],
-    }));
-    await logActivity({
-      actorMemberId: activeMemberId ?? undefined,
-      subjectMemberId: selectedSchockId,
-      actionType: "schock_log_created",
-      terminId: termin.id,
-      refId: log.id,
-      meta: { typ },
-    });
+  async function handleLogSpielEreignis(ereignisTypId: string) {
+    if (!selectedSpielMemberId || !termin || !aktivesSpiel) return;
+    const ereignisTyp = aktiveEreignisTypen.find((e) => e.id === ereignisTypId);
+    if (!ereignisTyp) return;
 
-    if (typ === "niederlage") {
-      const schockKat = STRAF_KATEGORIEN.find((k) => k.key === "schock_niederlage")!;
-      const strafLog = await addStrafLog(selectedSchockId, {
-        kategorie: schockKat.key,
-        betrag: schockKat.betrag,
+    let strafLogId: string | undefined;
+    if (ereignisTyp.strafKategorie) {
+      const strafLog = await addStrafLog(selectedSpielMemberId, {
+        kategorie: ereignisTyp.strafKategorie,
+        betrag: ereignisTyp.strafBetrag ?? 0,
         terminId: termin.id,
         loggedAt: new Date().toISOString(),
         beglichen: false,
       });
+      strafLogId = strafLog.id;
       setStrafMap((prev) => ({
         ...prev,
-        [selectedSchockId]: [strafLog, ...(prev[selectedSchockId] ?? [])],
+        [selectedSpielMemberId]: [strafLog, ...(prev[selectedSpielMemberId] ?? [])],
       }));
       await logActivity({
         actorMemberId: activeMemberId ?? undefined,
-        subjectMemberId: selectedSchockId,
+        subjectMemberId: selectedSpielMemberId,
         actionType: "straf_log_created",
         terminId: termin.id,
         refId: strafLog.id,
         meta: { kategorie: strafLog.kategorie, betrag: strafLog.betrag },
       });
     }
-  }
 
-  async function handleDeleteSchock(memberId: string, logId: string) {
-    const log = (schockMap[memberId] ?? []).find((l) => l.id === logId);
-    await deleteSchockLog(memberId, logId);
-    setSchockMap((prev) => ({
+    const log = await addSpielLog(selectedSpielMemberId, {
+      spielId: aktivesSpiel.id,
+      ereignisTypId,
+      terminId: termin.id,
+      strafLogId,
+      loggedAt: new Date().toISOString(),
+    });
+    setSpielLogMap((prev) => ({
       ...prev,
-      [memberId]: (prev[memberId] ?? []).filter((l) => l.id !== logId),
+      [selectedSpielMemberId]: [log, ...(prev[selectedSpielMemberId] ?? [])],
     }));
     await logActivity({
       actorMemberId: activeMemberId ?? undefined,
-      subjectMemberId: memberId,
-      actionType: "schock_log_deleted",
-      terminId: termin?.id,
-      refId: logId,
-      meta: { typ: log?.typ },
+      subjectMemberId: selectedSpielMemberId,
+      actionType: "spiel_log_created",
+      terminId: termin.id,
+      refId: log.id,
+      meta: {
+        spielName: aktivesSpiel.name,
+        spielEmoji: aktivesSpiel.emoji,
+        ereignisLabel: ereignisTyp.label,
+        ereignisEmoji: ereignisTyp.emoji,
+      },
     });
   }
 
+  async function handleDeleteSpielLog(memberId: string, logId: string) {
+    const log = (spielLogMap[memberId] ?? []).find((l) => l.id === logId);
+    const ereignisTyp = aktiveEreignisTypen.find((e) => e.id === log?.ereignisTypId);
+    await deleteSpielLog(memberId, logId);
+    setSpielLogMap((prev) => ({
+      ...prev,
+      [memberId]: (prev[memberId] ?? []).filter((l) => l.id !== logId),
+    }));
+
+    if (log?.strafLogId) {
+      await deleteStrafLog(memberId, log.strafLogId);
+      setStrafMap((prev) => ({
+        ...prev,
+        [memberId]: (prev[memberId] ?? []).filter((l) => l.id !== log.strafLogId),
+      }));
+      await logActivity({
+        actorMemberId: activeMemberId ?? undefined,
+        subjectMemberId: memberId,
+        actionType: "straf_log_deleted",
+        terminId: termin?.id,
+        refId: log.strafLogId,
+        meta: { kategorie: ereignisTyp?.strafKategorie, betrag: ereignisTyp?.strafBetrag ?? 0 },
+      });
+    }
+
+    await logActivity({
+      actorMemberId: activeMemberId ?? undefined,
+      subjectMemberId: memberId,
+      actionType: "spiel_log_deleted",
+      terminId: termin?.id,
+      refId: logId,
+      meta: {
+        spielName: aktivesSpiel?.name,
+        spielEmoji: aktivesSpiel?.emoji,
+        ereignisLabel: ereignisTyp?.label,
+        ereignisEmoji: ereignisTyp?.emoji,
+      },
+    });
+  }
+
+  // ── Wetten handlers ─────────────────────────────────────────────────────────
+
   async function handleAddWette() {
-    if (!selectedSchockId || !wetteGegenId || !termin) {
+    if (!selectedWetteMemberId || !wetteGegenId || !termin) {
       showAlert("Fehlt", "Bitte einen Gegner auswählen.");
       return;
     }
@@ -601,7 +657,7 @@ export default function TerminDetailScreen() {
       showAlert("Ungültig", "Bitte einen gültigen Betrag eingeben.");
       return;
     }
-    const w = await addWette(selectedSchockId, {
+    const w = await addWette(selectedWetteMemberId, {
       gegenMemberId: wetteGegenId,
       betrag,
       loggedAt: new Date().toISOString(),
@@ -609,11 +665,11 @@ export default function TerminDetailScreen() {
     });
     setWettenMap((prev) => ({
       ...prev,
-      [selectedSchockId]: [w, ...(prev[selectedSchockId] ?? [])],
+      [selectedWetteMemberId]: [w, ...(prev[selectedWetteMemberId] ?? [])],
     }));
     await logActivity({
       actorMemberId: activeMemberId ?? undefined,
-      subjectMemberId: selectedSchockId,
+      subjectMemberId: selectedWetteMemberId,
       actionType: "wette_created",
       terminId: termin.id,
       refId: w.id,
@@ -873,18 +929,15 @@ export default function TerminDetailScreen() {
     : members;
 
   const totalVerspätung = Object.values(verspätungMap).flat().reduce((s, l) => s + l.minutenVerspätet, 0);
-  const allSchock = Object.values(schockMap).flat();
-  const totalNiederlagen = allSchock.filter((l) => l.typ === "niederlage").length;
-  const totalSchockAus = allSchock.filter((l) => l.typ === "schock_aus").length;
-  const selMember = members.find((m) => m.id === selectedSchockId);
-  const selSchock = schockMap[selectedSchockId ?? ""] ?? [];
-  const selWetten = wettenMap[selectedSchockId ?? ""] ?? [];
-  const selNiederlagen = selSchock.filter((l) => l.typ === "niederlage").length;
-  const selSchockAus = selSchock.filter((l) => l.typ === "schock_aus").length;
+  const allSpielLogs = Object.values(spielLogMap).flat();
+  const selMember = members.find((m) => m.id === selectedSpielMemberId);
+  const selSpielLogs = spielLogMap[selectedSpielMemberId ?? ""] ?? [];
+  const selWetteMember = members.find((m) => m.id === selectedWetteMemberId);
+  const selWetten = wettenMap[selectedWetteMemberId ?? ""] ?? [];
   const offeneWetten = selWetten.filter((w) => w.gewonnen === undefined);
-  const otherMembers = members.filter((m) => m.id !== selectedSchockId);
+  const otherMembers = members.filter((m) => m.id !== selectedWetteMemberId);
 
-  const schockFeed = Object.entries(schockMap)
+  const spielFeed = Object.entries(spielLogMap)
     .flatMap(([memberId, logs]) => logs.map((l) => ({ ...l, memberId })))
     .sort((a, b) => new Date(b.loggedAt).getTime() - new Date(a.loggedAt).getTime());
 
@@ -1057,24 +1110,28 @@ export default function TerminDetailScreen() {
 
           {/* ── Tabs ── */}
           <View style={styles.tabBar}>
-            {(["anwesenheit", "strafen", "schocken", "agenda", "protokoll"] as const).map((tab) => {
-              const meta: Record<typeof tab, { label: string; icon: keyof typeof Ionicons.glyphMap }> = {
-                anwesenheit: { label: "Anwes.",  icon: "people-outline" },
-                strafen:     { label: "Strafen",  icon: "cash-outline" },
-                schocken:    { label: "Schocken", icon: "dice-outline" },
-                agenda:      { label: "Agenda",   icon: "list-outline" },
-                protokoll:   { label: "Protokoll", icon: "document-text-outline" },
-              };
-              const isActive = activeTab === tab;
+            {([
+              { key: "anwesenheit", label: "Anwes.", icon: "people-outline", emoji: undefined },
+              { key: "strafen", label: "Strafen", icon: "cash-outline", emoji: undefined },
+              ...(aktivesSpiel ? [{ key: "spiel", label: aktivesSpiel.name, icon: undefined, emoji: aktivesSpiel.emoji ?? "🎮" }] : []),
+              { key: "wetten", label: "Wetten", icon: undefined, emoji: "🤝" },
+              { key: "agenda", label: "Agenda", icon: "list-outline", emoji: undefined },
+              { key: "protokoll", label: "Protokoll", icon: "document-text-outline", emoji: undefined },
+            ] as { key: typeof activeTab; label: string; icon?: keyof typeof Ionicons.glyphMap; emoji?: string }[]).map((tab) => {
+              const isActive = activeTab === tab.key;
               return (
                 <TouchableOpacity
-                  key={tab}
+                  key={tab.key}
                   style={[styles.tabBtn, isActive && styles.tabBtnActive]}
-                  onPress={() => setActiveTab(tab)}
+                  onPress={() => setActiveTab(tab.key)}
                 >
-                  <Ionicons name={meta[tab].icon} size={17} color={isActive ? "#FFFFFF" : COLORS.textMuted} />
+                  {tab.emoji ? (
+                    <Text style={{ fontSize: 15 }}>{tab.emoji}</Text>
+                  ) : (
+                    <Ionicons name={tab.icon!} size={17} color={isActive ? "#FFFFFF" : COLORS.textMuted} />
+                  )}
                   <Text style={[styles.tabBtnText, isActive && styles.tabBtnTextActive]} numberOfLines={1}>
-                    {meta[tab].label}
+                    {tab.label}
                   </Text>
                 </TouchableOpacity>
               );
@@ -1292,13 +1349,13 @@ export default function TerminDetailScreen() {
             </>
           )}
 
-          {/* ── Tab: Schocken & Wetten ── */}
-          {activeTab === "schocken" && members.length > 0 && (
+          {/* ── Tab: Spiel (generisch) ── */}
+          {activeTab === "spiel" && aktivesSpiel && members.length > 0 && (
             <>
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>🎲 Schocken</Text>
-                {(totalNiederlagen > 0 || totalSchockAus > 0) && (
-                  <Text style={styles.sectionBadge}>{totalNiederlagen + totalSchockAus} Events</Text>
+                <Text style={styles.sectionTitle}>{aktivesSpiel.emoji ?? "🎮"} {aktivesSpiel.name}</Text>
+                {allSpielLogs.length > 0 && (
+                  <Text style={styles.sectionBadge}>{allSpielLogs.length} Events</Text>
                 )}
               </View>
 
@@ -1309,12 +1366,12 @@ export default function TerminDetailScreen() {
                 contentContainerStyle={styles.chipsContent}
               >
                 {members.map((m) => {
-                  const isSelected = m.id === selectedSchockId;
+                  const isSelected = m.id === selectedSpielMemberId;
                   return (
                     <TouchableOpacity
                       key={m.id}
                       style={[styles.chip, isSelected && { backgroundColor: m.avatarColor, borderColor: m.avatarColor }]}
-                      onPress={() => { setSelectedSchockId(m.id); setShowWetteForm(false); }}
+                      onPress={() => setSelectedSpielMemberId(m.id)}
                     >
                       {m.photoUri ? (
                         <Image source={{ uri: m.photoUri }} style={styles.chipAvatar} />
@@ -1338,92 +1395,160 @@ export default function TerminDetailScreen() {
 
               {selMember && (
                 <>
-                  <View style={styles.schockStatsRow}>
-                    <View style={styles.schockStatBox}>
-                      <Text style={styles.schockStatEmoji}>💀</Text>
-                      <Text style={[styles.schockStatValue, { color: "#6B3A8A" }]}>{selNiederlagen}</Text>
-                      <Text style={styles.schockStatLabel}>Niederlagen</Text>
-                    </View>
-                    <View style={[styles.schockStatBox, { borderColor: COLORS.danger + "44" }]}>
-                      <Text style={styles.schockStatEmoji}>🎲</Text>
-                      <Text style={[styles.schockStatValue, { color: COLORS.danger }]}>{selSchockAus}</Text>
-                      <Text style={styles.schockStatLabel}>Schock-Aus</Text>
-                    </View>
-                    <View style={[styles.schockStatBox, { borderColor: COLORS.gold + "44" }]}>
-                      <Text style={styles.schockStatEmoji}>🤝</Text>
-                      <Text style={[styles.schockStatValue, { color: COLORS.gold }]}>{offeneWetten.length}</Text>
-                      <Text style={styles.schockStatLabel}>Off. Wetten</Text>
-                    </View>
+                  <View style={styles.spielStatsRow}>
+                    {aktiveEreignisTypen.map((et) => (
+                      <View key={et.id} style={styles.spielStatBox}>
+                        <Text style={styles.spielStatEmoji}>{et.emoji ?? "🎯"}</Text>
+                        <Text style={styles.spielStatValue}>
+                          {selSpielLogs.filter((l) => l.ereignisTypId === et.id).length}
+                        </Text>
+                        <Text style={styles.spielStatLabel} numberOfLines={1}>{et.label}</Text>
+                      </View>
+                    ))}
                   </View>
 
-                  <View style={styles.schockActionRow}>
-                    <TouchableOpacity style={styles.niederlagenBtn} onPress={() => handleLogSchock("niederlage")}>
-                      <Text style={styles.schockActionEmoji}>💀</Text>
-                      <Text style={styles.niederlagenLabel}>Niederlage</Text>
-                      <View style={styles.plusBadge}><Text style={styles.plusText}>+1</Text></View>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.schockAusBtn} onPress={() => handleLogSchock("schock_aus")}>
-                      <Text style={styles.schockActionEmoji}>🎲</Text>
-                      <Text style={[styles.niederlagenLabel, { color: COLORS.danger }]}>Schock-Aus</Text>
-                      <View style={[styles.plusBadge, { backgroundColor: COLORS.danger + "22" }]}>
-                        <Text style={[styles.plusText, { color: COLORS.danger }]}>+1</Text>
-                      </View>
-                    </TouchableOpacity>
-                  </View>
-
-                  <TouchableOpacity
-                    style={[styles.wetteToggleBtn, showWetteForm && { backgroundColor: COLORS.blue }]}
-                    onPress={() => setShowWetteForm((v) => !v)}
-                  >
-                    <Ionicons name={showWetteForm ? "close" : "add"} size={16} color={showWetteForm ? "#FFFFFF" : COLORS.gold} />
-                    <Text style={[styles.wetteToggleText, showWetteForm && { color: "#FFFFFF" }]}>
-                      {showWetteForm ? "Abbrechen" : "Wette einloggen"}
-                    </Text>
-                  </TouchableOpacity>
-
-                  {showWetteForm && (
-                    <View style={styles.wetteForm}>
-                      <Text style={styles.wetteFormTitle}>🤝 Neue Wette — {selMember.name}</Text>
-                      <View style={styles.betragRow}>
-                        <TextInput
-                          style={styles.betragInput}
-                          value={wetteBetrag}
-                          onChangeText={setWetteBetrag}
-                          placeholder="5,00"
-                          placeholderTextColor={COLORS.textLight}
-                          keyboardType="decimal-pad"
-                          autoFocus
-                        />
-                        <Text style={styles.betragLabel}>€</Text>
-                      </View>
-                      <Text style={styles.wetteFormSubtitle}>Wettet auf:</Text>
-                      <View style={styles.gegnerGrid}>
-                        {otherMembers.map((m) => (
-                          <TouchableOpacity
-                            key={m.id}
-                            style={[styles.gegnerChip, wetteGegenId === m.id && { backgroundColor: m.avatarColor, borderColor: m.avatarColor }]}
-                            onPress={() => setWetteGegenId(m.id)}
-                          >
-                            <View style={[styles.gegnerDot, { backgroundColor: wetteGegenId === m.id ? "rgba(255,255,255,0.5)" : m.avatarColor }]} />
-                            <Text style={[styles.gegnerText, wetteGegenId === m.id && { color: "#FFFFFF" }]}>
-                              {m.spitzname ?? m.name.split(" ")[0]}
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
-                      </View>
-                      <TouchableOpacity style={styles.wetteSubmitBtn} onPress={handleAddWette}>
-                        <Ionicons name="checkmark" size={16} color="#FFFFFF" />
-                        <Text style={styles.wetteSubmitText}>Wette aufnehmen</Text>
+                  <View style={styles.spielActionRow}>
+                    {aktiveEreignisTypen.map((et) => (
+                      <TouchableOpacity key={et.id} style={styles.spielActionBtn} onPress={() => handleLogSpielEreignis(et.id)}>
+                        <Text style={styles.schockActionEmoji}>{et.emoji ?? "🎯"}</Text>
+                        <Text style={styles.spielActionLabel} numberOfLines={1}>{et.label}</Text>
+                        <View style={styles.plusBadge}><Text style={styles.plusText}>+1</Text></View>
                       </TouchableOpacity>
-                    </View>
-                  )}
-
+                    ))}
+                  </View>
                 </>
+              )}
+
+              {spielFeed.length > 0 && (
+                <>
+                  <Text style={styles.subSectionLabel}>📋 {aktivesSpiel.name}-Verlauf dieses Abends</Text>
+                  {spielFeed.map((log) => {
+                    const m = members.find((x) => x.id === log.memberId);
+                    const et = aktiveEreignisTypen.find((e) => e.id === log.ereignisTypId);
+                    return (
+                      <Swipeable
+                        key={log.id}
+                        renderRightActions={() => (
+                          <TouchableOpacity
+                            style={styles.deleteSwipeSmall}
+                            onPress={() => handleDeleteSpielLog(log.memberId, log.id)}
+                          >
+                            <Ionicons name="trash-outline" size={16} color="#FFFFFF" />
+                          </TouchableOpacity>
+                        )}
+                      >
+                        <View style={styles.schockFeedRow}>
+                          <Text style={styles.schockFeedEmoji}>{et?.emoji ?? "🎯"}</Text>
+                          <View style={{ flex: 1 }}>
+                            <Text style={styles.schockFeedMember}>{m?.name ?? "Unbekannt"}</Text>
+                            <Text style={styles.schockFeedText}>{et?.label ?? "Ereignis"}</Text>
+                          </View>
+                          <Text style={styles.schockFeedTime}>{formatTime(log.loggedAt)}</Text>
+                        </View>
+                      </Swipeable>
+                    );
+                  })}
+                </>
+              )}
+            </>
+          )}
+
+          {/* ── Tab: Wetten ── */}
+          {activeTab === "wetten" && members.length > 0 && (
+            <>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>🤝 Wetten</Text>
+                {offeneWetten.length > 0 && (
+                  <Text style={styles.sectionBadge}>{offeneWetten.length} offen</Text>
+                )}
+              </View>
+
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.chipsScroll}
+                contentContainerStyle={styles.chipsContent}
+              >
+                {members.map((m) => {
+                  const isSelected = m.id === selectedWetteMemberId;
+                  return (
+                    <TouchableOpacity
+                      key={m.id}
+                      style={[styles.chip, isSelected && { backgroundColor: m.avatarColor, borderColor: m.avatarColor }]}
+                      onPress={() => { setSelectedWetteMemberId(m.id); setShowWetteForm(false); }}
+                    >
+                      {m.photoUri ? (
+                        <Image source={{ uri: m.photoUri }} style={styles.chipAvatar} />
+                      ) : (
+                        <View style={[styles.chipAvatar, {
+                          backgroundColor: isSelected ? "rgba(255,255,255,0.35)" : m.avatarColor,
+                          alignItems: "center", justifyContent: "center",
+                        }]}>
+                          <Text style={{ fontSize: 11, fontWeight: "700", color: "#FFF" }}>
+                            {getInitial(m.name)}
+                          </Text>
+                        </View>
+                      )}
+                      <Text style={[styles.chipText, isSelected && { color: "#FFFFFF" }]}>
+                        {m.spitzname ?? m.name.split(" ")[0]}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+
+              {selWetteMember && (
+                <TouchableOpacity
+                  style={[styles.wetteToggleBtn, showWetteForm && { backgroundColor: COLORS.blue }]}
+                  onPress={() => setShowWetteForm((v) => !v)}
+                >
+                  <Ionicons name={showWetteForm ? "close" : "add"} size={16} color={showWetteForm ? "#FFFFFF" : COLORS.gold} />
+                  <Text style={[styles.wetteToggleText, showWetteForm && { color: "#FFFFFF" }]}>
+                    {showWetteForm ? "Abbrechen" : "Wette einloggen"}
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              {showWetteForm && selWetteMember && (
+                <View style={styles.wetteForm}>
+                  <Text style={styles.wetteFormTitle}>🤝 Neue Wette — {selWetteMember.name}</Text>
+                  <View style={styles.betragRow}>
+                    <TextInput
+                      style={styles.betragInput}
+                      value={wetteBetrag}
+                      onChangeText={setWetteBetrag}
+                      placeholder="5,00"
+                      placeholderTextColor={COLORS.textLight}
+                      keyboardType="decimal-pad"
+                      autoFocus
+                    />
+                    <Text style={styles.betragLabel}>€</Text>
+                  </View>
+                  <Text style={styles.wetteFormSubtitle}>Wettet auf:</Text>
+                  <View style={styles.gegnerGrid}>
+                    {otherMembers.map((m) => (
+                      <TouchableOpacity
+                        key={m.id}
+                        style={[styles.gegnerChip, wetteGegenId === m.id && { backgroundColor: m.avatarColor, borderColor: m.avatarColor }]}
+                        onPress={() => setWetteGegenId(m.id)}
+                      >
+                        <View style={[styles.gegnerDot, { backgroundColor: wetteGegenId === m.id ? "rgba(255,255,255,0.5)" : m.avatarColor }]} />
+                        <Text style={[styles.gegnerText, wetteGegenId === m.id && { color: "#FFFFFF" }]}>
+                          {m.spitzname ?? m.name.split(" ")[0]}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                  <TouchableOpacity style={styles.wetteSubmitBtn} onPress={handleAddWette}>
+                    <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                    <Text style={styles.wetteSubmitText}>Wette aufnehmen</Text>
+                  </TouchableOpacity>
+                </View>
               )}
 
               {wettenFeed.length > 0 && (
                 <>
-                  <Text style={styles.subSectionLabel}>🤝 Wetten-Verlauf dieses Abends</Text>
+                  <Text style={styles.subSectionLabel}>📋 Wetten-Verlauf dieses Abends</Text>
                   {wettenFeed.map((w) => (
                     <WetteCard
                       key={w.id}
@@ -1435,37 +1560,6 @@ export default function TerminDetailScreen() {
                       onDelete={() => handleDeleteWette(w.memberId, w.id)}
                     />
                   ))}
-                </>
-              )}
-
-              {schockFeed.length > 0 && (
-                <>
-                  <Text style={styles.subSectionLabel}>📋 Schock-Verlauf dieses Abends</Text>
-                  {schockFeed.map((log) => {
-                    const m = members.find((x) => x.id === log.memberId);
-                    return (
-                      <Swipeable
-                        key={log.id}
-                        renderRightActions={() => (
-                          <TouchableOpacity
-                            style={styles.deleteSwipeSmall}
-                            onPress={() => handleDeleteSchock(log.memberId, log.id)}
-                          >
-                            <Ionicons name="trash-outline" size={16} color="#FFFFFF" />
-                          </TouchableOpacity>
-                        )}
-                      >
-                        <View style={[styles.schockFeedRow, log.typ === "schock_aus" && styles.schockFeedRowAus]}>
-                          <Text style={styles.schockFeedEmoji}>{log.typ === "schock_aus" ? "🎲" : "💀"}</Text>
-                          <View style={{ flex: 1 }}>
-                            <Text style={styles.schockFeedMember}>{m?.name ?? "Unbekannt"}</Text>
-                            <Text style={styles.schockFeedText}>{log.typ === "schock_aus" ? "Schock-Aus" : "Niederlage"}</Text>
-                          </View>
-                          <Text style={styles.schockFeedTime}>{formatTime(log.loggedAt)}</Text>
-                        </View>
-                      </Swipeable>
-                    );
-                  })}
                 </>
               )}
             </>
@@ -1681,29 +1775,25 @@ const styles = StyleSheet.create({
   chipAvatar: { width: 22, height: 22, borderRadius: 11 },
   chipText: { fontSize: 13, fontWeight: "600", color: COLORS.textDark },
 
-  schockStatsRow: { flexDirection: "row", gap: 10, marginBottom: 12 },
-  schockStatBox: {
-    flex: 1, alignItems: "center", paddingVertical: 12,
+  spielStatsRow: { flexDirection: "row", gap: 10, marginBottom: 12, flexWrap: "wrap" },
+  spielStatBox: {
+    flex: 1, minWidth: 76, alignItems: "center", paddingVertical: 12,
     backgroundColor: COLORS.card, borderRadius: 14,
-    borderWidth: 1.5, borderColor: "#6B3A8A22", gap: 2, ...SHADOWS.light,
+    borderWidth: 1.5, borderColor: COLORS.blue + "22", gap: 2, ...SHADOWS.light,
   },
-  schockStatEmoji: { fontSize: 20 },
-  schockStatValue: { fontSize: 20, fontWeight: "800", color: "#6B3A8A" },
-  schockStatLabel: { fontSize: 10, color: COLORS.textMuted, fontWeight: "600" },
+  spielStatEmoji: { fontSize: 20 },
+  spielStatValue: { fontSize: 20, fontWeight: "800", color: COLORS.blue },
+  spielStatLabel: { fontSize: 10, color: COLORS.textMuted, fontWeight: "600" },
 
-  schockActionRow: { flexDirection: "row", gap: 10, marginBottom: 10 },
-  niederlagenBtn: {
-    flex: 1, alignItems: "center", paddingVertical: 14, borderRadius: 14,
-    backgroundColor: "#F5F0FF", borderWidth: 1.5, borderColor: "#6B3A8A44", gap: 4,
+  spielActionRow: { flexDirection: "row", gap: 10, marginBottom: 10, flexWrap: "wrap" },
+  spielActionBtn: {
+    flex: 1, minWidth: 100, alignItems: "center", paddingVertical: 14, borderRadius: 14,
+    backgroundColor: COLORS.blue + "10", borderWidth: 1.5, borderColor: COLORS.blue + "44", gap: 4,
   },
-  schockAusBtn: {
-    flex: 1, alignItems: "center", paddingVertical: 14, borderRadius: 14,
-    backgroundColor: "#FFF0F0", borderWidth: 1.5, borderColor: COLORS.danger + "44", gap: 4,
-  },
+  spielActionLabel: { fontSize: 13, fontWeight: "700", color: COLORS.blue },
   schockActionEmoji: { fontSize: 26 },
-  niederlagenLabel: { fontSize: 13, fontWeight: "700", color: "#6B3A8A" },
-  plusBadge: { backgroundColor: "#6B3A8A22", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 3 },
-  plusText: { fontSize: 12, fontWeight: "700", color: "#6B3A8A" },
+  plusBadge: { backgroundColor: COLORS.blue + "18", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 3 },
+  plusText: { fontSize: 12, fontWeight: "700", color: COLORS.blue },
 
   wetteToggleBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
@@ -1774,9 +1864,8 @@ const styles = StyleSheet.create({
 
   schockFeedRow: {
     flexDirection: "row", alignItems: "center", gap: 10,
-    backgroundColor: "#F5F0FF", borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 6,
+    backgroundColor: COLORS.blue + "0F", borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 6,
   },
-  schockFeedRowAus: { backgroundColor: "#FFF0F0" },
   schockFeedEmoji: { fontSize: 18 },
   schockFeedText: { fontSize: 11, color: COLORS.textMuted, marginTop: 1 },
   schockFeedMember: { fontSize: 13, fontWeight: "700", color: COLORS.textDark },
