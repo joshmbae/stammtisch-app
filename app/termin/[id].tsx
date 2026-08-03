@@ -1111,13 +1111,13 @@ export default function TerminDetailScreen() {
           {/* ── Tabs ── */}
           <View style={styles.tabBar}>
             {([
-              { key: "anwesenheit", label: "Anwes.", icon: "people-outline", emoji: undefined },
-              { key: "strafen", label: "Strafen", icon: "cash-outline", emoji: undefined },
-              ...(aktivesSpiel ? [{ key: "spiel", label: aktivesSpiel.name, icon: undefined, emoji: aktivesSpiel.emoji ?? "🎮" }] : []),
-              { key: "wetten", label: "Wetten", icon: undefined, emoji: "🤝" },
-              { key: "agenda", label: "Agenda", icon: "list-outline", emoji: undefined },
-              { key: "protokoll", label: "Protokoll", icon: "document-text-outline", emoji: undefined },
-            ] as { key: typeof activeTab; label: string; icon?: keyof typeof Ionicons.glyphMap; emoji?: string }[]).map((tab) => {
+              { key: "anwesenheit", label: "Anwes.", emoji: "👥" },
+              { key: "strafen", label: "Strafen", emoji: "💰" },
+              ...(aktivesSpiel ? [{ key: "spiel", label: aktivesSpiel.name, emoji: aktivesSpiel.emoji ?? "🎮" }] : []),
+              { key: "wetten", label: "Wetten", emoji: "🤝" },
+              { key: "agenda", label: "Agenda", emoji: "📋" },
+              { key: "protokoll", label: "Protokoll", emoji: "📝" },
+            ] as { key: typeof activeTab; label: string; emoji: string }[]).map((tab) => {
               const isActive = activeTab === tab.key;
               return (
                 <TouchableOpacity
@@ -1125,11 +1125,7 @@ export default function TerminDetailScreen() {
                   style={[styles.tabBtn, isActive && styles.tabBtnActive]}
                   onPress={() => setActiveTab(tab.key)}
                 >
-                  {tab.emoji ? (
-                    <Text style={{ fontSize: 15 }}>{tab.emoji}</Text>
-                  ) : (
-                    <Ionicons name={tab.icon!} size={17} color={isActive ? "#FFFFFF" : COLORS.textMuted} />
-                  )}
+                  <Text style={{ fontSize: 15 }}>{tab.emoji}</Text>
                   <Text style={[styles.tabBtnText, isActive && styles.tabBtnTextActive]} numberOfLines={1}>
                     {tab.label}
                   </Text>
