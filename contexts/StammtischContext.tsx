@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { ensureAuthSession } from "../utils/supabase";
 import { getLegacySingleStammtischId, setActiveStammtischId as cacheStammtischId } from "../utils/storage";
 
 const STAMMTISCH_KEY = "st_active_stammtisch";
@@ -29,6 +30,7 @@ export function StammtischProvider({ children }: { children: React.ReactNode }) 
   useEffect(() => { resolveStammtisch(); }, []);
 
   async function resolveStammtisch() {
+    await ensureAuthSession();
     const id = await AsyncStorage.getItem(STAMMTISCH_KEY);
     const name = await AsyncStorage.getItem(STAMMTISCH_NAME_KEY);
     if (id) {

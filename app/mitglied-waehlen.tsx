@@ -10,7 +10,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { MemberProfile } from "../types";
-import { loadMembers, setMemberPin } from "../utils/storage";
+import { loadMembers } from "../utils/storage";
 import { useSession } from "../contexts/SessionContext";
 import { useStammtisch } from "../contexts/StammtischContext";
 import { COLORS, SHADOWS } from "../constants/design";
@@ -18,12 +18,13 @@ import StammtischLogo from "../components/StammtischLogo";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { getInitial } from "../utils/format";
 import PinPrompt from "../components/PinPrompt";
-import { hashPin } from "../utils/pin";
+import { verifyPin } from "../utils/pin";
 
 export default function MitgliedWaehlenScreen() {
   const [members, setMembers] = useState<MemberProfile[]>([]);
-  const [pendingMember, setPendingMember] = useState<MemberProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [pendingMember, setPendingMember] = useState<MemberProfile | null>(null);
+  const [pinError, setPinError] = useState<string | undefined>(undefined);
   const { setActiveSession, clearSession } = useSession();
   const { stammtischName, clearStammtisch } = useStammtisch();
 
@@ -38,8 +39,8 @@ export default function MitgliedWaehlenScreen() {
   }, []);
 
   async function handleSelect(member: MemberProfile) {
-    if (!member.pinHash) {
-      // Erstes Auswählen dieses Profils: PIN-Vergabe ist Pflicht, bevor die Session startet.
+    if (member.pinHash) {
+      setPinError(undefined);
       setPendingMember(member);
       return;
     }
@@ -47,10 +48,13 @@ export default function MitgliedWaehlenScreen() {
     router.replace("/(tabs)/home");
   }
 
-  async function handleSetPin(pin: string) {
+  async function handlePinVerify(pin: string) {
     if (!pendingMember) return;
-    const pinHash = await hashPin(pendingMember.id, pin);
-    await setMemberPin(pendingMember.id, pinHash);
+    const ok = await verifyPin(pendingMember.id, pin);
+    if (!ok) {
+      setPinError("Falscher PIN.");
+      return;
+    }
     await setActiveSession(pendingMember.id);
     setPendingMember(null);
     router.replace("/(tabs)/home");
@@ -135,10 +139,11 @@ export default function MitgliedWaehlenScreen() {
 
       <PinPrompt
         visible={!!pendingMember}
-        mode="set"
+        mode="verify"
         memberName={pendingMember?.name}
+        error={pinError}
         onCancel={() => setPendingMember(null)}
-        onSubmit={handleSetPin}
+        onSubmit={handlePinVerify}
       />
     </SafeAreaView>
   );

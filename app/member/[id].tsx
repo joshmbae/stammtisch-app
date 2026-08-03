@@ -170,7 +170,7 @@ export default function MemberDetailScreen() {
 
   async function handlePinVerify(pin: string) {
     if (!member?.pinHash) return;
-    const ok = await verifyPin(member.id, pin, member.pinHash);
+    const ok = await verifyPin(member.id, pin);
     if (!ok) {
       setPinError("Falscher PIN.");
       return;

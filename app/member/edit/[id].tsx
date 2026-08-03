@@ -23,6 +23,7 @@ import { getInitial } from "../../../utils/format";
 import LoadingSpinner from "../../../components/LoadingSpinner";
 import { toLocalIsoDate } from "../../../utils/date";
 import InlineDateTimePicker from "../../../components/InlineDateTimePicker";
+import { hashPin, isValidPin } from "../../../utils/pin";
 
 export default function EditMemberScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -38,6 +39,9 @@ export default function EditMemberScreen() {
   const [avatarColor, setAvatarColor] = useState(AVATAR_COLORS[0]);
   const [photoUri, setPhotoUri] = useState<string | undefined>(undefined);
   const [notizen, setNotizen] = useState("");
+  const [pinHash, setPinHash] = useState<string | undefined>(undefined);
+  const [newPin, setNewPin] = useState("");
+  const [newPinConfirm, setNewPinConfirm] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -54,9 +58,17 @@ export default function EditMemberScreen() {
       setAvatarColor(m.avatarColor);
       setPhotoUri(m.photoUri);
       setNotizen(m.notizen ?? "");
+      setPinHash(m.pinHash);
       setLoading(false);
     });
   }, [id]);
+
+  function removePin() {
+    showAlert("PIN entfernen?", "Das Profil kann danach von jedem bearbeitet oder gelöscht werden.", [
+      { text: "Abbrechen", style: "cancel" },
+      { text: "Entfernen", style: "destructive", onPress: () => setPinHash(undefined) },
+    ]);
+  }
 
   async function pickPhoto() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -78,6 +90,14 @@ export default function EditMemberScreen() {
       showAlert("Name fehlt", "Bitte einen Namen eingeben.");
       return;
     }
+    let finalPinHash = pinHash;
+    if (newPin || newPinConfirm) {
+      if (!isValidPin(newPin) || newPin !== newPinConfirm) {
+        showAlert("PIN ungültig", "Der PIN muss 4-stellig sein und in beiden Feldern übereinstimmen.");
+        return;
+      }
+      finalPinHash = await hashPin(id, newPin);
+    }
     const uploadedPhotoUri =
       photoUri && !photoUri.startsWith("http") ? await uploadAvatar(id, photoUri) : photoUri;
     const members = await loadMembers();
@@ -95,6 +115,7 @@ export default function EditMemberScreen() {
             avatarColor,
             photoUri: uploadedPhotoUri,
             notizen: notizen.trim() || undefined,
+            pinHash: finalPinHash,
           }
         : m
     );
@@ -243,6 +264,42 @@ export default function EditMemberScreen() {
           />
         </View>
 
+        <View style={styles.card}>
+          <Text style={styles.fieldLabel}>🔒 PIN-Schutz</Text>
+          <Text style={styles.pinHint}>
+            {pinHash
+              ? "Dieses Profil ist PIN-geschützt. Neuen PIN eingeben, um ihn zu ändern."
+              : "Kein PIN gesetzt — jeder kann dieses Profil bearbeiten oder löschen."}
+          </Text>
+          <View style={styles.pinRow}>
+            <TextInput
+              style={[styles.input, styles.pinInput]}
+              value={newPin}
+              onChangeText={(t) => setNewPin(t.replace(/\D/g, "").slice(0, 4))}
+              keyboardType="number-pad"
+              secureTextEntry
+              maxLength={4}
+              placeholder={pinHash ? "Neuer PIN" : "PIN"}
+              placeholderTextColor={COLORS.textLight}
+            />
+            <TextInput
+              style={[styles.input, styles.pinInput]}
+              value={newPinConfirm}
+              onChangeText={(t) => setNewPinConfirm(t.replace(/\D/g, "").slice(0, 4))}
+              keyboardType="number-pad"
+              secureTextEntry
+              maxLength={4}
+              placeholder="Bestätigen"
+              placeholderTextColor={COLORS.textLight}
+            />
+          </View>
+          {pinHash && (
+            <TouchableOpacity onPress={removePin} style={styles.pinRemoveBtn}>
+              <Text style={styles.pinRemoveText}>PIN entfernen</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
         <TouchableOpacity style={styles.saveBtn} onPress={save}>
           <Ionicons name="checkmark" size={20} color="#FFFFFF" />
           <Text style={styles.saveBtnText}>Änderungen speichern</Text>
@@ -283,6 +340,11 @@ const styles = StyleSheet.create({
   rolleChipText: { fontSize: 13, fontWeight: "600", color: COLORS.textDark },
   dateBtn: { flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: COLORS.background, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border, paddingHorizontal: 12, paddingVertical: 10 },
   dateBtnText: { fontSize: 14, color: COLORS.textDark, fontWeight: "600" },
+  pinHint: { fontSize: 12, color: COLORS.textMuted, lineHeight: 17, marginBottom: 10 },
+  pinRow: { flexDirection: "row", gap: 8 },
+  pinInput: { flex: 1, textAlign: "center", letterSpacing: 4 },
+  pinRemoveBtn: { marginTop: 10 },
+  pinRemoveText: { fontSize: 12, color: COLORS.danger, fontWeight: "600" },
   saveBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: COLORS.blue, borderRadius: 16, paddingVertical: 16, marginTop: 8 },
   saveBtnText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
 });

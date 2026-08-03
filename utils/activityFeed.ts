@@ -70,12 +70,26 @@ export function renderActivity(
         text: `Stammtischrechnung beglichen: ${subjectName} wurde zurückgezahlt (${formatEuro(Number(meta.betrag ?? 0))})`,
         actorText: eingetragenVon,
       };
+    case "kasse_eintrag_deleted":
+      return {
+        emoji: "🗑️",
+        text: `Kassen-Eintrag gelöscht: ${meta.beschreibung ?? "Sonstiges"} (${formatEuro(Number(meta.betrag ?? 0))})`,
+        actorText: eingetragenVon,
+      };
     case "schock_log_created":
       return {
         emoji: meta.typ === "schock_aus" ? "💥" : "🎲",
         text: meta.typ === "schock_aus"
           ? `${subjectName} hat ein Schock-Aus geworfen`
           : `${subjectName} hat beim Schocken verloren`,
+        actorText: eingetragenVon,
+      };
+    case "schock_log_deleted":
+      return {
+        emoji: "🗑️",
+        text: meta.typ === "schock_aus"
+          ? `Schock-Aus von ${subjectName} gelöscht`
+          : `Niederlage von ${subjectName} gelöscht`,
         actorText: eingetragenVon,
       };
     case "wette_created":
@@ -90,6 +104,20 @@ export function renderActivity(
         text: `Wette ${meta.gewonnen ? "gewonnen" : "verloren"}: ${subjectName} (${formatEuro(Number(meta.betrag ?? 0))})`,
         actorText: eingetragenVon,
       };
+    case "wette_deleted":
+      return {
+        emoji: "🗑️",
+        text: `Wette gelöscht: ${subjectName} gegen ${displayName(membersById.get(meta.gegenMemberId))} (${formatEuro(Number(meta.betrag ?? 0))})`,
+        actorText: eingetragenVon,
+      };
+    case "straf_log_deleted": {
+      const kat = STRAF_KATEGORIEN.find((k) => k.key === meta.kategorie);
+      return {
+        emoji: "🗑️",
+        text: `Strafe gelöscht: ${subjectName} – ${kat?.label ?? meta.kategorie} (${formatEuro(Number(meta.betrag ?? 0))})`,
+        actorText: eingetragenVon,
+      };
+    }
     case "protokoll_updated":
       return {
         emoji: "📝",

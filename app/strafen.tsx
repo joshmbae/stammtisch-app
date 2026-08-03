@@ -99,6 +99,14 @@ export default function StrafenScreen() {
   async function handleDelete(log: StrafLog) {
     await deleteStrafLog(log.memberId, log.id);
     setLogs((prev) => prev.filter((l) => l.id !== log.id));
+    await logActivity({
+      actorMemberId: activeMemberId ?? undefined,
+      subjectMemberId: log.memberId,
+      actionType: "straf_log_deleted",
+      terminId: log.terminId,
+      refId: log.id,
+      meta: { kategorie: log.kategorie, betrag: log.betrag },
+    });
   }
 
   return (

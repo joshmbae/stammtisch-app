@@ -204,8 +204,17 @@ export default function KasseScreen() {
   }
 
   async function handleDelete(id: string) {
+    const e = eintraege.find((x) => x.id === id);
     await deleteKassenEintrag(id);
-    setEintraege((prev) => prev.filter((e) => e.id !== id));
+    setEintraege((prev) => prev.filter((x) => x.id !== id));
+    await logActivity({
+      actorMemberId: activeMemberId ?? undefined,
+      subjectMemberId: e?.bezahltVon,
+      actionType: "kasse_eintrag_deleted",
+      terminId: e?.terminId,
+      refId: id,
+      meta: { betrag: e?.betrag ?? 0, beschreibung: e?.beschreibung },
+    });
   }
 
   async function handleToggleBeglichen(id: string, current: boolean) {

@@ -13,7 +13,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { createStammtisch, findStammtischByName } from "../utils/storage";
-import { hashStammtischPassword, verifyStammtischPassword } from "../utils/pin";
+import { hashStammtischPassword } from "../utils/pin";
 import { useStammtisch } from "../contexts/StammtischContext";
 import { COLORS, SHADOWS } from "../constants/design";
 import StammtischLogo from "../components/StammtischLogo";
@@ -71,13 +71,9 @@ export default function StammtischWaehlenScreen() {
     }
     setLoading(true);
     try {
-      const found = await findStammtischByName(name);
-      if (!found || !found.passwordHash) {
-        setError("Stammtisch oder Passwort falsch.");
-        return;
-      }
-      const valid = await verifyStammtischPassword(found.name, password, found.passwordHash);
-      if (!valid) {
+      const passwordHash = await hashStammtischPassword(name, password);
+      const found = await findStammtischByName(name, passwordHash);
+      if (!found) {
         setError("Stammtisch oder Passwort falsch.");
         return;
       }

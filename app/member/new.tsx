@@ -23,6 +23,7 @@ import InlineDateTimePicker from "../../components/InlineDateTimePicker";
 import { useSession } from "../../contexts/SessionContext";
 import { getInitial } from "../../utils/format";
 import { toLocalIsoDate } from "../../utils/date";
+import { hashPin, isValidPin } from "../../utils/pin";
 
 export default function NewMemberScreen() {
   const { activeMemberId, setActiveSession } = useSession();
@@ -38,6 +39,8 @@ export default function NewMemberScreen() {
   const [avatarColor, setAvatarColor] = useState(AVATAR_COLORS[0]);
   const [photoUri, setPhotoUri] = useState<string | undefined>(undefined);
   const [notizen, setNotizen] = useState("");
+  const [pin, setPin] = useState("");
+  const [pinConfirm, setPinConfirm] = useState("");
 
   async function pickPhoto() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -59,6 +62,12 @@ export default function NewMemberScreen() {
       showAlert("Name fehlt", "Bitte einen Namen eingeben.");
       return;
     }
+    if (pin || pinConfirm) {
+      if (!isValidPin(pin) || pin !== pinConfirm) {
+        showAlert("PIN ungültig", "Der PIN muss 4-stellig sein und in beiden Feldern übereinstimmen.");
+        return;
+      }
+    }
     const id = Date.now().toString();
     const uploadedPhotoUri = photoUri ? await uploadAvatar(id, photoUri) : undefined;
     const newMember: MemberProfile = {
@@ -74,6 +83,7 @@ export default function NewMemberScreen() {
       photoUri: uploadedPhotoUri,
       notizen: notizen.trim() || undefined,
       createdAt: new Date().toISOString(),
+      pinHash: pin ? await hashPin(id, pin) : undefined,
     };
     const existing = await loadMembers();
     await saveMembers([...existing, newMember]);
@@ -258,6 +268,36 @@ export default function NewMemberScreen() {
           />
         </View>
 
+        {/* PIN-Schutz */}
+        <View style={styles.card}>
+          <Text style={styles.fieldLabel}>🔒 PIN-Schutz (optional)</Text>
+          <Text style={styles.pinHint}>
+            Schützt dieses Profil davor, dass andere es bearbeiten oder löschen. Ohne PIN kann jeder das Profil verwalten — praktisch, wenn nur einer die App für alle pflegt.
+          </Text>
+          <View style={styles.pinRow}>
+            <TextInput
+              style={[styles.input, styles.pinInput]}
+              value={pin}
+              onChangeText={(t) => setPin(t.replace(/\D/g, "").slice(0, 4))}
+              keyboardType="number-pad"
+              secureTextEntry
+              maxLength={4}
+              placeholder="PIN"
+              placeholderTextColor={COLORS.textLight}
+            />
+            <TextInput
+              style={[styles.input, styles.pinInput]}
+              value={pinConfirm}
+              onChangeText={(t) => setPinConfirm(t.replace(/\D/g, "").slice(0, 4))}
+              keyboardType="number-pad"
+              secureTextEntry
+              maxLength={4}
+              placeholder="Bestätigen"
+              placeholderTextColor={COLORS.textLight}
+            />
+          </View>
+        </View>
+
         {/* Speichern */}
         <TouchableOpacity style={styles.saveBtn} onPress={save}>
           <Ionicons name="checkmark" size={20} color="#FFFFFF" />
@@ -314,6 +354,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12, paddingVertical: 10,
   },
   dateBtnText: { fontSize: 14, color: COLORS.textDark, fontWeight: "600" },
+
+  pinHint: { fontSize: 12, color: COLORS.textMuted, lineHeight: 17, marginBottom: 10 },
+  pinRow: { flexDirection: "row", gap: 8 },
+  pinInput: { flex: 1, textAlign: "center", letterSpacing: 4 },
 
   saveBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,

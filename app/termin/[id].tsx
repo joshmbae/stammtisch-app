@@ -571,11 +571,20 @@ export default function TerminDetailScreen() {
   }
 
   async function handleDeleteSchock(memberId: string, logId: string) {
+    const log = (schockMap[memberId] ?? []).find((l) => l.id === logId);
     await deleteSchockLog(memberId, logId);
     setSchockMap((prev) => ({
       ...prev,
       [memberId]: (prev[memberId] ?? []).filter((l) => l.id !== logId),
     }));
+    await logActivity({
+      actorMemberId: activeMemberId ?? undefined,
+      subjectMemberId: memberId,
+      actionType: "schock_log_deleted",
+      terminId: termin?.id,
+      refId: logId,
+      meta: { typ: log?.typ },
+    });
   }
 
   async function handleAddWette() {
@@ -631,11 +640,20 @@ export default function TerminDetailScreen() {
   }
 
   async function handleDeleteWette(memberId: string, wetteId: string) {
+    const w = (wettenMap[memberId] ?? []).find((x) => x.id === wetteId);
     await deleteWette(memberId, wetteId);
     setWettenMap((prev) => ({
       ...prev,
-      [memberId]: (prev[memberId] ?? []).filter((w) => w.id !== wetteId),
+      [memberId]: (prev[memberId] ?? []).filter((x) => x.id !== wetteId),
     }));
+    await logActivity({
+      actorMemberId: activeMemberId ?? undefined,
+      subjectMemberId: memberId,
+      actionType: "wette_deleted",
+      terminId: termin?.id,
+      refId: wetteId,
+      meta: { gegenMemberId: w?.gegenMemberId, betrag: w?.betrag ?? 0 },
+    });
   }
 
   // ── Strafen handlers ────────────────────────────────────────────────────────
@@ -709,11 +727,20 @@ export default function TerminDetailScreen() {
   }
 
   async function handleDeleteStraf(memberId: string, logId: string) {
+    const log = (strafMap[memberId] ?? []).find((l) => l.id === logId);
     await deleteStrafLog(memberId, logId);
     setStrafMap((prev) => ({
       ...prev,
       [memberId]: (prev[memberId] ?? []).filter((l) => l.id !== logId),
     }));
+    await logActivity({
+      actorMemberId: activeMemberId ?? undefined,
+      subjectMemberId: memberId,
+      actionType: "straf_log_deleted",
+      terminId: termin?.id,
+      refId: logId,
+      meta: { kategorie: log?.kategorie, betrag: log?.betrag ?? 0 },
+    });
   }
 
   // ── Termin handlers ─────────────────────────────────────────────────────────

@@ -148,8 +148,7 @@ export default function RanglistenScreen() {
                 <Text style={styles.rangCardSub}>Wer hat am meisten Schock-Aus geworfen</Text>
                 {schockAusRang.map((s, i) => (
                   <RangRow key={s.member.id} rank={i} member={s.member}
-                    value={`${s.schockAus}`} valueLabel="Schock-Aus"
-                    sub={s.niederlagen > 0 ? `+ ${s.niederlagen} Niederlagen` : undefined} />
+                    value={`${s.schockAus}`} valueLabel="Schock-Aus" />
                 ))}
               </View>
             )}
@@ -161,8 +160,7 @@ export default function RanglistenScreen() {
                 <Text style={styles.rangCardSub}>Wer hat am meisten Runden gezahlt</Text>
                 {niederlagenRang.map((s, i) => (
                   <RangRow key={s.member.id} rank={i} member={s.member}
-                    value={`${s.niederlagen}`} valueLabel="Niederlagen"
-                    sub={s.schockAus > 0 ? `davon ${s.schockAus}× Schock-Aus` : undefined} />
+                    value={`${s.niederlagen}`} valueLabel="Niederlagen" />
                 ))}
               </View>
             )}

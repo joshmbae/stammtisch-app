@@ -144,13 +144,17 @@ export interface KassenEintrag {
 export type ActivityActionType =
   | "straf_log_created"
   | "straf_log_beglichen"
+  | "straf_log_deleted"
   | "kasse_einnahme_created"
   | "kasse_ausgabe_created"
   | "abendkosten_created"
   | "kasse_beglichen"
+  | "kasse_eintrag_deleted"
   | "schock_log_created"
+  | "schock_log_deleted"
   | "wette_created"
   | "wette_resolved"
+  | "wette_deleted"
   | "protokoll_updated"
   | "termin_zusage"
   | "termin_absage";

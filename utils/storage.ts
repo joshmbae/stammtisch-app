@@ -36,36 +36,41 @@ export async function getStammtischId(): Promise<string> {
 /**
  * Fallback für bestehende Installationen: gibt die Id zurück, wenn die
  * `stammtische`-Tabelle genau eine Zeile hat (der Prod-Stand vor Multi-
- * Stammtisch-Unterstützung), sonst null.
+ * Stammtisch-Unterstützung), sonst null. Trägt bei Treffer serverseitig
+ * Zugriff für die aktuelle Auth-Session ein (RPC, siehe Migration).
  */
 export async function getLegacySingleStammtischId(): Promise<string | null> {
-  const { data, error } = await supabase.from("stammtische").select("id");
-  if (error || !data || data.length !== 1) return null;
-  return data[0].id as string;
+  const { data, error } = await supabase.rpc("rpc_legacy_single_stammtisch_id");
+  if (error || !data) return null;
+  return data as string;
 }
 
+/**
+ * Prüft Name + (bereits gehashtes) Passwort serverseitig und trägt bei
+ * Erfolg Zugriff für die aktuelle Auth-Session ein. Der Passwort-Hash
+ * selbst verlässt die Datenbank nie.
+ */
 export async function findStammtischByName(
-  name: string
-): Promise<{ id: string; name: string; passwordHash: string | null } | null> {
-  const { data, error } = await supabase
-    .from("stammtische")
-    .select("id, name, password_hash")
-    .ilike("name", name.trim());
+  name: string,
+  passwordHash: string
+): Promise<{ id: string; name: string } | null> {
+  const { data, error } = await supabase.rpc("rpc_join_stammtisch", {
+    p_name: name,
+    p_password_hash: passwordHash,
+  });
   if (error || !data || data.length === 0) return null;
-  const row = data[0];
-  return { id: row.id, name: row.name, passwordHash: row.password_hash ?? null };
+  return { id: data[0].id, name: data[0].name };
 }
 
 export async function createStammtisch(name: string, passwordHash: string): Promise<{ id: string }> {
-  // stammtische.id ist uuid (DB-Default gen_random_uuid()) — anders als die
-  // text-Ids der übrigen Tabellen, daher hier keine nextId() übergeben.
-  const { data, error } = await supabase
-    .from("stammtische")
-    .insert({ name: name.trim(), password_hash: passwordHash })
-    .select("id")
-    .single();
-  if (error || !data) throw new Error("Stammtisch konnte nicht angelegt werden: " + error?.message);
-  return { id: data.id as string };
+  const { data, error } = await supabase.rpc("rpc_create_stammtisch", {
+    p_name: name,
+    p_password_hash: passwordHash,
+  });
+  if (error || !data || data.length === 0) {
+    throw new Error("Stammtisch konnte nicht angelegt werden: " + error?.message);
+  }
+  return { id: data[0].id as string };
 }
 
 // ─── Member Profiles ──────────────────────────────────────────────────────────
@@ -137,11 +142,6 @@ export async function saveMembers(members: MemberProfile[]): Promise<void> {
 
 export async function deleteMember(id: string): Promise<void> {
   const { error } = await supabase.from("members").delete().eq("id", id);
-  if (error) throw error;
-}
-
-export async function setMemberPin(memberId: string, pinHash: string): Promise<void> {
-  const { error } = await supabase.from("members").update({ pin_hash: pinHash }).eq("id", memberId);
   if (error) throw error;
 }
 
