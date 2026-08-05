@@ -178,6 +178,7 @@ export default function HomeScreen() {
   const [members, setMembers]                 = useState<MemberProfile[]>([]);
   const [memberStats, setMemberStats]         = useState<MemberStats[]>([]);
   const [spiele, setSpiele]                   = useState<SpielMitTypen[]>([]);
+  const [featuredSpiel, setFeaturedSpiel]     = useState<{ spiel: Spiel; ereignisTyp: SpielEreignisTyp } | null>(null);
   const [kasse, setKasse]                     = useState<KassenEintrag[]>([]);
   const [terminCount, setTerminCount]         = useState(0);
   const [lastActivity, setLastActivity]       = useState<ActivityLogEntry | null>(null);
@@ -207,7 +208,7 @@ export default function HomeScreen() {
     setLetzterTermin(past[0] ?? null);
     setTerminCount(alle.length);
 
-    if (ms.length === 0) { setMemberStats([]); setLoading(false); return; }
+    if (ms.length === 0) { setMemberStats([]); setFeaturedSpiel(null); setLoading(false); return; }
 
     const stats = await Promise.all(ms.map(async (m) => {
       const [vLogs, spLogs, stLogs]: [VerspätungLog[], SpielLog[], StrafLog[]] = await Promise.all([
@@ -224,6 +225,12 @@ export default function HomeScreen() {
       };
     }));
     setMemberStats(stats);
+
+    // Wählt bei jedem Öffnen zufällig eine (Spiel, Ereignistyp)-Kombination mit Einträgen aus
+    const combos = spieleMitTypen.flatMap(({ spiel, ereignisTypen }) => ereignisTypen.map((et) => ({ spiel, ereignisTyp: et })))
+      .filter(({ spiel, ereignisTyp }) => stats.some((s) => s.spielLogs.some((l) => l.spielId === spiel.id && l.ereignisTypId === ereignisTyp.id)));
+    setFeaturedSpiel(combos.length > 0 ? combos[Math.floor(Math.random() * combos.length)] : null);
+
     setLoading(false);
   }
 
@@ -238,20 +245,15 @@ export default function HomeScreen() {
   const gruendungsjahr = verordnung?.gruendungsjahr ?? null;
   const dauer = gruendungsjahr ? gruendungsDauer(gruendungsjahr) : null;
 
-  // Zeigt automatisch die (Spiel, Ereignistyp)-Kombination mit den meisten Einträgen
-  const spielTotals = spiele.flatMap(({ spiel, ereignisTypen }) => ereignisTypen.map((et) => ({
-    spiel, ereignisTyp: et,
-    total: memberStats.reduce((s, ms) => s + ms.spielLogs.filter((l) => l.spielId === spiel.id && l.ereignisTypId === et.id).length, 0),
-  })));
-  const topSpielStat = spielTotals.filter((s) => s.total > 0).sort((a, b) => b.total - a.total)[0] ?? null;
-  const spielRang = topSpielStat
+  // Rotiert bei jedem Öffnen des Home-Screens zufällig durch die (Spiel, Ereignistyp)-Ranglisten (siehe featuredSpiel in load())
+  const spielRang = featuredSpiel
     ? [...memberStats]
-        .map((s) => ({ member: s.member, count: s.spielLogs.filter((l) => l.spielId === topSpielStat.spiel.id && l.ereignisTypId === topSpielStat.ereignisTyp.id).length }))
+        .map((s) => ({ member: s.member, count: s.spielLogs.filter((l) => l.spielId === featuredSpiel.spiel.id && l.ereignisTypId === featuredSpiel.ereignisTyp.id).length }))
         .filter((s) => s.count > 0)
         .sort((a, b) => b.count - a.count)
     : [];
-  const myTopSpielCount = topSpielStat
-    ? (myStats?.spielLogs.filter((l) => l.spielId === topSpielStat.spiel.id && l.ereignisTypId === topSpielStat.ereignisTyp.id).length ?? 0)
+  const myFeaturedSpielCount = featuredSpiel
+    ? (myStats?.spielLogs.filter((l) => l.spielId === featuredSpiel.spiel.id && l.ereignisTypId === featuredSpiel.ereignisTyp.id).length ?? 0)
     : 0;
 
   const naechsterInStunden = naechsterTermin ? hoursUntil(naechsterTermin.datum, naechsterTermin.startZeit) : null;
@@ -306,7 +308,6 @@ export default function HomeScreen() {
                 <Text style={styles.letzterLabel}>Letzter</Text>
                 <Text style={styles.letzterEmoji}>🍺</Text>
                 <Text style={styles.letzterDate}>{formatDatumKurz(letzterTermin.datum)}</Text>
-                <Ionicons name="chevron-forward" size={13} color="rgba(255,255,255,0.35)" style={{ marginTop: 6 }} />
               </TouchableOpacity>
             )}
 
@@ -372,13 +373,13 @@ export default function HomeScreen() {
                 </Text>
                 <Text style={styles.myStatLabel}>{myStats.strafOffen > 0 ? "Offen" : "Beglichen"}</Text>
               </View>
-              {topSpielStat && (
+              {featuredSpiel && (
                 <>
                   <View style={styles.myStatDivider} />
                   <View style={styles.myStatBox}>
-                    <Text style={styles.myStatEmoji}>{topSpielStat.ereignisTyp.emoji ?? "🎮"}</Text>
-                    <Text style={styles.myStatValue}>{myTopSpielCount}</Text>
-                    <Text style={styles.myStatLabel} numberOfLines={1}>{topSpielStat.ereignisTyp.label}</Text>
+                    <Text style={styles.myStatEmoji}>{featuredSpiel.ereignisTyp.emoji ?? "🎮"}</Text>
+                    <Text style={styles.myStatValue}>{myFeaturedSpielCount}</Text>
+                    <Text style={styles.myStatLabel} numberOfLines={1}>{featuredSpiel.ereignisTyp.label}</Text>
                   </View>
                 </>
               )}
@@ -453,12 +454,12 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* ── Top-Spiel-Rangliste ── */}
-        {topSpielStat && spielRang.length > 0 && (
+        {/* ── Rotierende Spiel-Rangliste (wechselt bei jedem Öffnen) ── */}
+        {featuredSpiel && spielRang.length > 0 && (
           <View style={styles.rangCard}>
             <View style={styles.rangCardHeader}>
               <Text style={styles.rangCardTitle}>
-                {topSpielStat.spiel.emoji ?? "🎮"} {topSpielStat.spiel.name} — {topSpielStat.ereignisTyp.label}
+                {featuredSpiel.spiel.emoji ?? "🎮"} {featuredSpiel.spiel.name} — {featuredSpiel.ereignisTyp.label}
               </Text>
               <TouchableOpacity onPress={() => router.push("/ranglisten")}>
                 <Text style={styles.rangCardLink}>Alle →</Text>
@@ -466,12 +467,12 @@ export default function HomeScreen() {
             </View>
             {spielRang.slice(0, 3).map((s, i) => (
               <RangRow key={s.member.id} rank={i} member={s.member}
-                value={`${s.count}`} valueLabel={topSpielStat.ereignisTyp.label} />
+                value={`${s.count}`} valueLabel={featuredSpiel.ereignisTyp.label} />
             ))}
           </View>
         )}
 
-        {memberStats.length > 0 && !(topSpielStat && spielRang.length > 0) && (
+        {memberStats.length > 0 && !(featuredSpiel && spielRang.length > 0) && (
           <TouchableOpacity style={styles.rangLinkCard} onPress={() => router.push("/ranglisten")}>
             <Text style={styles.rangLinkText}>🏆 Alle Ranglisten ansehen</Text>
             <Ionicons name="chevron-forward" size={16} color={COLORS.blue} />
@@ -530,7 +531,14 @@ export default function HomeScreen() {
               {verordnung?.treffpunkt && (
                 <View style={styles.faktBox}>
                   <Text style={styles.faktEmoji}>📍</Text>
-                  <Text style={styles.faktValue} numberOfLines={1}>{verordnung.treffpunkt.split(",")[0]}</Text>
+                  <Text
+                    style={[styles.faktValue, { fontSize: 12 }]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.7}
+                  >
+                    {verordnung.treffpunkt.split(",")[0]}
+                  </Text>
                   <Text style={styles.faktLabel}>Treffpunkt</Text>
                 </View>
               )}
