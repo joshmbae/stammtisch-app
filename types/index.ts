@@ -95,7 +95,7 @@ export const STRAF_KATEGORIEN: {
 }[] = [
   { key: "fehlen_entschuldigt",   label: "Fehlen (entschuld.)",   betrag: 10,  emoji: "📵", beschreibung: "Angekündigt bis 23:59 Uhr Vortag oder triftiger Grund" },
   { key: "fehlen_unentschuldigt", label: "Fehlen (unentschuld.)", betrag: 50,  emoji: "🚫" },
-  { key: "spaet_entschuldigt",    label: "Zu spät (entschuld.)",  betrag: 5,   emoji: "⏰", beschreibung: "Straffrei <30 Min., sonst 5 € – Tracker ab neuer Ankunftszeit" },
+  { key: "spaet_entschuldigt",    label: "Zu spät entschuld. (ab 30 Min.)", betrag: 5, emoji: "⏰", beschreibung: "Straffrei bei <30 Min. Verspätung, ab 30 Min. 5 €" },
   { key: "spaet_15min",           label: "Zu spät 15–30 Min.",    betrag: 5,   emoji: "⏱️", beschreibung: "Unentschuldigt – Trinkspruch ab 1 Min., 5 € ab 15 Min." },
   { key: "spaet_30min",           label: "Zu spät >30 Min.",      betrag: 10,  emoji: "⏱️", beschreibung: "Unentschuldigt" },
   { key: "maennlicher_gast",      label: "Männl. Gast",           betrag: 20,  emoji: "👨", beschreibung: "Pro Gast – weibliche Gäste nur am Valentinsstammtisch" },

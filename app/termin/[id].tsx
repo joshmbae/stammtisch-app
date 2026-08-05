@@ -1231,12 +1231,7 @@ export default function TerminDetailScreen() {
                           style={[styles.strafKatBtn, isSelected && styles.strafKatBtnActive]}
                           onPress={() => {
                             setStrafKategorie(isSelected ? null : kat);
-                            if (kat.key === "spaet_entschuldigt" && strafMemberId) {
-                              const minuten = (verspätungMap[strafMemberId] ?? []).reduce((s, l) => s + l.minutenVerspätet, 0);
-                              setStrafBetragOverride(minuten >= 30 ? String(kat.betrag).replace(".", ",") : "0");
-                            } else {
-                              setStrafBetragOverride(kat.betrag > 0 ? String(kat.betrag).replace(".", ",") : "");
-                            }
+                            setStrafBetragOverride(kat.betrag > 0 ? String(kat.betrag).replace(".", ",") : "");
                             setStrafNotiz("");
                             setShowStrafForm(!isSelected);
                           }}
@@ -1261,11 +1256,6 @@ export default function TerminDetailScreen() {
                       </Text>
                       {strafKategorie.beschreibung && (
                         <Text style={styles.strafFormHint}>{strafKategorie.beschreibung}</Text>
-                      )}
-                      {strafKategorie.key === "spaet_entschuldigt" && strafMemberId && (
-                        <Text style={styles.strafFormHint}>
-                          Getrackte Verspätung: {(verspätungMap[strafMemberId] ?? []).reduce((s, l) => s + l.minutenVerspätet, 0)} Min.
-                        </Text>
                       )}
                       <View style={styles.strafFormRow}>
                         <View style={{ flex: 1 }}>
