@@ -110,12 +110,12 @@ export default function EinstellungenScreen() {
 
   async function handleSeed() {
     showAlert(
-      "Testdaten laden?",
-      "Bestehende Daten werden überschrieben. 11 Mitglieder, monatliche Stammtische seit Oktober 2024 und alle Logs werden angelegt.",
+      "⚠️ Echte Daten löschen?",
+      "Alle aktuell eingegebenen echten Daten (Mitglieder, Termine, Logs) werden unwiderruflich gelöscht und durch einen Beispiel-Teststammtisch ersetzt. Nur zum Ausprobieren gedacht.",
       [
         { text: "Abbrechen", style: "cancel" },
         {
-          text: "Laden",
+          text: "Löschen & Testdaten laden",
           style: "destructive",
           onPress: async () => {
             setSeeding(true);
@@ -414,7 +414,7 @@ export default function EinstellungenScreen() {
         <Text style={[styles.sectionTitle, { marginTop: 32 }]}>🧪 Entwickler</Text>
         <View style={styles.devCard}>
           <Text style={styles.devHint}>
-            Lädt 11 Mitglieder, monatliche Stammtische seit Oktober 2024 und alle Logs (Verspätungen, Schocken, Strafen, Kasse, Protokolle) als realistische Testdaten.
+            Falls du sehen willst, wie ein Teststammtisch aussieht: lädt 11 Beispiel-Mitglieder, monatliche Stammtische und Beispiel-Logs als Demo-Daten. Achtung: Das löscht alle aktuell eingegebenen echten Daten unwiderruflich.
           </Text>
           <TouchableOpacity
             style={[styles.devBtn, styles.devBtnPrimary, seeding && styles.devBtnDisabled]}
@@ -428,7 +428,7 @@ export default function EinstellungenScreen() {
               <Ionicons name="flask-outline" size={18} color="#FFFFFF" />
             )}
             <Text style={styles.devBtnText}>
-              {seeding ? "Wird geladen …" : "Testdaten laden"}
+              {seeding ? "Wird geladen …" : "Teststammtisch anzeigen"}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
