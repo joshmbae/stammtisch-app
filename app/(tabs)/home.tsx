@@ -257,6 +257,7 @@ export default function HomeScreen() {
     : 0;
 
   const naechsterInStunden = naechsterTermin ? hoursUntil(naechsterTermin.datum, naechsterTermin.startZeit) : null;
+  const naechsterInTagen = naechsterTermin ? daysUntil(naechsterTermin.datum) : null;
   const naechsterZusagen = naechsterTermin?.anwesenheit?.length ?? 0;
   const naechsterAbsagen = naechsterTermin?.absagen?.length ?? 0;
   const naechsterOffen = Math.max(0, members.length - naechsterZusagen - naechsterAbsagen);
@@ -327,10 +328,10 @@ export default function HomeScreen() {
                 </Text>
                 <View style={styles.countdownNumRow}>
                   <Text style={styles.countdownNum}>
-                    {naechsterInStunden < 24 ? naechsterInStunden : Math.ceil(naechsterInStunden / 24)}
+                    {naechsterInStunden < 24 ? naechsterInStunden : naechsterInTagen}
                   </Text>
                   <Text style={styles.countdownUnit}>
-                    {naechsterInStunden === 0 ? "Jetzt!" : naechsterInStunden < 24 ? "Std." : naechsterInStunden < 48 ? "Tag" : "Tage"}
+                    {naechsterInStunden === 0 ? "Jetzt!" : naechsterInStunden < 24 ? "Std." : naechsterInTagen === 1 ? "Tag" : "Tage"}
                   </Text>
                 </View>
                 {members.length > 0 && (
