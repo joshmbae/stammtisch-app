@@ -528,21 +528,18 @@ export default function HomeScreen() {
                   <Text style={styles.faktLabel}>Stammtische</Text>
                 </View>
               )}
-              {verordnung?.treffpunkt && (
-                <View style={styles.faktBox}>
-                  <Text style={styles.faktEmoji}>📍</Text>
-                  <Text
-                    style={[styles.faktValue, { fontSize: 12 }]}
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
-                    minimumFontScale={0.7}
-                  >
+            </View>
+            {verordnung?.treffpunkt && (
+              <View style={styles.treffpunktRow}>
+                <Text style={styles.faktEmoji}>📍</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.faktLabel, { textAlign: "left" }]}>Treffpunkt</Text>
+                  <Text style={styles.treffpunktValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
                     {verordnung.treffpunkt.split(",")[0]}
                   </Text>
-                  <Text style={styles.faktLabel}>Treffpunkt</Text>
                 </View>
-              )}
-            </View>
+              </View>
+            )}
           </View>
         )}
 
@@ -730,6 +727,13 @@ const styles = StyleSheet.create({
   faktEmoji: { fontSize: 20 },
   faktValue: { fontSize: 15, fontWeight: "800", color: COLORS.textDark, textAlign: "center" },
   faktLabel: { fontSize: 10, color: COLORS.textMuted, fontWeight: "600", textAlign: "center" },
+
+  treffpunktRow: {
+    flexDirection: "row", alignItems: "center", gap: 10,
+    backgroundColor: COLORS.background, borderRadius: 16,
+    paddingVertical: 12, paddingHorizontal: 14, marginTop: 10,
+  },
+  treffpunktValue: { fontSize: 14, fontWeight: "800", color: COLORS.textDark, marginTop: 1 },
 
   // ── Schock-Aus Rangliste ──────────────────────────────────────────────────
   rangCard: {
