@@ -28,6 +28,11 @@ export function setActiveStammtischId(id: string): void {
   cachedStammtischId = id;
 }
 
+/** Setzt den In-Memory-Cache zurück (Tenant-Wechsel/-Löschung). */
+export function clearActiveStammtischId(): void {
+  cachedStammtischId = null;
+}
+
 export async function getStammtischId(): Promise<string> {
   if (!cachedStammtischId) {
     throw new Error("Kein aktiver Stammtisch gesetzt — Routing hätte das vorher auflösen müssen.");
@@ -69,10 +74,27 @@ export async function createStammtisch(name: string, passwordHash: string): Prom
     p_name: name,
     p_password_hash: passwordHash,
   });
+  if (error?.code === "23505") {
+    throw new Error("Dieser Stammtisch-Name ist schon vergeben.");
+  }
   if (error || !data || data.length === 0) {
     throw new Error("Stammtisch konnte nicht angelegt werden: " + error?.message);
   }
   return { id: data[0].id as string };
+}
+
+/**
+ * Prüft Zugriff + (bereits gehashtes) Passwort serverseitig und löscht bei
+ * Erfolg den Stammtisch samt aller zugehörigen Daten unwiderruflich.
+ * Gibt false zurück bei falschem Passwort oder fehlendem Zugriff.
+ */
+export async function deleteStammtisch(stammtischId: string, passwordHash: string): Promise<boolean> {
+  const { data, error } = await supabase.rpc("rpc_delete_stammtisch", {
+    p_stammtisch_id: stammtischId,
+    p_password_hash: passwordHash,
+  });
+  if (error) throw error;
+  return data === true;
 }
 
 // ─── Member Profiles ──────────────────────────────────────────────────────────

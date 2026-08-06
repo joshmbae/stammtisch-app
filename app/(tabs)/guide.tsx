@@ -18,13 +18,15 @@ import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { showAlert } from "../../utils/alert";
 import { StammtischVerordnung, Spiel, SPIEL_VORLAGEN } from "../../types";
-import { loadVerordnung, saveVerordnung, uploadStammtischLogo, loadSpiele, instantiateSpielVorlage } from "../../utils/storage";
+import { loadVerordnung, saveVerordnung, uploadStammtischLogo, loadSpiele, instantiateSpielVorlage, deleteStammtisch } from "../../utils/storage";
 import { seedTestData, clearAllData } from "../../utils/seed";
+import { hashStammtischPassword } from "../../utils/pin";
 import { COLORS, SHADOWS } from "../../constants/design";
 import { HamburgerButton } from "../../components/HamburgerButton";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import InlineDateTimePicker from "../../components/InlineDateTimePicker";
 import { useStammtisch } from "../../contexts/StammtischContext";
+import { useSession } from "../../contexts/SessionContext";
 
 /** Parst "YYYY" oder "YYYY-MM" (legacy: nur Jahr -> Januar). */
 function parseGruendung(value?: string): Date {
@@ -49,7 +51,11 @@ export default function EinstellungenScreen() {
   const [loading, setLoading] = useState(true);
   const [spiele, setSpiele] = useState<Spiel[]>([]);
   const [activatingSpiel, setActivatingSpiel] = useState<string | null>(null);
-  const { stammtischId } = useStammtisch();
+  const [showDeleteForm, setShowDeleteForm] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const { stammtischId, clearStammtisch } = useStammtisch();
+  const { clearSession } = useSession();
 
   async function handleSelectSpiel(spiel: Spiel | null) {
     setActivatingSpiel(spiel?.id ?? "none");
@@ -149,6 +155,43 @@ export default function EinstellungenScreen() {
               showAlert("Gelöscht", "Alle Stammtisch-Daten wurden entfernt.");
             } finally {
               setSeeding(false);
+            }
+          },
+        },
+      ]
+    );
+  }
+
+  async function handleDeleteStammtisch() {
+    if (!stammtischId || !deletePassword) {
+      showAlert("Passwort fehlt", "Bitte das Stammtisch-Passwort eingeben.");
+      return;
+    }
+    showAlert(
+      "⚠️ Stammtisch endgültig löschen?",
+      "Alle Daten – Mitglieder, Termine, Kasse, Strafen, Protokolle – werden für alle unwiderruflich gelöscht. Das kann nicht rückgängig gemacht werden.",
+      [
+        { text: "Abbrechen", style: "cancel" },
+        {
+          text: "Endgültig löschen",
+          style: "destructive",
+          onPress: async () => {
+            setDeleting(true);
+            try {
+              const passwordHash = await hashStammtischPassword(verordnung.name, deletePassword);
+              const ok = await deleteStammtisch(stammtischId, passwordHash);
+              if (!ok) {
+                showAlert("Falsches Passwort", "Der Stammtisch wurde nicht gelöscht.");
+                return;
+              }
+              await clearSession();
+              await clearStammtisch();
+              router.replace("/stammtisch-waehlen");
+            } catch (e) {
+              showAlert("Fehler", "Stammtisch konnte nicht gelöscht werden.");
+            } finally {
+              setDeleting(false);
+              setDeletePassword("");
             }
           },
         },
@@ -440,6 +483,55 @@ export default function EinstellungenScreen() {
             <Ionicons name="trash-outline" size={18} color="#FFFFFF" />
             <Text style={styles.devBtnText}>Alle Daten löschen</Text>
           </TouchableOpacity>
+        </View>
+
+        {/* ── Gefahrenzone ── */}
+        <Text style={[styles.sectionTitle, { marginTop: 32 }]}>⚠️ Gefahrenzone</Text>
+        <View style={styles.devCard}>
+          <Text style={styles.devHint}>
+            Löscht diesen Stammtisch komplett und unwiderruflich — für alle Mitglieder. Alle
+            Termine, Kasse, Strafen, Spiele-Logs und Protokolle gehen dabei verloren.
+          </Text>
+          {!showDeleteForm ? (
+            <TouchableOpacity
+              style={[styles.devBtn, styles.devBtnDanger]}
+              onPress={() => setShowDeleteForm(true)}
+              activeOpacity={0.85}
+            >
+              <Ionicons name="trash-outline" size={18} color="#FFFFFF" />
+              <Text style={styles.devBtnText}>Stammtisch löschen</Text>
+            </TouchableOpacity>
+          ) : (
+            <>
+              <TextInput
+                style={styles.input}
+                value={deletePassword}
+                onChangeText={setDeletePassword}
+                placeholder="Stammtisch-Passwort zur Bestätigung"
+                placeholderTextColor={COLORS.textLight}
+                secureTextEntry
+                autoCapitalize="none"
+              />
+              <TouchableOpacity
+                style={[styles.devBtn, styles.devBtnDanger, deleting && styles.devBtnDisabled]}
+                onPress={handleDeleteStammtisch}
+                disabled={deleting}
+                activeOpacity={0.85}
+              >
+                {deleting ? (
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                ) : (
+                  <Ionicons name="warning-outline" size={18} color="#FFFFFF" />
+                )}
+                <Text style={styles.devBtnText}>
+                  {deleting ? "Wird gelöscht …" : "Endgültig löschen"}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => { setShowDeleteForm(false); setDeletePassword(""); }}>
+                <Text style={styles.logoRemoveText}>Abbrechen</Text>
+              </TouchableOpacity>
+            </>
+          )}
         </View>
 
       </ScrollView>

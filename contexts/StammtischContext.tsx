@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ensureAuthSession } from "../utils/supabase";
-import { getLegacySingleStammtischId, setActiveStammtischId as cacheStammtischId } from "../utils/storage";
+import { getLegacySingleStammtischId, setActiveStammtischId as cacheStammtischId, clearActiveStammtischId } from "../utils/storage";
 
 const STAMMTISCH_KEY = "st_active_stammtisch";
 const STAMMTISCH_NAME_KEY = "st_active_stammtisch_name";
@@ -63,6 +63,7 @@ export function StammtischProvider({ children }: { children: React.ReactNode }) 
   async function clearStammtisch() {
     await AsyncStorage.removeItem(STAMMTISCH_KEY);
     await AsyncStorage.removeItem(STAMMTISCH_NAME_KEY);
+    clearActiveStammtischId();
     setStammtischId(null);
     setStammtischName(null);
   }
