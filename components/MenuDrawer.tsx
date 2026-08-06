@@ -16,7 +16,7 @@ import { useMenu } from "../contexts/MenuContext";
 import { useSession } from "../contexts/SessionContext";
 import { useStammtisch } from "../contexts/StammtischContext";
 import { COLORS } from "../constants/design";
-import { getInitial } from "../utils/format";
+import { getInitial, displayName } from "../utils/format";
 
 const DRAWER_WIDTH = Math.min(Dimensions.get("window").width * 0.78, 300);
 
@@ -116,11 +116,8 @@ export function MenuDrawer() {
                     </Text>
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.drawerTitle}>{activeMember.name}</Text>
-                    <Text style={styles.drawerSub}>
-                      {activeMember.spitzname ? `„${activeMember.spitzname}" · ` : ""}
-                      {activeMember.rollen.join(", ")}
-                    </Text>
+                    <Text style={styles.drawerTitle}>{displayName(activeMember)}</Text>
+                    <Text style={styles.drawerSub}>{activeMember.rollen.join(", ")}</Text>
                   </View>
                 </View>
               ) : (

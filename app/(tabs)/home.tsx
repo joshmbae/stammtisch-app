@@ -40,7 +40,7 @@ import { COLORS, SHADOWS } from "../../constants/design";
 import { HamburgerButton } from "../../components/HamburgerButton";
 import StammtischLogo from "../../components/StammtischLogo";
 import LoadingSpinner from "../../components/LoadingSpinner";
-import { formatEuro, getInitial, gruendungsDauer, formatDauer, formatGruendungMonat } from "../../utils/format";
+import { formatEuro, getInitial, gruendungsDauer, formatDauer, formatGruendungMonat, displayName } from "../../utils/format";
 import { toLocalIsoDate, formatActivityZeit } from "../../utils/date";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -141,7 +141,7 @@ function RangRow({ rank, member, value, valueLabel, sub }: {
         </View>
       )}
       <View style={styles.rangInfo}>
-        <Text style={styles.rangName}>{member.name}{member.spitzname ? ` „${member.spitzname}"` : ""}</Text>
+        <Text style={styles.rangName}>{displayName(member)}</Text>
         {sub ? <Text style={styles.rangSub}>{sub}</Text> : null}
       </View>
       <View style={styles.rangValueWrap}>

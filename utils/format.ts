@@ -6,6 +6,11 @@ export function getInitial(name: string): string {
   return name.charAt(0).toUpperCase();
 }
 
+/** Zeigt nur den Spitznamen, falls einer gesetzt ist — nie beides zusammen. */
+export function displayName(member: { name: string; spitzname?: string }): string {
+  return member.spitzname || member.name;
+}
+
 /** Parst "YYYY" oder "YYYY-MM" und liefert die vergangene Zeit als Jahre + Monate. */
 export function gruendungsDauer(gruendungsjahr: string): { jahre: number; monate: number } | null {
   const match = gruendungsjahr.match(/^(\d{4})(?:-(\d{2}))?/);

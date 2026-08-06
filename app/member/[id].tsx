@@ -33,7 +33,7 @@ import {
   loadTermine,
 } from "../../utils/storage";
 import { COLORS, SHADOWS } from "../../constants/design";
-import { formatEuro, getInitial } from "../../utils/format";
+import { formatEuro, getInitial, displayName } from "../../utils/format";
 import PinPrompt from "../../components/PinPrompt";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { verifyPin } from "../../utils/pin";
@@ -223,8 +223,7 @@ export default function MemberDetailScreen() {
             </View>
           )}
           <View style={styles.heroInfo}>
-            <Text style={styles.heroName}>{member.name}</Text>
-            {member.spitzname && <Text style={styles.heroSpitzname}>„{member.spitzname}"</Text>}
+            <Text style={styles.heroName}>{displayName(member)}</Text>
             <View style={[styles.rolleBadge, { backgroundColor: member.avatarColor + "22", borderColor: member.avatarColor + "66" }]}>
               <Text style={[styles.rolleBadgeText, { color: member.avatarColor }]}>{member.rollen.join(", ")}</Text>
             </View>
@@ -389,7 +388,6 @@ const styles = StyleSheet.create({
   heroAvatarLetter: { fontSize: 26, fontWeight: "700", color: "#FFFFFF" },
   heroInfo: { flex: 1, gap: 4 },
   heroName: { fontSize: 18, fontWeight: "800", color: COLORS.textDark },
-  heroSpitzname: { fontSize: 13, color: COLORS.textMuted, fontStyle: "italic" },
   rolleBadge: { alignSelf: "flex-start", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10, borderWidth: 1 },
   rolleBadgeText: { fontSize: 12, fontWeight: "700" },
 

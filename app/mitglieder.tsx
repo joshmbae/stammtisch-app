@@ -17,7 +17,7 @@ import { loadMembers, deleteMember } from "../utils/storage";
 import { COLORS, SHADOWS } from "../constants/design";
 import { HamburgerButton } from "../components/HamburgerButton";
 import LoadingSpinner from "../components/LoadingSpinner";
-import { getInitial } from "../utils/format";
+import { getInitial, displayName } from "../utils/format";
 import PinPrompt from "../components/PinPrompt";
 import { verifyPin } from "../utils/pin";
 
@@ -117,7 +117,7 @@ export default function MitgliederScreen() {
                 )}
               </View>
               <View style={styles.memberInfo}>
-                <Text style={styles.memberName}>{m.name}{m.spitzname ? ` „${m.spitzname}"` : ""}</Text>
+                <Text style={styles.memberName}>{displayName(m)}</Text>
                 <Text style={styles.memberSub}>{m.rollen.join(", ")}{m.lieblingsgetraenk ? ` · ${m.lieblingsgetraenk}` : ""}</Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color={COLORS.textLight} />

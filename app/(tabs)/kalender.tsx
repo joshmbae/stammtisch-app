@@ -23,6 +23,7 @@ import {
   deleteTermin,
 } from "../../utils/storage";
 import { COLORS, SHADOWS } from "../../constants/design";
+import { displayName } from "../../utils/format";
 import { HamburgerButton } from "../../components/HamburgerButton";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import InlineDateTimePicker from "../../components/InlineDateTimePicker";
@@ -82,7 +83,7 @@ function memberBirthdayEvent(m: MemberProfile): StammtischTermin {
   return {
     id: `bd_${m.id}`,
     art: "geburtstag",
-    titel: m.name + (m.spitzname ? ` „${m.spitzname}"` : ""),
+    titel: displayName(m),
     datum: m.geburtsdatum!,
     aktiv: false,
     createdAt: m.createdAt,

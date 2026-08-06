@@ -10,6 +10,14 @@ function displayName(m: MemberProfile | undefined): string {
   return m.spitzname ?? m.name.split(" ")[0];
 }
 
+/** Baut z.B. "Stammtisch am 06.08." oder "Weihnachtsfeier am 19.12." aus den im meta eingefrorenen Termin-Daten. */
+function terminBezeichnung(meta: Record<string, any>): string {
+  const label = meta.terminTitel || (meta.terminArt === "geburtstag" ? "Geburtstag" : meta.terminArt === "veranstaltung" ? "Veranstaltung" : "Stammtisch");
+  if (!meta.terminDatum) return label;
+  const datum = new Date(meta.terminDatum + "T00:00:00").toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
+  return `${label} am ${datum}`;
+}
+
 export interface RenderedActivity {
   emoji: string;
   text: string;
@@ -122,12 +130,12 @@ export function renderActivity(
     case "termin_zusage":
       return {
         emoji: "✅",
-        text: `${subjectName} hat zugesagt`,
+        text: `${subjectName} hat für ${terminBezeichnung(meta)} zugesagt`,
       };
     case "termin_absage":
       return {
         emoji: "❌",
-        text: `${subjectName} hat abgesagt`,
+        text: `${subjectName} hat für ${terminBezeichnung(meta)} abgesagt`,
       };
     default:
       return { emoji: "📋", text: `${subjectName ?? actorName}: ${entry.actionType}` };

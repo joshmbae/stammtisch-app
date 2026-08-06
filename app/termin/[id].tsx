@@ -64,7 +64,7 @@ import {
 } from "../../utils/storage";
 import { COLORS, SHADOWS } from "../../constants/design";
 import { useSession } from "../../contexts/SessionContext";
-import { getInitial } from "../../utils/format";
+import { getInitial, displayName } from "../../utils/format";
 import { toTimeString, parseTimeString } from "../../utils/date";
 import LoadingSpinner from "../../components/LoadingSpinner";
 
@@ -153,7 +153,7 @@ function MemberRow({
             </View>
           )}
           <View style={styles.memberInfo}>
-            <Text style={styles.memberName}>{member.name}{member.spitzname ? ` „${member.spitzname}"` : ""}</Text>
+            <Text style={styles.memberName}>{displayName(member)}</Text>
             {gesamtMinuten > 0 && (
               <Text style={styles.memberVerspätung}>⏱️ {gesamtMinuten} Min.</Text>
             )}
@@ -259,7 +259,7 @@ function MemberRow({
 
         <View style={styles.memberInfoCompact}>
           <Text style={styles.memberNameCompact} numberOfLines={1}>
-            {member.name}{member.spitzname ? ` „${member.spitzname}"` : ""}
+            {displayName(member)}
           </Text>
           {gesamtMinuten > 0 && (
             <Text style={styles.memberVerspätungSmall}>⏱ {gesamtMinuten} Min.</Text>
@@ -359,7 +359,7 @@ function WetteCard({
 }) {
   const isOffen = wette.gewonnen === undefined;
   const gewonnen = wette.gewonnen === true;
-  const gegnerName = `${gegner?.name ?? "Unbekannt"}${gegner?.spitzname ? ` „${gegner.spitzname}"` : ""}`;
+  const gegnerName = gegner ? displayName(gegner) : "Unbekannt";
   const bettorName = bettor ? (bettor.spitzname ?? bettor.name.split(" ")[0]) : undefined;
 
   return (
@@ -889,6 +889,7 @@ export default function TerminDetailScreen() {
         subjectMemberId: activeMemberId,
         actionType: status === "ja" ? "termin_zusage" : "termin_absage",
         terminId: termin.id,
+        meta: { terminDatum: termin.datum, terminTitel: termin.titel, terminArt: termin.art },
       });
     }
   }

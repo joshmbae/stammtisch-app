@@ -16,7 +16,7 @@ import { useStammtisch } from "../contexts/StammtischContext";
 import { COLORS, SHADOWS } from "../constants/design";
 import StammtischLogo from "../components/StammtischLogo";
 import LoadingSpinner from "../components/LoadingSpinner";
-import { getInitial } from "../utils/format";
+import { getInitial, displayName } from "../utils/format";
 import PinPrompt from "../components/PinPrompt";
 import { verifyPin } from "../utils/pin";
 
@@ -96,10 +96,7 @@ export default function MitgliedWaehlenScreen() {
                     <Text style={styles.avatarLetter}>{getInitial(m.name)}</Text>
                   )}
                 </View>
-                <Text style={styles.cardName} numberOfLines={1}>{m.name}</Text>
-                {m.spitzname ? (
-                  <Text style={styles.cardSpitz} numberOfLines={1}>„{m.spitzname}"</Text>
-                ) : null}
+                <Text style={styles.cardName} numberOfLines={1}>{displayName(m)}</Text>
                 <View style={[styles.rolleBadge, { backgroundColor: m.avatarColor + "22" }]}>
                   <Text style={[styles.rolleText, { color: m.avatarColor }]} numberOfLines={1}>{m.rollen.join(", ")}</Text>
                 </View>
@@ -191,7 +188,6 @@ const styles = StyleSheet.create({
   avatarImg: { width: 60, height: 60, borderRadius: 30 },
   avatarLetter: { fontSize: 24, fontWeight: "700", color: "#FFFFFF" },
   cardName: { fontSize: 15, fontWeight: "700", color: COLORS.textDark, textAlign: "center" },
-  cardSpitz: { fontSize: 12, color: COLORS.textMuted, fontStyle: "italic", textAlign: "center" },
   rolleBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,

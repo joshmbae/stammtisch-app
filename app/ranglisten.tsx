@@ -32,7 +32,7 @@ import {
 import { COLORS, SHADOWS } from "../constants/design";
 import { HamburgerButton } from "../components/HamburgerButton";
 import LoadingSpinner from "../components/LoadingSpinner";
-import { formatEuro, getInitial } from "../utils/format";
+import { formatEuro, getInitial, displayName } from "../utils/format";
 
 interface MemberStats {
   member: MemberProfile;
@@ -63,7 +63,7 @@ function RangRow({ rank, member, value, valueLabel, sub }: {
         </View>
       )}
       <View style={styles.rangInfo}>
-        <Text style={styles.rangName}>{member.name}{member.spitzname ? ` „${member.spitzname}"` : ""}</Text>
+        <Text style={styles.rangName}>{displayName(member)}</Text>
         {sub ? <Text style={styles.rangSub}>{sub}</Text> : null}
       </View>
       <View style={styles.rangValueWrap}>
