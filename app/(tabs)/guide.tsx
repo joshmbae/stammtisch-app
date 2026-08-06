@@ -80,8 +80,8 @@ export default function EinstellungenScreen() {
       await saveVerordnung(updated);
       setVerordnung(updated);
       setDirty(false);
-    } catch {
-      showAlert("Fehler", "Spiel-Vorlage konnte nicht angelegt werden.");
+    } catch (e: any) {
+      showAlert("Fehler", "Spiel-Vorlage konnte nicht angelegt werden: " + (e?.message ?? "Unbekannter Fehler."));
     } finally {
       setActivatingSpiel(null);
     }
