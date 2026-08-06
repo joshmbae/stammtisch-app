@@ -64,6 +64,8 @@ export default function EinstellungenScreen() {
       await saveVerordnung(updated);
       setVerordnung(updated);
       setDirty(false);
+    } catch (e: any) {
+      showAlert("Fehler", "Spiel konnte nicht aktiviert werden: " + (e?.message ?? "Unbekannter Fehler."));
     } finally {
       setActivatingSpiel(null);
     }
