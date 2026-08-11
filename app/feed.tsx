@@ -9,6 +9,9 @@ import { formatActivityZeit } from "../utils/date";
 import { COLORS, SHADOWS } from "../constants/design";
 import { HamburgerButton } from "../components/HamburgerButton";
 import LoadingSpinner from "../components/LoadingSpinner";
+import { supabase } from "../utils/supabase";
+import { subscribeToActivityFeed } from "../utils/realtime";
+import { useStammtisch } from "../contexts/StammtischContext";
 
 function FeedRow({
   entry,
@@ -44,6 +47,7 @@ export default function FeedScreen() {
   const [entries, setEntries] = useState<ActivityLogEntry[]>([]);
   const [members, setMembers] = useState<MemberProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const { stammtischId } = useStammtisch();
 
   useFocusEffect(
     useCallback(() => {
@@ -54,7 +58,13 @@ export default function FeedScreen() {
         setLoading(false);
       }
       load();
-    }, [])
+
+      if (!stammtischId) return;
+      const channel = subscribeToActivityFeed(stammtischId, (entry) => {
+        setEntries((prev) => (prev.some((e) => e.id === entry.id) ? prev : [entry, ...prev]));
+      });
+      return () => { supabase.removeChannel(channel); };
+    }, [stammtischId])
   );
 
   const membersById = new Map(members.map((m) => [m.id, m]));
