@@ -246,7 +246,7 @@ export async function saveVerordnung(v: StammtischVerordnung): Promise<void> {
 
 // ─── Verspätungs-Logs ─────────────────────────────────────────────────────────
 
-function rowToVerspätungLog(row: any): VerspätungLog {
+export function rowToVerspätungLog(row: any): VerspätungLog {
   return {
     id: row.id,
     memberId: row.member_id,
@@ -410,7 +410,7 @@ export async function deleteEreignisTyp(id: string): Promise<void> {
   if (error) throw error;
 }
 
-function rowToSpielLog(row: any): SpielLog {
+export function rowToSpielLog(row: any): SpielLog {
   return {
     id: row.id,
     memberId: row.member_id,
@@ -476,7 +476,7 @@ export async function instantiateSpielVorlage(vorlage: {
 
 // ─── Wetten ───────────────────────────────────────────────────────────────────
 
-function rowToWette(row: any): Wette {
+export function rowToWette(row: any): Wette {
   return {
     id: row.id,
     memberId: row.member_id,
@@ -555,7 +555,7 @@ export async function deleteWette(memberId: string, wetteId: string): Promise<vo
 
 // ─── Stammtisch-Termine ───────────────────────────────────────────────────────
 
-function rowToTermin(row: any): StammtischTermin {
+export function rowToTermin(row: any): StammtischTermin {
   return {
     id: row.id,
     art: row.art,
@@ -738,7 +738,7 @@ export async function deleteProtokoll(terminId: string): Promise<void> {
 
 // ─── Strafen ──────────────────────────────────────────────────────────────────
 
-function rowToStrafLog(row: any): StrafLog {
+export function rowToStrafLog(row: any): StrafLog {
   return {
     id: row.id,
     memberId: row.member_id,
@@ -949,7 +949,7 @@ export async function setRsvpStatus(
 
 // ─── Activity-Feed ─────────────────────────────────────────────────────────────
 
-function rowToActivity(row: any): ActivityLogEntry {
+export function rowToActivity(row: any): ActivityLogEntry {
   return {
     id: row.id,
     createdAt: row.created_at,
