@@ -15,6 +15,8 @@ export default function RootLayout() {
             <Stack screenOptions={{ headerShown: false }}>
               <Stack.Screen name="index" />
               <Stack.Screen name="stammtisch-waehlen" />
+              <Stack.Screen name="onboarding-setup" />
+              <Stack.Screen name="onboarding-intro" />
               <Stack.Screen name="mitglied-waehlen" />
               <Stack.Screen name="(tabs)" />
               <Stack.Screen name="member/new" />

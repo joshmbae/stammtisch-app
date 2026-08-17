@@ -13,6 +13,7 @@ import { Protokoll, StammtischTermin } from "../types";
 import { loadProtokolle, loadTermine } from "../utils/storage";
 import { COLORS, SHADOWS } from "../constants/design";
 import { HamburgerButton } from "../components/HamburgerButton";
+import { BackButton } from "../components/BackButton";
 import LoadingSpinner from "../components/LoadingSpinner";
 
 type ProtokollMitTermin = Protokoll & {
@@ -61,6 +62,7 @@ export default function ProtokollListeScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
         <View style={styles.header}>
+          <BackButton />
           <HamburgerButton />
           <View style={styles.headerTexts}>
             <Text style={styles.headerTitle}>Protokolle</Text>

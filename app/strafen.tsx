@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  TextInput,
   Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -16,6 +17,7 @@ import { StrafLog, MemberProfile, STRAF_KATEGORIEN } from "../types";
 import {
   loadMembers,
   loadAllStrafLogs,
+  addStrafLog,
   updateStrafLog,
   deleteStrafLog,
   logActivity,
@@ -23,6 +25,7 @@ import {
 } from "../utils/storage";
 import { COLORS, SHADOWS } from "../constants/design";
 import { HamburgerButton } from "../components/HamburgerButton";
+import { BackButton } from "../components/BackButton";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { useSession } from "../contexts/SessionContext";
 import { formatEuro, getInitial } from "../utils/format";
@@ -48,6 +51,11 @@ export default function StrafenScreen() {
   const [filterMemberId, setFilterMemberId] = useState<string | null>(null);
   const [showBeglichen, setShowBeglichen] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newMemberId, setNewMemberId] = useState<string | null>(null);
+  const [newBetrag, setNewBetrag] = useState("");
+  const [newNotiz, setNewNotiz] = useState("");
 
   useFocusEffect(
     useCallback(() => {
@@ -96,6 +104,35 @@ export default function StrafenScreen() {
     }
   }
 
+  function toggleAddForm() {
+    setShowAddForm((v) => !v);
+    setNewMemberId(null);
+    setNewBetrag("");
+    setNewNotiz("");
+  }
+
+  async function handleAddStraf() {
+    if (!newMemberId) return;
+    const betrag = parseFloat(newBetrag.replace(",", "."));
+    if (isNaN(betrag) || betrag < 0) return;
+    const log = await addStrafLog(newMemberId, {
+      kategorie: "sonstiges",
+      betrag,
+      notiz: newNotiz.trim() || undefined,
+      loggedAt: new Date().toISOString(),
+      beglichen: false,
+    });
+    setLogs((prev) => [log, ...prev]);
+    await logActivity({
+      actorMemberId: activeMemberId ?? undefined,
+      subjectMemberId: newMemberId,
+      actionType: "straf_log_created",
+      refId: log.id,
+      meta: { kategorie: log.kategorie, betrag: log.betrag, notiz: log.notiz },
+    });
+    toggleAddForm();
+  }
+
   async function handleDelete(log: StrafLog) {
     await deleteStrafLog(log.memberId, log.id);
     setLogs((prev) => prev.filter((l) => l.id !== log.id));
@@ -117,12 +154,85 @@ export default function StrafenScreen() {
 
           {/* Header */}
           <View style={styles.header}>
+            <BackButton />
             <HamburgerButton />
             <View style={styles.headerTexts}>
               <Text style={styles.headerTitle}>Strafen</Text>
               <Text style={styles.headerSub}>Alle Strafen der Runde</Text>
             </View>
+            <TouchableOpacity onPress={toggleAddForm} activeOpacity={0.8}>
+              <Ionicons
+                name={showAddForm ? "close-circle" : "add-circle"}
+                size={32}
+                color={COLORS.blue}
+              />
+            </TouchableOpacity>
           </View>
+
+          {showAddForm && (
+            <View style={styles.addCard}>
+              <Text style={styles.addCardTitle}>Neue Strafe</Text>
+
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 4 }}>
+                {members.map((m) => {
+                  const isSelected = m.id === newMemberId;
+                  return (
+                    <TouchableOpacity
+                      key={m.id}
+                      style={[styles.memberChip, isSelected && { backgroundColor: m.avatarColor, borderColor: m.avatarColor }]}
+                      onPress={() => setNewMemberId(isSelected ? null : m.id)}
+                      activeOpacity={0.8}
+                    >
+                      {m.photoUri ? (
+                        <Image source={{ uri: m.photoUri }} style={styles.chipAvatar} />
+                      ) : (
+                        <View style={[styles.chipAvatarFallback, { backgroundColor: isSelected ? "rgba(255,255,255,0.3)" : m.avatarColor + "33" }]}>
+                          <Text style={{ fontSize: 11, fontWeight: "700", color: isSelected ? "#FFF" : m.avatarColor }}>
+                            {getInitial(m.name)}
+                          </Text>
+                        </View>
+                      )}
+                      <Text style={[styles.chipName, isSelected && { color: "#FFFFFF" }]}>
+                        {m.spitzname ?? m.name.split(" ")[0]}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+
+              {newMemberId && (
+                <>
+                  <View style={styles.strafFormRow}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.strafFormLabel}>Betrag (€)</Text>
+                      <TextInput
+                        style={styles.strafFormInput}
+                        value={newBetrag}
+                        onChangeText={setNewBetrag}
+                        placeholder="0,00"
+                        placeholderTextColor={COLORS.textLight}
+                        keyboardType="decimal-pad"
+                      />
+                    </View>
+                    <View style={{ flex: 2 }}>
+                      <Text style={styles.strafFormLabel}>Grund</Text>
+                      <TextInput
+                        style={styles.strafFormInput}
+                        value={newNotiz}
+                        onChangeText={setNewNotiz}
+                        placeholder="z. B. 20 Min. zu spät, kein Grund"
+                        placeholderTextColor={COLORS.textLight}
+                      />
+                    </View>
+                  </View>
+                  <TouchableOpacity style={styles.strafSubmitBtn} onPress={handleAddStraf} activeOpacity={0.8}>
+                    <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                    <Text style={styles.strafSubmitText}>Strafe eintragen</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+            </View>
+          )}
 
           {/* Summe offen */}
           <View style={[styles.saldoCard, { borderColor: summeOffen > 0 ? COLORS.danger + "44" : COLORS.success + "44" }]}>
@@ -260,6 +370,24 @@ const styles = StyleSheet.create({
   headerTexts: { flex: 1 },
   headerTitle: { fontSize: 18, fontWeight: "800", color: COLORS.textDark },
   headerSub: { fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
+
+  addCard: {
+    backgroundColor: COLORS.card, borderRadius: 18, padding: 16,
+    marginBottom: 14, borderWidth: 1.5, borderColor: COLORS.blue + "33", gap: 10, ...SHADOWS.card,
+  },
+  addCardTitle: { fontSize: 14, fontWeight: "800", color: COLORS.textDark },
+
+  strafFormRow: { flexDirection: "row", gap: 10 },
+  strafFormLabel: { fontSize: 11, fontWeight: "700", color: COLORS.textMuted, textTransform: "uppercase", letterSpacing: 0.3, marginBottom: 5 },
+  strafFormInput: {
+    backgroundColor: COLORS.background, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9,
+    fontSize: 14, color: COLORS.textDark, borderWidth: 1, borderColor: COLORS.border,
+  },
+  strafSubmitBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7,
+    backgroundColor: COLORS.danger, borderRadius: 12, paddingVertical: 12,
+  },
+  strafSubmitText: { color: "#FFFFFF", fontWeight: "700", fontSize: 14 },
 
   saldoCard: {
     backgroundColor: COLORS.card, borderRadius: 20, padding: 18,

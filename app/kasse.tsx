@@ -29,6 +29,7 @@ import {
 } from "../utils/storage";
 import { COLORS, SHADOWS } from "../constants/design";
 import { HamburgerButton } from "../components/HamburgerButton";
+import { BackButton } from "../components/BackButton";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { useSession } from "../contexts/SessionContext";
 import { formatEuro, getInitial } from "../utils/format";
@@ -274,6 +275,7 @@ export default function KasseScreen() {
 
           {/* Header */}
           <View style={styles.header}>
+            <BackButton />
             <HamburgerButton />
             <View style={styles.headerTexts}>
               <Text style={styles.headerTitle}>Stammtischkasse</Text>

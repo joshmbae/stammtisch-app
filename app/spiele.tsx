@@ -7,6 +7,7 @@ import { Spiel, StammtischVerordnung } from "../types";
 import { loadSpiele, loadVerordnung } from "../utils/storage";
 import { COLORS, SHADOWS } from "../constants/design";
 import { HamburgerButton } from "../components/HamburgerButton";
+import { BackButton } from "../components/BackButton";
 import LoadingSpinner from "../components/LoadingSpinner";
 
 export default function SpieleScreen() {
@@ -32,6 +33,7 @@ export default function SpieleScreen() {
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
           <View style={styles.header}>
+            <BackButton />
             <HamburgerButton />
             <View style={styles.headerTexts}>
               <Text style={styles.headerTitle}>Spiele</Text>

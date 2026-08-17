@@ -19,10 +19,10 @@ import * as ImagePicker from "expo-image-picker";
 import { showAlert } from "../../utils/alert";
 import { StammtischVerordnung, Spiel, SPIEL_VORLAGEN } from "../../types";
 import { loadVerordnung, saveVerordnung, uploadStammtischLogo, loadSpiele, instantiateSpielVorlage, deleteStammtisch } from "../../utils/storage";
-import { seedTestData, clearAllData } from "../../utils/seed";
 import { hashStammtischPassword } from "../../utils/pin";
 import { COLORS, SHADOWS } from "../../constants/design";
 import { HamburgerButton } from "../../components/HamburgerButton";
+import { BackButton } from "../../components/BackButton";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import InlineDateTimePicker from "../../components/InlineDateTimePicker";
 import { useStammtisch } from "../../contexts/StammtischContext";
@@ -46,7 +46,6 @@ export default function EinstellungenScreen() {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [neueRegel, setNeueRegel] = useState("");
-  const [seeding, setSeeding] = useState(false);
   const [showGruendungPicker, setShowGruendungPicker] = useState(false);
   const [loading, setLoading] = useState(true);
   const [spiele, setSpiele] = useState<Spiel[]>([]);
@@ -116,54 +115,6 @@ export default function EinstellungenScreen() {
     update({ logoUrl: undefined });
   }
 
-  async function handleSeed() {
-    showAlert(
-      "⚠️ Echte Daten löschen?",
-      "Alle aktuell eingegebenen echten Daten (Mitglieder, Termine, Logs) werden unwiderruflich gelöscht und durch einen Beispiel-Teststammtisch ersetzt. Nur zum Ausprobieren gedacht.",
-      [
-        { text: "Abbrechen", style: "cancel" },
-        {
-          text: "Löschen & Testdaten laden",
-          style: "destructive",
-          onPress: async () => {
-            setSeeding(true);
-            try {
-              await seedTestData();
-              showAlert("Fertig! 🍺", "Testdaten wurden geladen. Du kannst die App jetzt erkunden.");
-            } catch (e) {
-              showAlert("Fehler", "Testdaten konnten nicht geladen werden.");
-            } finally {
-              setSeeding(false);
-            }
-          },
-        },
-      ]
-    );
-  }
-
-  async function handleClear() {
-    showAlert(
-      "Alle Daten löschen?",
-      "Sämtliche Mitglieder, Termine und Logs werden unwiderruflich gelöscht.",
-      [
-        { text: "Abbrechen", style: "cancel" },
-        {
-          text: "Alles löschen",
-          style: "destructive",
-          onPress: async () => {
-            setSeeding(true);
-            try {
-              await clearAllData();
-              showAlert("Gelöscht", "Alle Stammtisch-Daten wurden entfernt.");
-            } finally {
-              setSeeding(false);
-            }
-          },
-        },
-      ]
-    );
-  }
-
   async function handleDeleteStammtisch() {
     if (!stammtischId || !deletePassword) {
       showAlert("Passwort fehlt", "Bitte das Stammtisch-Passwort eingeben.");
@@ -220,7 +171,7 @@ export default function EinstellungenScreen() {
   async function speichern() {
     await saveVerordnung(verordnung);
     setDirty(false);
-    showAlert("Gespeichert", "Die Stammtischverordnung wurde gespeichert.");
+    showAlert("Gespeichert", "Die Änderungen wurden gespeichert.");
   }
 
   function regelHinzufügen() {
@@ -241,6 +192,7 @@ export default function EinstellungenScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
         <View style={styles.header}>
+          <BackButton />
           <HamburgerButton />
           <View style={styles.headerTexts}>
             <Text style={styles.headerTitle}>Einstellungen</Text>
@@ -348,6 +300,15 @@ export default function EinstellungenScreen() {
         {/* Regeln */}
         <Text style={styles.sectionTitle}>📋 Regeln</Text>
 
+        <View style={styles.infoBox}>
+          <Ionicons name="information-circle-outline" size={18} color={COLORS.blue} />
+          <Text style={styles.infoBoxText}>
+            Eure Stammtisch-Regeln, für alle sichtbar unter „Satzung“. Rein informativ — z. B.
+            wer eine Runde ausgibt oder was am Stammtischabend gilt. Strafen selbst tragt ihr
+            separat im jeweiligen Termin ein.
+          </Text>
+        </View>
+
         {verordnung.regeln.map((regel, i) => (
           <View key={i} style={styles.regelRow}>
             <Text style={styles.regelNr}>{i + 1}.</Text>
@@ -377,6 +338,16 @@ export default function EinstellungenScreen() {
 
         {/* Aktives Spiel */}
         <Text style={styles.sectionTitle}>🎲 Aktives Spiel</Text>
+
+        <View style={styles.infoBox}>
+          <Ionicons name="information-circle-outline" size={18} color={COLORS.blue} />
+          <Text style={styles.infoBoxText}>
+            Wählt hier das Spiel, das ihr am Stammtisch spielt (z. B. Schocken). Es erscheint dann
+            als eigener Tab im Termin, wo ihr Spielereignisse protokolliert — manche davon lösen
+            automatisch eine Strafe aus. Eigene Spiele könnt ihr unter „Spiele verwalten“ anlegen.
+          </Text>
+        </View>
+
         <View style={styles.card}>
           <TouchableOpacity
             style={[styles.spielRow, !verordnung.aktivesSpielId && styles.spielRowActive]}
@@ -452,38 +423,19 @@ export default function EinstellungenScreen() {
           disabled={!dirty}
         >
           <Ionicons name="checkmark" size={20} color="#FFFFFF" />
-          <Text style={styles.saveBtnText}>Verordnung speichern</Text>
+          <Text style={styles.saveBtnText}>Speichern</Text>
         </TouchableOpacity>
 
-        {/* ── Entwicklerwerkzeuge ── */}
-        <Text style={[styles.sectionTitle, { marginTop: 32 }]}>🧪 Entwickler</Text>
-        <View style={styles.devCard}>
-          <Text style={styles.devHint}>
-            Falls du sehen willst, wie ein Teststammtisch aussieht: lädt 11 Beispiel-Mitglieder, monatliche Stammtische und Beispiel-Logs als Demo-Daten. Achtung: Das löscht alle aktuell eingegebenen echten Daten unwiderruflich.
-          </Text>
+        {/* ── Hilfe ── */}
+        <Text style={[styles.sectionTitle, { marginTop: 32 }]}>❓ Hilfe</Text>
+        <View style={styles.card}>
           <TouchableOpacity
-            style={[styles.devBtn, styles.devBtnPrimary, seeding && styles.devBtnDisabled]}
-            onPress={handleSeed}
-            disabled={seeding}
+            style={[styles.devBtn, styles.devBtnPrimary]}
+            onPress={() => router.push("/onboarding-intro?replay=1")}
             activeOpacity={0.85}
           >
-            {seeding ? (
-              <ActivityIndicator color="#FFFFFF" size="small" />
-            ) : (
-              <Ionicons name="flask-outline" size={18} color="#FFFFFF" />
-            )}
-            <Text style={styles.devBtnText}>
-              {seeding ? "Wird geladen …" : "Teststammtisch anzeigen"}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.devBtn, styles.devBtnDanger, seeding && styles.devBtnDisabled]}
-            onPress={handleClear}
-            disabled={seeding}
-            activeOpacity={0.85}
-          >
-            <Ionicons name="trash-outline" size={18} color="#FFFFFF" />
-            <Text style={styles.devBtnText}>Alle Daten löschen</Text>
+            <Ionicons name="school-outline" size={18} color="#FFFFFF" />
+            <Text style={styles.devBtnText}>Tutorial erneut ansehen</Text>
           </TouchableOpacity>
         </View>
 
@@ -567,6 +519,12 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: COLORS.border,
   },
   cardRow: { flexDirection: "row", gap: 10 },
+
+  infoBox: {
+    flexDirection: "row", gap: 8, alignItems: "flex-start",
+    backgroundColor: COLORS.blue + "12", borderRadius: 12, padding: 12, marginBottom: 10,
+  },
+  infoBoxText: { flex: 1, fontSize: 12.5, color: COLORS.textMid, lineHeight: 18 },
 
   fieldLabel: { fontSize: 12, fontWeight: "700", color: COLORS.textMuted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 },
 

@@ -90,7 +90,7 @@ export default function NewMemberScreen() {
     if (!activeMemberId) {
       // Onboarding: noch niemand aktiv -> direkt als neues Mitglied weiter in die App
       await setActiveSession(newMember.id);
-      router.replace("/(tabs)/home");
+      router.replace("/onboarding-intro");
     } else {
       router.back();
     }
