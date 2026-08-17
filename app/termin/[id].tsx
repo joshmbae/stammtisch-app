@@ -1224,7 +1224,7 @@ export default function TerminDetailScreen() {
               {strafMemberId && (
                 <>
                   <View style={styles.strafGrid}>
-                    {STRAF_KATEGORIEN.map((kat) => {
+                    {STRAF_KATEGORIEN.filter((kat) => kat.key !== "schock_niederlage").map((kat) => {
                       const isSelected = strafKategorie?.key === kat.key;
                       return (
                         <TouchableOpacity
@@ -1882,10 +1882,10 @@ const styles = StyleSheet.create({
   notFoundText: { fontSize: 16, color: COLORS.textMuted },
 
   // Strafen
-  strafGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 10 },
+  strafGrid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", marginBottom: 10 },
   strafKatBtn: {
-    width: "47%", alignItems: "center", paddingVertical: 12, paddingHorizontal: 8,
-    borderRadius: 14, backgroundColor: COLORS.card,
+    width: "48%", alignItems: "center", paddingVertical: 12, paddingHorizontal: 8,
+    borderRadius: 14, backgroundColor: COLORS.card, marginBottom: 8,
     borderWidth: 1.5, borderColor: COLORS.border, gap: 3, ...SHADOWS.light,
   },
   strafKatBtnActive: { backgroundColor: COLORS.danger, borderColor: COLORS.danger },

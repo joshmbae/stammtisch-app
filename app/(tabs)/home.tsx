@@ -40,7 +40,7 @@ import { COLORS, SHADOWS } from "../../constants/design";
 import { HamburgerButton } from "../../components/HamburgerButton";
 import StammtischLogo from "../../components/StammtischLogo";
 import LoadingSpinner from "../../components/LoadingSpinner";
-import { formatEuro, getInitial, gruendungsDauer, formatDauer, formatGruendungMonat, displayName } from "../../utils/format";
+import { formatEuro, getInitial, gruendungsDauer, formatDauer, formatGruendungMonat, displayName, anwesenheitsQuote } from "../../utils/format";
 import { toLocalIsoDate, formatActivityZeit } from "../../utils/date";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -214,8 +214,8 @@ export default function HomeScreen() {
       const [vLogs, spLogs, stLogs]: [VerspätungLog[], SpielLog[], StrafLog[]] = await Promise.all([
         loadVerspätungLogs(m.id), loadSpielLogs(m.id), loadStrafLogs(m.id),
       ]);
-      const anwesenheitCount = alle.filter((t) => (t.anwesenheit ?? []).includes(m.id)).length;
-      const anwesenheitPct = alle.length > 0 ? Math.round((anwesenheitCount / alle.length) * 100) : 0;
+      const { count: anwesenheitCount, pct } = anwesenheitsQuote(alle, m.id, m.mitgliedSeit);
+      const anwesenheitPct = pct ?? 0;
       return {
         member: m, anwesenheitCount, anwesenheitPct,
         verspätungMin: vLogs.reduce((s, l) => s + l.minutenVerspätet, 0),
@@ -507,29 +507,33 @@ export default function HomeScreen() {
         {(gruendungsjahr || members.length > 0 || terminCount > 0) && (
           <View style={styles.faktenCard}>
             <Text style={styles.faktenTitle}>🍺 Stammtisch-Infos</Text>
-            <View style={styles.faktenGrid}>
-              {gruendungsjahr && dauer && (
-                <View style={styles.faktBox}>
-                  <Text style={styles.faktEmoji}>🎉</Text>
-                  <Text style={[styles.faktValue, { fontSize: 13 }]} numberOfLines={2}>{formatDauer(dauer)}</Text>
-                  <Text style={styles.faktLabel}>seit {formatGruendungMonat(gruendungsjahr)}</Text>
+            {gruendungsjahr && dauer && (
+              <View style={styles.treffpunktRow}>
+                <Text style={styles.faktEmoji}>🎉</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.faktLabel, { textAlign: "left" }]}>seit {formatGruendungMonat(gruendungsjahr)}</Text>
+                  <Text style={styles.treffpunktValue} numberOfLines={1}>{formatDauer(dauer)}</Text>
                 </View>
-              )}
-              {members.length > 0 && (
-                <View style={styles.faktBox}>
-                  <Text style={styles.faktEmoji}>👥</Text>
-                  <Text style={styles.faktValue}>{members.length}</Text>
-                  <Text style={styles.faktLabel}>Mitglieder</Text>
+              </View>
+            )}
+            {members.length > 0 && (
+              <View style={styles.treffpunktRow}>
+                <Text style={styles.faktEmoji}>👥</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.faktLabel, { textAlign: "left" }]}>Mitglieder</Text>
+                  <Text style={styles.treffpunktValue}>{members.length}</Text>
                 </View>
-              )}
-              {terminCount > 0 && (
-                <View style={styles.faktBox}>
-                  <Text style={styles.faktEmoji}>📅</Text>
-                  <Text style={styles.faktValue}>{terminCount}</Text>
-                  <Text style={styles.faktLabel}>Stammtische</Text>
+              </View>
+            )}
+            {terminCount > 0 && (
+              <View style={styles.treffpunktRow}>
+                <Text style={styles.faktEmoji}>📅</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.faktLabel, { textAlign: "left" }]}>Stammtische</Text>
+                  <Text style={styles.treffpunktValue}>{terminCount}</Text>
                 </View>
-              )}
-            </View>
+              </View>
+            )}
             {verordnung?.treffpunkt && (
               <View style={styles.treffpunktRow}>
                 <Text style={styles.faktEmoji}>📍</Text>
@@ -720,13 +724,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: COLORS.border, ...SHADOWS.light,
   },
   faktenTitle: { fontSize: 14, fontWeight: "800", color: COLORS.textDark, marginBottom: 12, letterSpacing: -0.2 },
-  faktenGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
-  faktBox: {
-    flex: 1, minWidth: 100, alignItems: "center", gap: 5,
-    backgroundColor: COLORS.background, borderRadius: 16, paddingVertical: 14, paddingHorizontal: 10,
-  },
   faktEmoji: { fontSize: 20 },
-  faktValue: { fontSize: 15, fontWeight: "800", color: COLORS.textDark, textAlign: "center" },
   faktLabel: { fontSize: 10, color: COLORS.textMuted, fontWeight: "600", textAlign: "center" },
 
   treffpunktRow: {

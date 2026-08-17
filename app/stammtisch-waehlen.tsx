@@ -55,7 +55,7 @@ export default function StammtischWaehlenScreen() {
       const passwordHash = await hashStammtischPassword(name, password);
       const { id } = await createStammtisch(name, passwordHash);
       await setActiveStammtisch(id, name.trim());
-      router.replace("/mitglied-waehlen");
+      router.replace("/onboarding-setup");
     } catch (e: any) {
       setError(e?.message ?? "Stammtisch konnte nicht angelegt werden.");
     } finally {

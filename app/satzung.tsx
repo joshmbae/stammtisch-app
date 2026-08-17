@@ -11,6 +11,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { HamburgerButton } from "../components/HamburgerButton";
+import { BackButton } from "../components/BackButton";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { StammtischVerordnung } from "../types";
 import { loadVerordnung } from "../utils/storage";
@@ -37,6 +38,7 @@ export default function SatzungScreen() {
 
         {/* Header */}
         <View style={styles.header}>
+          <BackButton />
           <HamburgerButton />
           <View style={styles.headerTexts}>
             <Text style={styles.headerTitle}>Satzung</Text>

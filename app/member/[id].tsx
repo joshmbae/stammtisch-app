@@ -33,7 +33,7 @@ import {
   loadTermine,
 } from "../../utils/storage";
 import { COLORS, SHADOWS } from "../../constants/design";
-import { formatEuro, getInitial, displayName } from "../../utils/format";
+import { formatEuro, getInitial, displayName, anwesenheitsQuote } from "../../utils/format";
 import PinPrompt from "../../components/PinPrompt";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import { verifyPin } from "../../utils/pin";
@@ -192,8 +192,7 @@ export default function MemberDetailScreen() {
   }))).filter((s) => s.count > 0);
   const strafGesamt = strafLogs.reduce((s, l) => s + l.betrag, 0);
   const strafOffen = strafLogs.filter((l) => !l.beglichen).reduce((s, l) => s + l.betrag, 0);
-  const anwesenheitCount = termine.filter((t) => (t.anwesenheit ?? []).includes(id)).length;
-  const anwesenheitPct = termine.length > 0 ? Math.round((anwesenheitCount / termine.length) * 100) : null;
+  const { count: anwesenheitCount, total: anwesenheitTotal, pct: anwesenheitPct } = anwesenheitsQuote(termine, id, member.mitgliedSeit);
 
   // ── Per-termin history ──────────────────────────────────────────────────────
   const displayedTermine = showAllTermine ? termine : termine.slice(0, 8);
@@ -275,7 +274,7 @@ export default function MemberDetailScreen() {
               <View style={styles.statBox}>
                 <Text style={styles.statEmoji}>✅</Text>
                 <Text style={[styles.statValue, { color: COLORS.success }]}>{anwesenheitPct} %</Text>
-                <Text style={styles.statLabel}>{anwesenheitCount}/{termine.length} Abende</Text>
+                <Text style={styles.statLabel}>{anwesenheitCount}/{anwesenheitTotal} Abende</Text>
               </View>
             )}
             {verspätungGesamt > 0 && (

@@ -31,13 +31,14 @@ import {
 } from "../utils/storage";
 import { COLORS, SHADOWS } from "../constants/design";
 import { HamburgerButton } from "../components/HamburgerButton";
+import { BackButton } from "../components/BackButton";
 import LoadingSpinner from "../components/LoadingSpinner";
-import { formatEuro, getInitial, displayName } from "../utils/format";
+import { formatEuro, getInitial, displayName, anwesenheitsQuote } from "../utils/format";
 
 interface MemberStats {
   member: MemberProfile;
   anwesenheitCount: number;
-  anwesenheitPct: number;
+  anwesenheitPct: number | null;
   verspätungMin: number;
   spielLogs: SpielLog[];
   strafGesamt: number;
@@ -104,8 +105,7 @@ export default function RanglistenScreen() {
       const [vLogs, spLogs, stLogs]: [VerspätungLog[], SpielLog[], StrafLog[]] = await Promise.all([
         loadVerspätungLogs(m.id), loadSpielLogs(m.id), loadStrafLogs(m.id),
       ]);
-      const anwesenheitCount = alle.filter((t) => (t.anwesenheit ?? []).includes(m.id)).length;
-      const anwesenheitPct = alle.length > 0 ? Math.round((anwesenheitCount / alle.length) * 100) : 0;
+      const { count: anwesenheitCount, pct: anwesenheitPct } = anwesenheitsQuote(alle, m.id, m.mitgliedSeit);
       return {
         member: m, anwesenheitCount, anwesenheitPct,
         verspätungMin: vLogs.reduce((s, l) => s + l.minutenVerspätet, 0),
@@ -138,6 +138,7 @@ export default function RanglistenScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
         <View style={styles.header}>
+          <BackButton />
           <HamburgerButton />
           <View style={styles.headerTexts}>
             <Text style={styles.headerTitle}>Ranglisten</Text>
@@ -159,7 +160,7 @@ export default function RanglistenScreen() {
               {teilnahmeRang.map((s, i) => (
                 <RangRow key={s.member.id} rank={i} member={s.member}
                   value={`${s.anwesenheitCount}`} valueLabel="Abende"
-                  sub={terminCount > 0 ? `${s.anwesenheitPct} % Anwesenheit` : undefined} />
+                  sub={s.anwesenheitPct !== null ? `${s.anwesenheitPct} % Anwesenheit` : undefined} />
               ))}
             </View>
 

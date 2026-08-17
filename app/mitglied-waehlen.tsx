@@ -19,6 +19,7 @@ import LoadingSpinner from "../components/LoadingSpinner";
 import { getInitial, displayName } from "../utils/format";
 import PinPrompt from "../components/PinPrompt";
 import { verifyPin } from "../utils/pin";
+import { hasSeenAppIntro } from "../utils/onboarding";
 
 export default function MitgliedWaehlenScreen() {
   const [members, setMembers] = useState<MemberProfile[]>([]);
@@ -43,6 +44,11 @@ export default function MitgliedWaehlenScreen() {
     });
   }, []);
 
+  async function goToApp(memberId: string) {
+    const seen = await hasSeenAppIntro(memberId);
+    router.replace(seen ? "/(tabs)/home" : "/onboarding-intro");
+  }
+
   async function handleSelect(member: MemberProfile) {
     if (member.pinHash) {
       setPinError(undefined);
@@ -50,7 +56,7 @@ export default function MitgliedWaehlenScreen() {
       return;
     }
     await setActiveSession(member.id);
-    router.replace("/(tabs)/home");
+    await goToApp(member.id);
   }
 
   async function handlePinVerify(pin: string) {
@@ -62,7 +68,7 @@ export default function MitgliedWaehlenScreen() {
     }
     await setActiveSession(pendingMember.id);
     setPendingMember(null);
-    router.replace("/(tabs)/home");
+    await goToApp(pendingMember.id);
   }
 
   return (

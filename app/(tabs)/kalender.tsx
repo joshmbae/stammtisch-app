@@ -25,6 +25,7 @@ import {
 import { COLORS, SHADOWS } from "../../constants/design";
 import { displayName } from "../../utils/format";
 import { HamburgerButton } from "../../components/HamburgerButton";
+import { BackButton } from "../../components/BackButton";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import InlineDateTimePicker from "../../components/InlineDateTimePicker";
 import { toLocalIsoDate, toTimeString, parseTimeString } from "../../utils/date";
@@ -568,6 +569,7 @@ export default function KalenderTab() {
 
         {/* ── Header ── */}
         <View style={styles.header}>
+          <BackButton />
           <HamburgerButton />
           <View style={styles.headerTexts}>
             <Text style={styles.headerTitle}>Kalender</Text>

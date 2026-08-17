@@ -16,6 +16,7 @@ import { MemberProfile } from "../types";
 import { loadMembers, deleteMember } from "../utils/storage";
 import { COLORS, SHADOWS } from "../constants/design";
 import { HamburgerButton } from "../components/HamburgerButton";
+import { BackButton } from "../components/BackButton";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { getInitial, displayName } from "../utils/format";
 import PinPrompt from "../components/PinPrompt";
@@ -79,6 +80,7 @@ export default function MitgliederScreen() {
 
         {/* Header */}
         <View style={styles.header}>
+          <BackButton />
           <HamburgerButton />
           <View style={styles.headerTexts}>
             <Text style={styles.headerTitle}>Die Runde</Text>

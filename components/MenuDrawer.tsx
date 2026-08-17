@@ -23,13 +23,13 @@ const DRAWER_WIDTH = Math.min(Dimensions.get("window").width * 0.78, 300);
 const NAV_ITEMS = [
   { route: "/(tabs)/home",     label: "Übersicht",    icon: "stats-chart-outline",    activeIcon: "stats-chart" },
   { route: "/(tabs)/kalender", label: "Kalender",     icon: "calendar-outline",       activeIcon: "calendar" },
-  { route: "/mitglieder",      label: "Mitglieder",   icon: "people-outline",         activeIcon: "people" },
   { route: "/feed",            label: "Aktivität",    icon: "pulse-outline",          activeIcon: "pulse" },
   { route: "/kasse",           label: "Kasse",        icon: "wallet-outline",         activeIcon: "wallet" },
   { route: "/strafen",         label: "Strafen",      icon: "cash-outline",           activeIcon: "cash" },
   { route: "/ranglisten",      label: "Ranglisten",   icon: "trophy-outline",         activeIcon: "trophy" },
   { route: "/protokolle",      label: "Protokolle",   icon: "document-text-outline",  activeIcon: "document-text" },
   { route: "/satzung",         label: "Satzung",        icon: "document-text-outline",  activeIcon: "document-text" },
+  { route: "/mitglieder",      label: "Mitglieder",   icon: "people-outline",         activeIcon: "people" },
   { route: "/(tabs)/guide",    label: "Einstellungen", icon: "settings-outline",       activeIcon: "settings" },
 ] as const;
 
@@ -77,7 +77,8 @@ export function MenuDrawer() {
 
   function navigate(route: string) {
     closeMenu();
-    setTimeout(() => router.push(route as never), 50);
+    // replace statt push: Drawer-Ziele sind gleichrangige Bereiche, kein Drilldown-Stack.
+    setTimeout(() => router.replace(route as never), 50);
   }
 
   return (
