@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -62,6 +62,8 @@ import {
   logActivity,
   addKassenEintrag,
 } from "../../utils/storage";
+import { supabase } from "../../utils/supabase";
+import { subscribeToTerminChanges, dedupeInsert, patchById, removeByIdEverywhere } from "../../utils/realtime";
 import { COLORS, SHADOWS } from "../../constants/design";
 import { useSession } from "../../contexts/SessionContext";
 import { getInitial, displayName } from "../../utils/format";
@@ -444,6 +446,8 @@ export default function TerminDetailScreen() {
 
   // Spiel (generisch)
   const [aktivesSpiel, setAktivesSpiel] = useState<Spiel | null>(null);
+  const aktivesSpielRef = useRef<Spiel | null>(null);
+  useEffect(() => { aktivesSpielRef.current = aktivesSpiel; }, [aktivesSpiel]);
   const [aktiveEreignisTypen, setAktiveEreignisTypen] = useState<SpielEreignisTyp[]>([]);
   const [spielLogMap, setSpielLogMap] = useState<Record<string, SpielLog[]>>({});
   const [selectedSpielMemberId, setSelectedSpielMemberId] = useState<string | null>(null);
@@ -457,7 +461,40 @@ export default function TerminDetailScreen() {
   const [loading, setLoading] = useState(true);
 
   useFocusEffect(
-    useCallback(() => { load(); }, [id])
+    useCallback(() => {
+      load();
+
+      let hadDropped = false;
+      const channel = subscribeToTerminChanges(
+        id,
+        {
+          onSpielLogInsert: (log) => {
+            if (aktivesSpielRef.current && log.spielId !== aktivesSpielRef.current.id) return;
+            setSpielLogMap((prev) => dedupeInsert(prev, log, log.memberId));
+          },
+          onSpielLogDelete: (logId) => setSpielLogMap((prev) => removeByIdEverywhere(prev, logId)),
+          onStrafLogInsert: (log) => setStrafMap((prev) => dedupeInsert(prev, log, log.memberId)),
+          onStrafLogUpdate: (log) => setStrafMap((prev) => patchById(prev, log, log.memberId)),
+          onStrafLogDelete: (logId) => setStrafMap((prev) => removeByIdEverywhere(prev, logId)),
+          onVerspätungInsert: (log) => setVerspätungMap((prev) => dedupeInsert(prev, log, log.memberId)),
+          onVerspätungDelete: (logId) => setVerspätungMap((prev) => removeByIdEverywhere(prev, logId)),
+          onWetteInsert: (w) => setWettenMap((prev) => dedupeInsert(prev, w, w.memberId)),
+          onWetteUpdate: (w) => setWettenMap((prev) => patchById(prev, w, w.memberId)),
+          onWetteDelete: (wetteId) => setWettenMap((prev) => removeByIdEverywhere(prev, wetteId)),
+          onTerminUpdate: (t) => setTermin((prev) => (prev ? { ...prev, ...t } : t)),
+        },
+        (status) => {
+          if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+            hadDropped = true;
+          } else if (status === "SUBSCRIBED" && hadDropped) {
+            hadDropped = false;
+            load();
+          }
+        }
+      );
+
+      return () => { supabase.removeChannel(channel); };
+    }, [id])
   );
 
   async function load() {

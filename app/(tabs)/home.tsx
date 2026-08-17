@@ -36,6 +36,9 @@ import {
 } from "../../utils/storage";
 import { renderActivity } from "../../utils/activityFeed";
 import { useSession } from "../../contexts/SessionContext";
+import { useStammtisch } from "../../contexts/StammtischContext";
+import { supabase } from "../../utils/supabase";
+import { subscribeToActivityFeed } from "../../utils/realtime";
 import { COLORS, SHADOWS } from "../../constants/design";
 import { HamburgerButton } from "../../components/HamburgerButton";
 import StammtischLogo from "../../components/StammtischLogo";
@@ -171,6 +174,7 @@ interface SpielMitTypen {
 
 export default function HomeScreen() {
   const { activeMemberId, activeMember } = useSession();
+  const { stammtischId } = useStammtisch();
 
   const [verordnung, setVerordnung]           = useState<StammtischVerordnung | null>(null);
   const [naechsterTermin, setNaechsterTermin] = useState<StammtischTermin | null>(null);
@@ -184,7 +188,17 @@ export default function HomeScreen() {
   const [lastActivity, setLastActivity]       = useState<ActivityLogEntry | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useFocusEffect(useCallback(() => { load(); }, []));
+  useFocusEffect(
+    useCallback(() => {
+      load();
+
+      if (!stammtischId) return;
+      const channel = subscribeToActivityFeed(stammtischId, (entry) => {
+        setLastActivity(entry);
+      });
+      return () => { supabase.removeChannel(channel); };
+    }, [stammtischId])
+  );
 
   async function load() {
     const [ms, v, alle, kasseData, activityFeed, alleSpiele] = await Promise.all([
