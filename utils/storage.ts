@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { sendActivityPush } from "./push";
 import {
   MemberProfile,
   VerspätungLog,
@@ -984,7 +985,9 @@ export async function logActivity(entry: {
   };
   const { error } = await supabase.from("activity_log").insert(row);
   if (error) throw error;
-  return rowToActivity(row);
+  const activity = rowToActivity(row);
+  sendActivityPush(stammtischId, activity);
+  return activity;
 }
 
 export async function loadActivityFeed(limitCount = 100): Promise<ActivityLogEntry[]> {

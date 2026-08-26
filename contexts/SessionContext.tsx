@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { MemberProfile } from "../types";
 import { loadMembers } from "../utils/storage";
+import { registerForPushNotifications } from "../utils/push";
 import { useStammtisch } from "./StammtischContext";
 
 const SESSION_KEY = "st_active_member";
@@ -44,6 +45,10 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     }
     reloadSession();
   }, [stammtischLoaded, stammtischId]);
+
+  useEffect(() => {
+    if (activeMemberId) registerForPushNotifications(activeMemberId);
+  }, [activeMemberId]);
 
   async function reloadSession() {
     const id = await AsyncStorage.getItem(SESSION_KEY);
