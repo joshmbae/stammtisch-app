@@ -312,9 +312,10 @@ export default function StrafenScreen() {
                       </View>
                       <View style={styles.eintragMeta}>
                         <Text style={styles.eintragTypLabel}>{member?.name ?? "Unbekannt"}</Text>
-                        <Text style={styles.eintragDesc} numberOfLines={1}>
-                          {kat?.label ?? log.kategorie}{log.notiz ? ` · ${log.notiz}` : ""}
-                        </Text>
+                        <Text style={styles.eintragDesc}>{kat?.label ?? log.kategorie}</Text>
+                        {log.notiz && (
+                          <Text style={styles.eintragNotiz} numberOfLines={2}>„{log.notiz}"</Text>
+                        )}
                         <Text style={styles.eintragDatum}>{formatDatum(log.loggedAt)}</Text>
                       </View>
                       <Text style={[
@@ -424,6 +425,7 @@ const styles = StyleSheet.create({
   eintragMeta: { flex: 1 },
   eintragTypLabel: { fontSize: 13, fontWeight: "700", color: COLORS.textDark },
   eintragDesc: { fontSize: 12, color: COLORS.textMuted, marginTop: 1 },
+  eintragNotiz: { fontSize: 12, color: COLORS.textLight, fontStyle: "italic", marginTop: 1 },
   eintragDatum: { fontSize: 11, color: COLORS.textLight, marginTop: 2 },
   eintragBetrag: { fontSize: 16, fontWeight: "800", minWidth: 70, textAlign: "right" },
 
