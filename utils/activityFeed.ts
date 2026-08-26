@@ -137,6 +137,20 @@ export function renderActivity(
         emoji: "❌",
         text: `${subjectName} hat für ${terminBezeichnung(meta)} abgesagt`,
       };
+    case "termin_erstellt":
+      return {
+        emoji: "📅",
+        text: `${actorName} hat ${terminBezeichnung(meta)} angelegt`,
+      };
+    case "termin_verlegt": {
+      const altDatum = meta.altDatum
+        ? new Date(meta.altDatum + "T00:00:00").toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })
+        : "?";
+      return {
+        emoji: "🔁",
+        text: `${actorName} hat ${terminBezeichnung(meta)} verlegt (vorher: ${altDatum})`,
+      };
+    }
     default:
       return { emoji: "📋", text: `${subjectName ?? actorName}: ${entry.actionType}` };
   }

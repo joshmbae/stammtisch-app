@@ -211,7 +211,9 @@ export type ActivityActionType =
   | "wette_deleted"
   | "protokoll_updated"
   | "termin_zusage"
-  | "termin_absage";
+  | "termin_absage"
+  | "termin_erstellt"
+  | "termin_verlegt";
 
 export interface ActivityLogEntry {
   id: string;

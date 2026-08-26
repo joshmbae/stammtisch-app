@@ -55,6 +55,7 @@ export default function ProtokollEditor() {
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(false);
   const autoSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useFocusEffect(
@@ -70,6 +71,9 @@ export default function ProtokollEditor() {
           setProtokoll(existing);
           setTitel(existing.titel ?? "");
           setInhalt(existing.inhalt);
+          setEditing(false);
+        } else {
+          setEditing(true);
         }
         setDirty(false);
         setLoading(false);
@@ -109,6 +113,7 @@ export default function ProtokollEditor() {
     setProtokoll(saved);
     setDirty(false);
     setSaving(false);
+    setEditing(false);
     await logActivity({
       actorMemberId: activeMemberId ?? undefined,
       actionType: "protokoll_updated",
@@ -159,14 +164,21 @@ export default function ProtokollEditor() {
                 <Ionicons name="trash-outline" size={20} color={COLORS.danger} />
               </TouchableOpacity>
             )}
-            <TouchableOpacity
-              style={[styles.saveBtn, (!dirty || saving) && styles.saveBtnDim]}
-              onPress={handleSave}
-              disabled={!dirty || saving}
-            >
-              <Ionicons name="checkmark" size={18} color="#FFFFFF" />
-              <Text style={styles.saveBtnText}>{saving ? "Speichert…" : "Speichern"}</Text>
-            </TouchableOpacity>
+            {editing ? (
+              <TouchableOpacity
+                style={[styles.saveBtn, (!dirty || saving) && styles.saveBtnDim]}
+                onPress={handleSave}
+                disabled={!dirty || saving}
+              >
+                <Ionicons name="checkmark" size={18} color="#FFFFFF" />
+                <Text style={styles.saveBtnText}>{saving ? "Speichert…" : "Speichern"}</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity style={styles.saveBtn} onPress={() => setEditing(true)}>
+                <Ionicons name="pencil" size={16} color="#FFFFFF" />
+                <Text style={styles.saveBtnText}>Bearbeiten</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 
@@ -195,27 +207,39 @@ export default function ProtokollEditor() {
             </View>
           )}
 
-          {/* Titel */}
-          <TextInput
-            style={styles.titelInput}
-            value={titel}
-            onChangeText={(v) => handleChange("titel", v)}
-            placeholder="Protokolltitel (optional)"
-            placeholderTextColor={COLORS.textLight}
-            returnKeyType="next"
-          />
+          {editing ? (
+            <>
+              {/* Titel */}
+              <TextInput
+                style={styles.titelInput}
+                value={titel}
+                onChangeText={(v) => handleChange("titel", v)}
+                placeholder="Protokolltitel (optional)"
+                placeholderTextColor={COLORS.textLight}
+                returnKeyType="next"
+              />
 
-          {/* Inhalt */}
-          <TextInput
-            style={styles.inhaltInput}
-            value={inhalt}
-            onChangeText={(v) => handleChange("inhalt", v)}
-            placeholder={`Stammtisch vom ${termin ? formatDatum(termin.datum) : "…"}\n\nAnwesende: …\n\nThemen & Beschlüsse:\n1. …\n\nSonstiges: …`}
-            placeholderTextColor={COLORS.textLight}
-            multiline
-            textAlignVertical="top"
-            autoCorrect
-          />
+              {/* Inhalt */}
+              <TextInput
+                style={styles.inhaltInput}
+                value={inhalt}
+                onChangeText={(v) => handleChange("inhalt", v)}
+                placeholder={`Stammtisch vom ${termin ? formatDatum(termin.datum) : "…"}\n\nAnwesende: …\n\nThemen & Beschlüsse:\n1. …\n\nSonstiges: …`}
+                placeholderTextColor={COLORS.textLight}
+                multiline
+                textAlignVertical="top"
+                autoCorrect
+              />
+            </>
+          ) : (
+            <>
+              {/* Titel (read-only) */}
+              <Text style={styles.readTitel}>{titel || terminName}</Text>
+
+              {/* Inhalt (read-only) */}
+              <Text style={styles.readInhalt} selectable>{inhalt}</Text>
+            </>
+          )}
         </ScrollView>
         )}
       </SafeAreaView>
@@ -281,6 +305,25 @@ const styles = StyleSheet.create({
     color: COLORS.textDark,
     lineHeight: 24,
     minHeight: 340,
+    backgroundColor: COLORS.card,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginBottom: 16,
+    ...SHADOWS.light,
+  },
+
+  readTitel: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: COLORS.textDark,
+    marginBottom: 14,
+  },
+  readInhalt: {
+    fontSize: 15,
+    color: COLORS.textDark,
+    lineHeight: 24,
     backgroundColor: COLORS.card,
     borderRadius: 16,
     padding: 16,

@@ -21,7 +21,9 @@ import {
   loadMembers,
   addTermin,
   deleteTermin,
+  logActivity,
 } from "../../utils/storage";
+import { useSession } from "../../contexts/SessionContext";
 import { COLORS, SHADOWS } from "../../constants/design";
 import { displayName } from "../../utils/format";
 import { HamburgerButton } from "../../components/HamburgerButton";
@@ -265,7 +267,7 @@ function EventCard({
               : formatDatum(termin.datum)}
           </Text>
           {(termin.startZeit || termin.ort) ? (
-            <Text style={styles.eventMeta}>
+            <Text style={styles.eventMeta} numberOfLines={1}>
               {termin.startZeit ? `⏰ ${termin.startZeit}${termin.endZeit ? ` – ${termin.endZeit}` : ""}` : ""}
               {termin.startZeit && termin.ort ? "   " : ""}
               {termin.ort ? `📍 ${termin.ort}` : ""}
@@ -317,6 +319,7 @@ function NeuerTerminForm({ initialDate, onSave, onCancel }: {
   const [showEndZeit, setShowEndZeit] = useState(false);
   const [ort, setOrt] = useState("");
   const [notizen, setNotizen] = useState("");
+  const { activeMemberId } = useSession();
 
   const isStammtisch = art === "stammtisch";
   const isGeburtstag = art === "geburtstag";
@@ -331,7 +334,7 @@ function NeuerTerminForm({ initialDate, onSave, onCancel }: {
       showAlert("Bitte Titel angeben");
       return;
     }
-    await addTermin({
+    const neuerTermin = await addTermin({
       art,
       titel: titel.trim() || undefined,
       datum: localIso(datum),
@@ -340,6 +343,12 @@ function NeuerTerminForm({ initialDate, onSave, onCancel }: {
       endZeit: endZeit ? toTimeString(endZeit) : undefined,
       ort: ort.trim() || undefined,
       notizen: notizen.trim() || undefined,
+    });
+    await logActivity({
+      actorMemberId: activeMemberId ?? undefined,
+      actionType: "termin_erstellt",
+      terminId: neuerTermin.id,
+      meta: { terminDatum: neuerTermin.datum, terminTitel: neuerTermin.titel, terminArt: neuerTermin.art },
     });
     onSave();
   }

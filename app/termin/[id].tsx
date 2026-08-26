@@ -228,7 +228,6 @@ function MemberRow({
                 <View style={styles.verspätungLogRow}>
                   <Text style={styles.verspätungLogMin}>{log.minutenVerspätet} Min.</Text>
                   {log.grund && <Text style={styles.verspätungLogGrund}>„{log.grund}"</Text>}
-                  <Text style={styles.verspätungLogTime}>{formatTime(log.datum)}</Text>
                 </View>
               </Swipeable>
             ))}
@@ -332,7 +331,6 @@ function MemberRow({
               <View style={styles.verspätungLogRow}>
                 <Text style={styles.verspätungLogMin}>{log.minutenVerspätet} Min.</Text>
                 {log.grund && <Text style={styles.verspätungLogGrund}>„{log.grund}"</Text>}
-                <Text style={styles.verspätungLogTime}>{formatTime(log.datum)}</Text>
               </View>
             </Swipeable>
           ))}
@@ -898,14 +896,30 @@ export default function TerminDetailScreen() {
 
   async function handleSaveEdit() {
     if (!termin) return;
+    const neuDatum = localIso(editDatum);
+    const neuStartZeit = editStartZeit ? toTimeString(editStartZeit) : undefined;
+    const verlegt = neuDatum !== termin.datum || neuStartZeit !== termin.startZeit;
     await updateTermin(termin.id, {
       titel: editTitel.trim() || undefined,
-      datum: localIso(editDatum),
-      startZeit: editStartZeit ? toTimeString(editStartZeit) : undefined,
+      datum: neuDatum,
+      startZeit: neuStartZeit,
       endZeit: editEndZeit ? toTimeString(editEndZeit) : undefined,
       ort: editOrt.trim() || undefined,
       notizen: editNotizen.trim() || undefined,
     });
+    if (verlegt) {
+      await logActivity({
+        actorMemberId: activeMemberId ?? undefined,
+        actionType: "termin_verlegt",
+        terminId: termin.id,
+        meta: {
+          terminDatum: neuDatum,
+          terminTitel: editTitel.trim() || termin.titel,
+          terminArt: termin.art,
+          altDatum: termin.datum,
+        },
+      });
+    }
     const updated = await loadTermine();
     const fresh = updated.find((t) => t.id === termin.id) ?? null;
     if (fresh) setTermin(fresh);
@@ -1021,7 +1035,7 @@ export default function TerminDetailScreen() {
                 </Text>
                 <Text style={styles.terminDatum}>{formatDatum(termin.datum)}</Text>
                 {(termin.startZeit || termin.ort) && (
-                  <Text style={styles.terminMeta}>
+                  <Text style={styles.terminMeta} numberOfLines={1}>
                     {termin.startZeit ? `⏰ ${termin.startZeit}${termin.endZeit ? ` – ${termin.endZeit}` : ""}` : ""}
                     {termin.startZeit && termin.ort ? "   " : ""}
                     {termin.ort ? `📍 ${termin.ort}` : ""}
@@ -1787,7 +1801,6 @@ const styles = StyleSheet.create({
   },
   verspätungLogMin: { fontSize: 13, fontWeight: "700", color: COLORS.danger, minWidth: 52 },
   verspätungLogGrund: { flex: 1, fontSize: 12, color: COLORS.textMuted, fontStyle: "italic" },
-  verspätungLogTime: { fontSize: 12, color: COLORS.textLight },
 
   chipsScroll: { marginBottom: 12 },
   chipsContent: { gap: 8, paddingRight: 4 },
