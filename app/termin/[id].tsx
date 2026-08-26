@@ -1636,9 +1636,12 @@ export default function TerminDetailScreen() {
                       <Text style={styles.protokollTitel} numberOfLines={1}>
                         {protokoll.titel || "Protokoll"}
                       </Text>
-                      <Ionicons name="pencil-outline" size={15} color={COLORS.textMuted} />
                     </View>
-                    <Text style={styles.protokollExcerpt} numberOfLines={8}>{protokoll.inhalt}</Text>
+                    <Text style={styles.protokollExcerpt} numberOfLines={20}>{protokoll.inhalt}</Text>
+                    <View style={styles.protokollOeffnenRow}>
+                      <Text style={styles.protokollOeffnenText}>Vollständig lesen</Text>
+                      <Ionicons name="chevron-forward" size={14} color={COLORS.blue} />
+                    </View>
                   </>
                 ) : (
                   <View style={styles.protokollLeer}>
@@ -1920,6 +1923,12 @@ const styles = StyleSheet.create({
   protokollHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 },
   protokollTitel: { flex: 1, fontSize: 15, fontWeight: "700", color: COLORS.textDark },
   protokollExcerpt: { fontSize: 13, color: COLORS.textMuted, lineHeight: 19 },
+  protokollOeffnenRow: {
+    flexDirection: "row", alignItems: "center", gap: 4,
+    marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: COLORS.border,
+    alignSelf: "flex-start",
+  },
+  protokollOeffnenText: { fontSize: 13, fontWeight: "700", color: COLORS.blue },
   protokollLeer: { flexDirection: "row", alignItems: "center", gap: 12 },
   protokollLeerIcon: {
     width: 48, height: 48, borderRadius: 24,
