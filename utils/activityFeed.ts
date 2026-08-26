@@ -48,12 +48,14 @@ export function renderActivity(
         actorText: eingetragenVon,
       };
     }
-    case "straf_log_beglichen":
+    case "straf_log_beglichen": {
+      const kat = STRAF_KATEGORIEN.find((k) => k.key === meta.kategorie);
       return {
         emoji: "✅",
-        text: `${subjectName} hat eine Strafe beglichen (${formatEuro(Number(meta.betrag ?? 0))})`,
+        text: `${subjectName} hat eine Strafe beglichen: ${kat?.label ?? meta.kategorie ?? "Sonstiges"} (${formatEuro(Number(meta.betrag ?? 0))})`,
         actorText: eingetragenVon,
       };
+    }
     case "kasse_einnahme_created":
       return {
         emoji: "➕",

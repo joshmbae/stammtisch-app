@@ -849,7 +849,7 @@ export default function TerminDetailScreen() {
         actionType: "straf_log_beglichen",
         terminId: termin?.id,
         refId: logId,
-        meta: { betrag: log?.betrag ?? 0 },
+        meta: { betrag: log?.betrag ?? 0, kategorie: log?.kategorie },
       });
     }
   }

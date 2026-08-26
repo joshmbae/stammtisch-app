@@ -101,7 +101,7 @@ export default function StrafenScreen() {
         actionType: "straf_log_beglichen",
         terminId: log.terminId,
         refId: log.id,
-        meta: { betrag: log.betrag },
+        meta: { betrag: log.betrag, kategorie: log.kategorie },
       });
     }
   }
