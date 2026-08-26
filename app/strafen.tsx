@@ -29,6 +29,7 @@ import { BackButton } from "../components/BackButton";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { useSession } from "../contexts/SessionContext";
 import { formatEuro, getInitial } from "../utils/format";
+import { useSingleFlight } from "../utils/useSingleFlight";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -46,6 +47,7 @@ function katMeta(kategorie: StrafLog["kategorie"]) {
 
 export default function StrafenScreen() {
   const { activeMemberId } = useSession();
+  const guard = useSingleFlight();
   const [logs, setLogs] = useState<StrafLog[]>([]);
   const [members, setMembers] = useState<MemberProfile[]>([]);
   const [filterMemberId, setFilterMemberId] = useState<string | null>(null);
@@ -225,7 +227,7 @@ export default function StrafenScreen() {
                       />
                     </View>
                   </View>
-                  <TouchableOpacity style={styles.strafSubmitBtn} onPress={handleAddStraf} activeOpacity={0.8}>
+                  <TouchableOpacity style={styles.strafSubmitBtn} onPress={() => guard(handleAddStraf)} activeOpacity={0.8}>
                     <Ionicons name="checkmark" size={16} color="#FFFFFF" />
                     <Text style={styles.strafSubmitText}>Strafe eintragen</Text>
                   </TouchableOpacity>
@@ -323,7 +325,7 @@ export default function StrafenScreen() {
                         {formatEuro(log.betrag)} €
                       </Text>
                       <TouchableOpacity
-                        onPress={() => handleToggleBeglichen(log)}
+                        onPress={() => guard(() => handleToggleBeglichen(log))}
                         activeOpacity={0.8}
                         style={{ paddingLeft: 8 }}
                       >

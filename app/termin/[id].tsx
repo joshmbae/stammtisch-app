@@ -67,6 +67,7 @@ import { subscribeToTerminChanges, dedupeInsert, patchById, removeByIdEverywhere
 import { COLORS, SHADOWS } from "../../constants/design";
 import { useSession } from "../../contexts/SessionContext";
 import { getInitial, displayName } from "../../utils/format";
+import { useSingleFlight } from "../../utils/useSingleFlight";
 import { toTimeString, parseTimeString } from "../../utils/date";
 import LoadingSpinner from "../../components/LoadingSpinner";
 
@@ -116,23 +117,30 @@ function MemberRow({
   isActiveUser: boolean;
   onToggle: () => void;
   onRsvp: (status: "ja" | "nein" | null) => void;
-  onAddVerspätung: (minuten: number, grund?: string) => void;
+  onAddVerspätung: (minuten: number, grund?: string) => Promise<void>;
   onDeleteVerspätung: (logId: string) => void;
 }) {
   const [showInput, setShowInput] = useState(false);
   const [minuten, setMinuten] = useState("");
   const [grund, setGrund] = useState("");
+  const submitting = useRef(false);
 
-  function submit() {
+  async function submit() {
+    if (submitting.current) return;
     const m = parseInt(minuten, 10);
     if (isNaN(m) || m <= 0) {
       showAlert("Ungültig", "Bitte eine gültige Minutenzahl eingeben.");
       return;
     }
-    onAddVerspätung(m, grund.trim() || undefined);
-    setMinuten("");
-    setGrund("");
-    setShowInput(false);
+    submitting.current = true;
+    try {
+      await onAddVerspätung(m, grund.trim() || undefined);
+      setMinuten("");
+      setGrund("");
+      setShowInput(false);
+    } finally {
+      submitting.current = false;
+    }
   }
 
   const gesamtMinuten = verspätungen.reduce((s, l) => s + l.minutenVerspätet, 0);
@@ -407,6 +415,7 @@ function WetteCard({
 export default function TerminDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { activeMemberId } = useSession();
+  const guard = useSingleFlight();
 
   const [termin, setTermin] = useState<StammtischTermin | null>(null);
   const [members, setMembers] = useState<MemberProfile[]>([]);
@@ -1332,7 +1341,7 @@ export default function TerminDetailScreen() {
                           />
                         </View>
                       </View>
-                      <TouchableOpacity style={styles.strafSubmitBtn} onPress={handleAddStraf} activeOpacity={0.8}>
+                      <TouchableOpacity style={styles.strafSubmitBtn} onPress={() => guard(handleAddStraf)} activeOpacity={0.8}>
                         <Ionicons name="checkmark" size={16} color="#FFFFFF" />
                         <Text style={styles.strafSubmitText}>Strafe eintragen</Text>
                       </TouchableOpacity>
@@ -1368,7 +1377,7 @@ export default function TerminDetailScreen() {
                               {log.betrag.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €
                             </Text>
                             <TouchableOpacity
-                              onPress={() => handleToggleStrafBeglichen(log.memberId, log.id, log.beglichen)}
+                              onPress={() => guard(() => handleToggleStrafBeglichen(log.memberId, log.id, log.beglichen))}
                               style={styles.strafBegleichenBtn}
                             >
                               <Ionicons
@@ -1447,7 +1456,7 @@ export default function TerminDetailScreen() {
 
                   <View style={styles.spielActionRow}>
                     {aktiveEreignisTypen.map((et) => (
-                      <TouchableOpacity key={et.id} style={styles.spielActionBtn} onPress={() => handleLogSpielEreignis(et.id)}>
+                      <TouchableOpacity key={et.id} style={styles.spielActionBtn} onPress={() => guard(() => handleLogSpielEreignis(et.id))}>
                         <Text style={styles.schockActionEmoji}>{et.emoji ?? "🎯"}</Text>
                         <Text style={styles.spielActionLabel} numberOfLines={1}>{et.label}</Text>
                         <View style={styles.plusBadge}><Text style={styles.plusText}>+1</Text></View>
@@ -1577,7 +1586,7 @@ export default function TerminDetailScreen() {
                       </TouchableOpacity>
                     ))}
                   </View>
-                  <TouchableOpacity style={styles.wetteSubmitBtn} onPress={handleAddWette}>
+                  <TouchableOpacity style={styles.wetteSubmitBtn} onPress={() => guard(handleAddWette)}>
                     <Ionicons name="checkmark" size={16} color="#FFFFFF" />
                     <Text style={styles.wetteSubmitText}>Wette aufnehmen</Text>
                   </TouchableOpacity>
@@ -1593,8 +1602,8 @@ export default function TerminDetailScreen() {
                       wette={w}
                       gegner={members.find((m) => m.id === w.gegenMemberId)}
                       bettor={members.find((m) => m.id === w.memberId)}
-                      onGewonnen={() => handleWetteErgebnis(w.memberId, w.id, w.gewonnen === undefined ? true : undefined)}
-                      onVerloren={() => handleWetteErgebnis(w.memberId, w.id, w.gewonnen === undefined ? false : undefined)}
+                      onGewonnen={() => guard(() => handleWetteErgebnis(w.memberId, w.id, w.gewonnen === undefined ? true : undefined))}
+                      onVerloren={() => guard(() => handleWetteErgebnis(w.memberId, w.id, w.gewonnen === undefined ? false : undefined))}
                       onDelete={() => handleDeleteWette(w.memberId, w.id)}
                     />
                   ))}

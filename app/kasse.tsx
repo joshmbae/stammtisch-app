@@ -33,6 +33,7 @@ import { BackButton } from "../components/BackButton";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { useSession } from "../contexts/SessionContext";
 import { formatEuro, getInitial } from "../utils/format";
+import { useSingleFlight } from "../utils/useSingleFlight";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -116,6 +117,7 @@ type FormTyp = KassenEintragTyp | null;
 
 export default function KasseScreen() {
   const { activeMemberId } = useSession();
+  const guard = useSingleFlight();
   const [eintraege, setEintraege] = useState<KassenEintrag[]>([]);
   const [members, setMembers] = useState<MemberProfile[]>([]);
   const [actorByRefId, setActorByRefId] = useState<Map<string, string>>(new Map());
@@ -442,7 +444,7 @@ export default function KasseScreen() {
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.submitBtn, { backgroundColor: TYP_META[activeForm].color }]}
-                  onPress={handleSubmit}
+                  onPress={() => guard(handleSubmit)}
                   activeOpacity={0.8}
                 >
                   <Ionicons name="checkmark" size={16} color="#FFFFFF" />
@@ -508,7 +510,7 @@ export default function KasseScreen() {
                         </Text>
                         {!hatTeilnehmer && (
                           <TouchableOpacity
-                            onPress={() => handleToggleBeglichen(e.id, !!e.beglichen)}
+                            onPress={() => guard(() => handleToggleBeglichen(e.id, !!e.beglichen))}
                             activeOpacity={0.8}
                             style={{ paddingLeft: 8 }}
                           >
@@ -530,7 +532,7 @@ export default function KasseScreen() {
                               <TouchableOpacity
                                 key={id}
                                 style={styles.schuldnerRow}
-                                onPress={() => handleToggleTeilnehmerBeglichen(e.id, id)}
+                                onPress={() => guard(() => handleToggleTeilnehmerBeglichen(e.id, id))}
                                 activeOpacity={0.75}
                               >
                                 <Text style={[styles.schuldnerName, bezahlt && styles.schuldnerNameBeglichen]}>
