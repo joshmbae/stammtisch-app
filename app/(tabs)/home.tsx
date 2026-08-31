@@ -21,6 +21,7 @@ import {
   StrafLog,
   KassenEintrag,
   ActivityLogEntry,
+  StrafKategorieDef,
 } from "../../types";
 import {
   loadMembers,
@@ -33,6 +34,7 @@ import {
   loadStrafLogs,
   loadKasse,
   loadActivityFeed,
+  loadStrafKategorien,
 } from "../../utils/storage";
 import { renderActivity } from "../../utils/activityFeed";
 import { useSession } from "../../contexts/SessionContext";
@@ -186,6 +188,7 @@ export default function HomeScreen() {
   const [kasse, setKasse]                     = useState<KassenEintrag[]>([]);
   const [terminCount, setTerminCount]         = useState(0);
   const [lastActivity, setLastActivity]       = useState<ActivityLogEntry | null>(null);
+  const [strafKategorien, setStrafKategorien] = useState<StrafKategorieDef[]>([]);
   const [loading, setLoading] = useState(true);
 
   useFocusEffect(
@@ -201,14 +204,15 @@ export default function HomeScreen() {
   );
 
   async function load() {
-    const [ms, v, alle, kasseData, activityFeed, alleSpiele] = await Promise.all([
-      loadMembers(), loadVerordnung(), loadTermine(), loadKasse(), loadActivityFeed(1), loadSpiele(),
+    const [ms, v, alle, kasseData, activityFeed, alleSpiele, kats] = await Promise.all([
+      loadMembers(), loadVerordnung(), loadTermine(), loadKasse(), loadActivityFeed(1), loadSpiele(), loadStrafKategorien(),
     ]);
 
     setVerordnung(v);
     setKasse(kasseData);
     setMembers(ms);
     setLastActivity(activityFeed[0] ?? null);
+    setStrafKategorien(kats);
 
     const spieleMitTypen = await Promise.all(
       alleSpiele.map(async (spiel) => ({ spiel, ereignisTypen: await loadEreignisTypen(spiel.id) }))
@@ -278,7 +282,7 @@ export default function HomeScreen() {
   const naechsterZusagePct = members.length > 0 ? Math.round((naechsterZusagen / members.length) * 100) : 0;
 
   const membersById = new Map(members.map((m) => [m.id, m]));
-  const lastActivityRendered = lastActivity ? renderActivity(lastActivity, membersById) : null;
+  const lastActivityRendered = lastActivity ? renderActivity(lastActivity, membersById, strafKategorien) : null;
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>

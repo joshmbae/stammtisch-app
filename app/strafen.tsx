@@ -13,10 +13,11 @@ import { useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import Swipeable from "react-native-gesture-handler/Swipeable";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { StrafLog, MemberProfile, STRAF_KATEGORIEN } from "../types";
+import { StrafLog, MemberProfile, StrafKategorieDef } from "../types";
 import {
   loadMembers,
   loadAllStrafLogs,
+  loadStrafKategorien,
   addStrafLog,
   updateStrafLog,
   deleteStrafLog,
@@ -39,8 +40,8 @@ function formatDatum(iso: string): string {
   });
 }
 
-function katMeta(kategorie: StrafLog["kategorie"]) {
-  return STRAF_KATEGORIEN.find((k) => k.key === kategorie);
+function katMeta(kategorie: StrafLog["kategorie"], strafKategorien: StrafKategorieDef[]) {
+  return strafKategorien.find((k) => k.id === kategorie);
 }
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
@@ -50,6 +51,7 @@ export default function StrafenScreen() {
   const guard = useSingleFlight();
   const [logs, setLogs] = useState<StrafLog[]>([]);
   const [members, setMembers] = useState<MemberProfile[]>([]);
+  const [strafKategorien, setStrafKategorien] = useState<StrafKategorieDef[]>([]);
   const [filterMemberId, setFilterMemberId] = useState<string | null>(null);
   const [showBeglichen, setShowBeglichen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -62,8 +64,9 @@ export default function StrafenScreen() {
   useFocusEffect(
     useCallback(() => {
       async function load() {
-        const ms = await loadMembers();
+        const [ms, kats] = await Promise.all([loadMembers(), loadStrafKategorien()]);
         setMembers(ms);
+        setStrafKategorien(kats);
         const all = await loadAllStrafLogs(ms.map((m) => m.id));
         setLogs(all.sort((a, b) => b.loggedAt.localeCompare(a.loggedAt)));
         setLoading(false);
@@ -87,7 +90,7 @@ export default function StrafenScreen() {
     setLogs((prev) => prev.map((l) => l.id === log.id ? { ...l, beglichen: next } : l));
     if (next) {
       const member = membersById.get(log.memberId);
-      const kat = katMeta(log.kategorie);
+      const kat = katMeta(log.kategorie, strafKategorien);
       await addKassenEintrag({
         typ: "einnahme",
         betrag: log.betrag,
@@ -117,8 +120,10 @@ export default function StrafenScreen() {
     if (!newMemberId) return;
     const betrag = parseFloat(newBetrag.replace(",", "."));
     if (isNaN(betrag) || betrag < 0) return;
+    const sonstiges = strafKategorien.find((k) => k.systemKey === "sonstiges");
+    if (!sonstiges) return;
     const log = await addStrafLog(newMemberId, {
-      kategorie: "sonstiges",
+      kategorie: sonstiges.id,
       betrag,
       notiz: newNotiz.trim() || undefined,
       loggedAt: new Date().toISOString(),
@@ -290,7 +295,7 @@ export default function StrafenScreen() {
                 )}
               </View>
               {sichtbar.map((log) => {
-                const kat = katMeta(log.kategorie);
+                const kat = katMeta(log.kategorie, strafKategorien);
                 const member = membersById.get(log.memberId);
                 return (
                   <Swipeable

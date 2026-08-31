@@ -18,7 +18,6 @@ import {
   Spiel,
   SpielEreignisTyp,
   StrafLog,
-  STRAF_KATEGORIEN,
   StammtischVerordnung,
   StammtischTermin,
 } from "../../types";

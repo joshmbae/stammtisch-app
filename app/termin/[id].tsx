@@ -29,7 +29,7 @@ import {
   StammtischVerordnung,
   Protokoll,
   StrafLog,
-  STRAF_KATEGORIEN,
+  StrafKategorieDef,
 } from "../../types";
 import {
   loadTermine,
@@ -47,6 +47,7 @@ import {
   updateWette,
   deleteWette,
   loadStrafLogs,
+  loadStrafKategorien,
   addStrafLog,
   deleteStrafLog,
   updateStrafLog,
@@ -433,11 +434,12 @@ export default function TerminDetailScreen() {
 
   // Strafen
   const [strafMap, setStrafMap] = useState<Record<string, StrafLog[]>>({});
+  const [strafKategorien, setStrafKategorien] = useState<StrafKategorieDef[]>([]);
   const [strafMemberId, setStrafMemberId] = useState<string | null>(null);
   const [showStrafForm, setShowStrafForm] = useState(false);
   const [strafBetragOverride, setStrafBetragOverride] = useState("");
   const [strafNotiz, setStrafNotiz] = useState("");
-  const [strafKategorie, setStrafKategorie] = useState<typeof STRAF_KATEGORIEN[number] | null>(null);
+  const [strafKategorie, setStrafKategorie] = useState<StrafKategorieDef | null>(null);
 
   // Edit form
   const [showEditForm, setShowEditForm] = useState(false);
@@ -505,11 +507,12 @@ export default function TerminDetailScreen() {
   );
 
   async function load() {
-    const [termine, ms, v] = await Promise.all([loadTermine(), loadMembers(), loadVerordnung()]);
+    const [termine, ms, v, kats] = await Promise.all([loadTermine(), loadMembers(), loadVerordnung(), loadStrafKategorien()]);
     const t = termine.find((x) => x.id === id) ?? null;
     setTermin(t);
     setMembers(ms);
     setVerordnung(v);
+    setStrafKategorien(kats);
     if (!t || ms.length === 0) { setLoading(false); return; }
 
     const proto = await loadProtokoll(t.id);
@@ -743,8 +746,10 @@ export default function TerminDetailScreen() {
 
       if (gewonnen === false && w) {
         const gegner = members.find((x) => x.id === w.gegenMemberId);
+        const wetteVerlorenKat = strafKategorien.find((k) => k.systemKey === "wette_verloren");
+        if (!wetteVerlorenKat) return;
         const strafLog = await addStrafLog(memberId, {
-          kategorie: "wette_verloren",
+          kategorie: wetteVerlorenKat.id,
           betrag: w.betrag,
           notiz: gegner ? `gegen ${gegner.name}` : undefined,
           terminId: termin?.id,
@@ -801,7 +806,7 @@ export default function TerminDetailScreen() {
       : strafKategorie.betrag;
     if (isNaN(betrag) || betrag < 0) return;
     const log = await addStrafLog(strafMemberId, {
-      kategorie: strafKategorie.key,
+      kategorie: strafKategorie.id,
       betrag,
       notiz: strafNotiz.trim() || undefined,
       terminId: termin.id,
@@ -835,7 +840,7 @@ export default function TerminDetailScreen() {
     if (!current) {
       const log = (strafMap[memberId] ?? []).find((l) => l.id === logId);
       const member = members.find((m) => m.id === memberId);
-      const kat = STRAF_KATEGORIEN.find((k) => k.key === log?.kategorie);
+      const kat = strafKategorien.find((k) => k.id === log?.kategorie);
       await addKassenEintrag({
         typ: "einnahme",
         betrag: log?.betrag ?? 0,
@@ -1284,11 +1289,11 @@ export default function TerminDetailScreen() {
               {strafMemberId && (
                 <>
                   <View style={styles.strafGrid}>
-                    {STRAF_KATEGORIEN.filter((kat) => kat.key !== "schock_niederlage").map((kat) => {
-                      const isSelected = strafKategorie?.key === kat.key;
+                    {strafKategorien.filter((kat) => !kat.istSystem).map((kat) => {
+                      const isSelected = strafKategorie?.id === kat.id;
                       return (
                         <TouchableOpacity
-                          key={kat.key}
+                          key={kat.id}
                           style={[styles.strafKatBtn, isSelected && styles.strafKatBtnActive]}
                           onPress={() => {
                             setStrafKategorie(isSelected ? null : kat);
@@ -1355,7 +1360,7 @@ export default function TerminDetailScreen() {
                   <Text style={styles.subSectionLabel}>📋 Strafen dieses Abends</Text>
                   {allStrafLogs.map((log) => {
                     const m = members.find((x) => x.id === log.memberId);
-                    const kat = STRAF_KATEGORIEN.find((k) => k.key === log.kategorie);
+                    const kat = strafKategorien.find((k) => k.id === log.kategorie);
                     return (
                       <Swipeable
                         key={log.id}

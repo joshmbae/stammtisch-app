@@ -9,6 +9,7 @@ import {
   Protokoll,
   KassenEintrag,
   StrafLog,
+  StrafKategorieDef,
   ActivityActionType,
   ActivityLogEntry,
   Spiel,
@@ -81,7 +82,38 @@ export async function createStammtisch(name: string, passwordHash: string): Prom
   if (error || !data || data.length === 0) {
     throw new Error("Stammtisch konnte nicht angelegt werden: " + error?.message);
   }
-  return { id: data[0].id as string };
+  const stammtischId = data[0].id as string;
+  await seedDefaultStrafKategorien(stammtischId);
+  return { id: stammtischId };
+}
+
+/**
+ * Legt für einen frisch erstellten Stammtisch die drei technisch nötigen
+ * System-Kategorien plus ein paar neutrale Basics an. Hellen-spezifische
+ * Extras (Männl. Gast, gestaffelte Verspätung, ...) bleiben bewusst außen
+ * vor — die stehen als Vorlage bereit (STRAF_KATEGORIEN_VORLAGEN).
+ */
+async function seedDefaultStrafKategorien(stammtischId: string): Promise<void> {
+  const defaults: { label: string; betrag: number; emoji: string; beschreibung?: string; istSystem: boolean; systemKey?: string }[] = [
+    { label: "Sonstiges", betrag: 0, emoji: "💰", istSystem: true, systemKey: "sonstiges" },
+    { label: "Spiel-Ereignis", betrag: 0, emoji: "🎮", beschreibung: "Wird automatisch bei einem konfigurierten Spiel-Ereignis eingetragen", istSystem: true, systemKey: "spiel_ereignis" },
+    { label: "Verlorene Wette", betrag: 0, emoji: "🤝", beschreibung: "Wird automatisch bei einer verlorenen Wette eingetragen, Betrag = Wetteinsatz", istSystem: true, systemKey: "wette_verloren" },
+    { label: "Fehlen (unentschuldigt)", betrag: 10, emoji: "🚫", istSystem: false },
+    { label: "Zu spät", betrag: 5, emoji: "⏱️", istSystem: false },
+  ];
+  const rows = defaults.map((d, i) => ({
+    id: nextId(),
+    stammtisch_id: stammtischId,
+    label: d.label,
+    betrag: d.betrag,
+    emoji: d.emoji,
+    beschreibung: d.beschreibung ?? null,
+    reihenfolge: i,
+    ist_system: d.istSystem,
+    system_key: d.systemKey ?? null,
+  }));
+  const { error } = await supabase.from("straf_kategorien").insert(rows);
+  if (error) throw error;
 }
 
 /**
@@ -214,8 +246,11 @@ function rowToVerordnung(row: any): StammtischVerordnung {
     regeln: row.regeln ?? [],
     sonstiges: row.sonstiges ?? undefined,
     aktivesSpielId: row.aktives_spiel_id ?? undefined,
+    rollenOptionen: row.rollen_optionen ?? undefined,
   };
 }
+
+const ROLLEN_OPTIONEN_DEFAULT = ["Mitglied", "Kassenwart", "Schriftführer"];
 
 export async function loadVerordnung(): Promise<StammtischVerordnung> {
   const stammtischId = await getStammtischId();
@@ -224,7 +259,7 @@ export async function loadVerordnung(): Promise<StammtischVerordnung> {
     .select("*")
     .eq("stammtisch_id", stammtischId)
     .single();
-  if (error || !data) return { name: "Mein Stammtisch", regeln: [] };
+  if (error || !data) return { name: "Mein Stammtisch", regeln: [], rollenOptionen: ROLLEN_OPTIONEN_DEFAULT };
   return rowToVerordnung(data);
 }
 
@@ -241,6 +276,7 @@ export async function saveVerordnung(v: StammtischVerordnung): Promise<void> {
     regeln: v.regeln ?? [],
     sonstiges: v.sonstiges ?? null,
     aktives_spiel_id: v.aktivesSpielId ?? null,
+    rollen_optionen: v.rollenOptionen ?? ROLLEN_OPTIONEN_DEFAULT,
   });
   if (error) throw error;
 }
@@ -824,6 +860,81 @@ export async function loadAllStrafLogs(memberIds: string[]): Promise<StrafLog[]>
     .in("member_id", memberIds);
   if (error) throw error;
   return (data ?? []).map(rowToStrafLog);
+}
+
+// ─── Strafenkategorien (pro Stammtisch anpassbar) ──────────────────────────────
+
+function rowToStrafKategorieDef(row: any): StrafKategorieDef {
+  return {
+    id: row.id,
+    label: row.label,
+    betrag: Number(row.betrag),
+    emoji: row.emoji ?? "💰",
+    beschreibung: row.beschreibung ?? undefined,
+    reihenfolge: row.reihenfolge,
+    istSystem: row.ist_system,
+    systemKey: row.system_key ?? undefined,
+  };
+}
+
+export async function loadStrafKategorien(): Promise<StrafKategorieDef[]> {
+  const stammtischId = await getStammtischId();
+  const { data, error } = await supabase
+    .from("straf_kategorien")
+    .select("*")
+    .eq("stammtisch_id", stammtischId)
+    .order("reihenfolge", { ascending: true });
+  if (error) throw error;
+  return (data ?? []).map(rowToStrafKategorieDef);
+}
+
+export async function addStrafKategorie(
+  entry: Omit<StrafKategorieDef, "id" | "istSystem" | "systemKey">
+): Promise<StrafKategorieDef> {
+  const stammtischId = await getStammtischId();
+  const kat: StrafKategorieDef = { ...entry, id: nextId(), istSystem: false };
+  const { error } = await supabase.from("straf_kategorien").insert({
+    id: kat.id,
+    stammtisch_id: stammtischId,
+    label: kat.label,
+    betrag: kat.betrag,
+    emoji: kat.emoji,
+    beschreibung: kat.beschreibung ?? null,
+    reihenfolge: kat.reihenfolge,
+    ist_system: false,
+  });
+  if (error) throw error;
+  return kat;
+}
+
+export async function updateStrafKategorie(id: string, partial: Partial<StrafKategorieDef>): Promise<void> {
+  const patch: Record<string, unknown> = {};
+  if (partial.label !== undefined) patch.label = partial.label;
+  if (partial.betrag !== undefined) patch.betrag = partial.betrag;
+  if (partial.emoji !== undefined) patch.emoji = partial.emoji;
+  if (partial.beschreibung !== undefined) patch.beschreibung = partial.beschreibung ?? null;
+  if (partial.reihenfolge !== undefined) patch.reihenfolge = partial.reihenfolge;
+  const { error } = await supabase.from("straf_kategorien").update(patch).eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteStrafKategorie(id: string): Promise<void> {
+  const { error } = await supabase.from("straf_kategorien").delete().eq("id", id).eq("ist_system", false);
+  if (error) throw error;
+}
+
+/** Übernimmt eine STRAF_KATEGORIEN_VORLAGEN-Vorlage 1:1 als neue, eigene Kategorie. */
+export async function instantiateStrafKategorieVorlage(
+  vorlage: { label: string; betrag: number; emoji: string; beschreibung?: string },
+  reihenfolge: number
+): Promise<StrafKategorieDef> {
+  return addStrafKategorie({
+    label: vorlage.label,
+    betrag: vorlage.betrag,
+    emoji: vorlage.emoji,
+    beschreibung: vorlage.beschreibung,
+    reihenfolge,
+  });
 }
 
 // ─── Kasse ────────────────────────────────────────────────────────────────────

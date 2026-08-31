@@ -76,19 +76,5 @@ export const AVATAR_COLORS = [
 ];
 
 // ─── Rollen am Stammtisch ─────────────────────────────────────────────────────
-
-export const ROLLEN = [
-  "Stammtischkönig",
-  "Schriftführer",
-  "Kassenwart",
-  "Bierwart",
-  "Eventmanager",
-  "Vize-Eventmanager",
-  "Reserviermeister",
-  "Vize-Reserviermeister",
-  "Kameramann",
-  "Foto-Beauftragter",
-  "Reiseminister",
-  "Mitglied",
-  "Gast",
-] as const;
+// Die Rollen-Optionen sind pro Stammtisch konfigurierbar, siehe
+// StammtischVerordnung.rollenOptionen (types/index.ts) — kein fester Export mehr.

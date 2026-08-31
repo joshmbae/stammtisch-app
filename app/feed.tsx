@@ -2,8 +2,8 @@ import React, { useState, useCallback } from "react";
 import { View, Text, StyleSheet, ScrollView, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "expo-router";
-import { ActivityLogEntry, MemberProfile } from "../types";
-import { loadActivityFeed, loadMembers } from "../utils/storage";
+import { ActivityLogEntry, MemberProfile, StrafKategorieDef } from "../types";
+import { loadActivityFeed, loadMembers, loadStrafKategorien } from "../utils/storage";
 import { renderActivity } from "../utils/activityFeed";
 import { formatActivityZeit } from "../utils/date";
 import { COLORS, SHADOWS } from "../constants/design";
@@ -17,11 +17,13 @@ import { useStammtisch } from "../contexts/StammtischContext";
 function FeedRow({
   entry,
   membersById,
+  strafKategorien,
 }: {
   entry: ActivityLogEntry;
   membersById: Map<string, MemberProfile>;
+  strafKategorien: StrafKategorieDef[];
 }) {
-  const rendered = renderActivity(entry, membersById);
+  const rendered = renderActivity(entry, membersById, strafKategorien);
   const subject = entry.subjectMemberId ? membersById.get(entry.subjectMemberId) : undefined;
 
   return (
@@ -47,15 +49,17 @@ function FeedRow({
 export default function FeedScreen() {
   const [entries, setEntries] = useState<ActivityLogEntry[]>([]);
   const [members, setMembers] = useState<MemberProfile[]>([]);
+  const [strafKategorien, setStrafKategorien] = useState<StrafKategorieDef[]>([]);
   const [loading, setLoading] = useState(true);
   const { stammtischId } = useStammtisch();
 
   useFocusEffect(
     useCallback(() => {
       async function load() {
-        const [feed, ms] = await Promise.all([loadActivityFeed(200), loadMembers()]);
+        const [feed, ms, kats] = await Promise.all([loadActivityFeed(200), loadMembers(), loadStrafKategorien()]);
         setEntries(feed);
         setMembers(ms);
+        setStrafKategorien(kats);
         setLoading(false);
       }
       load();
@@ -92,7 +96,7 @@ export default function FeedScreen() {
         ) : (
           <View style={styles.card}>
             {entries.map((entry) => (
-              <FeedRow key={entry.id} entry={entry} membersById={membersById} />
+              <FeedRow key={entry.id} entry={entry} membersById={membersById} strafKategorien={strafKategorien} />
             ))}
           </View>
         )}

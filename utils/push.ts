@@ -72,8 +72,13 @@ export async function sendActivityPush(stammtischId: string, activity: ActivityL
       .in("member_id", recipients.map((m: any) => m.id));
     if (tokensError || !tokenRows || tokenRows.length === 0) return;
 
+    const { data: strafKategorien } = await supabase
+      .from("straf_kategorien")
+      .select("id, label, emoji")
+      .eq("stammtisch_id", stammtischId);
+
     const membersById = new Map(members.map((m: any) => [m.id, m]));
-    const rendered = renderActivity(activity, membersById);
+    const rendered = renderActivity(activity, membersById, (strafKategorien ?? []) as any);
 
     const messages = tokenRows.map((t: any) => ({
       to: t.token,

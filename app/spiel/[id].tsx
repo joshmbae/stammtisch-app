@@ -25,6 +25,7 @@ import {
   deleteEreignisTyp,
   loadVerordnung,
   saveVerordnung,
+  loadStrafKategorien,
 } from "../../utils/storage";
 import { COLORS } from "../../constants/design";
 import LoadingSpinner from "../../components/LoadingSpinner";
@@ -113,10 +114,12 @@ export default function EditSpielScreen() {
     setSaving(true);
     try {
       await updateSpiel(id, { name: name.trim(), emoji: emoji.trim() || undefined });
+      const strafKategorien = await loadStrafKategorien();
+      const spielEreignisKat = strafKategorien.find((k) => k.systemKey === "spiel_ereignis");
 
       for (let i = 0; i < gueltig.length; i++) {
         const r = gueltig[i];
-        const strafKategorie = r.strafAktiv ? (r.strafKategorie ?? "spiel_ereignis") : undefined;
+        const strafKategorie = r.strafAktiv ? (r.strafKategorie ?? spielEreignisKat?.id) : undefined;
         const strafBetrag = r.strafAktiv ? Number(r.strafBetrag.replace(",", ".")) || 0 : undefined;
         if (r.id) {
           await updateEreignisTyp(r.id, {

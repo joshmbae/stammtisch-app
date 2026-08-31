@@ -1,4 +1,5 @@
-export type Rolle = "Stammtischkönig" | "Schriftführer" | "Kassenwart" | "Bierwart" | "Eventmanager" | "Vize-Eventmanager" | "Reserviermeister" | "Vize-Reserviermeister" | "Kameramann" | "Foto-Beauftragter" | "Reiseminister" | "Mitglied" | "Gast";
+/** Freier, pro Stammtisch definierter Rollenname (siehe verordnung.rollenOptionen). */
+export type Rolle = string;
 
 export interface MemberProfile {
   id: string;
@@ -74,35 +75,35 @@ export interface Protokoll {
 
 // ─── Strafen ──────────────────────────────────────────────────────────────────
 
-export type StrafKategorie =
-  | "fehlen_entschuldigt"
-  | "fehlen_unentschuldigt"
-  | "spaet_entschuldigt"
-  | "spaet_15min"
-  | "spaet_30min"
-  | "maennlicher_gast"
-  | "schock_niederlage"
-  | "spiel_ereignis"
-  | "wette_verloren"
-  | "sonstiges";
+/** Freier, pro Stammtisch vergebener Schlüssel (Zeilen-id aus straf_kategorien). */
+export type StrafKategorie = string;
 
-export const STRAF_KATEGORIEN: {
-  key: StrafKategorie;
+/** System-Keys, auf die andere Features technisch angewiesen sind (nicht löschbar). */
+export type StrafSystemKey = "sonstiges" | "spiel_ereignis" | "wette_verloren";
+
+export interface StrafKategorieDef {
+  id: string;
+  label: string;
+  betrag: number;
+  emoji: string;
+  beschreibung?: string;
+  reihenfolge: number;
+  istSystem: boolean;
+  systemKey?: StrafSystemKey;
+}
+
+/** Optionale Vorlagen, die ein Stammtisch per Klick übernehmen kann (siehe SPIEL_VORLAGEN). */
+export const STRAF_KATEGORIEN_VORLAGEN: {
   label: string;
   betrag: number;
   emoji: string;
   beschreibung?: string;
 }[] = [
-  { key: "fehlen_entschuldigt",   label: "Fehlen (entschuld.)",   betrag: 10,  emoji: "📵", beschreibung: "Angekündigt bis 23:59 Uhr Vortag oder triftiger Grund" },
-  { key: "fehlen_unentschuldigt", label: "Fehlen (unentschuld.)", betrag: 50,  emoji: "🚫" },
-  { key: "spaet_entschuldigt",    label: "Zu spät entschuld. (ab 30 Min.)", betrag: 5, emoji: "⏰", beschreibung: "Straffrei bei <30 Min. Verspätung, ab 30 Min. 5 €" },
-  { key: "spaet_15min",           label: "Zu spät 15–30 Min.",    betrag: 5,   emoji: "⏱️", beschreibung: "Unentschuldigt – Trinkspruch ab 1 Min., 5 € ab 15 Min." },
-  { key: "spaet_30min",           label: "Zu spät >30 Min.",      betrag: 10,  emoji: "⏱️", beschreibung: "Unentschuldigt" },
-  { key: "maennlicher_gast",      label: "Männl. Gast",           betrag: 20,  emoji: "👨", beschreibung: "Pro Gast – weibliche Gäste nur am Valentinsstammtisch" },
-  { key: "schock_niederlage",     label: "Schock-Niederlage",     betrag: 5,   emoji: "🎲", beschreibung: "Wird automatisch bei jeder Schock-Niederlage eingetragen" },
-  { key: "spiel_ereignis",        label: "Spiel-Ereignis",        betrag: 0,   emoji: "🎮", beschreibung: "Wird automatisch bei einem konfigurierten Spiel-Ereignis eingetragen" },
-  { key: "wette_verloren",        label: "Verlorene Wette",        betrag: 0,   emoji: "🤝", beschreibung: "Wird automatisch bei einer verlorenen Wette eingetragen, Betrag = Wetteinsatz" },
-  { key: "sonstiges",             label: "Sonstiges",             betrag: 0,   emoji: "💰" },
+  { label: "Fehlen (entschuld.)",   betrag: 10, emoji: "📵", beschreibung: "Angekündigt bis 23:59 Uhr Vortag oder triftiger Grund" },
+  { label: "Zu spät entschuld. (ab 30 Min.)", betrag: 5, emoji: "⏰", beschreibung: "Straffrei bei <30 Min. Verspätung, ab 30 Min. 5 €" },
+  { label: "Zu spät 15–30 Min.",    betrag: 5,  emoji: "⏱️", beschreibung: "Unentschuldigt – Trinkspruch ab 1 Min., 5 € ab 15 Min." },
+  { label: "Zu spät >30 Min.",      betrag: 10, emoji: "⏱️", beschreibung: "Unentschuldigt" },
+  { label: "Männl. Gast",           betrag: 20, emoji: "👨", beschreibung: "Pro Gast – weibliche Gäste nur am Valentinsstammtisch" },
 ];
 
 export interface StrafLog {
@@ -238,4 +239,5 @@ export interface StammtischVerordnung {
   regeln: string[];
   sonstiges?: string;
   aktivesSpielId?: string;
+  rollenOptionen?: string[];
 }

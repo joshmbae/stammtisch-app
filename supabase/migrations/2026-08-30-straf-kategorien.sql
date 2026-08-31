@@ -1,0 +1,78 @@
+-- Strafenkategorien werden von einer fest codierten Liste (identisch für
+-- jeden Stammtisch) zu einer pro Stammtisch editierbaren Tabelle. Manche
+-- Kategorien sind "System"-Kategorien (system_key gesetzt) — drei davon
+-- (sonstiges, spiel_ereignis, wette_verloren), weil andere Features
+-- automatisch straf_logs mit genau diesen Kategorien anlegen; dazu
+-- schock_niederlage als historisches Relikt (Schocken läuft heute über
+-- das generische Spiele-System, nicht mehr über einen eigenen Key).
+-- System-Kategorien dürfen nicht gelöscht werden (Label/Betrag/Emoji
+-- bleiben aber editierbar) und tauchen nicht im manuellen Kategorie-Picker
+-- auf. Der Client findet ihre id über system_key statt über einen fest
+-- verdrahteten String.
+--
+-- Datenerhalt: es gibt bereits echte straf_logs (anders als beim
+-- Spiele-Umbau, siehe 2026-08-05-spiele.sql). Für JEDEN bestehenden
+-- Stammtisch werden deshalb alle 10 bisherigen Kategorien mit einer neuen
+-- zufälligen id angelegt, und die alten straf_logs.kategorie- bzw.
+-- spiel_ereignis_typen.straf_kategorie-Werte (bisher der literale Key wie
+-- "sonstiges") werden per system_key-Crosswalk auf diese neuen ids
+-- umgeschrieben.
+--
+-- ACHTUNG: nicht idempotent — nicht zweimal ausführen (würde die
+-- Bestandsdaten-Zeilen duplizieren).
+
+create table if not exists dev.straf_kategorien (
+  id text primary key default gen_random_uuid()::text,
+  stammtisch_id uuid not null references dev.stammtische(id) on delete cascade,
+  label text not null,
+  betrag numeric not null default 0,
+  emoji text,
+  beschreibung text,
+  reihenfolge int not null default 0,
+  ist_system boolean not null default false,
+  system_key text
+);
+
+alter table dev.straf_kategorien enable row level security;
+
+create policy "stammtisch access" on dev.straf_kategorien for all using (
+  stammtisch_id in (select stammtisch_id from dev.stammtisch_access where auth_user_id = auth.uid())
+) with check (
+  stammtisch_id in (select stammtisch_id from dev.stammtisch_access where auth_user_id = auth.uid())
+);
+
+-- ─── Bestandsdaten: alle bisherigen Kategorien pro Stammtisch anlegen ────
+insert into dev.straf_kategorien (stammtisch_id, label, betrag, emoji, beschreibung, reihenfolge, ist_system, system_key)
+select s.id, 'Fehlen (entschuld.)', 10, '📵', 'Angekündigt bis 23:59 Uhr Vortag oder triftiger Grund', 0, false, 'fehlen_entschuldigt' from dev.stammtische s
+union all
+select s.id, 'Fehlen (unentschuld.)', 50, '🚫', null, 1, false, 'fehlen_unentschuldigt' from dev.stammtische s
+union all
+select s.id, 'Zu spät entschuld. (ab 30 Min.)', 5, '⏰', 'Straffrei bei <30 Min. Verspätung, ab 30 Min. 5 €', 2, false, 'spaet_entschuldigt' from dev.stammtische s
+union all
+select s.id, 'Zu spät 15–30 Min.', 5, '⏱️', 'Unentschuldigt – Trinkspruch ab 1 Min., 5 € ab 15 Min.', 3, false, 'spaet_15min' from dev.stammtische s
+union all
+select s.id, 'Zu spät >30 Min.', 10, '⏱️', 'Unentschuldigt', 4, false, 'spaet_30min' from dev.stammtische s
+union all
+select s.id, 'Männl. Gast', 20, '👨', 'Pro Gast – weibliche Gäste nur am Valentinsstammtisch', 5, false, 'maennlicher_gast' from dev.stammtische s
+union all
+select s.id, 'Schock-Niederlage', 5, '🎲', 'Historisch – wird nicht mehr automatisch vergeben', 6, true, 'schock_niederlage' from dev.stammtische s
+union all
+select s.id, 'Spiel-Ereignis', 0, '🎮', 'Wird automatisch bei einem konfigurierten Spiel-Ereignis eingetragen', 7, true, 'spiel_ereignis' from dev.stammtische s
+union all
+select s.id, 'Verlorene Wette', 0, '🤝', 'Wird automatisch bei einer verlorenen Wette eingetragen, Betrag = Wetteinsatz', 8, true, 'wette_verloren' from dev.stammtische s
+union all
+select s.id, 'Sonstiges', 0, '💰', null, 9, true, 'sonstiges' from dev.stammtische s;
+
+-- ─── Bestehende straf_logs auf die neuen ids ummappen ────────────────────
+update dev.straf_logs sl
+set kategorie = sk.id
+from dev.members m
+join dev.straf_kategorien sk on sk.stammtisch_id = m.stammtisch_id and sk.system_key = sl.kategorie
+where sl.member_id = m.id;
+
+-- ─── Bestehende Spiel-Ereignistypen (Strafe-Kopplung) genauso ummappen ───
+update dev.spiel_ereignis_typen et
+set straf_kategorie = sk.id
+from dev.spiele sp
+join dev.straf_kategorien sk on sk.stammtisch_id = sp.stammtisch_id and sk.system_key = et.straf_kategorie
+where et.spiel_id = sp.id and et.straf_kategorie is not null;

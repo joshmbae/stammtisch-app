@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -17,8 +17,8 @@ import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { showAlert } from "../../utils/alert";
 import { MemberProfile } from "../../types";
-import { loadMembers, saveMembers, uploadAvatar } from "../../utils/storage";
-import { COLORS, AVATAR_COLORS, ROLLEN } from "../../constants/design";
+import { loadMembers, saveMembers, uploadAvatar, loadVerordnung } from "../../utils/storage";
+import { COLORS, AVATAR_COLORS } from "../../constants/design";
 import InlineDateTimePicker from "../../components/InlineDateTimePicker";
 import { useSession } from "../../contexts/SessionContext";
 import { getInitial } from "../../utils/format";
@@ -30,6 +30,7 @@ export default function NewMemberScreen() {
   const [name, setName] = useState("");
   const [spitzname, setSpitzname] = useState("");
   const [rollen, setRollen] = useState<MemberProfile["rollen"]>(["Mitglied"]);
+  const [rollenOptionen, setRollenOptionen] = useState<string[]>(["Mitglied"]);
   const [lieblingsgetraenk, setLieblingsgetraenk] = useState("");
   const [beruf, setBeruf] = useState("");
   const [mitgliedSeit, setMitgliedSeit] = useState(new Date());
@@ -41,6 +42,12 @@ export default function NewMemberScreen() {
   const [notizen, setNotizen] = useState("");
   const [pin, setPin] = useState("");
   const [pinConfirm, setPinConfirm] = useState("");
+
+  useEffect(() => {
+    loadVerordnung().then((v) => {
+      if (v.rollenOptionen?.length) setRollenOptionen(v.rollenOptionen);
+    });
+  }, []);
 
   async function pickPhoto() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -171,7 +178,7 @@ export default function NewMemberScreen() {
         <View style={styles.card}>
           <Text style={styles.fieldLabel}>Rolle(n) am Stammtisch</Text>
           <View style={styles.rollenGrid}>
-            {ROLLEN.map((r) => {
+            {rollenOptionen.map((r) => {
               const selected = rollen.includes(r);
               return (
                 <TouchableOpacity

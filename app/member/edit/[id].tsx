@@ -17,8 +17,8 @@ import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { showAlert } from "../../../utils/alert";
 import { MemberProfile } from "../../../types";
-import { loadMembers, saveMembers, uploadAvatar } from "../../../utils/storage";
-import { COLORS, AVATAR_COLORS, ROLLEN } from "../../../constants/design";
+import { loadMembers, saveMembers, uploadAvatar, loadVerordnung } from "../../../utils/storage";
+import { COLORS, AVATAR_COLORS } from "../../../constants/design";
 import { getInitial } from "../../../utils/format";
 import LoadingSpinner from "../../../components/LoadingSpinner";
 import { toLocalIsoDate } from "../../../utils/date";
@@ -43,8 +43,12 @@ export default function EditMemberScreen() {
   const [newPin, setNewPin] = useState("");
   const [newPinConfirm, setNewPinConfirm] = useState("");
   const [loading, setLoading] = useState(true);
+  const [rollenOptionen, setRollenOptionen] = useState<string[]>(["Mitglied"]);
 
   useEffect(() => {
+    loadVerordnung().then((v) => {
+      if (v.rollenOptionen?.length) setRollenOptionen(v.rollenOptionen);
+    });
     loadMembers().then((members) => {
       const m = members.find((x) => x.id === id);
       if (!m) { setLoading(false); return; }
@@ -184,7 +188,7 @@ export default function EditMemberScreen() {
         <View style={styles.card}>
           <Text style={styles.fieldLabel}>Rolle(n) am Stammtisch</Text>
           <View style={styles.rollenGrid}>
-            {ROLLEN.map((r) => {
+            {rollenOptionen.map((r) => {
               const selected = rollen.includes(r);
               return (
                 <TouchableOpacity

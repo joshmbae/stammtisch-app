@@ -1,4 +1,4 @@
-import { ActivityLogEntry, MemberProfile, STRAF_KATEGORIEN } from "../types";
+import { ActivityLogEntry, MemberProfile, StrafKategorieDef } from "../types";
 import { formatEuro as formatEuroBase } from "./format";
 
 function formatEuro(n: number): string {
@@ -27,7 +27,8 @@ export interface RenderedActivity {
 /** Baut den lesbaren Feed-Text aus einem Activity-Log-Eintrag zur Laufzeit. */
 export function renderActivity(
   entry: ActivityLogEntry,
-  membersById: Map<string, MemberProfile>
+  membersById: Map<string, MemberProfile>,
+  strafKategorien: StrafKategorieDef[] = []
 ): RenderedActivity {
   const actor = entry.actorMemberId ? membersById.get(entry.actorMemberId) : undefined;
   const subject = entry.subjectMemberId ? membersById.get(entry.subjectMemberId) : undefined;
@@ -41,7 +42,7 @@ export function renderActivity(
 
   switch (entry.actionType) {
     case "straf_log_created": {
-      const kat = STRAF_KATEGORIEN.find((k) => k.key === meta.kategorie);
+      const kat = strafKategorien.find((k) => k.id === meta.kategorie);
       return {
         emoji: kat?.emoji ?? "💰",
         text: `${subjectName} hat eine Strafe bekommen: ${kat?.label ?? meta.kategorie} (${formatEuro(Number(meta.betrag ?? 0))})`,
@@ -49,7 +50,7 @@ export function renderActivity(
       };
     }
     case "straf_log_beglichen": {
-      const kat = STRAF_KATEGORIEN.find((k) => k.key === meta.kategorie);
+      const kat = strafKategorien.find((k) => k.id === meta.kategorie);
       return {
         emoji: "✅",
         text: `${subjectName} hat eine Strafe beglichen: ${kat?.label ?? meta.kategorie ?? "Sonstiges"} (${formatEuro(Number(meta.betrag ?? 0))})`,
@@ -117,7 +118,7 @@ export function renderActivity(
         actorText: eingetragenVon,
       };
     case "straf_log_deleted": {
-      const kat = STRAF_KATEGORIEN.find((k) => k.key === meta.kategorie);
+      const kat = strafKategorien.find((k) => k.id === meta.kategorie);
       return {
         emoji: "🗑️",
         text: `Strafe gelöscht: ${subjectName} – ${kat?.label ?? meta.kategorie} (${formatEuro(Number(meta.betrag ?? 0))})`,

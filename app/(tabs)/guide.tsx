@@ -46,6 +46,7 @@ export default function EinstellungenScreen() {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [neueRegel, setNeueRegel] = useState("");
+  const [neueRolle, setNeueRolle] = useState("");
   const [showGruendungPicker, setShowGruendungPicker] = useState(false);
   const [loading, setLoading] = useState(true);
   const [spiele, setSpiele] = useState<Spiel[]>([]);
@@ -183,6 +184,17 @@ export default function EinstellungenScreen() {
 
   function regelLöschen(index: number) {
     update({ regeln: verordnung.regeln.filter((_, i) => i !== index) });
+  }
+
+  function rolleHinzufügen() {
+    const r = neueRolle.trim();
+    if (!r || verordnung.rollenOptionen?.includes(r)) return;
+    update({ rollenOptionen: [...(verordnung.rollenOptionen ?? []), r] });
+    setNeueRolle("");
+  }
+
+  function rolleLöschen(index: number) {
+    update({ rollenOptionen: (verordnung.rollenOptionen ?? []).filter((_, i) => i !== index) });
   }
 
   return (
@@ -336,6 +348,45 @@ export default function EinstellungenScreen() {
           </View>
         </View>
 
+        {/* Rollen */}
+        <Text style={styles.sectionTitle}>🎩 Rollen</Text>
+
+        <View style={styles.infoBox}>
+          <Ionicons name="information-circle-outline" size={18} color={COLORS.blue} />
+          <Text style={styles.infoBoxText}>
+            Die Rollen, die beim Anlegen/Bearbeiten eines Mitglieds zur Auswahl stehen
+            (z. B. Kassenwart, Bierwart, ...). Rein organisatorisch, ohne Zugriffsrechte.
+          </Text>
+        </View>
+
+        <View style={styles.rollenWrap}>
+          {(verordnung.rollenOptionen ?? []).map((rolle, i) => (
+            <View key={rolle} style={styles.rolleTag}>
+              <Text style={styles.rolleTagText}>{rolle}</Text>
+              <TouchableOpacity onPress={() => rolleLöschen(i)}>
+                <Ionicons name="close-circle" size={16} color={COLORS.danger} />
+              </TouchableOpacity>
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.fieldLabel}>Neue Rolle hinzufügen</Text>
+          <View style={styles.regelInputRow}>
+            <TextInput
+              style={[styles.input, { flex: 1, marginBottom: 0 }]}
+              value={neueRolle}
+              onChangeText={setNeueRolle}
+              placeholder="z.B. Bierwart"
+              placeholderTextColor={COLORS.textLight}
+              onSubmitEditing={rolleHinzufügen}
+            />
+            <TouchableOpacity style={styles.regelAddBtn} onPress={rolleHinzufügen}>
+              <Ionicons name="add" size={22} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* Aktives Spiel */}
         <Text style={styles.sectionTitle}>🎲 Aktives Spiel</Text>
 
@@ -399,6 +450,22 @@ export default function EinstellungenScreen() {
 
           <TouchableOpacity style={styles.spielManageLink} onPress={() => router.push("/spiele")}>
             <Text style={styles.spielManageLinkText}>Spiele verwalten →</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Strafenkategorien */}
+        <Text style={styles.sectionTitle}>💰 Strafenkategorien</Text>
+
+        <View style={styles.infoBox}>
+          <Ionicons name="information-circle-outline" size={18} color={COLORS.blue} />
+          <Text style={styles.infoBoxText}>
+            Legt eure eigenen Strafen mit Betrag fest — z. B. Fehlen, Zu spät oder eigene Regeln.
+          </Text>
+        </View>
+
+        <View style={styles.card}>
+          <TouchableOpacity style={styles.spielManageLink} onPress={() => router.push("/strafen-kategorien")}>
+            <Text style={styles.spielManageLinkText}>Strafenkategorien verwalten →</Text>
           </TouchableOpacity>
         </View>
 
@@ -567,6 +634,14 @@ const styles = StyleSheet.create({
     width: 42, height: 42, borderRadius: 21,
     backgroundColor: COLORS.blue, alignItems: "center", justifyContent: "center", flexShrink: 0,
   },
+
+  rollenWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 },
+  rolleTag: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    backgroundColor: COLORS.card, borderRadius: 16, paddingVertical: 6, paddingHorizontal: 10,
+    borderWidth: 1, borderColor: COLORS.border,
+  },
+  rolleTagText: { fontSize: 13, fontWeight: "600", color: COLORS.textDark },
 
   spielRow: {
     flexDirection: "row", alignItems: "center", gap: 10,
