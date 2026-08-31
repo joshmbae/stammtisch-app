@@ -1012,6 +1012,9 @@ export default function TerminDetailScreen() {
     .sort((a, b) => new Date(b.loggedAt).getTime() - new Date(a.loggedAt).getTime());
 
   const strafSelMember = members.find((m) => m.id === strafMemberId);
+  const waehlbareStrafKategorien = strafKategorien.filter(
+    (kat) => kat.systemKey !== "spiel_ereignis" && kat.systemKey !== "wette_verloren"
+  );
   const allStrafLogs = Object.entries(strafMap)
     .flatMap(([memberId, logs]) => logs.map((l) => ({ ...l, memberId })))
     .sort((a, b) => new Date(b.loggedAt).getTime() - new Date(a.loggedAt).getTime());
@@ -1178,9 +1181,9 @@ export default function TerminDetailScreen() {
           <View style={styles.tabBar}>
             {([
               { key: "anwesenheit", label: "Anwes.", emoji: "👥" },
-              { key: "strafen", label: "Strafen", emoji: "💰" },
+              ...(verordnung.tabStrafenAktiv !== false ? [{ key: "strafen", label: "Strafen", emoji: "💰" }] : []),
               ...(aktivesSpiel ? [{ key: "spiel", label: aktivesSpiel.name, emoji: aktivesSpiel.emoji ?? "🎮" }] : []),
-              { key: "wetten", label: "Wetten", emoji: "🤝" },
+              ...(verordnung.tabWettenAktiv !== false ? [{ key: "wetten", label: "Wetten", emoji: "🤝" }] : []),
               { key: "agenda", label: "Agenda", emoji: "📋" },
               { key: "protokoll", label: "Protokoll", emoji: "📝" },
             ] as { key: typeof activeTab; label: string; emoji: string }[]).map((tab) => {
@@ -1288,8 +1291,11 @@ export default function TerminDetailScreen() {
 
               {strafMemberId && (
                 <>
+                  {waehlbareStrafKategorien.length === 0 ? (
+                    <Text style={styles.strafKeineKategorien}>Dieser Stammtisch hat keine Strafen.</Text>
+                  ) : (
                   <View style={styles.strafGrid}>
-                    {strafKategorien.filter((kat) => !kat.istSystem).map((kat) => {
+                    {waehlbareStrafKategorien.map((kat) => {
                       const isSelected = strafKategorie?.id === kat.id;
                       return (
                         <TouchableOpacity
@@ -1314,6 +1320,7 @@ export default function TerminDetailScreen() {
                       );
                     })}
                   </View>
+                  )}
 
                   {showStrafForm && strafKategorie && (
                     <View style={styles.strafForm}>
@@ -1956,6 +1963,7 @@ const styles = StyleSheet.create({
 
   // Strafen
   strafGrid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", marginBottom: 10 },
+  strafKeineKategorien: { fontSize: 13, color: COLORS.textMuted, fontStyle: "italic", marginBottom: 10 },
   strafKatBtn: {
     width: "48%", alignItems: "center", paddingVertical: 12, paddingHorizontal: 8,
     borderRadius: 14, backgroundColor: COLORS.card, marginBottom: 8,

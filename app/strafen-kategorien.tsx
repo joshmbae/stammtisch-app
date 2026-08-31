@@ -10,7 +10,7 @@ import {
   Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useFocusEffect } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { showAlert } from "../utils/alert";
 import { StrafKategorieDef, STRAF_KATEGORIEN_VORLAGEN } from "../types";
@@ -22,8 +22,6 @@ import {
   instantiateStrafKategorieVorlage,
 } from "../utils/storage";
 import { COLORS, SHADOWS } from "../constants/design";
-import { HamburgerButton } from "../components/HamburgerButton";
-import { BackButton } from "../components/BackButton";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { useSingleFlight } from "../utils/useSingleFlight";
 
@@ -120,8 +118,9 @@ export default function StrafenKategorienScreen() {
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
           <View style={styles.header}>
-            <BackButton />
-            <HamburgerButton />
+            <TouchableOpacity onPress={() => router.back()} style={{ padding: 4 }}>
+              <Ionicons name="chevron-back" size={22} color={COLORS.textDark} />
+            </TouchableOpacity>
             <View style={styles.headerTexts}>
               <Text style={styles.headerTitle}>Strafenkategorien</Text>
               <Text style={styles.headerSub}>Eigene Strafen & Beträge verwalten</Text>

@@ -1,14 +1,16 @@
 -- Strafenkategorien werden von einer fest codierten Liste (identisch für
--- jeden Stammtisch) zu einer pro Stammtisch editierbaren Tabelle. Manche
--- Kategorien sind "System"-Kategorien (system_key gesetzt) — drei davon
--- (sonstiges, spiel_ereignis, wette_verloren), weil andere Features
--- automatisch straf_logs mit genau diesen Kategorien anlegen; dazu
--- schock_niederlage als historisches Relikt (Schocken läuft heute über
--- das generische Spiele-System, nicht mehr über einen eigenen Key).
--- System-Kategorien dürfen nicht gelöscht werden (Label/Betrag/Emoji
--- bleiben aber editierbar) und tauchen nicht im manuellen Kategorie-Picker
--- auf. Der Client findet ihre id über system_key statt über einen fest
--- verdrahteten String.
+-- jeden Stammtisch) zu einer pro Stammtisch editierbaren Tabelle. Drei
+-- Kategorien sind "System"-Kategorien (ist_system = true, system_key
+-- gesetzt): sonstiges, spiel_ereignis, wette_verloren — andere Features
+-- legen automatisch straf_logs mit genau diesen Kategorien an, deshalb
+-- dürfen sie nicht gelöscht werden (Label/Betrag/Emoji bleiben aber
+-- editierbar) und spiel_ereignis/wette_verloren tauchen nicht im
+-- manuellen Kategorie-Picker auf. schock_niederlage bekommt zwar ebenfalls
+-- einen system_key (für den Datenmigrations-Crosswalk unten), ist aber
+-- KEIN ist_system — reines historisches Relikt (Schocken läuft heute über
+-- das generische Spiele-System), frei löschbar wie jede andere Kategorie.
+-- Der Client findet die drei echten System-Kategorien über system_key
+-- statt über einen fest verdrahteten String.
 --
 -- Datenerhalt: es gibt bereits echte straf_logs (anders als beim
 -- Spiele-Umbau, siehe 2026-08-05-spiele.sql). Für JEDEN bestehenden
@@ -55,7 +57,7 @@ select s.id, 'Zu spät >30 Min.', 10, '⏱️', 'Unentschuldigt', 4, false, 'spa
 union all
 select s.id, 'Männl. Gast', 20, '👨', 'Pro Gast – weibliche Gäste nur am Valentinsstammtisch', 5, false, 'maennlicher_gast' from dev.stammtische s
 union all
-select s.id, 'Schock-Niederlage', 5, '🎲', 'Historisch – wird nicht mehr automatisch vergeben', 6, true, 'schock_niederlage' from dev.stammtische s
+select s.id, 'Schock-Niederlage', 5, '🎲', 'Historisch – wird nicht mehr automatisch vergeben', 6, false, 'schock_niederlage' from dev.stammtische s
 union all
 select s.id, 'Spiel-Ereignis', 0, '🎮', 'Wird automatisch bei einem konfigurierten Spiel-Ereignis eingetragen', 7, true, 'spiel_ereignis' from dev.stammtische s
 union all

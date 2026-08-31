@@ -247,6 +247,8 @@ function rowToVerordnung(row: any): StammtischVerordnung {
     sonstiges: row.sonstiges ?? undefined,
     aktivesSpielId: row.aktives_spiel_id ?? undefined,
     rollenOptionen: row.rollen_optionen ?? undefined,
+    tabStrafenAktiv: row.tab_strafen_aktiv ?? true,
+    tabWettenAktiv: row.tab_wetten_aktiv ?? true,
   };
 }
 
@@ -277,6 +279,8 @@ export async function saveVerordnung(v: StammtischVerordnung): Promise<void> {
     sonstiges: v.sonstiges ?? null,
     aktives_spiel_id: v.aktivesSpielId ?? null,
     rollen_optionen: v.rollenOptionen ?? ROLLEN_OPTIONEN_DEFAULT,
+    tab_strafen_aktiv: v.tabStrafenAktiv ?? true,
+    tab_wetten_aktiv: v.tabWettenAktiv ?? true,
   });
   if (error) throw error;
 }

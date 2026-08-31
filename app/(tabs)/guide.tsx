@@ -11,6 +11,7 @@ import {
   Platform,
   KeyboardAvoidingView,
   Image,
+  Switch,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
@@ -462,20 +463,43 @@ export default function EinstellungenScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Strafenkategorien */}
-        <Text style={styles.sectionTitle}>💰 Strafenkategorien</Text>
-
-        <View style={styles.infoBox}>
-          <Ionicons name="information-circle-outline" size={18} color={COLORS.blue} />
-          <Text style={styles.infoBoxText}>
-            Legt eure eigenen Strafen mit Betrag fest — z. B. Fehlen, Zu spät oder eigene Regeln.
-          </Text>
-        </View>
+        {/* Strafen */}
+        <Text style={styles.sectionTitle}>💰 Strafen</Text>
 
         <View style={styles.card}>
-          <TouchableOpacity style={styles.spielManageLink} onPress={() => router.push("/strafen-kategorien")}>
-            <Text style={styles.spielManageLinkText}>Strafenkategorien verwalten →</Text>
-          </TouchableOpacity>
+          <View style={styles.switchRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.fieldLabel}>Strafen-Tab im Termin anzeigen</Text>
+              <Text style={styles.switchHint}>Aus, wenn ihr am Stammtisch keine Strafen führt.</Text>
+            </View>
+            <Switch
+              value={verordnung.tabStrafenAktiv !== false}
+              onValueChange={(v) => update({ tabStrafenAktiv: v })}
+              trackColor={{ false: COLORS.border, true: COLORS.blue }}
+            />
+          </View>
+          {verordnung.tabStrafenAktiv !== false && (
+            <TouchableOpacity style={[styles.spielManageLink, { marginTop: 4 }]} onPress={() => router.push("/strafen-kategorien")}>
+              <Text style={styles.spielManageLinkText}>Strafenkategorien verwalten →</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Wetten */}
+        <Text style={styles.sectionTitle}>🤝 Wetten</Text>
+
+        <View style={styles.card}>
+          <View style={styles.switchRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.fieldLabel}>Wetten-Tab im Termin anzeigen</Text>
+              <Text style={styles.switchHint}>Aus, wenn ihr am Stammtisch nicht wettet.</Text>
+            </View>
+            <Switch
+              value={verordnung.tabWettenAktiv !== false}
+              onValueChange={(v) => update({ tabWettenAktiv: v })}
+              trackColor={{ false: COLORS.border, true: COLORS.blue }}
+            />
+          </View>
         </View>
 
         {/* Sonstiges */}
@@ -603,6 +627,8 @@ const styles = StyleSheet.create({
   infoBoxText: { flex: 1, fontSize: 12.5, color: COLORS.textMid, lineHeight: 18 },
 
   fieldLabel: { fontSize: 12, fontWeight: "700", color: COLORS.textMuted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 },
+  switchRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  switchHint: { fontSize: 12, color: COLORS.textLight, marginTop: -4 },
 
   input: {
     backgroundColor: COLORS.background, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border,

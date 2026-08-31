@@ -240,4 +240,6 @@ export interface StammtischVerordnung {
   sonstiges?: string;
   aktivesSpielId?: string;
   rollenOptionen?: string[];
+  tabStrafenAktiv?: boolean;
+  tabWettenAktiv?: boolean;
 }
