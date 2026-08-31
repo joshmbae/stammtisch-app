@@ -79,7 +79,7 @@ export interface Protokoll {
 export type StrafKategorie = string;
 
 /** System-Keys, auf die andere Features technisch angewiesen sind (nicht löschbar). */
-export type StrafSystemKey = "sonstiges" | "spiel_ereignis" | "wette_verloren";
+export type StrafSystemKey = "sonstiges" | "wette_verloren";
 
 export interface StrafKategorieDef {
   id: string;
@@ -90,9 +90,12 @@ export interface StrafKategorieDef {
   reihenfolge: number;
   istSystem: boolean;
   systemKey?: StrafSystemKey;
+  /** Gesetzt, wenn diese Kategorie zu genau einem Spiel-Ereignistyp gehört
+   * (dort verwaltet, nicht in der allgemeinen Strafen-Verwaltung/Auswahl). */
+  spielEreignisTypId?: string;
 }
 
-/** Optionale Vorlagen, die ein Stammtisch per Klick übernehmen kann (siehe SPIEL_VORLAGEN). */
+/** Optionale Vorlagen, die ein Stammtisch per Klick übernehmen kann (siehe SPIEL_VORLAGEN). Bewusst kurz gehalten. */
 export const STRAF_KATEGORIEN_VORLAGEN: {
   label: string;
   betrag: number;
@@ -100,10 +103,7 @@ export const STRAF_KATEGORIEN_VORLAGEN: {
   beschreibung?: string;
 }[] = [
   { label: "Fehlen (entschuld.)",   betrag: 10, emoji: "📵", beschreibung: "Angekündigt bis 23:59 Uhr Vortag oder triftiger Grund" },
-  { label: "Zu spät entschuld. (ab 30 Min.)", betrag: 5, emoji: "⏰", beschreibung: "Straffrei bei <30 Min. Verspätung, ab 30 Min. 5 €" },
-  { label: "Zu spät 15–30 Min.",    betrag: 5,  emoji: "⏱️", beschreibung: "Unentschuldigt – Trinkspruch ab 1 Min., 5 € ab 15 Min." },
-  { label: "Zu spät >30 Min.",      betrag: 10, emoji: "⏱️", beschreibung: "Unentschuldigt" },
-  { label: "Männl. Gast",           betrag: 20, emoji: "👨", beschreibung: "Pro Gast – weibliche Gäste nur am Valentinsstammtisch" },
+  { label: "Zu spät",               betrag: 5,  emoji: "⏱️" },
 ];
 
 export interface StrafLog {
@@ -149,13 +149,13 @@ export interface SpielLog {
 export const SPIEL_VORLAGEN: {
   name: string;
   emoji: string;
-  ereignisTypen: { label: string; emoji: string; strafKategorie?: StrafKategorie; strafBetrag?: number }[];
+  ereignisTypen: { label: string; emoji: string; strafBetrag?: number }[];
 }[] = [
   {
     name: "Schocken",
     emoji: "🎲",
     ereignisTypen: [
-      { label: "Niederlage", emoji: "💀", strafKategorie: "schock_niederlage", strafBetrag: 5 },
+      { label: "Niederlage", emoji: "💀", strafBetrag: 5 },
       { label: "Schock-Aus", emoji: "🎲" },
     ],
   },
@@ -163,7 +163,7 @@ export const SPIEL_VORLAGEN: {
     name: "Skat",
     emoji: "🃏",
     ereignisTypen: [
-      { label: "Verloren", emoji: "🃏", strafKategorie: "spiel_ereignis", strafBetrag: 3 },
+      { label: "Verloren", emoji: "🃏", strafBetrag: 3 },
       { label: "Schwarz gespielt", emoji: "🖤" },
     ],
   },
@@ -171,7 +171,7 @@ export const SPIEL_VORLAGEN: {
     name: "Kegeln",
     emoji: "🎳",
     ereignisTypen: [
-      { label: "Nullwurf", emoji: "😅", strafKategorie: "spiel_ereignis", strafBetrag: 2 },
+      { label: "Nullwurf", emoji: "😅", strafBetrag: 2 },
       { label: "Alle Neune", emoji: "🎳" },
     ],
   },

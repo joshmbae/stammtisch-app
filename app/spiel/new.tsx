@@ -14,7 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { showAlert } from "../../utils/alert";
-import { addSpiel, addEreignisTyp, loadStrafKategorien } from "../../utils/storage";
+import { addSpiel, addEreignisTyp } from "../../utils/storage";
 import { COLORS } from "../../constants/design";
 
 interface EreignisRow {
@@ -62,15 +62,12 @@ export default function NewSpielScreen() {
     setSaving(true);
     try {
       const spiel = await addSpiel({ name: name.trim(), emoji: emoji.trim() || undefined });
-      const strafKategorien = await loadStrafKategorien();
-      const spielEreignisKat = strafKategorien.find((k) => k.systemKey === "spiel_ereignis");
       for (let i = 0; i < gueltig.length; i++) {
         const r = gueltig[i];
         await addEreignisTyp(spiel.id, {
           label: r.label.trim(),
           emoji: r.emoji.trim() || undefined,
           reihenfolge: i + 1,
-          strafKategorie: r.strafAktiv ? spielEreignisKat?.id : undefined,
           strafBetrag: r.strafAktiv ? Number(r.strafBetrag.replace(",", ".")) || 0 : undefined,
         });
       }

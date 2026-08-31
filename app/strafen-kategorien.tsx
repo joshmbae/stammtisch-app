@@ -42,7 +42,9 @@ export default function StrafenKategorienScreen() {
     useCallback(() => {
       async function load() {
         const kats = await loadStrafKategorien();
-        setKategorien(kats);
+        // Kategorien aus Spiel-Ereignissen werden beim jeweiligen Spiel verwaltet
+        // (Betrag/Label dort editieren), nicht hier.
+        setKategorien(kats.filter((k) => !k.spielEreignisTypId));
         setLoading(false);
       }
       load();
@@ -125,6 +127,14 @@ export default function StrafenKategorienScreen() {
               <Text style={styles.headerTitle}>Strafenkategorien</Text>
               <Text style={styles.headerSub}>Eigene Strafen & Beträge verwalten</Text>
             </View>
+          </View>
+
+          <View style={styles.infoBox}>
+            <Ionicons name="information-circle-outline" size={18} color={COLORS.blue} />
+            <Text style={styles.infoBoxText}>
+              Strafen, die bei einem Spiel-Ereignis automatisch entstehen (z. B. "Schock-Niederlage"),
+              verwaltet ihr direkt beim jeweiligen Spiel unter „Spiele verwalten" — hier nur alles Manuelle.
+            </Text>
           </View>
 
           {kategorien.map((k) => (

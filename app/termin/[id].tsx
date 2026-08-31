@@ -1013,7 +1013,7 @@ export default function TerminDetailScreen() {
 
   const strafSelMember = members.find((m) => m.id === strafMemberId);
   const waehlbareStrafKategorien = strafKategorien.filter(
-    (kat) => kat.systemKey !== "spiel_ereignis" && kat.systemKey !== "wette_verloren"
+    (kat) => !kat.spielEreignisTypId && kat.systemKey !== "wette_verloren"
   );
   const allStrafLogs = Object.entries(strafMap)
     .flatMap(([memberId, logs]) => logs.map((l) => ({ ...l, memberId })))

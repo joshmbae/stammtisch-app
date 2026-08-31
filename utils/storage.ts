@@ -88,15 +88,17 @@ export async function createStammtisch(name: string, passwordHash: string): Prom
 }
 
 /**
- * Legt für einen frisch erstellten Stammtisch die drei technisch nötigen
- * System-Kategorien plus ein paar neutrale Basics an. Hellen-spezifische
- * Extras (Männl. Gast, gestaffelte Verspätung, ...) bleiben bewusst außen
- * vor — die stehen als Vorlage bereit (STRAF_KATEGORIEN_VORLAGEN).
+ * Legt für einen frisch erstellten Stammtisch die zwei technisch nötigen
+ * System-Kategorien plus ein paar neutrale Basics an. Kategorien für
+ * Spiel-Ereignisse entstehen erst, wenn beim jeweiligen Spiel eine Strafe
+ * aktiviert wird (siehe addSpielEreignisStrafKategorie) — keine geteilte
+ * Sammelkategorie mehr. Hellen-spezifische Extras (Männl. Gast, gestaffelte
+ * Verspätung, ...) bleiben bewusst außen vor — die stehen als Vorlage
+ * bereit (STRAF_KATEGORIEN_VORLAGEN).
  */
 async function seedDefaultStrafKategorien(stammtischId: string): Promise<void> {
   const defaults: { label: string; betrag: number; emoji: string; beschreibung?: string; istSystem: boolean; systemKey?: string }[] = [
     { label: "Sonstiges", betrag: 0, emoji: "💰", istSystem: true, systemKey: "sonstiges" },
-    { label: "Spiel-Ereignis", betrag: 0, emoji: "🎮", beschreibung: "Wird automatisch bei einem konfigurierten Spiel-Ereignis eingetragen", istSystem: true, systemKey: "spiel_ereignis" },
     { label: "Verlorene Wette", betrag: 0, emoji: "🤝", beschreibung: "Wird automatisch bei einer verlorenen Wette eingetragen, Betrag = Wetteinsatz", istSystem: true, systemKey: "wette_verloren" },
     { label: "Fehlen (unentschuldigt)", betrag: 10, emoji: "🚫", istSystem: false },
     { label: "Zu spät", betrag: 5, emoji: "⏱️", istSystem: false },
@@ -417,22 +419,60 @@ export async function loadEreignisTypen(spielId: string): Promise<SpielEreignisT
   return (data ?? []).map(rowToSpielEreignisTyp);
 }
 
+/**
+ * Legt für einen Spiel-Ereignistyp mit aktivierter Strafe eine eigene,
+ * nach ihm benannte Straf-Kategorie an (statt einer geteilten generischen
+ * "Spiel-Ereignis"-Sammelkategorie) — so weisen Strafen im Aktivitätsprotokoll/
+ * Feed immer auf das konkrete Ereignis hin (z. B. "Schock-Aus", nicht nur
+ * "Spiel-Ereignis"), und unterschiedliche Ereignisse können unterschiedliche
+ * Beträge haben ohne sich gegenseitig zu überschreiben.
+ */
+async function addSpielEreignisStrafKategorie(
+  ereignisTypId: string,
+  label: string,
+  emoji: string | undefined,
+  betrag: number
+): Promise<StrafKategorieDef> {
+  const stammtischId = await getStammtischId();
+  const kat: StrafKategorieDef = {
+    id: nextId(), label, betrag, emoji: emoji ?? "🎮",
+    reihenfolge: 999, istSystem: true, spielEreignisTypId: ereignisTypId,
+  };
+  const { error } = await supabase.from("straf_kategorien").insert({
+    id: kat.id,
+    stammtisch_id: stammtischId,
+    label: kat.label,
+    betrag: kat.betrag,
+    emoji: kat.emoji,
+    reihenfolge: kat.reihenfolge,
+    ist_system: true,
+    spiel_ereignis_typ_id: ereignisTypId,
+  });
+  if (error) throw error;
+  return kat;
+}
+
 export async function addEreignisTyp(
   spielId: string,
-  entry: Omit<SpielEreignisTyp, "id" | "spielId">
+  entry: Omit<SpielEreignisTyp, "id" | "spielId" | "strafKategorie">
 ): Promise<SpielEreignisTyp> {
   const typ: SpielEreignisTyp = { ...entry, id: nextId(), spielId };
+  let strafKategorieId: string | undefined;
+  if (entry.strafBetrag !== undefined) {
+    const kat = await addSpielEreignisStrafKategorie(typ.id, typ.label, typ.emoji, entry.strafBetrag);
+    strafKategorieId = kat.id;
+  }
   const { error } = await supabase.from("spiel_ereignis_typen").insert({
     id: typ.id,
     spiel_id: spielId,
     label: typ.label,
     emoji: typ.emoji ?? null,
     reihenfolge: typ.reihenfolge,
-    straf_kategorie: typ.strafKategorie ?? null,
+    straf_kategorie: strafKategorieId ?? null,
     straf_betrag: typ.strafBetrag ?? null,
   });
   if (error) throw error;
-  return typ;
+  return { ...typ, strafKategorie: strafKategorieId };
 }
 
 export async function updateEreignisTyp(id: string, partial: Partial<SpielEreignisTyp>): Promise<void> {
@@ -440,13 +480,46 @@ export async function updateEreignisTyp(id: string, partial: Partial<SpielEreign
   if (partial.label !== undefined) patch.label = partial.label;
   if (partial.emoji !== undefined) patch.emoji = partial.emoji ?? null;
   if (partial.reihenfolge !== undefined) patch.reihenfolge = partial.reihenfolge;
-  if (partial.strafKategorie !== undefined) patch.straf_kategorie = partial.strafKategorie ?? null;
-  if (partial.strafBetrag !== undefined) patch.straf_betrag = partial.strafBetrag ?? null;
+
+  // Verknüpfte Straf-Kategorie synchron halten (anlegen/aktualisieren/entfernen),
+  // statt eine geteilte Kategorie zu referenzieren (siehe addSpielEreignisStrafKategorie).
+  // "strafBetrag" in partial statt !== undefined, weil Aufrufer bewusst
+  // { strafBetrag: undefined } schicken, um eine Strafe wieder zu deaktivieren —
+  // das muss von "Feld gar nicht mitgeschickt" unterscheidbar bleiben.
+  const strafBetragTouched = "strafBetrag" in partial;
+  if (strafBetragTouched || partial.label !== undefined || partial.emoji !== undefined) {
+    const { data: current, error: readError } = await supabase
+      .from("spiel_ereignis_typen").select("*").eq("id", id).single();
+    if (readError) throw readError;
+    const neuBetrag = strafBetragTouched
+      ? partial.strafBetrag
+      : (current.straf_betrag != null ? Number(current.straf_betrag) : undefined);
+    const neuLabel = partial.label ?? current.label;
+    const neuEmoji = partial.emoji !== undefined ? partial.emoji : (current.emoji ?? undefined);
+
+    if (neuBetrag === undefined) {
+      if (current.straf_kategorie) {
+        await supabase.from("straf_kategorien").delete().eq("id", current.straf_kategorie);
+        patch.straf_kategorie = null;
+      }
+    } else if (current.straf_kategorie) {
+      await updateStrafKategorie(current.straf_kategorie, { label: neuLabel, betrag: neuBetrag, emoji: neuEmoji });
+    } else {
+      const kat = await addSpielEreignisStrafKategorie(id, neuLabel, neuEmoji, neuBetrag);
+      patch.straf_kategorie = kat.id;
+    }
+    if (strafBetragTouched) patch.straf_betrag = partial.strafBetrag ?? null;
+  }
+
   const { error } = await supabase.from("spiel_ereignis_typen").update(patch).eq("id", id);
   if (error) throw error;
 }
 
 export async function deleteEreignisTyp(id: string): Promise<void> {
+  const { data: current } = await supabase.from("spiel_ereignis_typen").select("straf_kategorie").eq("id", id).single();
+  if (current?.straf_kategorie) {
+    await supabase.from("straf_kategorien").delete().eq("id", current.straf_kategorie);
+  }
   const { error } = await supabase.from("spiel_ereignis_typen").delete().eq("id", id);
   if (error) throw error;
 }
@@ -499,7 +572,7 @@ export async function deleteSpielLog(memberId: string, logId: string): Promise<v
 export async function instantiateSpielVorlage(vorlage: {
   name: string;
   emoji: string;
-  ereignisTypen: { label: string; emoji: string; strafKategorie?: SpielEreignisTyp["strafKategorie"]; strafBetrag?: number }[];
+  ereignisTypen: { label: string; emoji: string; strafBetrag?: number }[];
 }): Promise<Spiel> {
   const spiel = await addSpiel({ name: vorlage.name, emoji: vorlage.emoji });
   for (let i = 0; i < vorlage.ereignisTypen.length; i++) {
@@ -508,7 +581,6 @@ export async function instantiateSpielVorlage(vorlage: {
       label: et.label,
       emoji: et.emoji,
       reihenfolge: i + 1,
-      strafKategorie: et.strafKategorie,
       strafBetrag: et.strafBetrag,
     });
   }
@@ -878,6 +950,7 @@ function rowToStrafKategorieDef(row: any): StrafKategorieDef {
     reihenfolge: row.reihenfolge,
     istSystem: row.ist_system,
     systemKey: row.system_key ?? undefined,
+    spielEreignisTypId: row.spiel_ereignis_typ_id ?? undefined,
   };
 }
 
