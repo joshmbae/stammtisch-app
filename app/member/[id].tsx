@@ -291,7 +291,7 @@ export default function MemberDetailScreen() {
               </View>
             ))}
             {strafGesamt > 0 && (
-              <View style={styles.statBox}>
+              <TouchableOpacity style={styles.statBox} onPress={() => router.push(`/strafen?memberId=${id}`)} activeOpacity={0.7}>
                 <Text style={styles.statEmoji}>💰</Text>
                 <Text style={[styles.statValue, { fontSize: 15, color: COLORS.danger }]}>
                   {strafGesamt.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €
@@ -299,7 +299,7 @@ export default function MemberDetailScreen() {
                 <Text style={styles.statLabel}>
                   Strafen{strafOffen > 0 ? ` (${strafOffen.toLocaleString("de-DE", { minimumFractionDigits: 2 })} € offen)` : " ✓"}
                 </Text>
-              </View>
+              </TouchableOpacity>
             )}
           </View>
         </View>

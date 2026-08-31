@@ -9,7 +9,7 @@ import {
   Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import Swipeable from "react-native-gesture-handler/Swipeable";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -47,12 +47,13 @@ function katMeta(kategorie: StrafLog["kategorie"], strafKategorien: StrafKategor
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function StrafenScreen() {
+  const { memberId: memberIdParam } = useLocalSearchParams<{ memberId?: string }>();
   const { activeMemberId } = useSession();
   const guard = useSingleFlight();
   const [logs, setLogs] = useState<StrafLog[]>([]);
   const [members, setMembers] = useState<MemberProfile[]>([]);
   const [strafKategorien, setStrafKategorien] = useState<StrafKategorieDef[]>([]);
-  const [filterMemberId, setFilterMemberId] = useState<string | null>(null);
+  const [filterMemberId, setFilterMemberId] = useState<string | null>(memberIdParam ?? null);
   const [showBeglichen, setShowBeglichen] = useState(false);
   const [loading, setLoading] = useState(true);
 

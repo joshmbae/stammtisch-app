@@ -364,46 +364,48 @@ export default function HomeScreen() {
 
         {/* ── Meine Bilanz ── */}
         {myStats && activeMember && (
-          <TouchableOpacity
-            style={[styles.myStatsCard, { borderColor: activeMember.avatarColor + "55" }]}
-            onPress={() => router.push(`/member/${activeMember.id}`)}
-            activeOpacity={0.88}
-          >
-            <Text style={styles.myStatsTitle}>Meine Bilanz</Text>
+          <View style={[styles.myStatsCard, { borderColor: activeMember.avatarColor + "55" }]}>
+            <TouchableOpacity onPress={() => router.push(`/member/${activeMember.id}`)} activeOpacity={0.7}>
+              <Text style={styles.myStatsTitle}>Meine Bilanz</Text>
+            </TouchableOpacity>
             <View style={styles.myStatsRow}>
-              <View style={styles.myStatBox}>
+              <TouchableOpacity style={styles.myStatBox} onPress={() => router.push(`/member/${activeMember.id}`)} activeOpacity={0.7}>
                 <Text style={styles.myStatEmoji}>✅</Text>
                 <Text style={[styles.myStatValue, { color: COLORS.success }]}>{myStats.anwesenheitPct} %</Text>
                 <Text style={styles.myStatLabel}>Anwesenheit</Text>
-              </View>
+              </TouchableOpacity>
               <View style={styles.myStatDivider} />
-              <View style={styles.myStatBox}>
+              <TouchableOpacity style={styles.myStatBox} onPress={() => router.push(`/member/${activeMember.id}`)} activeOpacity={0.7}>
                 <Text style={styles.myStatEmoji}>⏱️</Text>
                 <Text style={[styles.myStatValue, myStats.verspätungMin > 0 ? { color: COLORS.danger } : {}]}>
                   {myStats.verspätungMin} Min.
                 </Text>
                 <Text style={styles.myStatLabel}>Verspätung</Text>
-              </View>
+              </TouchableOpacity>
               <View style={styles.myStatDivider} />
-              <View style={styles.myStatBox}>
+              <TouchableOpacity
+                style={styles.myStatBox}
+                onPress={() => router.push(`/strafen?memberId=${activeMember.id}`)}
+                activeOpacity={0.7}
+              >
                 <Text style={styles.myStatEmoji}>💰</Text>
                 <Text style={[styles.myStatValue, myStats.strafOffen > 0 ? { color: COLORS.danger } : { color: COLORS.success }]}>
                   {myStats.strafOffen > 0 ? `${formatEuro(myStats.strafOffen)} €` : "✓"}
                 </Text>
                 <Text style={styles.myStatLabel}>{myStats.strafOffen > 0 ? "Offen" : "Beglichen"}</Text>
-              </View>
+              </TouchableOpacity>
               {featuredSpiel && (
                 <>
                   <View style={styles.myStatDivider} />
-                  <View style={styles.myStatBox}>
+                  <TouchableOpacity style={styles.myStatBox} onPress={() => router.push(`/member/${activeMember.id}`)} activeOpacity={0.7}>
                     <Text style={styles.myStatEmoji}>{featuredSpiel.ereignisTyp.emoji ?? "🎮"}</Text>
                     <Text style={styles.myStatValue}>{myFeaturedSpielCount}</Text>
                     <Text style={styles.myStatLabel} numberOfLines={1}>{featuredSpiel.ereignisTyp.label}</Text>
-                  </View>
+                  </TouchableOpacity>
                 </>
               )}
             </View>
-          </TouchableOpacity>
+          </View>
         )}
 
         {/* ── Kassenstand + Nächster Geburtstag ── */}
