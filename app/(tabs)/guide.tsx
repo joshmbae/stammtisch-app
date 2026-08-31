@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -153,14 +153,19 @@ export default function EinstellungenScreen() {
     );
   }
 
+  const dirtyRef = useRef(false);
+  useEffect(() => { dirtyRef.current = dirty; }, [dirty]);
+
   useFocusEffect(
     useCallback(() => {
+      // Ungespeicherte Änderungen nie stillschweigend überschreiben (z. B. beim
+      // kurzen Wechsel auf einen anderen Tab und zurück, bevor "Speichern" gedrückt wurde).
+      if (dirtyRef.current) { setLoading(false); return; }
       Promise.all([loadVerordnung(), loadSpiele()]).then(([v, s]) => {
         setVerordnung(v);
         setSpiele(s);
         setLoading(false);
       });
-      setDirty(false);
     }, [])
   );
 
@@ -170,9 +175,13 @@ export default function EinstellungenScreen() {
   }
 
   async function speichern() {
-    await saveVerordnung(verordnung);
-    setDirty(false);
-    showAlert("Gespeichert", "Die Änderungen wurden gespeichert.");
+    try {
+      await saveVerordnung(verordnung);
+      setDirty(false);
+      showAlert("Gespeichert", "Die Änderungen wurden gespeichert.");
+    } catch (e: any) {
+      showAlert("Fehler", "Speichern fehlgeschlagen: " + (e?.message ?? "Unbekannter Fehler.") + "\n\nDeine Eingaben bleiben erhalten, bitte nochmal versuchen.");
+    }
   }
 
   function regelHinzufügen() {
