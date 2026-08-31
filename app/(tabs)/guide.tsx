@@ -18,8 +18,8 @@ import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { showAlert } from "../../utils/alert";
-import { StammtischVerordnung, Spiel, SPIEL_VORLAGEN } from "../../types";
-import { loadVerordnung, saveVerordnung, uploadStammtischLogo, loadSpiele, instantiateSpielVorlage, deleteStammtisch } from "../../utils/storage";
+import { StammtischVerordnung, Spiel, SPIEL_VORLAGEN, StrafKategorieDef } from "../../types";
+import { loadVerordnung, saveVerordnung, uploadStammtischLogo, loadSpiele, loadStrafKategorien, instantiateSpielVorlage, deleteStammtisch } from "../../utils/storage";
 import { hashStammtischPassword } from "../../utils/pin";
 import { COLORS, SHADOWS } from "../../constants/design";
 import { HamburgerButton } from "../../components/HamburgerButton";
@@ -51,6 +51,7 @@ export default function EinstellungenScreen() {
   const [showGruendungPicker, setShowGruendungPicker] = useState(false);
   const [loading, setLoading] = useState(true);
   const [spiele, setSpiele] = useState<Spiel[]>([]);
+  const [strafKategorien, setStrafKategorien] = useState<StrafKategorieDef[]>([]);
   const [activatingSpiel, setActivatingSpiel] = useState<string | null>(null);
   const [showDeleteForm, setShowDeleteForm] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
@@ -162,9 +163,10 @@ export default function EinstellungenScreen() {
       // Ungespeicherte Änderungen nie stillschweigend überschreiben (z. B. beim
       // kurzen Wechsel auf einen anderen Tab und zurück, bevor "Speichern" gedrückt wurde).
       if (dirtyRef.current) { setLoading(false); return; }
-      Promise.all([loadVerordnung(), loadSpiele()]).then(([v, s]) => {
+      Promise.all([loadVerordnung(), loadSpiele(), loadStrafKategorien()]).then(([v, s, k]) => {
         setVerordnung(v);
         setSpiele(s);
+        setStrafKategorien(k);
         setLoading(false);
       });
     }, [])
@@ -222,8 +224,27 @@ export default function EinstellungenScreen() {
           </View>
         </View>
 
-        {/* ── Stammtischverordnung ── */}
-        <Text style={styles.sectionTitle}>📜 Stammtischverordnung</Text>
+        {/* ══════════ GRUNDDATEN ══════════ */}
+        <View style={styles.groupHeader}>
+          <Text style={styles.groupTitle}>🏠 Grunddaten</Text>
+          <Text style={styles.groupSubtitle}>Nur der Name ist Pflicht — der Rest kann jederzeit später ergänzt werden.</Text>
+        </View>
+
+        <View style={styles.card}>
+          <View style={styles.fieldLabelRow}>
+            <Text style={styles.fieldLabel}>Name des Stammtischs</Text>
+            <Text style={styles.pflichtBadge}>Pflicht</Text>
+          </View>
+          <TextInput
+            style={styles.input}
+            value={verordnung.name}
+            onChangeText={(t) => update({ name: t })}
+            placeholder="z.B. Die Hellen"
+            placeholderTextColor={COLORS.textLight}
+          />
+        </View>
+
+        <Text style={styles.sectionTitle}>📜 Weitere Angaben <Text style={styles.optionalHint}>(optional)</Text></Text>
 
         <View style={styles.card}>
           <Text style={styles.fieldLabel}>Stammtisch-Logo</Text>
@@ -250,17 +271,6 @@ export default function EinstellungenScreen() {
               )}
             </View>
           </View>
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.fieldLabel}>Name des Stammtischs</Text>
-          <TextInput
-            style={styles.input}
-            value={verordnung.name}
-            onChangeText={(t) => update({ name: t })}
-            placeholder="z.B. Die Hellen"
-            placeholderTextColor={COLORS.textLight}
-          />
         </View>
 
         <View style={styles.card}>
@@ -317,6 +327,12 @@ export default function EinstellungenScreen() {
               onClose={() => setShowGruendungPicker(false)}
             />
           )}
+        </View>
+
+        {/* ══════════ COMMUNITY ══════════ */}
+        <View style={[styles.groupHeader, styles.groupHeaderSpaced]}>
+          <Text style={styles.groupTitle}>👥 Community</Text>
+          <Text style={styles.groupSubtitle}>Optional — könnt ihr jederzeit später ergänzen.</Text>
         </View>
 
         {/* Regeln */}
@@ -397,8 +413,14 @@ export default function EinstellungenScreen() {
           </View>
         </View>
 
+        {/* ══════════ FEATURES ══════════ */}
+        <View style={[styles.groupHeader, styles.groupHeaderSpaced]}>
+          <Text style={styles.groupTitle}>🎯 Features</Text>
+          <Text style={styles.groupSubtitle}>Nur aktivieren, was ihr am Stammtisch wirklich nutzt.</Text>
+        </View>
+
         {/* Aktives Spiel */}
-        <Text style={styles.sectionTitle}>🎲 Aktives Spiel</Text>
+        <Text style={styles.sectionTitle}>🎲 Spiele</Text>
 
         <View style={styles.infoBox}>
           <Ionicons name="information-circle-outline" size={18} color={COLORS.blue} />
@@ -479,9 +501,23 @@ export default function EinstellungenScreen() {
             />
           </View>
           {verordnung.tabStrafenAktiv !== false && (
-            <TouchableOpacity style={[styles.spielManageLink, { marginTop: 4 }]} onPress={() => router.push("/strafen-kategorien")}>
-              <Text style={styles.spielManageLinkText}>Strafenkategorien verwalten →</Text>
-            </TouchableOpacity>
+            <>
+              {strafKategorien.length > 0 ? (
+                <View style={styles.rollenWrap}>
+                  {strafKategorien.map((k) => (
+                    <View key={k.id} style={styles.rolleTag}>
+                      <Text style={styles.rolleTagText}>{k.emoji} {k.label}</Text>
+                      {k.betrag > 0 && <Text style={styles.strafKatPreisText}>{k.betrag.toLocaleString("de-DE")} €</Text>}
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <Text style={styles.switchHint}>Noch keine Kategorien angelegt.</Text>
+              )}
+              <TouchableOpacity style={styles.spielManageLink} onPress={() => router.push("/strafen-kategorien")}>
+                <Text style={styles.spielManageLinkText}>Strafenkategorien verwalten →</Text>
+              </TouchableOpacity>
+            </>
           )}
         </View>
 
@@ -502,7 +538,11 @@ export default function EinstellungenScreen() {
           </View>
         </View>
 
-        {/* Sonstiges */}
+        {/* ══════════ VERWALTUNG ══════════ */}
+        <View style={[styles.groupHeader, styles.groupHeaderSpaced]}>
+          <Text style={styles.groupTitle}>⚙️ Verwaltung</Text>
+        </View>
+
         <View style={styles.card}>
           <Text style={styles.fieldLabel}>Sonstige Anmerkungen</Text>
           <TextInput
@@ -613,6 +653,22 @@ const styles = StyleSheet.create({
     fontSize: 15, fontWeight: "800", color: COLORS.textDark,
     marginBottom: 10, marginTop: 8, letterSpacing: -0.2,
   },
+  optionalHint: { fontSize: 12, fontWeight: "600", color: COLORS.textLight },
+
+  groupHeader: {
+    borderTopWidth: 2, borderTopColor: COLORS.gold + "40",
+    paddingTop: 16, marginBottom: 4,
+  },
+  groupHeaderSpaced: { marginTop: 20 },
+  groupTitle: { fontSize: 19, fontWeight: "800", color: COLORS.textDark, letterSpacing: -0.3 },
+  groupSubtitle: { fontSize: 13, color: COLORS.textMuted, marginTop: 3, marginBottom: 4 },
+
+  fieldLabelRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
+  pflichtBadge: {
+    fontSize: 10, fontWeight: "800", color: COLORS.blue, backgroundColor: COLORS.blue + "18",
+    borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2, textTransform: "uppercase", letterSpacing: 0.3,
+  },
+  strafKatPreisText: { fontSize: 12, fontWeight: "700", color: COLORS.danger },
 
   card: {
     backgroundColor: COLORS.card, borderRadius: 14, padding: 14, marginBottom: 10,
