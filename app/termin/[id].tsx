@@ -25,7 +25,6 @@ import {
   Spiel,
   SpielEreignisTyp,
   SpielLog,
-  Wette,
   StammtischVerordnung,
   Protokoll,
   StrafLog,
@@ -42,10 +41,6 @@ import {
   loadSpielLogs,
   addSpielLog,
   deleteSpielLog,
-  loadWetten,
-  addWette,
-  updateWette,
-  deleteWette,
   loadStrafLogs,
   loadStrafKategorien,
   addStrafLog,
@@ -90,10 +85,6 @@ function duration(start: string, end?: string): string {
   const m = Math.floor((ms % 3600000) / 60000);
   if (h === 0) return `${m} Min.`;
   return `${h} Std. ${m} Min.`;
-}
-
-function formatBetrag(n: number): string {
-  return n.toLocaleString("de-DE", { minimumFractionDigits: 2 }) + " €";
 }
 
 // ─── Member Row (RSVP + Anwesenheit + Verspätung) ────────────────────────────
@@ -349,68 +340,6 @@ function MemberRow({
   );
 }
 
-// ─── Wette Card ───────────────────────────────────────────────────────────────
-
-function WetteCard({
-  wette,
-  gegner,
-  bettor,
-  onGewonnen,
-  onVerloren,
-  onDelete,
-}: {
-  wette: Wette;
-  gegner: MemberProfile | undefined;
-  bettor?: MemberProfile;
-  onGewonnen: () => void;
-  onVerloren: () => void;
-  onDelete: () => void;
-}) {
-  const isOffen = wette.gewonnen === undefined;
-  const gewonnen = wette.gewonnen === true;
-  const gegnerName = gegner ? displayName(gegner) : "Unbekannt";
-  const bettorName = bettor ? (bettor.spitzname ?? bettor.name.split(" ")[0]) : undefined;
-
-  return (
-    <View style={[styles.wetteCard, gewonnen && styles.wetteCardGewonnen, !isOffen && !gewonnen && styles.wetteCardVerloren]}>
-      <View style={styles.wetteCardHeader}>
-        <View style={styles.wetteIconBox}>
-          <Text style={{ fontSize: 18 }}>{isOffen ? "🤝" : gewonnen ? "✅" : "❌"}</Text>
-        </View>
-        <View style={styles.wetteInfo}>
-          <Text style={styles.wetteTitel}>
-            {bettorName ? `${bettorName} auf ${gegnerName}` : `Auf: ${gegnerName}`}
-          </Text>
-          <Text style={styles.wetteBetrag}>{formatBetrag(wette.betrag)}</Text>
-        </View>
-        <View style={{ alignItems: "flex-end" }}>
-          <Text style={styles.wetteTime}>{formatTime(wette.loggedAt)}</Text>
-          <TouchableOpacity onPress={onDelete} style={{ padding: 4, marginTop: 2 }}>
-            <Ionicons name="trash-outline" size={14} color={COLORS.danger} />
-          </TouchableOpacity>
-        </View>
-      </View>
-      {isOffen && (
-        <View style={styles.wetteActions}>
-          <TouchableOpacity style={styles.wetteGewonnenBtn} onPress={onGewonnen}>
-            <Ionicons name="checkmark" size={14} color={COLORS.success} />
-            <Text style={styles.wetteGewonnenText}>Gewonnen</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.wetteVerlorenBtn} onPress={onVerloren}>
-            <Ionicons name="close" size={14} color={COLORS.danger} />
-            <Text style={styles.wetteVerlorenText}>Verloren</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-      {!isOffen && (
-        <TouchableOpacity onPress={onGewonnen} style={styles.wetteReopen}>
-          <Text style={styles.wetteReopenText}>Ergebnis zurücksetzen</Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
-}
-
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function TerminDetailScreen() {
@@ -424,7 +353,7 @@ export default function TerminDetailScreen() {
   const [protokoll, setProtokoll] = useState<Protokoll | null>(null);
 
   // Tabs
-  const [activeTab, setActiveTab] = useState<"anwesenheit" | "strafen" | "spiel" | "wetten" | "agenda" | "protokoll">("anwesenheit");
+  const [activeTab, setActiveTab] = useState<"anwesenheit" | "strafen" | "spiel" | "agenda" | "protokoll">("anwesenheit");
 
   // Agenda
   const [agendaText, setAgendaText] = useState("");
@@ -461,12 +390,6 @@ export default function TerminDetailScreen() {
   const [spielLogMap, setSpielLogMap] = useState<Record<string, SpielLog[]>>({});
   const [selectedSpielMemberId, setSelectedSpielMemberId] = useState<string | null>(null);
 
-  // Wetten
-  const [wettenMap, setWettenMap] = useState<Record<string, Wette[]>>({});
-  const [selectedWetteMemberId, setSelectedWetteMemberId] = useState<string | null>(null);
-  const [showWetteForm, setShowWetteForm] = useState(false);
-  const [wetteBetrag, setWetteBetrag] = useState("");
-  const [wetteGegenId, setWetteGegenId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useFocusEffect(
@@ -487,9 +410,6 @@ export default function TerminDetailScreen() {
           onStrafLogDelete: (logId) => setStrafMap((prev) => removeByIdEverywhere(prev, logId)),
           onVerspätungInsert: (log) => setVerspätungMap((prev) => dedupeInsert(prev, log, log.memberId)),
           onVerspätungDelete: (logId) => setVerspätungMap((prev) => removeByIdEverywhere(prev, logId)),
-          onWetteInsert: (w) => setWettenMap((prev) => dedupeInsert(prev, w, w.memberId)),
-          onWetteUpdate: (w) => setWettenMap((prev) => patchById(prev, w, w.memberId)),
-          onWetteDelete: (wetteId) => setWettenMap((prev) => removeByIdEverywhere(prev, wetteId)),
           onTerminUpdate: (t) => setTermin((prev) => (prev ? { ...prev, ...t } : t)),
         },
         (status) => {
@@ -522,7 +442,6 @@ export default function TerminDetailScreen() {
     setAgendaText(agenda);
 
     setSelectedSpielMemberId((prev) => prev ?? ms[0]?.id ?? null);
-    setSelectedWetteMemberId((prev) => prev ?? ms[0]?.id ?? null);
 
     let spiel: Spiel | null = null;
     let ereignisTypen: SpielEreignisTyp[] = [];
@@ -538,23 +457,19 @@ export default function TerminDetailScreen() {
       memberId: m.id,
       verspätungen: (await loadVerspätungLogs(m.id)).filter((l) => l.terminId === t.id),
       spielLogs: (await loadSpielLogs(m.id)).filter((l) => l.terminId === t.id && (!spiel || l.spielId === spiel.id)),
-      wetten: (await loadWetten(m.id)).filter((l) => l.terminId === t.id),
       strafLogs: (await loadStrafLogs(m.id)).filter((l) => l.terminId === t.id),
     })));
 
     const vMap: Record<string, VerspätungLog[]> = {};
     const spMap: Record<string, SpielLog[]> = {};
-    const wMap: Record<string, Wette[]> = {};
     const stMap: Record<string, StrafLog[]> = {};
-    memberData.forEach(({ memberId, verspätungen, spielLogs, wetten, strafLogs }) => {
+    memberData.forEach(({ memberId, verspätungen, spielLogs, strafLogs }) => {
       vMap[memberId] = verspätungen;
       spMap[memberId] = spielLogs;
-      wMap[memberId] = wetten;
       stMap[memberId] = strafLogs;
     });
     setVerspätungMap(vMap);
     setSpielLogMap(spMap);
-    setWettenMap(wMap);
     setStrafMap(stMap);
     setStrafMemberId((prev) => prev ?? ms[0]?.id ?? null);
     setLoading(false);
@@ -689,103 +604,6 @@ export default function TerminDetailScreen() {
         ereignisLabel: ereignisTyp?.label,
         ereignisEmoji: ereignisTyp?.emoji,
       },
-    });
-  }
-
-  // ── Wetten handlers ─────────────────────────────────────────────────────────
-
-  async function handleAddWette() {
-    if (!selectedWetteMemberId || !wetteGegenId || !termin) {
-      showAlert("Fehlt", "Bitte einen Gegner auswählen.");
-      return;
-    }
-    const betrag = parseFloat(wetteBetrag.replace(",", "."));
-    if (isNaN(betrag) || betrag <= 0) {
-      showAlert("Ungültig", "Bitte einen gültigen Betrag eingeben.");
-      return;
-    }
-    const w = await addWette(selectedWetteMemberId, {
-      gegenMemberId: wetteGegenId,
-      betrag,
-      loggedAt: new Date().toISOString(),
-      terminId: termin.id,
-    });
-    setWettenMap((prev) => ({
-      ...prev,
-      [selectedWetteMemberId]: [w, ...(prev[selectedWetteMemberId] ?? [])],
-    }));
-    await logActivity({
-      actorMemberId: activeMemberId ?? undefined,
-      subjectMemberId: selectedWetteMemberId,
-      actionType: "wette_created",
-      terminId: termin.id,
-      refId: w.id,
-      meta: { gegenMemberId: wetteGegenId, betrag: w.betrag },
-    });
-    setWetteBetrag("");
-    setWetteGegenId(null);
-    setShowWetteForm(false);
-  }
-
-  async function handleWetteErgebnis(memberId: string, wetteId: string, gewonnen: boolean | undefined) {
-    await updateWette(memberId, wetteId, { gewonnen });
-    setWettenMap((prev) => ({
-      ...prev,
-      [memberId]: (prev[memberId] ?? []).map((w) => w.id === wetteId ? { ...w, gewonnen } : w),
-    }));
-    if (gewonnen !== undefined) {
-      const w = (wettenMap[memberId] ?? []).find((x) => x.id === wetteId);
-      await logActivity({
-        actorMemberId: activeMemberId ?? undefined,
-        subjectMemberId: memberId,
-        actionType: "wette_resolved",
-        terminId: termin?.id,
-        refId: wetteId,
-        meta: { gewonnen, betrag: w?.betrag ?? 0 },
-      });
-
-      if (gewonnen === false && w) {
-        const gegner = members.find((x) => x.id === w.gegenMemberId);
-        const wetteVerlorenKat = strafKategorien.find((k) => k.systemKey === "wette_verloren");
-        if (!wetteVerlorenKat) return;
-        const strafLog = await addStrafLog(memberId, {
-          kategorie: wetteVerlorenKat.id,
-          betrag: w.betrag,
-          notiz: gegner ? `gegen ${gegner.name}` : undefined,
-          terminId: termin?.id,
-          loggedAt: new Date().toISOString(),
-          beglichen: false,
-        });
-        setStrafMap((prev) => ({
-          ...prev,
-          [memberId]: [strafLog, ...(prev[memberId] ?? [])],
-        }));
-        await logActivity({
-          actorMemberId: activeMemberId ?? undefined,
-          subjectMemberId: memberId,
-          actionType: "straf_log_created",
-          terminId: termin?.id,
-          refId: strafLog.id,
-          meta: { kategorie: strafLog.kategorie, betrag: strafLog.betrag, notiz: strafLog.notiz },
-        });
-      }
-    }
-  }
-
-  async function handleDeleteWette(memberId: string, wetteId: string) {
-    const w = (wettenMap[memberId] ?? []).find((x) => x.id === wetteId);
-    await deleteWette(memberId, wetteId);
-    setWettenMap((prev) => ({
-      ...prev,
-      [memberId]: (prev[memberId] ?? []).filter((x) => x.id !== wetteId),
-    }));
-    await logActivity({
-      actorMemberId: activeMemberId ?? undefined,
-      subjectMemberId: memberId,
-      actionType: "wette_deleted",
-      terminId: termin?.id,
-      refId: wetteId,
-      meta: { gegenMemberId: w?.gegenMemberId, betrag: w?.betrag ?? 0 },
     });
   }
 
@@ -998,23 +816,13 @@ export default function TerminDetailScreen() {
   const allSpielLogs = Object.values(spielLogMap).flat();
   const selMember = members.find((m) => m.id === selectedSpielMemberId);
   const selSpielLogs = spielLogMap[selectedSpielMemberId ?? ""] ?? [];
-  const selWetteMember = members.find((m) => m.id === selectedWetteMemberId);
-  const selWetten = wettenMap[selectedWetteMemberId ?? ""] ?? [];
-  const offeneWetten = selWetten.filter((w) => w.gewonnen === undefined);
-  const otherMembers = members.filter((m) => m.id !== selectedWetteMemberId);
 
   const spielFeed = Object.entries(spielLogMap)
     .flatMap(([memberId, logs]) => logs.map((l) => ({ ...l, memberId })))
     .sort((a, b) => new Date(b.loggedAt).getTime() - new Date(a.loggedAt).getTime());
 
-  const wettenFeed = Object.entries(wettenMap)
-    .flatMap(([memberId, wetten]) => wetten.map((w) => ({ ...w, memberId })))
-    .sort((a, b) => new Date(b.loggedAt).getTime() - new Date(a.loggedAt).getTime());
-
   const strafSelMember = members.find((m) => m.id === strafMemberId);
-  const waehlbareStrafKategorien = strafKategorien.filter(
-    (kat) => !kat.spielEreignisTypId && kat.systemKey !== "wette_verloren"
-  );
+  const waehlbareStrafKategorien = strafKategorien.filter((kat) => !kat.spielEreignisTypId);
   const allStrafLogs = Object.entries(strafMap)
     .flatMap(([memberId, logs]) => logs.map((l) => ({ ...l, memberId })))
     .sort((a, b) => new Date(b.loggedAt).getTime() - new Date(a.loggedAt).getTime());
@@ -1183,7 +991,6 @@ export default function TerminDetailScreen() {
               { key: "anwesenheit", label: "Anwes.", emoji: "👥" },
               ...(verordnung.tabStrafenAktiv !== false ? [{ key: "strafen", label: "Strafen", emoji: "💰" }] : []),
               ...(aktivesSpiel ? [{ key: "spiel", label: aktivesSpiel.name, emoji: aktivesSpiel.emoji ?? "🎮" }] : []),
-              ...(verordnung.tabWettenAktiv !== false ? [{ key: "wetten", label: "Wetten", emoji: "🤝" }] : []),
               { key: "agenda", label: "Agenda", emoji: "📋" },
               { key: "protokoll", label: "Protokoll", emoji: "📝" },
             ] as { key: typeof activeTab; label: string; emoji: string }[]).map((tab) => {
@@ -1512,117 +1319,6 @@ export default function TerminDetailScreen() {
             </>
           )}
 
-          {/* ── Tab: Wetten ── */}
-          {activeTab === "wetten" && members.length > 0 && (
-            <>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>🤝 Wetten</Text>
-                {offeneWetten.length > 0 && (
-                  <Text style={styles.sectionBadge}>{offeneWetten.length} offen</Text>
-                )}
-              </View>
-
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={styles.chipsScroll}
-                contentContainerStyle={styles.chipsContent}
-              >
-                {members.map((m) => {
-                  const isSelected = m.id === selectedWetteMemberId;
-                  return (
-                    <TouchableOpacity
-                      key={m.id}
-                      style={[styles.chip, isSelected && { backgroundColor: m.avatarColor, borderColor: m.avatarColor }]}
-                      onPress={() => { setSelectedWetteMemberId(m.id); setShowWetteForm(false); }}
-                    >
-                      {m.photoUri ? (
-                        <Image source={{ uri: m.photoUri }} style={styles.chipAvatar} />
-                      ) : (
-                        <View style={[styles.chipAvatar, {
-                          backgroundColor: isSelected ? "rgba(255,255,255,0.35)" : m.avatarColor,
-                          alignItems: "center", justifyContent: "center",
-                        }]}>
-                          <Text style={{ fontSize: 11, fontWeight: "700", color: "#FFF" }}>
-                            {getInitial(m.name)}
-                          </Text>
-                        </View>
-                      )}
-                      <Text style={[styles.chipText, isSelected && { color: "#FFFFFF" }]}>
-                        {m.spitzname ?? m.name.split(" ")[0]}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
-
-              {selWetteMember && (
-                <TouchableOpacity
-                  style={[styles.wetteToggleBtn, showWetteForm && { backgroundColor: COLORS.blue }]}
-                  onPress={() => setShowWetteForm((v) => !v)}
-                >
-                  <Ionicons name={showWetteForm ? "close" : "add"} size={16} color={showWetteForm ? "#FFFFFF" : COLORS.gold} />
-                  <Text style={[styles.wetteToggleText, showWetteForm && { color: "#FFFFFF" }]}>
-                    {showWetteForm ? "Abbrechen" : "Wette einloggen"}
-                  </Text>
-                </TouchableOpacity>
-              )}
-
-              {showWetteForm && selWetteMember && (
-                <View style={styles.wetteForm}>
-                  <Text style={styles.wetteFormTitle}>🤝 Neue Wette — {selWetteMember.name}</Text>
-                  <View style={styles.betragRow}>
-                    <TextInput
-                      style={styles.betragInput}
-                      value={wetteBetrag}
-                      onChangeText={setWetteBetrag}
-                      placeholder="5,00"
-                      placeholderTextColor={COLORS.textLight}
-                      keyboardType="decimal-pad"
-                      autoFocus
-                    />
-                    <Text style={styles.betragLabel}>€</Text>
-                  </View>
-                  <Text style={styles.wetteFormSubtitle}>Wettet auf:</Text>
-                  <View style={styles.gegnerGrid}>
-                    {otherMembers.map((m) => (
-                      <TouchableOpacity
-                        key={m.id}
-                        style={[styles.gegnerChip, wetteGegenId === m.id && { backgroundColor: m.avatarColor, borderColor: m.avatarColor }]}
-                        onPress={() => setWetteGegenId(m.id)}
-                      >
-                        <View style={[styles.gegnerDot, { backgroundColor: wetteGegenId === m.id ? "rgba(255,255,255,0.5)" : m.avatarColor }]} />
-                        <Text style={[styles.gegnerText, wetteGegenId === m.id && { color: "#FFFFFF" }]}>
-                          {m.spitzname ?? m.name.split(" ")[0]}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                  <TouchableOpacity style={styles.wetteSubmitBtn} onPress={() => guard(handleAddWette)}>
-                    <Ionicons name="checkmark" size={16} color="#FFFFFF" />
-                    <Text style={styles.wetteSubmitText}>Wette aufnehmen</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-
-              {wettenFeed.length > 0 && (
-                <>
-                  <Text style={styles.subSectionLabel}>📋 Wetten-Verlauf dieses Abends</Text>
-                  {wettenFeed.map((w) => (
-                    <WetteCard
-                      key={w.id}
-                      wette={w}
-                      gegner={members.find((m) => m.id === w.gegenMemberId)}
-                      bettor={members.find((m) => m.id === w.memberId)}
-                      onGewonnen={() => guard(() => handleWetteErgebnis(w.memberId, w.id, w.gewonnen === undefined ? true : undefined))}
-                      onVerloren={() => guard(() => handleWetteErgebnis(w.memberId, w.id, w.gewonnen === undefined ? false : undefined))}
-                      onDelete={() => handleDeleteWette(w.memberId, w.id)}
-                    />
-                  ))}
-                </>
-              )}
-            </>
-          )}
 
           {/* ── Tab: Agenda ── */}
           {activeTab === "agenda" && (
@@ -1855,73 +1551,6 @@ const styles = StyleSheet.create({
   schockActionEmoji: { fontSize: 26 },
   plusBadge: { backgroundColor: COLORS.blue + "18", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 3 },
   plusText: { fontSize: 12, fontWeight: "700", color: COLORS.blue },
-
-  wetteToggleBtn: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-    paddingVertical: 10, borderRadius: 12, marginBottom: 12,
-    backgroundColor: COLORS.goldBg, borderWidth: 1.5, borderColor: COLORS.gold + "44",
-  },
-  wetteToggleText: { fontSize: 13, fontWeight: "700", color: COLORS.gold },
-  wetteForm: {
-    backgroundColor: COLORS.card, borderRadius: 16, padding: 16, marginBottom: 12,
-    borderWidth: 1, borderColor: COLORS.border, ...SHADOWS.light,
-  },
-  wetteFormTitle: { fontSize: 14, fontWeight: "800", color: COLORS.textDark, marginBottom: 12 },
-  wetteFormSubtitle: {
-    fontSize: 11, fontWeight: "700", color: COLORS.textMuted,
-    textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 8,
-  },
-  betragRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 14 },
-  betragInput: {
-    flex: 1, backgroundColor: COLORS.background, borderRadius: 10,
-    borderWidth: 1, borderColor: COLORS.border, paddingHorizontal: 14, paddingVertical: 10,
-    fontSize: 20, fontWeight: "800", color: COLORS.textDark, textAlign: "right",
-  },
-  betragLabel: { fontSize: 20, fontWeight: "700", color: COLORS.textMid },
-  gegnerGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 },
-  gegnerChip: {
-    flexDirection: "row", alignItems: "center", gap: 6,
-    paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20,
-    backgroundColor: COLORS.background, borderWidth: 1.5, borderColor: COLORS.border,
-  },
-  gegnerDot: { width: 10, height: 10, borderRadius: 5 },
-  gegnerText: { fontSize: 13, fontWeight: "600", color: COLORS.textDark },
-  wetteSubmitBtn: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-    backgroundColor: COLORS.gold, borderRadius: 12, paddingVertical: 12,
-  },
-  wetteSubmitText: { color: "#FFFFFF", fontWeight: "700", fontSize: 14 },
-
-  wetteCard: {
-    backgroundColor: COLORS.card, borderRadius: 14, padding: 12, marginBottom: 8,
-    borderWidth: 1.5, borderColor: "#6B3A8A33", ...SHADOWS.light,
-  },
-  wetteCardGewonnen: { borderColor: COLORS.success + "66", backgroundColor: "#F5FDF8" },
-  wetteCardVerloren: { borderColor: COLORS.danger + "44", backgroundColor: "#FFF5F5" },
-  wetteCardHeader: { flexDirection: "row", alignItems: "center", gap: 10 },
-  wetteIconBox: {
-    width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.background,
-    alignItems: "center", justifyContent: "center",
-  },
-  wetteInfo: { flex: 1 },
-  wetteTitel: { fontSize: 13, fontWeight: "700", color: COLORS.textDark },
-  wetteBetrag: { fontSize: 12, color: COLORS.gold, fontWeight: "700", marginTop: 2 },
-  wetteTime: { fontSize: 11, color: COLORS.textLight },
-  wetteActions: { flexDirection: "row", gap: 8, marginTop: 10 },
-  wetteGewonnenBtn: {
-    flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5,
-    paddingVertical: 7, borderRadius: 10,
-    backgroundColor: COLORS.success + "15", borderWidth: 1, borderColor: COLORS.success + "44",
-  },
-  wetteGewonnenText: { fontSize: 12, fontWeight: "700", color: COLORS.success },
-  wetteVerlorenBtn: {
-    flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5,
-    paddingVertical: 7, borderRadius: 10,
-    backgroundColor: COLORS.danger + "10", borderWidth: 1, borderColor: COLORS.danger + "33",
-  },
-  wetteVerlorenText: { fontSize: 12, fontWeight: "700", color: COLORS.danger },
-  wetteReopen: { marginTop: 8, alignItems: "center" },
-  wetteReopenText: { fontSize: 11, color: COLORS.textLight, textDecorationLine: "underline" },
 
   schockFeedRow: {
     flexDirection: "row", alignItems: "center", gap: 10,

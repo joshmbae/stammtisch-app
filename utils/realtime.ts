@@ -4,11 +4,10 @@ import {
   rowToSpielLog,
   rowToStrafLog,
   rowToVerspätungLog,
-  rowToWette,
   rowToTermin,
   rowToActivity,
 } from "./storage";
-import { SpielLog, StrafLog, VerspätungLog, Wette, StammtischTermin, ActivityLogEntry } from "../types";
+import { SpielLog, StrafLog, VerspätungLog, StammtischTermin, ActivityLogEntry } from "../types";
 
 // ─── Merge-Helfer ───────────────────────────────────────────────────────────
 // Rein mechanisch, kennen keine Business-Logik — die bleibt beim aufrufenden Screen.
@@ -54,9 +53,6 @@ export interface TerminChangeHandlers {
   onStrafLogDelete: (id: string) => void;
   onVerspätungInsert: (log: VerspätungLog) => void;
   onVerspätungDelete: (id: string) => void;
-  onWetteInsert: (w: Wette) => void;
-  onWetteUpdate: (w: Wette) => void;
-  onWetteDelete: (id: string) => void;
   onTerminUpdate: (t: StammtischTermin) => void;
 }
 
@@ -103,21 +99,6 @@ export function subscribeToTerminChanges(
       "postgres_changes",
       { event: "DELETE", schema: supabaseSchema, table: "verspaetung_logs", filter: terminFilter },
       (payload) => handlers.onVerspätungDelete(payload.old.id)
-    )
-    .on(
-      "postgres_changes",
-      { event: "INSERT", schema: supabaseSchema, table: "wetten", filter: terminFilter },
-      (payload) => handlers.onWetteInsert(rowToWette(payload.new))
-    )
-    .on(
-      "postgres_changes",
-      { event: "UPDATE", schema: supabaseSchema, table: "wetten", filter: terminFilter },
-      (payload) => handlers.onWetteUpdate(rowToWette(payload.new))
-    )
-    .on(
-      "postgres_changes",
-      { event: "DELETE", schema: supabaseSchema, table: "wetten", filter: terminFilter },
-      (payload) => handlers.onWetteDelete(payload.old.id)
     )
     .on(
       "postgres_changes",

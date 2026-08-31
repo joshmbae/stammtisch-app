@@ -3,7 +3,6 @@ import { sendActivityPush } from "./push";
 import {
   MemberProfile,
   VerspätungLog,
-  Wette,
   StammtischVerordnung,
   StammtischTermin,
   Protokoll,
@@ -88,8 +87,8 @@ export async function createStammtisch(name: string, passwordHash: string): Prom
 }
 
 /**
- * Legt für einen frisch erstellten Stammtisch die zwei technisch nötigen
- * System-Kategorien plus ein paar neutrale Basics an. Kategorien für
+ * Legt für einen frisch erstellten Stammtisch die technisch nötige
+ * "Sonstiges"-Kategorie plus ein paar neutrale Basics an. Kategorien für
  * Spiel-Ereignisse entstehen erst, wenn beim jeweiligen Spiel eine Strafe
  * aktiviert wird (siehe addSpielEreignisStrafKategorie) — keine geteilte
  * Sammelkategorie mehr. Hellen-spezifische Extras (Männl. Gast, gestaffelte
@@ -99,7 +98,6 @@ export async function createStammtisch(name: string, passwordHash: string): Prom
 async function seedDefaultStrafKategorien(stammtischId: string): Promise<void> {
   const defaults: { label: string; betrag: number; emoji: string; beschreibung?: string; istSystem: boolean; systemKey?: string }[] = [
     { label: "Sonstiges", betrag: 0, emoji: "💰", istSystem: true, systemKey: "sonstiges" },
-    { label: "Verlorene Wette", betrag: 0, emoji: "🤝", beschreibung: "Wird automatisch bei einer verlorenen Wette eingetragen, Betrag = Wetteinsatz", istSystem: true, systemKey: "wette_verloren" },
     { label: "Fehlen (unentschuldigt)", betrag: 10, emoji: "🚫", istSystem: false },
     { label: "Zu spät", betrag: 5, emoji: "⏱️", istSystem: false },
   ];
@@ -250,7 +248,6 @@ function rowToVerordnung(row: any): StammtischVerordnung {
     aktivesSpielId: row.aktives_spiel_id ?? undefined,
     rollenOptionen: row.rollen_optionen ?? undefined,
     tabStrafenAktiv: row.tab_strafen_aktiv ?? true,
-    tabWettenAktiv: row.tab_wetten_aktiv ?? true,
   };
 }
 
@@ -282,7 +279,6 @@ export async function saveVerordnung(v: StammtischVerordnung): Promise<void> {
     aktives_spiel_id: v.aktivesSpielId ?? null,
     rollen_optionen: v.rollenOptionen ?? ROLLEN_OPTIONEN_DEFAULT,
     tab_strafen_aktiv: v.tabStrafenAktiv ?? true,
-    tab_wetten_aktiv: v.tabWettenAktiv ?? true,
   });
   if (error) throw error;
 }
@@ -585,85 +581,6 @@ export async function instantiateSpielVorlage(vorlage: {
     });
   }
   return spiel;
-}
-
-// ─── Wetten ───────────────────────────────────────────────────────────────────
-
-export function rowToWette(row: any): Wette {
-  return {
-    id: row.id,
-    memberId: row.member_id,
-    terminId: row.termin_id ?? undefined,
-    gegenMemberId: row.gegen_member_id,
-    betrag: Number(row.betrag),
-    loggedAt: row.logged_at,
-    gewonnen: row.gewonnen ?? undefined,
-  };
-}
-
-export async function loadWetten(memberId: string): Promise<Wette[]> {
-  const { data, error } = await supabase
-    .from("wetten")
-    .select("*")
-    .eq("member_id", memberId)
-    .order("logged_at", { ascending: false });
-  if (error) throw error;
-  return (data ?? []).map(rowToWette);
-}
-
-export async function saveWetten(memberId: string, wetten: Wette[]): Promise<void> {
-  const { error: delError } = await supabase.from("wetten").delete().eq("member_id", memberId);
-  if (delError) throw delError;
-  if (wetten.length === 0) return;
-  const rows = wetten.map((w) => ({
-    id: w.id,
-    member_id: memberId,
-    termin_id: w.terminId ?? null,
-    gegen_member_id: w.gegenMemberId,
-    betrag: w.betrag,
-    logged_at: w.loggedAt,
-    gewonnen: w.gewonnen ?? null,
-  }));
-  const { error } = await supabase.from("wetten").insert(rows);
-  if (error) throw error;
-}
-
-export async function addWette(
-  memberId: string,
-  entry: Omit<Wette, "id" | "memberId">
-): Promise<Wette> {
-  const wette: Wette = { ...entry, id: nextId(), memberId };
-  const { error } = await supabase.from("wetten").insert({
-    id: wette.id,
-    member_id: memberId,
-    termin_id: wette.terminId ?? null,
-    gegen_member_id: wette.gegenMemberId,
-    betrag: wette.betrag,
-    logged_at: wette.loggedAt,
-    gewonnen: wette.gewonnen ?? null,
-  });
-  if (error) throw error;
-  return wette;
-}
-
-export async function updateWette(
-  memberId: string,
-  wetteId: string,
-  partial: Partial<Wette>
-): Promise<void> {
-  const patch: Record<string, unknown> = {};
-  if (partial.betrag !== undefined) patch.betrag = partial.betrag;
-  if (partial.gewonnen !== undefined) patch.gewonnen = partial.gewonnen;
-  if (partial.gegenMemberId !== undefined) patch.gegen_member_id = partial.gegenMemberId;
-  if (partial.terminId !== undefined) patch.termin_id = partial.terminId;
-  if (partial.loggedAt !== undefined) patch.logged_at = partial.loggedAt;
-  const { error } = await supabase.from("wetten").update(patch).eq("id", wetteId);
-  if (error) throw error;
-}
-
-export async function deleteWette(memberId: string, wetteId: string): Promise<void> {
-  const { error } = await supabase.from("wetten").delete().eq("id", wetteId);
-  if (error) throw error;
 }
 
 // ─── Stammtisch-Termine ───────────────────────────────────────────────────────

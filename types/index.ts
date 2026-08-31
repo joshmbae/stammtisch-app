@@ -50,18 +50,6 @@ export interface VerspätungLog {
   grund?: string;
 }
 
-// ─── Wetten ───────────────────────────────────────────────────────────────────
-
-export interface Wette {
-  id: string;
-  memberId: string;         // wer wettet
-  terminId?: string;
-  gegenMemberId: string;    // auf wen gewettet wird
-  betrag: number;           // in Euro
-  loggedAt: string;
-  gewonnen?: boolean;       // undefined = offen
-}
-
 // ─── Protokoll ────────────────────────────────────────────────────────────────
 
 export interface Protokoll {
@@ -79,7 +67,7 @@ export interface Protokoll {
 export type StrafKategorie = string;
 
 /** System-Keys, auf die andere Features technisch angewiesen sind (nicht löschbar). */
-export type StrafSystemKey = "sonstiges" | "wette_verloren";
+export type StrafSystemKey = "sonstiges";
 
 export interface StrafKategorieDef {
   id: string;
@@ -241,5 +229,4 @@ export interface StammtischVerordnung {
   aktivesSpielId?: string;
   rollenOptionen?: string[];
   tabStrafenAktiv?: boolean;
-  tabWettenAktiv?: boolean;
 }

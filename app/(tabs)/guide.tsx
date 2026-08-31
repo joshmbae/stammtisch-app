@@ -521,23 +521,6 @@ export default function EinstellungenScreen() {
           )}
         </View>
 
-        {/* Wetten */}
-        <Text style={styles.sectionTitle}>🤝 Wetten</Text>
-
-        <View style={styles.card}>
-          <View style={styles.switchRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.fieldLabel}>Wetten-Tab im Termin anzeigen</Text>
-              <Text style={styles.switchHint}>Aus, wenn ihr am Stammtisch nicht wettet.</Text>
-            </View>
-            <Switch
-              value={verordnung.tabWettenAktiv !== false}
-              onValueChange={(v) => update({ tabWettenAktiv: v })}
-              trackColor={{ false: COLORS.border, true: COLORS.blue }}
-            />
-          </View>
-        </View>
-
         {/* ══════════ VERWALTUNG ══════════ */}
         <View style={[styles.groupHeader, styles.groupHeaderSpaced]}>
           <Text style={styles.groupTitle}>⚙️ Verwaltung</Text>
