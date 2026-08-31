@@ -66,13 +66,16 @@ select s.id, 'Sonstiges', 0, '💰', null, 9, true, 'sonstiges' from dev.stammti
 -- ─── Bestehende straf_logs auf die neuen ids ummappen ────────────────────
 update dev.straf_logs sl
 set kategorie = sk.id
-from dev.members m
-join dev.straf_kategorien sk on sk.stammtisch_id = m.stammtisch_id and sk.system_key = sl.kategorie
-where sl.member_id = m.id;
+from dev.members m, dev.straf_kategorien sk
+where sl.member_id = m.id
+  and sk.stammtisch_id = m.stammtisch_id
+  and sk.system_key = sl.kategorie;
 
 -- ─── Bestehende Spiel-Ereignistypen (Strafe-Kopplung) genauso ummappen ───
 update dev.spiel_ereignis_typen et
 set straf_kategorie = sk.id
-from dev.spiele sp
-join dev.straf_kategorien sk on sk.stammtisch_id = sp.stammtisch_id and sk.system_key = et.straf_kategorie
-where et.spiel_id = sp.id and et.straf_kategorie is not null;
+from dev.spiele sp, dev.straf_kategorien sk
+where et.spiel_id = sp.id
+  and et.straf_kategorie is not null
+  and sk.stammtisch_id = sp.stammtisch_id
+  and sk.system_key = et.straf_kategorie;

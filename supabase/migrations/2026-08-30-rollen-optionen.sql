@@ -8,8 +8,12 @@
 -- angelegte Stammtische künftig automatisch mit einem schlanken,
 -- generischen Set starten.
 
-alter table dev.verordnung add column if not exists rollen_optionen text[]
-  default array['Mitglied', 'Kassenwart', 'Schriftführer'];
+-- Ohne Default anlegen, damit bestehende Zeilen erstmal NULL bleiben
+-- (Postgres würde bei ADD COLUMN ... DEFAULT sonst sofort allen
+-- bestehenden Zeilen den Default zuweisen statt NULL zu lassen — dann
+-- könnte das anschließende "where rollen_optionen is null" nichts mehr
+-- backfillen).
+alter table dev.verordnung add column if not exists rollen_optionen text[];
 
 update dev.verordnung
 set rollen_optionen = array[
@@ -18,3 +22,8 @@ set rollen_optionen = array[
   'Foto-Beauftragter', 'Reiseminister', 'Mitglied', 'Gast'
 ]
 where rollen_optionen is null;
+
+-- Default erst jetzt setzen — gilt nur für künftig neu angelegte Zeilen,
+-- die bestehenden (gerade befüllten) Zeilen bleiben unangetastet.
+alter table dev.verordnung alter column rollen_optionen
+  set default array['Mitglied', 'Kassenwart', 'Schriftführer'];
