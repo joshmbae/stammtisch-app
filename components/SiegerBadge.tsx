@@ -1,31 +1,37 @@
 import { View, Text, StyleSheet } from "react-native";
-import { COLORS } from "../constants/design";
+import { COLORS, SHADOWS } from "../constants/design";
+import { FuehrenderTitel } from "../utils/stats";
 
 /**
- * Krönchen für Mitglieder, die aktuell mindestens eine Jahres-Rangliste
- * anführen. Führt jemand mehrere an, steht die Anzahl daneben.
+ * Sitzt als kleiner Kreis am Rand des Profilbilds und zeigt das Icon der
+ * Wertung, die diese Person gerade anführt (bei mehreren die erstgenannte).
+ *
+ * Absolut positioniert — gehört in einen Container, der das Profilbild
+ * umschließt und nicht `overflow: "hidden"` setzt.
  */
-export default function SiegerBadge({ titel }: { titel: string[] }) {
+export default function SiegerBadge({ titel, size = 18 }: { titel: FuehrenderTitel[]; size?: number }) {
   if (titel.length === 0) return null;
   return (
     <View
-      style={styles.badge}
+      style={[styles.badge, { width: size, height: size, borderRadius: size / 2 }]}
       accessibilityRole="image"
-      accessibilityLabel={`Führt aktuell: ${titel.join(", ")}`}
+      accessibilityLabel={`Führt aktuell: ${titel.map((t) => t.titel).join(", ")}`}
     >
-      <Text style={styles.krone}>👑</Text>
-      {titel.length > 1 && <Text style={styles.count}>{titel.length}</Text>}
+      <Text style={{ fontSize: Math.round(size * 0.58) }}>{titel[0].emoji}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   badge: {
-    flexDirection: "row", alignItems: "center", gap: 2,
-    backgroundColor: COLORS.goldBg, borderRadius: 8,
-    borderWidth: 1, borderColor: COLORS.gold + "55",
-    paddingHorizontal: 5, paddingVertical: 1,
+    position: "absolute",
+    right: -2,
+    bottom: -2,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: COLORS.card,
+    borderWidth: 1.5,
+    borderColor: COLORS.gold,
+    ...SHADOWS.light,
   },
-  krone: { fontSize: 11 },
-  count: { fontSize: 10, fontWeight: "800", color: COLORS.gold },
 });

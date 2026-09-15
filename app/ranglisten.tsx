@@ -38,18 +38,21 @@ import ErrorState from "../components/ErrorState";
 import OfflineBanner from "../components/OfflineBanner";
 import { useScreenLoad } from "../utils/useScreenLoad";
 import { getInitial, displayName } from "../utils/format";
+import SiegerBadge from "../components/SiegerBadge";
 import {
   ALLZEIT,
+  FuehrenderTitel,
   JahrFilter,
   RangEintrag,
   Rangliste,
   StatsDaten,
   aktuellesJahr,
   computeRanglisten,
+  fuehrendeTitel,
   verfuegbareJahre,
 } from "../utils/stats";
 
-function RangRow({ eintrag }: { eintrag: RangEintrag }) {
+function RangRow({ eintrag, titel }: { eintrag: RangEintrag; titel: FuehrenderTitel[] }) {
   const medals = ["🥇", "🥈", "🥉"];
   const { member, platz } = eintrag;
   return (
@@ -61,13 +64,16 @@ function RangRow({ eintrag }: { eintrag: RangEintrag }) {
       accessibilityLabel={`Platz ${platz}: ${displayName(member)}, ${eintrag.anzeige} ${eintrag.label}`}
     >
       <Text style={styles.rangMedal}>{medals[platz - 1] ?? `${platz}.`}</Text>
-      {member.photoUri ? (
-        <Image source={{ uri: member.photoUri }} style={styles.rangAvatar} />
-      ) : (
-        <View style={[styles.rangAvatar, { backgroundColor: member.avatarColor, alignItems: "center", justifyContent: "center" }]}>
-          <Text style={{ fontSize: 13, fontWeight: "700", color: "#FFF" }}>{getInitial(member.name)}</Text>
-        </View>
-      )}
+      <View style={styles.rangAvatarWrap}>
+        {member.photoUri ? (
+          <Image source={{ uri: member.photoUri }} style={styles.rangAvatar} />
+        ) : (
+          <View style={[styles.rangAvatar, { backgroundColor: member.avatarColor, alignItems: "center", justifyContent: "center" }]}>
+            <Text style={{ fontSize: 13, fontWeight: "700", color: "#FFF" }}>{getInitial(member.name)}</Text>
+          </View>
+        )}
+        <SiegerBadge titel={titel} size={16} />
+      </View>
       <View style={styles.rangInfo}>
         <Text style={styles.rangName}>{displayName(member)}</Text>
         {eintrag.sub ? <Text style={styles.rangSub}>{eintrag.sub}</Text> : null}
@@ -119,6 +125,8 @@ export default function RanglistenScreen() {
   const daten: StatsDaten = { members, termine, verspätungLogs, spielLogs, strafLogs, spiele };
   const jahre = verfuegbareJahre(daten);
   const listen: Rangliste[] = computeRanglisten(daten, jahr);
+  // Badge zeigt immer die laufende Jahreswertung, unabhängig vom gewählten Filter.
+  const fuehrend = fuehrendeTitel(daten, aktuellesJahr());
   const jahrLabel = jahr === ALLZEIT ? "Allzeit" : jahr;
 
   return (
@@ -187,7 +195,7 @@ export default function RanglistenScreen() {
               <Text style={styles.rangCardTitle}>{liste.emoji} {liste.titel}</Text>
               <Text style={styles.rangCardSub}>{liste.untertitel} · {jahrLabel}</Text>
               {liste.eintraege.map((e) => (
-                <RangRow key={e.member.id} eintrag={e} />
+                <RangRow key={e.member.id} eintrag={e} titel={fuehrend.get(e.member.id) ?? []} />
               ))}
             </View>
           ))
@@ -240,6 +248,7 @@ const styles = StyleSheet.create({
     paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: COLORS.border,
   },
   rangMedal: { fontSize: 18, width: 28, textAlign: "center" },
+  rangAvatarWrap: { width: 36, height: 36 },
   rangAvatar: { width: 36, height: 36, borderRadius: 18 },
   rangInfo: { flex: 1 },
   rangName: { fontSize: 14, fontWeight: "700", color: COLORS.textDark },

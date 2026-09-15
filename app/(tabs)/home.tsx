@@ -49,7 +49,7 @@ import LoadingSpinner from "../../components/LoadingSpinner";
 import ErrorState from "../../components/ErrorState";
 import OfflineBanner from "../../components/OfflineBanner";
 import SiegerBadge from "../../components/SiegerBadge";
-import { StatsDaten, aktuellesJahr, fuehrendeTitel } from "../../utils/stats";
+import { StatsDaten, FuehrenderTitel, aktuellesJahr, fuehrendeTitel } from "../../utils/stats";
 import { useScreenLoad } from "../../utils/useScreenLoad";
 import { formatEuro, getInitial, gruendungsDauer, formatDauer, formatGruendungMonat, displayName, anwesenheitsQuote } from "../../utils/format";
 import { toLocalIsoDate, formatActivityZeit } from "../../utils/date";
@@ -108,7 +108,7 @@ function getNextBirthday(members: MemberProfile[]): {
 
 // ─── Mitglieder Avatar (horizontal) ──────────────────────────────────────────
 
-function MemberBubble({ member, isActive, titel }: { member: MemberProfile; isActive: boolean; titel: string[] }) {
+function MemberBubble({ member, isActive, titel }: { member: MemberProfile; isActive: boolean; titel: FuehrenderTitel[] }) {
   const firstName = member.spitzname ?? member.name.split(" ")[0];
   return (
     <TouchableOpacity
@@ -116,28 +116,28 @@ function MemberBubble({ member, isActive, titel }: { member: MemberProfile; isAc
       onPress={() => router.push(`/member/${member.id}`)}
       activeOpacity={0.8}
     >
-      <View style={[styles.bubble, { backgroundColor: member.avatarColor }, isActive && styles.bubbleActive]}>
-        {member.photoUri ? (
-          <Image source={{ uri: member.photoUri }} style={styles.bubbleImg} />
-        ) : (
-          <Text style={styles.bubbleLetter}>{getInitial(member.name)}</Text>
-        )}
-        {isActive && <View style={styles.bubbleActiveDot} />}
+      <View style={styles.bubbleAvatarWrap}>
+        <View style={[styles.bubble, { backgroundColor: member.avatarColor }, isActive && styles.bubbleActive]}>
+          {member.photoUri ? (
+            <Image source={{ uri: member.photoUri }} style={styles.bubbleImg} />
+          ) : (
+            <Text style={styles.bubbleLetter}>{getInitial(member.name)}</Text>
+          )}
+          {isActive && <View style={styles.bubbleActiveDot} />}
+        </View>
+        <SiegerBadge titel={titel} size={19} />
       </View>
-      <View style={styles.bubbleNameRow}>
-        <Text style={[styles.bubbleName, isActive && { color: COLORS.blue, fontWeight: "700" }]} numberOfLines={1}>
-          {firstName}
-        </Text>
-        <SiegerBadge titel={titel} />
-      </View>
+      <Text style={[styles.bubbleName, isActive && { color: COLORS.blue, fontWeight: "700" }]} numberOfLines={1}>
+        {firstName}
+      </Text>
     </TouchableOpacity>
   );
 }
 
 // ─── Ranglisten-Row ───────────────────────────────────────────────────────────
 
-function RangRow({ rank, member, value, valueLabel, sub }: {
-  rank: number; member: MemberProfile; value: string; valueLabel: string; sub?: string;
+function RangRow({ rank, member, value, valueLabel, sub, titel }: {
+  rank: number; member: MemberProfile; value: string; valueLabel: string; sub?: string; titel: FuehrenderTitel[];
 }) {
   const medals = ["🥇", "🥈", "🥉"];
   return (
@@ -147,13 +147,16 @@ function RangRow({ rank, member, value, valueLabel, sub }: {
       activeOpacity={0.85}
     >
       <Text style={styles.rangMedal}>{medals[rank] ?? `${rank + 1}.`}</Text>
-      {member.photoUri ? (
-        <Image source={{ uri: member.photoUri }} style={styles.rangAvatar} />
-      ) : (
-        <View style={[styles.rangAvatar, { backgroundColor: member.avatarColor, alignItems: "center", justifyContent: "center" }]}>
-          <Text style={{ fontSize: 13, fontWeight: "700", color: "#FFF" }}>{getInitial(member.name)}</Text>
-        </View>
-      )}
+      <View style={styles.rangAvatarWrap}>
+        {member.photoUri ? (
+          <Image source={{ uri: member.photoUri }} style={styles.rangAvatar} />
+        ) : (
+          <View style={[styles.rangAvatar, { backgroundColor: member.avatarColor, alignItems: "center", justifyContent: "center" }]}>
+            <Text style={{ fontSize: 13, fontWeight: "700", color: "#FFF" }}>{getInitial(member.name)}</Text>
+          </View>
+        )}
+        <SiegerBadge titel={titel} size={16} />
+      </View>
       <View style={styles.rangInfo}>
         <Text style={styles.rangName}>{displayName(member)}</Text>
         {sub ? <Text style={styles.rangSub}>{sub}</Text> : null}
@@ -198,7 +201,7 @@ export default function HomeScreen() {
   const [terminCount, setTerminCount]         = useState(0);
   const [lastActivity, setLastActivity]       = useState<ActivityLogEntry | null>(null);
   const [strafKategorien, setStrafKategorien] = useState<StrafKategorieDef[]>([]);
-  const [siegerTitel, setSiegerTitel] = useState<Map<string, string[]>>(new Map());
+  const [siegerTitel, setSiegerTitel] = useState<Map<string, FuehrenderTitel[]>>(new Map());
 
   const { loading, refreshing, error, onRefresh, retry } = useScreenLoad(load, []);
 
@@ -515,7 +518,8 @@ export default function HomeScreen() {
             </View>
             {spielRang.slice(0, 3).map((s, i) => (
               <RangRow key={s.member.id} rank={i} member={s.member}
-                value={`${s.count}`} valueLabel={featuredSpiel.ereignisTyp.label} />
+                value={`${s.count}`} valueLabel={featuredSpiel.ereignisTyp.label}
+                titel={siegerTitel.get(s.member.id) ?? []} />
             ))}
           </View>
         )}
@@ -758,7 +762,7 @@ const styles = StyleSheet.create({
     width: 12, height: 12, borderRadius: 6,
     backgroundColor: COLORS.blue, borderWidth: 2, borderColor: COLORS.card,
   },
-  bubbleNameRow: { flexDirection: "row", alignItems: "center", gap: 3, maxWidth: 74 },
+  bubbleAvatarWrap: { width: 48, height: 48 },
   bubbleName: { fontSize: 11, color: COLORS.textMuted, textAlign: "center", fontWeight: "500" },
   bubbleAdd: {
     width: 48, height: 48, borderRadius: 24,
@@ -801,6 +805,7 @@ const styles = StyleSheet.create({
     paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: COLORS.border,
   },
   rangMedal: { fontSize: 18, width: 28, textAlign: "center" },
+  rangAvatarWrap: { width: 36, height: 36 },
   rangAvatar: { width: 36, height: 36, borderRadius: 18 },
   rangInfo: { flex: 1 },
   rangName: { fontSize: 14, fontWeight: "700", color: COLORS.textDark },

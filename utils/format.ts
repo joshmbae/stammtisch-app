@@ -1,3 +1,5 @@
+import { toLocalIsoDate } from "./date";
+
 export function formatEuro(n: number): string {
   return n.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
@@ -30,14 +32,20 @@ export function formatDauer(d: { jahre: number; monate: number }): string {
   return parts.join(" ");
 }
 
-/** Zählt nur Termine ab Mitgliedsbeginn, damit neuere Mitglieder nicht durch Termine vor ihrem Beitritt schlechter dastehen. */
+/**
+ * Zählt nur Termine ab Mitgliedsbeginn, damit neuere Mitglieder nicht durch
+ * Termine vor ihrem Beitritt schlechter dastehen — und nur solche, die schon
+ * stattgefunden haben: `anwesenheit` enthält auch die RSVP-Zusagen für
+ * kommende Abende, die sonst als Teilnahme mitgezählt würden.
+ */
 export function anwesenheitsQuote(
   termine: { datum: string; anwesenheit?: string[]; art?: string }[],
   memberId: string,
   mitgliedSeit: string
 ): { count: number; total: number; pct: number | null } {
   const seitDatum = mitgliedSeit.slice(0, 10);
-  const relevante = termine.filter((t) => t.datum >= seitDatum && t.art === "stammtisch");
+  const heute = toLocalIsoDate(new Date());
+  const relevante = termine.filter((t) => t.datum >= seitDatum && t.datum <= heute && t.art === "stammtisch");
   const count = relevante.filter((t) => (t.anwesenheit ?? []).includes(memberId)).length;
   const total = relevante.length;
   return { count, total, pct: total > 0 ? Math.round((count / total) * 100) : null };

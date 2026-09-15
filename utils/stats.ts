@@ -8,6 +8,7 @@ import {
   SpielEreignisTyp,
 } from "../types";
 import { formatEuro } from "./format";
+import { toLocalIsoDate } from "./date";
 
 /**
  * Gemeinsame Rechenbasis für alle Ranglisten — genutzt von den Ranglisten,
@@ -78,17 +79,31 @@ export function aktuellesJahr(): string {
 }
 
 /**
+ * Nur Termine, die schon stattgefunden haben. `anwesenheit` führt zugleich die
+ * RSVP-Zusagen — ohne diesen Schnitt zählten Zusagen für kommende Abende als
+ * Teilnahme, und ein Dezember-Termin mit zehn Zusagen hätte die Jahreswertung
+ * entschieden, bevor jemand dort war.
+ */
+function stattgefunden(termine: StammtischTermin[]): StammtischTermin[] {
+  const heute = toLocalIsoDate(new Date());
+  return termine.filter((t) => t.datum <= heute);
+}
+
+/**
  * Alle Jahre, für die überhaupt Daten vorliegen — absteigend, das laufende
  * Jahr immer dabei, damit der Filter nicht leer wirkt, solange noch nichts
  * passiert ist.
  */
 export function verfuegbareJahre(daten: StatsDaten): string[] {
   const jahre = new Set<string>([aktuellesJahr()]);
-  daten.termine.forEach((t) => jahre.add(jahrVon(t.datum)));
+  stattgefunden(daten.termine).forEach((t) => jahre.add(jahrVon(t.datum)));
   daten.verspätungLogs.forEach((l) => jahre.add(jahrVon(l.datum)));
   daten.spielLogs.forEach((l) => jahre.add(jahrVon(l.loggedAt)));
   daten.strafLogs.forEach((l) => jahre.add(jahrVon(l.loggedAt)));
-  return [...jahre].sort((a, b) => b.localeCompare(a));
+  // Künftige Jahre gehören nicht in den Filter — sie entstehen nur durch
+  // vorausgeplante Termine, für die es noch nichts zu werten gibt.
+  const jetzt = aktuellesJahr();
+  return [...jahre].filter((j) => j <= jetzt).sort((a, b) => b.localeCompare(a));
 }
 
 // ─── Ranglisten ───────────────────────────────────────────────────────────────
@@ -110,7 +125,7 @@ export function computeRanglisten(daten: StatsDaten, jahr: JahrFilter): Ranglist
   const { members, termine, verspätungLogs, spielLogs, strafLogs, spiele } = daten;
   if (members.length === 0) return [];
 
-  const stammtische = termine.filter((t) => t.art === "stammtisch" && imJahr(t.datum, jahr));
+  const stammtische = stattgefunden(termine).filter((t) => t.art === "stammtisch" && imJahr(t.datum, jahr));
 
   const listen: Rangliste[] = [];
 
@@ -248,15 +263,22 @@ export function jahresTitelFuer(daten: StatsDaten, memberId: string): Jahrestite
   return titel;
 }
 
+/** Eine Wertung, die jemand gerade anführt — Emoji für das Badge, Titel für die Vorlesehilfe. */
+export interface FuehrenderTitel {
+  emoji: string;
+  titel: string;
+}
+
 /**
- * Mitglieds-Id -> Titel, die diese Person im angegebenen Jahr gerade anführt.
- * Grundlage für das Krönchen am Namen.
+ * Mitglieds-Id -> Wertungen, die diese Person im angegebenen Jahr anführt,
+ * in der Reihenfolge der Ranglisten. Grundlage für das Badge am Profilbild;
+ * angezeigt wird das Icon der erstgenannten Wertung.
  */
-export function fuehrendeTitel(daten: StatsDaten, jahr: JahrFilter): Map<string, string[]> {
-  const map = new Map<string, string[]>();
+export function fuehrendeTitel(daten: StatsDaten, jahr: JahrFilter): Map<string, FuehrenderTitel[]> {
+  const map = new Map<string, FuehrenderTitel[]>();
   for (const liste of computeRanglisten(daten, jahr)) {
     for (const id of siegerIds(liste)) {
-      map.set(id, [...(map.get(id) ?? []), liste.kurz]);
+      map.set(id, [...(map.get(id) ?? []), { emoji: liste.emoji, titel: liste.kurz }]);
     }
   }
   return map;

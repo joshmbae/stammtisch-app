@@ -251,18 +251,18 @@ export default function MemberDetailScreen() {
 
         {/* Hero */}
         <View style={[styles.heroCard, { borderColor: member.avatarColor + "44" }]}>
-          {member.photoUri ? (
-            <Image source={{ uri: member.photoUri }} style={styles.heroAvatar} />
-          ) : (
-            <View style={[styles.heroAvatarPlaceholder, { backgroundColor: member.avatarColor }]}>
-              <Text style={styles.heroAvatarLetter}>{getInitial(member.name)}</Text>
-            </View>
-          )}
+          <View style={styles.heroAvatarWrap}>
+            {member.photoUri ? (
+              <Image source={{ uri: member.photoUri }} style={styles.heroAvatar} />
+            ) : (
+              <View style={[styles.heroAvatarPlaceholder, { backgroundColor: member.avatarColor }]}>
+                <Text style={styles.heroAvatarLetter}>{getInitial(member.name)}</Text>
+              </View>
+            )}
+            <SiegerBadge titel={fuehrtAktuell} size={24} />
+          </View>
           <View style={styles.heroInfo}>
-            <View style={styles.heroNameRow}>
-              <Text style={styles.heroName}>{displayName(member)}</Text>
-              <SiegerBadge titel={fuehrtAktuell} />
-            </View>
+            <Text style={styles.heroName}>{displayName(member)}</Text>
             <View style={[styles.rolleBadge, { backgroundColor: member.avatarColor + "22", borderColor: member.avatarColor + "66" }]}>
               <Text style={[styles.rolleBadgeText, { color: member.avatarColor }]}>{member.rollen.join(", ")}</Text>
             </View>
@@ -287,7 +287,7 @@ export default function MemberDetailScreen() {
             ))}
             <Text style={styles.titelHinweis}>
               {fuehrtAktuell.length > 0
-                ? `Führt aktuell: ${fuehrtAktuell.join(", ")}`
+                ? `Führt aktuell: ${fuehrtAktuell.map((t) => t.titel).join(", ")}`
                 : "Platz 1 im jeweiligen Kalenderjahr"}
             </Text>
           </View>
@@ -450,7 +450,7 @@ const styles = StyleSheet.create({
   heroAvatarPlaceholder: { width: 64, height: 64, borderRadius: 32, alignItems: "center", justifyContent: "center" },
   heroAvatarLetter: { fontSize: 26, fontWeight: "700", color: "#FFFFFF" },
   heroInfo: { flex: 1, gap: 4 },
-  heroNameRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  heroAvatarWrap: { width: 64, height: 64 },
   titelJahrRow: { flexDirection: "row", alignItems: "flex-start", gap: 10, paddingVertical: 6 },
   titelJahr: { fontSize: 13, fontWeight: "800", color: COLORS.textMuted, width: 44, paddingTop: 3 },
   titelChips: { flex: 1, flexDirection: "row", flexWrap: "wrap", gap: 6 },

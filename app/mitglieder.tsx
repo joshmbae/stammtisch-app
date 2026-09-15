@@ -32,14 +32,14 @@ import ErrorState from "../components/ErrorState";
 import OfflineBanner from "../components/OfflineBanner";
 import { useScreenLoad } from "../utils/useScreenLoad";
 import SiegerBadge from "../components/SiegerBadge";
-import { StatsDaten, aktuellesJahr, fuehrendeTitel } from "../utils/stats";
+import { StatsDaten, FuehrenderTitel, aktuellesJahr, fuehrendeTitel } from "../utils/stats";
 import { getInitial, displayName } from "../utils/format";
 import PinPrompt from "../components/PinPrompt";
 import { verifyPin } from "../utils/pin";
 
 export default function MitgliederScreen() {
   const [members, setMembers] = useState<MemberProfile[]>([]);
-  const [siegerTitel, setSiegerTitel] = useState<Map<string, string[]>>(new Map());
+  const [siegerTitel, setSiegerTitel] = useState<Map<string, FuehrenderTitel[]>>(new Map());
   const [pinTarget, setPinTarget] = useState<MemberProfile | null>(null);
   const [pinError, setPinError] = useState<string | undefined>(undefined);
 
@@ -150,18 +150,18 @@ export default function MitgliederScreen() {
               onPress={() => router.push(`/member/${m.id}`)}
               activeOpacity={0.85}
             >
-              <View style={[styles.avatar, { backgroundColor: m.avatarColor }]}>
-                {m.photoUri ? (
-                  <Image source={{ uri: m.photoUri }} style={styles.avatarImg} />
-                ) : (
-                  <Text style={styles.avatarLetter}>{getInitial(m.name)}</Text>
-                )}
+              <View style={styles.avatarWrap}>
+                <View style={[styles.avatar, { backgroundColor: m.avatarColor }]}>
+                  {m.photoUri ? (
+                    <Image source={{ uri: m.photoUri }} style={styles.avatarImg} />
+                  ) : (
+                    <Text style={styles.avatarLetter}>{getInitial(m.name)}</Text>
+                  )}
+                </View>
+                <SiegerBadge titel={siegerTitel.get(m.id) ?? []} size={19} />
               </View>
               <View style={styles.memberInfo}>
-                <View style={styles.memberNameRow}>
-                  <Text style={styles.memberName}>{displayName(m)}</Text>
-                  <SiegerBadge titel={siegerTitel.get(m.id) ?? []} />
-                </View>
+                <Text style={styles.memberName}>{displayName(m)}</Text>
                 <Text style={styles.memberSub}>{m.rollen.join(", ")}{m.lieblingsgetraenk ? ` · ${m.lieblingsgetraenk}` : ""}</Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color={COLORS.textLight} />
@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
   avatarImg: { width: 48, height: 48, borderRadius: 24 },
   avatarLetter: { fontSize: 20, fontWeight: "700", color: "#FFFFFF" },
   memberInfo: { flex: 1 },
-  memberNameRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  avatarWrap: { width: 48, height: 48 },
   memberName: { fontSize: 15, fontWeight: "700", color: COLORS.textDark },
   memberSub: { fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
   deleteBtn: { padding: 16 },
