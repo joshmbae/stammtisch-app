@@ -358,29 +358,25 @@ export default function MemberDetailScreen() {
               </View>
             ))}
             {strafGesamt > 0 && (
-              /* Offen ist die Zahl, die zum Handeln auffordert — deshalb steht sie
-                 groß und die Gesamtsumme darunter. Ist alles bezahlt, wird daraus
-                 eine grüne Bestätigung statt einer roten Restschuld. */
+              /* Große Zahl ist die Gesamtsumme; der offene Rest steht als eigene
+                 Zeile darunter und die Kachel färbt sich entsprechend — rot,
+                 solange etwas aussteht, grün sobald alles beglichen ist. */
               <TouchableOpacity
                 style={[styles.statBox, strafOffen > 0 ? styles.statBoxOffen : styles.statBoxBeglichen]}
                 onPress={() => router.push(`/strafen?memberId=${id}`)}
                 activeOpacity={0.7}
                 accessibilityRole="button"
                 accessibilityLabel={strafOffen > 0
-                  ? `${formatEuro(strafOffen)} Euro offen von ${formatEuro(strafGesamt)} Euro Strafen insgesamt`
-                  : `Alle Strafen beglichen, ${formatEuro(strafGesamt)} Euro insgesamt`}
+                  ? `${formatEuro(strafGesamt)} Euro Strafen gesamt, davon ${formatEuro(strafOffen)} Euro offen`
+                  : `${formatEuro(strafGesamt)} Euro Strafen gesamt, alles beglichen`}
               >
                 <Text style={styles.statEmoji}>💰</Text>
-                <Text style={[styles.statValue, { fontSize: 15, color: strafOffen > 0 ? COLORS.danger : COLORS.success }]}>
-                  {formatEuro(strafOffen > 0 ? strafOffen : strafGesamt)} €
+                <Text style={[styles.statValue, { fontSize: 15 }]}>
+                  {formatEuro(strafGesamt)} €
                 </Text>
+                <Text style={styles.statLabel}>Strafen gesamt</Text>
                 <Text style={[styles.statLabel, { fontWeight: "700", color: strafOffen > 0 ? COLORS.danger : COLORS.success }]}>
-                  {strafOffen > 0 ? "noch offen" : "✓ alles beglichen"}
-                </Text>
-                <Text style={styles.statLabel}>
-                  {strafOffen > 0
-                    ? `von ${formatEuro(strafGesamt)} € gesamt`
-                    : `aus ${strafLogs.length} ${strafLogs.length === 1 ? "Strafe" : "Strafen"}`}
+                  {strafOffen > 0 ? `offen: ${formatEuro(strafOffen)} €` : "✓ alles beglichen"}
                 </Text>
               </TouchableOpacity>
             )}
