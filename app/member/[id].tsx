@@ -95,6 +95,11 @@ function TerminHistoryRow({
       </View>
       {anwesend ? (
         <View style={styles.historyChips}>
+          {/* Steht immer vorn: dass jemand da war, geht sonst unter, sobald an dem
+              Abend auch eine Verspätung oder Strafe angefallen ist. */}
+          <View style={styles.historyChipDabei}>
+            <Text style={styles.historyChipDabeiText}>✓ Dabei</Text>
+          </View>
           {verspätungMin > 0 && (
             <View style={styles.historyChip}>
               <Text style={styles.historyChipText}>⏱️ {verspätungMin} Min.</Text>
@@ -111,9 +116,6 @@ function TerminHistoryRow({
                 💰 {strafSumme.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €
               </Text>
             </View>
-          )}
-          {verspätungMin === 0 && spielChips.length === 0 && strafSumme === 0 && (
-            <Text style={styles.historyClean}>✓ Dabei</Text>
           )}
         </View>
       ) : (
@@ -356,13 +358,29 @@ export default function MemberDetailScreen() {
               </View>
             ))}
             {strafGesamt > 0 && (
-              <TouchableOpacity style={styles.statBox} onPress={() => router.push(`/strafen?memberId=${id}`)} activeOpacity={0.7}>
+              /* Offen ist die Zahl, die zum Handeln auffordert — deshalb steht sie
+                 groß und die Gesamtsumme darunter. Ist alles bezahlt, wird daraus
+                 eine grüne Bestätigung statt einer roten Restschuld. */
+              <TouchableOpacity
+                style={[styles.statBox, strafOffen > 0 ? styles.statBoxOffen : styles.statBoxBeglichen]}
+                onPress={() => router.push(`/strafen?memberId=${id}`)}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel={strafOffen > 0
+                  ? `${formatEuro(strafOffen)} Euro offen von ${formatEuro(strafGesamt)} Euro Strafen insgesamt`
+                  : `Alle Strafen beglichen, ${formatEuro(strafGesamt)} Euro insgesamt`}
+              >
                 <Text style={styles.statEmoji}>💰</Text>
-                <Text style={[styles.statValue, { fontSize: 15, color: COLORS.danger }]}>
-                  {strafGesamt.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €
+                <Text style={[styles.statValue, { fontSize: 15, color: strafOffen > 0 ? COLORS.danger : COLORS.success }]}>
+                  {formatEuro(strafOffen > 0 ? strafOffen : strafGesamt)} €
+                </Text>
+                <Text style={[styles.statLabel, { fontWeight: "700", color: strafOffen > 0 ? COLORS.danger : COLORS.success }]}>
+                  {strafOffen > 0 ? "noch offen" : "✓ alles beglichen"}
                 </Text>
                 <Text style={styles.statLabel}>
-                  Strafen{strafOffen > 0 ? ` (${strafOffen.toLocaleString("de-DE", { minimumFractionDigits: 2 })} € offen)` : " ✓"}
+                  {strafOffen > 0
+                    ? `von ${formatEuro(strafGesamt)} € gesamt`
+                    : `aus ${strafLogs.length} ${strafLogs.length === 1 ? "Strafe" : "Strafen"}`}
                 </Text>
               </TouchableOpacity>
             )}
@@ -480,6 +498,14 @@ const styles = StyleSheet.create({
     flex: 1, minWidth: "40%", alignItems: "center", gap: 4,
     backgroundColor: COLORS.background, borderRadius: 12, padding: 12,
   },
+  statBoxOffen: {
+    backgroundColor: "#FFF0F0",
+    borderWidth: 1, borderColor: COLORS.danger + "33",
+  },
+  statBoxBeglichen: {
+    backgroundColor: "#EDF6F1",
+    borderWidth: 1, borderColor: COLORS.success + "33",
+  },
   statEmoji: { fontSize: 22 },
   statValue: { fontSize: 20, fontWeight: "800", color: COLORS.textDark },
   statLabel: { fontSize: 11, color: COLORS.textMuted, textAlign: "center" },
@@ -498,7 +524,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFF0F0", borderRadius: 8, paddingHorizontal: 7, paddingVertical: 3,
   },
   historyChipText: { fontSize: 11, fontWeight: "700", color: COLORS.danger },
-  historyClean: { fontSize: 12, color: COLORS.success, fontWeight: "600" },
+  historyChipDabei: {
+    backgroundColor: COLORS.success + "16", borderRadius: 8,
+    paddingHorizontal: 7, paddingVertical: 3,
+  },
+  historyChipDabeiText: { fontSize: 11, fontWeight: "700", color: COLORS.success },
   historyAbwesend: { fontSize: 12, color: COLORS.textLight, fontStyle: "italic" },
   showMoreBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5,
