@@ -148,7 +148,7 @@ export function computeRanglisten(daten: StatsDaten, jahr: JahrFilter): Ranglist
     .sort((a, b) => b.wert - a.wert);
   listen.push({
     key: "teilnahme",
-    emoji: "☑️",
+    emoji: "✅",
     titel: "Teilnahme-Rangliste",
     kurz: "Teilnahme",
     untertitel: `${stammtische.length} ${stammtische.length === 1 ? "Stammtisch" : "Stammtische"}${jahr === ALLZEIT ? " insgesamt" : ""}`,

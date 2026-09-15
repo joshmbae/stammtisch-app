@@ -12,15 +12,26 @@ import { FuehrenderTitel } from "../utils/stats";
  * Absolut positioniert: gehört in einen Container, der das Profilbild
  * umschließt und kein `overflow: "hidden"` setzt.
  */
+/**
+ * Emojis füllen ihre Zeilenhöhe unterschiedlich aus: ✅ ist ein vollflächiges
+ * Quadrat und wirkt bei gleicher Schriftgröße deutlich größer als luftig
+ * gezeichnete wie ⏱️ oder 🎲. Damit die Badges nebeneinander gleich groß
+ * wirken, werden solche Zeichen etwas kleiner gesetzt.
+ */
+const GROESSEN_AUSGLEICH: Record<string, number> = {
+  "✅": -3,
+};
+
 export default function SiegerBadge({ titel, size = 16 }: { titel: FuehrenderTitel[]; size?: number }) {
   if (titel.length === 0) return null;
+  const emoji = titel[0].emoji;
   return (
     <Text
-      style={[styles.badge, { fontSize: size }]}
+      style={[styles.badge, { fontSize: size + (GROESSEN_AUSGLEICH[emoji] ?? 0) }]}
       accessibilityRole="image"
       accessibilityLabel={`Führt aktuell: ${titel.map((t) => t.titel).join(", ")}`}
     >
-      {titel[0].emoji}
+      {emoji}
     </Text>
   );
 }
