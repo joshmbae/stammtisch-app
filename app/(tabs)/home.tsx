@@ -49,7 +49,14 @@ import LoadingSpinner from "../../components/LoadingSpinner";
 import ErrorState from "../../components/ErrorState";
 import OfflineBanner from "../../components/OfflineBanner";
 import SiegerBadge from "../../components/SiegerBadge";
-import { StatsDaten, FuehrenderTitel, aktuellesJahr, fuehrendeTitel } from "../../utils/stats";
+import {
+  StatsDaten,
+  FuehrenderTitel,
+  Rangliste,
+  aktuellesJahr,
+  computeRanglisten,
+  fuehrendeTitel,
+} from "../../utils/stats";
 import { useScreenLoad } from "../../utils/useScreenLoad";
 import { formatEuro, getInitial, gruendungsDauer, formatDauer, formatGruendungMonat, displayName, anwesenheitsQuote } from "../../utils/format";
 import { toLocalIsoDate, formatActivityZeit } from "../../utils/date";
@@ -125,7 +132,7 @@ function MemberBubble({ member, isActive, titel }: { member: MemberProfile; isAc
           )}
           {isActive && <View style={styles.bubbleActiveDot} />}
         </View>
-        <SiegerBadge titel={titel} size={19} />
+        <SiegerBadge titel={titel} size={16} />
       </View>
       <Text style={[styles.bubbleName, isActive && { color: COLORS.blue, fontWeight: "700" }]} numberOfLines={1}>
         {firstName}
@@ -155,7 +162,7 @@ function RangRow({ rank, member, value, valueLabel, sub, titel }: {
             <Text style={{ fontSize: 13, fontWeight: "700", color: "#FFF" }}>{getInitial(member.name)}</Text>
           </View>
         )}
-        <SiegerBadge titel={titel} size={16} />
+        <SiegerBadge titel={titel} size={13} />
       </View>
       <View style={styles.rangInfo}>
         <Text style={styles.rangName}>{displayName(member)}</Text>
@@ -196,7 +203,7 @@ export default function HomeScreen() {
   const [members, setMembers]                 = useState<MemberProfile[]>([]);
   const [memberStats, setMemberStats]         = useState<MemberStats[]>([]);
   const [spiele, setSpiele]                   = useState<SpielMitTypen[]>([]);
-  const [featuredSpiel, setFeaturedSpiel]     = useState<{ spiel: Spiel; ereignisTyp: SpielEreignisTyp } | null>(null);
+  const [featuredRang, setFeaturedRang]       = useState<Rangliste | null>(null);
   const [kasse, setKasse]                     = useState<KassenEintrag[]>([]);
   const [terminCount, setTerminCount]         = useState(0);
   const [lastActivity, setLastActivity]       = useState<ActivityLogEntry | null>(null);
@@ -240,7 +247,7 @@ export default function HomeScreen() {
     setLetzterTermin(past[0] ?? null);
     setTerminCount(alle.length);
 
-    if (ms.length === 0) { setMemberStats([]); setFeaturedSpiel(null); return; }
+    if (ms.length === 0) { setMemberStats([]); setFeaturedRang(null); return; }
 
     // Drei Sammelabfragen statt drei pro Mitglied — bei 25 Mitgliedern
     // waren das vorher 75 Roundtrips bei jedem Öffnen des Screens.
@@ -264,17 +271,19 @@ export default function HomeScreen() {
     });
     setMemberStats(stats);
 
-    // Wählt bei jedem Öffnen zufällig eine (Spiel, Ereignistyp)-Kombination mit Einträgen aus
-    const combos = spieleMitTypen.flatMap(({ spiel, ereignisTypen }) => ereignisTypen.map((et) => ({ spiel, ereignisTyp: et })))
-      .filter(({ spiel, ereignisTyp }) => stats.some((s) => s.spielLogs.some((l) => l.spielId === spiel.id && l.ereignisTypId === ereignisTyp.id)));
-    setFeaturedSpiel(combos.length > 0 ? combos[Math.floor(Math.random() * combos.length)] : null);
-
     const statsDaten: StatsDaten = {
       members: ms, termine: alle,
       verspätungLogs: alleVLogs, spielLogs: alleSpLogs, strafLogs: alleStLogs,
       spiele: spieleMitTypen,
     };
     setSiegerTitel(fuehrendeTitel(statsDaten, aktuellesJahr()));
+
+    // Die Startseite zeigt immer die laufende Jahreswertung — und wählt bei
+    // jedem Öffnen zufällig eine der Spiel-Ranglisten aus, die dieses Jahr
+    // schon Einträge hat.
+    const spielListen = computeRanglisten(statsDaten, aktuellesJahr())
+      .filter((l) => l.key.startsWith("spiel_"));
+    setFeaturedRang(spielListen.length > 0 ? spielListen[Math.floor(Math.random() * spielListen.length)] : null);
   }
 
   // ── Derived ───────────────────────────────────────────────────────────────
@@ -288,15 +297,12 @@ export default function HomeScreen() {
   const gruendungsjahr = verordnung?.gruendungsjahr ?? null;
   const dauer = gruendungsjahr ? gruendungsDauer(gruendungsjahr) : null;
 
-  // Rotiert bei jedem Öffnen des Home-Screens zufällig durch die (Spiel, Ereignistyp)-Ranglisten (siehe featuredSpiel in load())
-  const spielRang = featuredSpiel
-    ? [...memberStats]
-        .map((s) => ({ member: s.member, count: s.spielLogs.filter((l) => l.spielId === featuredSpiel.spiel.id && l.ereignisTypId === featuredSpiel.ereignisTyp.id).length }))
-        .filter((s) => s.count > 0)
-        .sort((a, b) => b.count - a.count)
-    : [];
-  const myFeaturedSpielCount = featuredSpiel
-    ? (myStats?.spielLogs.filter((l) => l.spielId === featuredSpiel.spiel.id && l.ereignisTypId === featuredSpiel.ereignisTyp.id).length ?? 0)
+  const spielRang = featuredRang?.eintraege ?? [];
+  // "Meine Bilanz" bleibt eine Lebenszeit-Bilanz — anders als die Rangliste
+  // darunter, die nur das laufende Jahr wertet.
+  const featuredEreignisTypId = featuredRang?.key.replace("spiel_", "") ?? null;
+  const myFeaturedSpielCount = featuredEreignisTypId
+    ? (myStats?.spielLogs.filter((l) => l.ereignisTypId === featuredEreignisTypId).length ?? 0)
     : 0;
 
   const naechsterInStunden = naechsterTermin ? hoursUntil(naechsterTermin.datum, naechsterTermin.startZeit) : null;
@@ -424,13 +430,13 @@ export default function HomeScreen() {
                 </Text>
                 <Text style={styles.myStatLabel}>{myStats.strafOffen > 0 ? "Offen" : "Beglichen"}</Text>
               </TouchableOpacity>
-              {featuredSpiel && (
+              {featuredRang && (
                 <>
                   <View style={styles.myStatDivider} />
                   <TouchableOpacity style={styles.myStatBox} onPress={() => router.push(`/member/${activeMember.id}`)} activeOpacity={0.7}>
-                    <Text style={styles.myStatEmoji}>{featuredSpiel.ereignisTyp.emoji ?? "🎮"}</Text>
+                    <Text style={styles.myStatEmoji}>{featuredRang.emoji}</Text>
                     <Text style={styles.myStatValue}>{myFeaturedSpielCount}</Text>
-                    <Text style={styles.myStatLabel} numberOfLines={1}>{featuredSpiel.ereignisTyp.label}</Text>
+                    <Text style={styles.myStatLabel} numberOfLines={1}>{featuredRang.kurz}</Text>
                   </TouchableOpacity>
                 </>
               )}
@@ -505,26 +511,27 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* ── Rotierende Spiel-Rangliste (wechselt bei jedem Öffnen) ── */}
-        {featuredSpiel && spielRang.length > 0 && (
+        {/* ── Rotierende Spiel-Rangliste des laufenden Jahres (wechselt bei jedem Öffnen) ── */}
+        {featuredRang && spielRang.length > 0 && (
           <View style={styles.rangCard}>
             <View style={styles.rangCardHeader}>
               <Text style={styles.rangCardTitle}>
-                {featuredSpiel.spiel.emoji ?? "🎮"} {featuredSpiel.spiel.name} — {featuredSpiel.ereignisTyp.label}
+                {featuredRang.emoji} {featuredRang.titel}
               </Text>
               <TouchableOpacity onPress={() => router.push("/ranglisten")}>
                 <Text style={styles.rangCardLink}>Alle →</Text>
               </TouchableOpacity>
             </View>
-            {spielRang.slice(0, 3).map((s, i) => (
-              <RangRow key={s.member.id} rank={i} member={s.member}
-                value={`${s.count}`} valueLabel={featuredSpiel.ereignisTyp.label}
-                titel={siegerTitel.get(s.member.id) ?? []} />
+            <Text style={styles.rangCardSub}>Wertung {aktuellesJahr()}</Text>
+            {spielRang.slice(0, 3).map((e) => (
+              <RangRow key={e.member.id} rank={e.platz - 1} member={e.member}
+                value={e.anzeige} valueLabel={e.label}
+                titel={siegerTitel.get(e.member.id) ?? []} />
             ))}
           </View>
         )}
 
-        {memberStats.length > 0 && !(featuredSpiel && spielRang.length > 0) && (
+        {memberStats.length > 0 && !(featuredRang && spielRang.length > 0) && (
           <TouchableOpacity style={styles.rangLinkCard} onPress={() => router.push("/ranglisten")}>
             <Text style={styles.rangLinkText}>🏆 Alle Ranglisten ansehen</Text>
             <Ionicons name="chevron-forward" size={16} color={COLORS.blue} />
@@ -792,6 +799,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: COLORS.border, ...SHADOWS.card,
   },
   rangCardHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
+  rangCardSub: { fontSize: 11, color: COLORS.textMuted, marginTop: -6, marginBottom: 8 },
   rangCardTitle: { fontSize: 14, fontWeight: "800", color: COLORS.textDark, letterSpacing: -0.2 },
   rangCardLink: { fontSize: 13, fontWeight: "700", color: COLORS.blue },
   rangLinkCard: {
