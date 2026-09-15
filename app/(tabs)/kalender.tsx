@@ -10,6 +10,7 @@ import {
   Dimensions,
   Platform,
   KeyboardAvoidingView,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, router } from "expo-router";
@@ -19,7 +20,7 @@ import { StammtischTermin, TerminArt, MemberProfile } from "../../types";
 import {
   loadTermine,
   loadMembers,
-  addTermin,
+  addTermine,
   deleteTermin,
   logActivity,
 } from "../../utils/storage";
@@ -29,6 +30,9 @@ import { displayName } from "../../utils/format";
 import { HamburgerButton } from "../../components/HamburgerButton";
 import { BackButton } from "../../components/BackButton";
 import LoadingSpinner from "../../components/LoadingSpinner";
+import ErrorState from "../../components/ErrorState";
+import OfflineBanner from "../../components/OfflineBanner";
+import { useScreenLoad } from "../../utils/useScreenLoad";
 import InlineDateTimePicker from "../../components/InlineDateTimePicker";
 import { toLocalIsoDate, toTimeString, parseTimeString } from "../../utils/date";
 
@@ -329,6 +333,7 @@ function NeuerTerminForm({ initialDate, onSave, onCancel }: {
   const [wiederholen, setWiederholen] = useState(false);
   const [wiederholIntervall, setWiederholIntervall] = useState<WiederholIntervall>("woechentlich");
   const [wiederholAnzahl, setWiederholAnzahl] = useState("8");
+  const [saving, setSaving] = useState(false);
   const { activeMemberId } = useSession();
 
   const isStammtisch = art === "stammtisch";
@@ -354,9 +359,10 @@ function NeuerTerminForm({ initialDate, onSave, onCancel }: {
     }
     const anzahl = wiederholen ? Math.min(Math.max(parseInt(wiederholAnzahl, 10) || 1, 1), 52) : 1;
 
+    const entwuerfe: Parameters<typeof addTermine>[0] = [];
     let laufendesDatum = datum;
     for (let i = 0; i < anzahl; i++) {
-      const neuerTermin = await addTermin({
+      entwuerfe.push({
         art,
         titel: titel.trim() || undefined,
         datum: localIso(laufendesDatum),
@@ -366,15 +372,37 @@ function NeuerTerminForm({ initialDate, onSave, onCancel }: {
         ort: ort.trim() || undefined,
         notizen: notizen.trim() || undefined,
       });
+      laufendesDatum = naechsterTermin(laufendesDatum, wiederholIntervall);
+    }
+
+    setSaving(true);
+    try {
+      const angelegt = await addTermine(entwuerfe);
+      const erster = angelegt[0];
+      // Bewusst nur ein Aktivitäts-Eintrag für die ganze Serie: jeder Eintrag
+      // löst ein Push an alle anderen aus — bei 52 Wochen wären das 52
+      // Benachrichtigungen pro Mitglied gewesen.
       await logActivity({
         actorMemberId: activeMemberId ?? undefined,
         actionType: "termin_erstellt",
-        terminId: neuerTermin.id,
-        meta: { terminDatum: neuerTermin.datum, terminTitel: neuerTermin.titel, terminArt: neuerTermin.art },
+        terminId: erster.id,
+        meta: {
+          terminDatum: erster.datum,
+          terminTitel: erster.titel,
+          terminArt: erster.art,
+          anzahl: angelegt.length,
+          letztesDatum: angelegt[angelegt.length - 1].datum,
+        },
       });
-      laufendesDatum = naechsterTermin(laufendesDatum, wiederholIntervall);
+      onSave();
+    } catch (e) {
+      showAlert(
+        "Konnte nicht gespeichert werden",
+        e instanceof Error ? e.message : "Bitte prüf deine Verbindung und versuch es nochmal."
+      );
+    } finally {
+      setSaving(false);
     }
-    onSave();
   }
 
   return (
@@ -560,11 +588,14 @@ function NeuerTerminForm({ initialDate, onSave, onCancel }: {
       />
 
       <TouchableOpacity
-        style={[styles.saveBtn, { backgroundColor: ART_CONFIG[art].color }]}
+        style={[styles.saveBtn, { backgroundColor: ART_CONFIG[art].color }, saving && { opacity: 0.6 }]}
         onPress={speichern}
+        disabled={saving}
+        accessibilityRole="button"
+        accessibilityLabel="Eintrag anlegen"
       >
-        <Ionicons name="add" size={18} color="#FFFFFF" />
-        <Text style={styles.saveBtnText}>Eintrag anlegen</Text>
+        <Ionicons name={saving ? "hourglass-outline" : "add"} size={18} color="#FFFFFF" />
+        <Text style={styles.saveBtnText}>{saving ? "Wird angelegt …" : "Eintrag anlegen"}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -579,7 +610,6 @@ export default function KalenderTab() {
   const [selectedDay, setSelectedDay] = useState<string | null>(todayIso());
   const [termine, setTermine] = useState<StammtischTermin[]>([]);
   const [showForm, setShowForm] = useState(false);
-  const [loading, setLoading] = useState(true);
 
   async function load() {
     const [ts, members] = await Promise.all([loadTermine(), loadMembers()]);
@@ -587,10 +617,9 @@ export default function KalenderTab() {
       .filter((m) => m.geburtsdatum)
       .map(memberBirthdayEvent);
     setTermine([...ts, ...birthdayEvents]);
-    setLoading(false);
   }
 
-  useFocusEffect(useCallback(() => { load(); }, []));
+  const { loading, refreshing, error, onRefresh, retry } = useScreenLoad(load, []);
 
   function prevMonth() {
     if (viewMonth === 0) { setViewYear((y) => y - 1); setViewMonth(11); }
@@ -638,8 +667,13 @@ export default function KalenderTab() {
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={0}>
     <SafeAreaView style={styles.safe} edges={["top"]}>
-      {loading ? <LoadingSpinner /> : (
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      {loading ? <LoadingSpinner /> : error ? <ErrorState message={error} onRetry={retry} /> : (
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.blue} />}
+      >
+        <OfflineBanner />
 
         {/* ── Header ── */}
         <View style={styles.header}>

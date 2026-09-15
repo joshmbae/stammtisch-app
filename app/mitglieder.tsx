@@ -7,32 +7,66 @@ import {
   TouchableOpacity,
   Alert,
   Image,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { showAlert } from "../utils/alert";
 import { MemberProfile } from "../types";
-import { loadMembers, deleteMember } from "../utils/storage";
+import {
+  loadMembers,
+  deleteMember,
+  loadTermine,
+  loadSpiele,
+  loadAllEreignisTypen,
+  loadAllVerspätungLogs,
+  loadAllSpielLogs,
+  loadAllStrafLogs,
+} from "../utils/storage";
 import { COLORS, SHADOWS } from "../constants/design";
 import { HamburgerButton } from "../components/HamburgerButton";
 import { BackButton } from "../components/BackButton";
 import LoadingSpinner from "../components/LoadingSpinner";
+import ErrorState from "../components/ErrorState";
+import OfflineBanner from "../components/OfflineBanner";
+import { useScreenLoad } from "../utils/useScreenLoad";
+import SiegerBadge from "../components/SiegerBadge";
+import { StatsDaten, aktuellesJahr, fuehrendeTitel } from "../utils/stats";
 import { getInitial, displayName } from "../utils/format";
 import PinPrompt from "../components/PinPrompt";
 import { verifyPin } from "../utils/pin";
 
 export default function MitgliederScreen() {
   const [members, setMembers] = useState<MemberProfile[]>([]);
+  const [siegerTitel, setSiegerTitel] = useState<Map<string, string[]>>(new Map());
   const [pinTarget, setPinTarget] = useState<MemberProfile | null>(null);
   const [pinError, setPinError] = useState<string | undefined>(undefined);
-  const [loading, setLoading] = useState(true);
 
-  useFocusEffect(
-    useCallback(() => {
-      loadMembers().then((ms) => { setMembers(ms); setLoading(false); });
-    }, [])
-  );
+  async function load() {
+    const [ms, termine, alleSpiele] = await Promise.all([loadMembers(), loadTermine(), loadSpiele()]);
+    setMembers(ms);
+
+    // Für die Krönchen wird die laufende Jahreswertung gerechnet — die Daten
+    // kommen aus dem Cache, wenn sie ein anderer Screen schon geholt hat.
+    const memberIds = ms.map((m) => m.id);
+    const [alleTypen, verspätungLogs, spielLogs, strafLogs] = await Promise.all([
+      loadAllEreignisTypen(alleSpiele.map((sp) => sp.id)),
+      loadAllVerspätungLogs(memberIds),
+      loadAllSpielLogs(memberIds),
+      loadAllStrafLogs(memberIds),
+    ]);
+    const daten: StatsDaten = {
+      members: ms, termine, verspätungLogs, spielLogs, strafLogs,
+      spiele: alleSpiele.map((spiel) => ({
+        spiel,
+        ereignisTypen: alleTypen.filter((et) => et.spielId === spiel.id),
+      })),
+    };
+    setSiegerTitel(fuehrendeTitel(daten, aktuellesJahr()));
+  }
+
+  const { loading, refreshing, error, onRefresh, retry } = useScreenLoad(load, []);
 
   function confirmAndDelete(m: MemberProfile) {
     showAlert(
@@ -75,8 +109,13 @@ export default function MitgliederScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
-      {loading ? <LoadingSpinner /> : (
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      {loading ? <LoadingSpinner /> : error ? <ErrorState message={error} onRetry={retry} /> : (
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.blue} />}
+      >
+        <OfflineBanner />
 
         {/* Header */}
         <View style={styles.header}>
@@ -119,7 +158,10 @@ export default function MitgliederScreen() {
                 )}
               </View>
               <View style={styles.memberInfo}>
-                <Text style={styles.memberName}>{displayName(m)}</Text>
+                <View style={styles.memberNameRow}>
+                  <Text style={styles.memberName}>{displayName(m)}</Text>
+                  <SiegerBadge titel={siegerTitel.get(m.id) ?? []} />
+                </View>
                 <Text style={styles.memberSub}>{m.rollen.join(", ")}{m.lieblingsgetraenk ? ` · ${m.lieblingsgetraenk}` : ""}</Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color={COLORS.textLight} />
@@ -192,6 +234,7 @@ const styles = StyleSheet.create({
   avatarImg: { width: 48, height: 48, borderRadius: 24 },
   avatarLetter: { fontSize: 20, fontWeight: "700", color: "#FFFFFF" },
   memberInfo: { flex: 1 },
+  memberNameRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   memberName: { fontSize: 15, fontWeight: "700", color: COLORS.textDark },
   memberSub: { fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
   deleteBtn: { padding: 16 },

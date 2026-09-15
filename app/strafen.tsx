@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   TextInput,
   Image,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
@@ -28,6 +29,9 @@ import { COLORS, SHADOWS } from "../constants/design";
 import { HamburgerButton } from "../components/HamburgerButton";
 import { BackButton } from "../components/BackButton";
 import LoadingSpinner from "../components/LoadingSpinner";
+import ErrorState from "../components/ErrorState";
+import OfflineBanner from "../components/OfflineBanner";
+import { useScreenLoad } from "../utils/useScreenLoad";
 import { useSession } from "../contexts/SessionContext";
 import { formatEuro, getInitial } from "../utils/format";
 import { useSingleFlight } from "../utils/useSingleFlight";
@@ -55,26 +59,21 @@ export default function StrafenScreen() {
   const [strafKategorien, setStrafKategorien] = useState<StrafKategorieDef[]>([]);
   const [filterMemberId, setFilterMemberId] = useState<string | null>(memberIdParam ?? null);
   const [showBeglichen, setShowBeglichen] = useState(false);
-  const [loading, setLoading] = useState(true);
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [newMemberId, setNewMemberId] = useState<string | null>(null);
   const [newBetrag, setNewBetrag] = useState("");
   const [newNotiz, setNewNotiz] = useState("");
 
-  useFocusEffect(
-    useCallback(() => {
-      async function load() {
-        const [ms, kats] = await Promise.all([loadMembers(), loadStrafKategorien()]);
-        setMembers(ms);
-        setStrafKategorien(kats);
-        const all = await loadAllStrafLogs(ms.map((m) => m.id));
-        setLogs(all.sort((a, b) => b.loggedAt.localeCompare(a.loggedAt)));
-        setLoading(false);
-      }
-      load();
-    }, [])
-  );
+  async function load() {
+    const [ms, kats] = await Promise.all([loadMembers(), loadStrafKategorien()]);
+    setMembers(ms);
+    setStrafKategorien(kats);
+    const all = await loadAllStrafLogs(ms.map((m) => m.id));
+    setLogs(all.sort((a, b) => b.loggedAt.localeCompare(a.loggedAt)));
+  }
+
+  const { loading, refreshing, error, onRefresh, retry } = useScreenLoad(load, []);
 
   const membersById = new Map(members.map((m) => [m.id, m]));
 
@@ -157,8 +156,13 @@ export default function StrafenScreen() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaView style={styles.safe} edges={["top"]}>
-        {loading ? <LoadingSpinner /> : (
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {loading ? <LoadingSpinner /> : error ? <ErrorState message={error} onRetry={retry} /> : (
+        <ScrollView
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.blue} />}
+        >
+          <OfflineBanner />
 
           {/* Header */}
           <View style={styles.header}>

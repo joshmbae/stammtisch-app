@@ -6,6 +6,7 @@ import {
   ScrollView,
   StyleSheet,
   Image,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
@@ -27,11 +28,11 @@ import {
   loadMembers,
   loadVerordnung,
   loadTermine,
-  loadVerspätungLogs,
   loadSpiele,
-  loadEreignisTypen,
-  loadSpielLogs,
-  loadStrafLogs,
+  loadAllEreignisTypen,
+  loadAllVerspätungLogs,
+  loadAllSpielLogs,
+  loadAllStrafLogs,
   loadKasse,
   loadActivityFeed,
   loadStrafKategorien,
@@ -45,6 +46,11 @@ import { COLORS, SHADOWS } from "../../constants/design";
 import { HamburgerButton } from "../../components/HamburgerButton";
 import StammtischLogo from "../../components/StammtischLogo";
 import LoadingSpinner from "../../components/LoadingSpinner";
+import ErrorState from "../../components/ErrorState";
+import OfflineBanner from "../../components/OfflineBanner";
+import SiegerBadge from "../../components/SiegerBadge";
+import { StatsDaten, aktuellesJahr, fuehrendeTitel } from "../../utils/stats";
+import { useScreenLoad } from "../../utils/useScreenLoad";
 import { formatEuro, getInitial, gruendungsDauer, formatDauer, formatGruendungMonat, displayName, anwesenheitsQuote } from "../../utils/format";
 import { toLocalIsoDate, formatActivityZeit } from "../../utils/date";
 
@@ -102,7 +108,7 @@ function getNextBirthday(members: MemberProfile[]): {
 
 // ─── Mitglieder Avatar (horizontal) ──────────────────────────────────────────
 
-function MemberBubble({ member, isActive }: { member: MemberProfile; isActive: boolean }) {
+function MemberBubble({ member, isActive, titel }: { member: MemberProfile; isActive: boolean; titel: string[] }) {
   const firstName = member.spitzname ?? member.name.split(" ")[0];
   return (
     <TouchableOpacity
@@ -118,9 +124,12 @@ function MemberBubble({ member, isActive }: { member: MemberProfile; isActive: b
         )}
         {isActive && <View style={styles.bubbleActiveDot} />}
       </View>
-      <Text style={[styles.bubbleName, isActive && { color: COLORS.blue, fontWeight: "700" }]} numberOfLines={1}>
-        {firstName}
-      </Text>
+      <View style={styles.bubbleNameRow}>
+        <Text style={[styles.bubbleName, isActive && { color: COLORS.blue, fontWeight: "700" }]} numberOfLines={1}>
+          {firstName}
+        </Text>
+        <SiegerBadge titel={titel} />
+      </View>
     </TouchableOpacity>
   );
 }
@@ -189,12 +198,12 @@ export default function HomeScreen() {
   const [terminCount, setTerminCount]         = useState(0);
   const [lastActivity, setLastActivity]       = useState<ActivityLogEntry | null>(null);
   const [strafKategorien, setStrafKategorien] = useState<StrafKategorieDef[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [siegerTitel, setSiegerTitel] = useState<Map<string, string[]>>(new Map());
+
+  const { loading, refreshing, error, onRefresh, retry } = useScreenLoad(load, []);
 
   useFocusEffect(
     useCallback(() => {
-      load();
-
       if (!stammtischId) return;
       const channel = subscribeToActivityFeed(stammtischId, (entry) => {
         setLastActivity(entry);
@@ -214,9 +223,11 @@ export default function HomeScreen() {
     setLastActivity(activityFeed[0] ?? null);
     setStrafKategorien(kats);
 
-    const spieleMitTypen = await Promise.all(
-      alleSpiele.map(async (spiel) => ({ spiel, ereignisTypen: await loadEreignisTypen(spiel.id) }))
-    );
+    const alleTypen = await loadAllEreignisTypen(alleSpiele.map((s) => s.id));
+    const spieleMitTypen = alleSpiele.map((spiel) => ({
+      spiel,
+      ereignisTypen: alleTypen.filter((et) => et.spielId === spiel.id),
+    }));
     setSpiele(spieleMitTypen);
 
     const today = toLocalIsoDate(new Date());
@@ -226,12 +237,18 @@ export default function HomeScreen() {
     setLetzterTermin(past[0] ?? null);
     setTerminCount(alle.length);
 
-    if (ms.length === 0) { setMemberStats([]); setFeaturedSpiel(null); setLoading(false); return; }
+    if (ms.length === 0) { setMemberStats([]); setFeaturedSpiel(null); return; }
 
-    const stats = await Promise.all(ms.map(async (m) => {
-      const [vLogs, spLogs, stLogs]: [VerspätungLog[], SpielLog[], StrafLog[]] = await Promise.all([
-        loadVerspätungLogs(m.id), loadSpielLogs(m.id), loadStrafLogs(m.id),
-      ]);
+    // Drei Sammelabfragen statt drei pro Mitglied — bei 25 Mitgliedern
+    // waren das vorher 75 Roundtrips bei jedem Öffnen des Screens.
+    const memberIds = ms.map((m) => m.id);
+    const [alleVLogs, alleSpLogs, alleStLogs]: [VerspätungLog[], SpielLog[], StrafLog[]] = await Promise.all([
+      loadAllVerspätungLogs(memberIds), loadAllSpielLogs(memberIds), loadAllStrafLogs(memberIds),
+    ]);
+    const stats = ms.map((m) => {
+      const vLogs = alleVLogs.filter((l) => l.memberId === m.id);
+      const spLogs = alleSpLogs.filter((l) => l.memberId === m.id);
+      const stLogs = alleStLogs.filter((l) => l.memberId === m.id);
       const { count: anwesenheitCount, pct } = anwesenheitsQuote(alle, m.id, m.mitgliedSeit);
       const anwesenheitPct = pct ?? 0;
       return {
@@ -241,7 +258,7 @@ export default function HomeScreen() {
         strafGesamt: stLogs.reduce((s, l) => s + l.betrag, 0),
         strafOffen: stLogs.filter((l) => !l.beglichen).reduce((s, l) => s + l.betrag, 0),
       };
-    }));
+    });
     setMemberStats(stats);
 
     // Wählt bei jedem Öffnen zufällig eine (Spiel, Ereignistyp)-Kombination mit Einträgen aus
@@ -249,7 +266,12 @@ export default function HomeScreen() {
       .filter(({ spiel, ereignisTyp }) => stats.some((s) => s.spielLogs.some((l) => l.spielId === spiel.id && l.ereignisTypId === ereignisTyp.id)));
     setFeaturedSpiel(combos.length > 0 ? combos[Math.floor(Math.random() * combos.length)] : null);
 
-    setLoading(false);
+    const statsDaten: StatsDaten = {
+      members: ms, termine: alle,
+      verspätungLogs: alleVLogs, spielLogs: alleSpLogs, strafLogs: alleStLogs,
+      spiele: spieleMitTypen,
+    };
+    setSiegerTitel(fuehrendeTitel(statsDaten, aktuellesJahr()));
   }
 
   // ── Derived ───────────────────────────────────────────────────────────────
@@ -286,8 +308,13 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
-      {loading ? <LoadingSpinner /> : (
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      {loading ? <LoadingSpinner /> : error ? <ErrorState message={error} onRetry={retry} /> : (
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.blue} />}
+      >
+        <OfflineBanner />
 
         {/* ── Header ── */}
         <View style={styles.header}>
@@ -511,7 +538,7 @@ export default function HomeScreen() {
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.bubbleRow}>
               {members.map((m) => (
-                <MemberBubble key={m.id} member={m} isActive={m.id === activeMemberId} />
+                <MemberBubble key={m.id} member={m} isActive={m.id === activeMemberId} titel={siegerTitel.get(m.id) ?? []} />
               ))}
               <TouchableOpacity style={styles.bubbleWrap} onPress={() => router.push("/member/new")} activeOpacity={0.8}>
                 <View style={styles.bubbleAdd}>
@@ -731,6 +758,7 @@ const styles = StyleSheet.create({
     width: 12, height: 12, borderRadius: 6,
     backgroundColor: COLORS.blue, borderWidth: 2, borderColor: COLORS.card,
   },
+  bubbleNameRow: { flexDirection: "row", alignItems: "center", gap: 3, maxWidth: 74 },
   bubbleName: { fontSize: 11, color: COLORS.textMuted, textAlign: "center", fontWeight: "500" },
   bubbleAdd: {
     width: 48, height: 48, borderRadius: 24,

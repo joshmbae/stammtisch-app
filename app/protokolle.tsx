@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
@@ -15,6 +16,9 @@ import { COLORS, SHADOWS } from "../constants/design";
 import { HamburgerButton } from "../components/HamburgerButton";
 import { BackButton } from "../components/BackButton";
 import LoadingSpinner from "../components/LoadingSpinner";
+import ErrorState from "../components/ErrorState";
+import OfflineBanner from "../components/OfflineBanner";
+import { useScreenLoad } from "../utils/useScreenLoad";
 
 type ProtokollMitTermin = Protokoll & {
   termin: StammtischTermin | null;
@@ -39,36 +43,36 @@ function formatUpdated(iso: string): string {
 
 export default function ProtokollListeScreen() {
   const [items, setItems] = useState<ProtokollMitTermin[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useFocusEffect(
-    useCallback(() => {
-      async function load() {
-        const [protokolle, termine] = await Promise.all([loadProtokolle(), loadTermine()]);
-        const terminMap = Object.fromEntries(termine.map((t) => [t.id, t]));
-        const merged: ProtokollMitTermin[] = protokolle
-          .map((p) => ({ ...p, termin: terminMap[p.terminId] ?? null }))
-          .sort((a, b) => {
-            // Chronologisch nach Termin-Datum (neuester zuerst), nicht nach letzter
-            // Bearbeitung — ein alt bearbeitetes Protokoll soll nicht nach oben springen.
-            const da = a.termin?.datum;
-            const db = b.termin?.datum;
-            if (!da && !db) return 0;
-            if (!da) return 1;
-            if (!db) return -1;
-            return db.localeCompare(da);
-          });
-        setItems(merged);
-        setLoading(false);
-      }
-      load();
-    }, [])
-  );
+  async function load() {
+    const [protokolle, termine] = await Promise.all([loadProtokolle(), loadTermine()]);
+    const terminMap = Object.fromEntries(termine.map((t) => [t.id, t]));
+    const merged: ProtokollMitTermin[] = protokolle
+      .map((p) => ({ ...p, termin: terminMap[p.terminId] ?? null }))
+      .sort((a, b) => {
+        // Chronologisch nach Termin-Datum (neuester zuerst), nicht nach letzter
+        // Bearbeitung — ein alt bearbeitetes Protokoll soll nicht nach oben springen.
+        const da = a.termin?.datum;
+        const db = b.termin?.datum;
+        if (!da && !db) return 0;
+        if (!da) return 1;
+        if (!db) return -1;
+        return db.localeCompare(da);
+      });
+    setItems(merged);
+  }
+
+  const { loading, refreshing, error, onRefresh, retry } = useScreenLoad(load, []);
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
-      {loading ? <LoadingSpinner /> : (
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      {loading ? <LoadingSpinner /> : error ? <ErrorState message={error} onRetry={retry} /> : (
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.blue} />}
+      >
+        <OfflineBanner />
 
         <View style={styles.header}>
           <BackButton />

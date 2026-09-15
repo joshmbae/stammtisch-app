@@ -11,6 +11,7 @@ import {
   Platform,
   KeyboardAvoidingView,
   Modal,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams, useFocusEffect } from "expo-router";
@@ -35,15 +36,15 @@ import {
 import {
   loadTermine,
   loadMembers,
-  loadVerspätungLogs,
+  loadAllVerspätungLogs,
   addVerspätungLog,
   deleteVerspätungLog,
   loadSpiele,
   loadEreignisTypen,
-  loadSpielLogs,
+  loadAllSpielLogs,
   addSpielLog,
   deleteSpielLog,
-  loadStrafLogs,
+  loadAllStrafLogs,
   loadStrafKategorien,
   addStrafLog,
   deleteStrafLog,
@@ -69,6 +70,9 @@ import { getInitial, displayName } from "../../utils/format";
 import { useSingleFlight } from "../../utils/useSingleFlight";
 import { toTimeString, parseTimeString } from "../../utils/date";
 import LoadingSpinner from "../../components/LoadingSpinner";
+import ErrorState from "../../components/ErrorState";
+import OfflineBanner from "../../components/OfflineBanner";
+import { useScreenLoad } from "../../utils/useScreenLoad";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -441,12 +445,10 @@ export default function TerminDetailScreen() {
   const [spielLogMap, setSpielLogMap] = useState<Record<string, SpielLog[]>>({});
   const [selectedSpielMemberId, setSelectedSpielMemberId] = useState<string | null>(null);
 
-  const [loading, setLoading] = useState(true);
+  const { loading, refreshing, error, onRefresh, retry } = useScreenLoad(load, [id]);
 
   useFocusEffect(
     useCallback(() => {
-      load();
-
       let hadDropped = false;
       const channel = subscribeToTerminChanges(
         id,
@@ -468,7 +470,7 @@ export default function TerminDetailScreen() {
             hadDropped = true;
           } else if (status === "SUBSCRIBED" && hadDropped) {
             hadDropped = false;
-            load();
+            load().catch(() => { /* nächster Pull-to-Refresh holt es nach */ });
           }
         }
       );
@@ -484,7 +486,7 @@ export default function TerminDetailScreen() {
     setMembers(ms);
     setVerordnung(v);
     setStrafKategorien(kats);
-    if (!t || ms.length === 0) { setLoading(false); return; }
+    if (!t || ms.length === 0) return;
 
     const proto = await loadProtokoll(t.id);
     setProtokoll(proto);
@@ -504,12 +506,19 @@ export default function TerminDetailScreen() {
     setAktivesSpiel(spiel);
     setAktiveEreignisTypen(ereignisTypen);
 
-    const memberData = await Promise.all(ms.map(async (m) => ({
+    // Drei Sammelabfragen statt drei pro Mitglied — vorher wurde außerdem die
+    // komplette Historie jedes Mitglieds geladen, nur um sie auf diesen einen
+    // Termin herunterzufiltern.
+    const memberIds = ms.map((m) => m.id);
+    const [alleVLogs, alleSpLogs, alleStLogs] = await Promise.all([
+      loadAllVerspätungLogs(memberIds), loadAllSpielLogs(memberIds), loadAllStrafLogs(memberIds),
+    ]);
+    const memberData = ms.map((m) => ({
       memberId: m.id,
-      verspätungen: (await loadVerspätungLogs(m.id)).filter((l) => l.terminId === t.id),
-      spielLogs: (await loadSpielLogs(m.id)).filter((l) => l.terminId === t.id && (!spiel || l.spielId === spiel.id)),
-      strafLogs: (await loadStrafLogs(m.id)).filter((l) => l.terminId === t.id),
-    })));
+      verspätungen: alleVLogs.filter((l) => l.memberId === m.id && l.terminId === t.id),
+      spielLogs: alleSpLogs.filter((l) => l.memberId === m.id && l.terminId === t.id && (!spiel || l.spielId === spiel.id)),
+      strafLogs: alleStLogs.filter((l) => l.memberId === m.id && l.terminId === t.id),
+    }));
 
     const vMap: Record<string, VerspätungLog[]> = {};
     const spMap: Record<string, SpielLog[]> = {};
@@ -523,7 +532,6 @@ export default function TerminDetailScreen() {
     setSpielLogMap(spMap);
     setStrafMap(stMap);
     setStrafMemberId((prev) => prev ?? ms[0]?.id ?? null);
-    setLoading(false);
   }
 
   // ── Anwesenheit & Verspätung handlers ──────────────────────────────────────
@@ -876,6 +884,7 @@ export default function TerminDetailScreen() {
   // ── Loading / Not found ─────────────────────────────────────────────────────
 
   if (loading) return <LoadingSpinner />;
+  if (error) return <ErrorState message={error} onRetry={retry} />;
 
   if (!termin) {
     return (
@@ -932,7 +941,13 @@ export default function TerminDetailScreen() {
         keyboardVerticalOffset={0}
       >
       <SafeAreaView style={styles.safe} edges={["top"]}>
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.blue} />}
+        >
+          <OfflineBanner />
 
           {/* Back */}
           <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>

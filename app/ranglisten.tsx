@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -6,10 +6,10 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router, useFocusEffect } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import {
   MemberProfile,
   StammtischVerordnung,
@@ -18,44 +18,49 @@ import {
   Spiel,
   SpielEreignisTyp,
   StrafLog,
+  StammtischTermin,
 } from "../types";
 import {
   loadMembers,
   loadVerordnung,
   loadTermine,
-  loadVerspätungLogs,
   loadSpiele,
-  loadEreignisTypen,
-  loadSpielLogs,
-  loadStrafLogs,
+  loadAllEreignisTypen,
+  loadAllVerspätungLogs,
+  loadAllSpielLogs,
+  loadAllStrafLogs,
 } from "../utils/storage";
 import { COLORS, SHADOWS } from "../constants/design";
 import { HamburgerButton } from "../components/HamburgerButton";
 import { BackButton } from "../components/BackButton";
 import LoadingSpinner from "../components/LoadingSpinner";
-import { formatEuro, getInitial, displayName, anwesenheitsQuote } from "../utils/format";
+import ErrorState from "../components/ErrorState";
+import OfflineBanner from "../components/OfflineBanner";
+import { useScreenLoad } from "../utils/useScreenLoad";
+import { getInitial, displayName } from "../utils/format";
+import {
+  ALLZEIT,
+  JahrFilter,
+  RangEintrag,
+  Rangliste,
+  StatsDaten,
+  aktuellesJahr,
+  computeRanglisten,
+  verfuegbareJahre,
+} from "../utils/stats";
 
-interface MemberStats {
-  member: MemberProfile;
-  anwesenheitCount: number;
-  anwesenheitPct: number | null;
-  verspätungMin: number;
-  spielLogs: SpielLog[];
-  strafGesamt: number;
-  strafOffen: number;
-}
-
-function RangRow({ rank, member, value, valueLabel, sub }: {
-  rank: number; member: MemberProfile; value: string; valueLabel: string; sub?: string;
-}) {
+function RangRow({ eintrag }: { eintrag: RangEintrag }) {
   const medals = ["🥇", "🥈", "🥉"];
+  const { member, platz } = eintrag;
   return (
     <TouchableOpacity
       style={styles.rangRow}
       onPress={() => router.push(`/member/${member.id}`)}
       activeOpacity={0.85}
+      accessibilityRole="button"
+      accessibilityLabel={`Platz ${platz}: ${displayName(member)}, ${eintrag.anzeige} ${eintrag.label}`}
     >
-      <Text style={styles.rangMedal}>{medals[rank] ?? `${rank + 1}.`}</Text>
+      <Text style={styles.rangMedal}>{medals[platz - 1] ?? `${platz}.`}</Text>
       {member.photoUri ? (
         <Image source={{ uri: member.photoUri }} style={styles.rangAvatar} />
       ) : (
@@ -65,145 +70,130 @@ function RangRow({ rank, member, value, valueLabel, sub }: {
       )}
       <View style={styles.rangInfo}>
         <Text style={styles.rangName}>{displayName(member)}</Text>
-        {sub ? <Text style={styles.rangSub}>{sub}</Text> : null}
+        {eintrag.sub ? <Text style={styles.rangSub}>{eintrag.sub}</Text> : null}
       </View>
       <View style={styles.rangValueWrap}>
-        <Text style={styles.rangValue}>{value}</Text>
-        <Text style={styles.rangValueLabel}>{valueLabel}</Text>
+        <Text style={styles.rangValue}>{eintrag.anzeige}</Text>
+        <Text style={styles.rangValueLabel}>{eintrag.label}</Text>
       </View>
     </TouchableOpacity>
   );
 }
 
-interface SpielMitTypen {
-  spiel: Spiel;
-  ereignisTypen: SpielEreignisTyp[];
-}
-
 export default function RanglistenScreen() {
-  const [memberStats, setMemberStats] = useState<MemberStats[]>([]);
-  const [spiele, setSpiele] = useState<SpielMitTypen[]>([]);
+  const [members, setMembers] = useState<MemberProfile[]>([]);
+  const [termine, setTermine] = useState<StammtischTermin[]>([]);
+  const [verspätungLogs, setVerspätungLogs] = useState<VerspätungLog[]>([]);
+  const [spielLogs, setSpielLogs] = useState<SpielLog[]>([]);
+  const [strafLogs, setStrafLogs] = useState<StrafLog[]>([]);
+  const [spiele, setSpiele] = useState<{ spiel: Spiel; ereignisTypen: SpielEreignisTyp[] }[]>([]);
   const [verordnung, setVerordnung] = useState<StammtischVerordnung | null>(null);
-  const [terminCount, setTerminCount] = useState(0);
-  const [loading, setLoading] = useState(true);
-
-  useFocusEffect(useCallback(() => { load(); }, []));
+  // Standardmäßig das laufende Jahr — die Gesamtwertung liegt eine Chip-Breite daneben.
+  const [jahr, setJahr] = useState<JahrFilter>(aktuellesJahr());
 
   async function load() {
-    const [ms, v, alle, alleSpiele] = await Promise.all([loadMembers(), loadVerordnung(), loadTermine(), loadSpiele()]);
+    const [ms, v, ts, alleSpiele] = await Promise.all([
+      loadMembers(), loadVerordnung(), loadTermine(), loadSpiele(),
+    ]);
+    setMembers(ms);
     setVerordnung(v);
-    setTerminCount(alle.length);
+    setTermine(ts);
 
-    const spieleMitTypen = await Promise.all(
-      alleSpiele.map(async (spiel) => ({ spiel, ereignisTypen: await loadEreignisTypen(spiel.id) }))
-    );
-    setSpiele(spieleMitTypen);
+    const alleTypen = await loadAllEreignisTypen(alleSpiele.map((s) => s.id));
+    setSpiele(alleSpiele.map((spiel) => ({
+      spiel,
+      ereignisTypen: alleTypen.filter((et) => et.spielId === spiel.id),
+    })));
 
-    if (ms.length === 0) { setMemberStats([]); setLoading(false); return; }
-
-    const stats = await Promise.all(ms.map(async (m) => {
-      const [vLogs, spLogs, stLogs]: [VerspätungLog[], SpielLog[], StrafLog[]] = await Promise.all([
-        loadVerspätungLogs(m.id), loadSpielLogs(m.id), loadStrafLogs(m.id),
-      ]);
-      const { count: anwesenheitCount, pct: anwesenheitPct } = anwesenheitsQuote(alle, m.id, m.mitgliedSeit);
-      return {
-        member: m, anwesenheitCount, anwesenheitPct,
-        verspätungMin: vLogs.reduce((s, l) => s + l.minutenVerspätet, 0),
-        spielLogs: spLogs,
-        strafGesamt: stLogs.reduce((s, l) => s + l.betrag, 0),
-        strafOffen: stLogs.filter((l) => !l.beglichen).reduce((s, l) => s + l.betrag, 0),
-      };
-    }));
-    setMemberStats(stats);
-    setLoading(false);
+    const memberIds = ms.map((m) => m.id);
+    const [vLogs, spLogs, stLogs] = await Promise.all([
+      loadAllVerspätungLogs(memberIds), loadAllSpielLogs(memberIds), loadAllStrafLogs(memberIds),
+    ]);
+    setVerspätungLogs(vLogs);
+    setSpielLogs(spLogs);
+    setStrafLogs(stLogs);
   }
 
-  const teilnahmeRang  = [...memberStats].sort((a, b) => b.anwesenheitCount - a.anwesenheitCount);
-  const verspätungRang = [...memberStats].filter(s => s.verspätungMin > 0).sort((a, b) => b.verspätungMin - a.verspätungMin);
-  const strafRang      = [...memberStats].filter(s => s.strafGesamt > 0).sort((a, b) => b.strafGesamt - a.strafGesamt);
+  const { loading, refreshing, error, onRefresh, retry } = useScreenLoad(load, []);
 
-  const spielRanglisten = spiele.flatMap(({ spiel, ereignisTypen }) =>
-    ereignisTypen.map((et) => ({
-      spiel, ereignisTyp: et,
-      rang: [...memberStats]
-        .map((s) => ({ member: s.member, count: s.spielLogs.filter((l) => l.spielId === spiel.id && l.ereignisTypId === et.id).length }))
-        .filter((s) => s.count > 0)
-        .sort((a, b) => b.count - a.count),
-    }))
-  ).filter((r) => r.rang.length > 0);
+  const daten: StatsDaten = { members, termine, verspätungLogs, spielLogs, strafLogs, spiele };
+  const jahre = verfuegbareJahre(daten);
+  const listen: Rangliste[] = computeRanglisten(daten, jahr);
+  const jahrLabel = jahr === ALLZEIT ? "Allzeit" : jahr;
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
-      {loading ? <LoadingSpinner /> : (
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      {loading ? <LoadingSpinner /> : error ? <ErrorState message={error} onRetry={retry} /> : (
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.blue} />}
+      >
+        <OfflineBanner />
 
         <View style={styles.header}>
           <BackButton />
           <HamburgerButton />
           <View style={styles.headerTexts}>
             <Text style={styles.headerTitle}>Ranglisten</Text>
-            <Text style={styles.headerSub}>Spiele, Verspätungen & Strafen</Text>
+            <Text style={styles.headerSub}>
+              {jahr === ALLZEIT ? "Gesamtwertung über alle Jahre" : `Wertung ${jahr}`}
+            </Text>
           </View>
         </View>
 
-        {memberStats.length === 0 ? (
+        {/* Jahresfilter */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.jahrRow}
+        >
+          {jahre.map((j) => (
+            <TouchableOpacity
+              key={j}
+              style={[styles.jahrChip, jahr === j && styles.jahrChipAktiv]}
+              onPress={() => setJahr(j)}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel={`Wertung ${j} anzeigen`}
+            >
+              <Text style={[styles.jahrChipText, jahr === j && styles.jahrChipTextAktiv]}>{j}</Text>
+            </TouchableOpacity>
+          ))}
+          <TouchableOpacity
+            style={[styles.jahrChip, jahr === ALLZEIT && styles.jahrChipAktiv]}
+            onPress={() => setJahr(ALLZEIT)}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="Gesamtwertung über alle Jahre anzeigen"
+          >
+            <Text style={[styles.jahrChipText, jahr === ALLZEIT && styles.jahrChipTextAktiv]}>Allzeit</Text>
+          </TouchableOpacity>
+        </ScrollView>
+
+        {members.length === 0 ? (
           <View style={styles.empty}>
             <Text style={styles.emptyIcon}>🏆</Text>
-            <Text style={styles.emptyText}>Noch keine Daten vorhanden.</Text>
+            <Text style={styles.emptyText}>Noch keine Mitglieder angelegt.</Text>
+          </View>
+        ) : listen.every((l) => l.eintraege.length === 0) ? (
+          <View style={styles.empty}>
+            <Text style={styles.emptyIcon}>📭</Text>
+            <Text style={styles.emptyText}>Für {jahrLabel} gibt's noch nichts zu werten.</Text>
           </View>
         ) : (
-          <>
-            {/* Teilnahme */}
-            <View style={styles.rangCard}>
-              <Text style={styles.rangCardTitle}>🏆 Teilnahme-Rangliste</Text>
-              <Text style={styles.rangCardSub}>{terminCount} Stammtische insgesamt</Text>
-              {teilnahmeRang.map((s, i) => (
-                <RangRow key={s.member.id} rank={i} member={s.member}
-                  value={`${s.anwesenheitCount}`} valueLabel="Abende"
-                  sub={s.anwesenheitPct !== null ? `${s.anwesenheitPct} % Anwesenheit` : undefined} />
+          listen.filter((l) => l.eintraege.length > 0).map((liste) => (
+            <View key={liste.key} style={styles.rangCard}>
+              <Text style={styles.rangCardTitle}>{liste.emoji} {liste.titel}</Text>
+              <Text style={styles.rangCardSub}>{liste.untertitel} · {jahrLabel}</Text>
+              {liste.eintraege.map((e) => (
+                <RangRow key={e.member.id} eintrag={e} />
               ))}
             </View>
-
-            {/* Spiele (generisch, pro Spiel + Ereignistyp) */}
-            {spielRanglisten.map(({ spiel, ereignisTyp, rang }) => (
-              <View key={ereignisTyp.id} style={styles.rangCard}>
-                <Text style={styles.rangCardTitle}>
-                  {spiel.emoji ?? "🎮"} {spiel.name} — {ereignisTyp.label}-Rangliste
-                </Text>
-                <Text style={styles.rangCardSub}>Wer hat am meisten „{ereignisTyp.label}"</Text>
-                {rang.map((s, i) => (
-                  <RangRow key={s.member.id} rank={i} member={s.member}
-                    value={`${s.count}`} valueLabel={ereignisTyp.label} />
-                ))}
-              </View>
-            ))}
-
-            {/* Verspätung */}
-            {verspätungRang.length > 0 && (
-              <View style={styles.rangCard}>
-                <Text style={styles.rangCardTitle}>⏱️ Verspätungs-Rangliste</Text>
-                <Text style={styles.rangCardSub}>Gesamte Verspätungsminuten</Text>
-                {verspätungRang.map((s, i) => (
-                  <RangRow key={s.member.id} rank={i} member={s.member}
-                    value={`${s.verspätungMin}`} valueLabel="Min." />
-                ))}
-              </View>
-            )}
-
-            {/* Strafen */}
-            {strafRang.length > 0 && (
-              <View style={styles.rangCard}>
-                <Text style={styles.rangCardTitle}>💰 Strafen-Rangliste</Text>
-                <Text style={styles.rangCardSub}>Gesamte Strafbeträge</Text>
-                {strafRang.map((s, i) => (
-                  <RangRow key={s.member.id} rank={i} member={s.member}
-                    value={`${formatEuro(s.strafGesamt)} €`} valueLabel="Gesamt"
-                    sub={s.strafOffen > 0 ? `⚠️ ${formatEuro(s.strafOffen)} € noch offen` : "✅ alles beglichen"} />
-                ))}
-              </View>
-            )}
-          </>
+          ))
         )}
+
+        {verordnung?.name ? <Text style={styles.footer}>{verordnung.name}</Text> : null}
 
       </ScrollView>
       )}
@@ -218,16 +208,25 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row", alignItems: "center", gap: 12,
     backgroundColor: COLORS.cardAlt, borderRadius: 20,
-    padding: 16, marginBottom: 16, ...SHADOWS.card,
+    padding: 16, marginBottom: 14, ...SHADOWS.card,
     borderWidth: 1, borderColor: COLORS.border,
   },
   headerTexts: { flex: 1 },
   headerTitle: { fontSize: 18, fontWeight: "800", color: COLORS.textDark },
   headerSub: { fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
 
-  empty: { alignItems: "center", paddingTop: 64, gap: 12 },
+  jahrRow: { gap: 8, paddingRight: 4, paddingBottom: 14 },
+  jahrChip: {
+    paddingVertical: 8, paddingHorizontal: 16, borderRadius: 999,
+    backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border,
+  },
+  jahrChipAktiv: { backgroundColor: COLORS.blue, borderColor: COLORS.blue },
+  jahrChipText: { fontSize: 13, fontWeight: "700", color: COLORS.textMuted },
+  jahrChipTextAktiv: { color: "#FFFFFF" },
+
+  empty: { alignItems: "center", paddingTop: 56, gap: 12 },
   emptyIcon: { fontSize: 48 },
-  emptyText: { fontSize: 15, color: COLORS.textMuted },
+  emptyText: { fontSize: 15, color: COLORS.textMuted, textAlign: "center" },
 
   rangCard: {
     backgroundColor: COLORS.card, borderRadius: 20, padding: 16, marginBottom: 14,
@@ -248,4 +247,6 @@ const styles = StyleSheet.create({
   rangValueWrap: { alignItems: "flex-end" },
   rangValue: { fontSize: 16, fontWeight: "800", color: COLORS.blue },
   rangValueLabel: { fontSize: 10, color: COLORS.textMuted },
+
+  footer: { textAlign: "center", fontSize: 11, color: COLORS.textLight, marginTop: 8 },
 });
