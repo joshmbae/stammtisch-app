@@ -26,7 +26,7 @@ const styles = StyleSheet.create({
   badge: {
     position: "absolute",
     right: -2,
-    bottom: -2,
+    top: -2,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: COLORS.card,
