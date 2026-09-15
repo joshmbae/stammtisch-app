@@ -132,7 +132,7 @@ function MemberBubble({ member, isActive, titel }: { member: MemberProfile; isAc
           )}
           {isActive && <View style={styles.bubbleActiveDot} />}
         </View>
-        <SiegerBadge titel={titel} size={16} />
+        <SiegerBadge titel={titel} size={14} />
       </View>
       <Text style={[styles.bubbleName, isActive && { color: COLORS.blue, fontWeight: "700" }]} numberOfLines={1}>
         {firstName}
@@ -162,7 +162,7 @@ function RangRow({ rank, member, value, valueLabel, sub, titel }: {
             <Text style={{ fontSize: 13, fontWeight: "700", color: "#FFF" }}>{getInitial(member.name)}</Text>
           </View>
         )}
-        <SiegerBadge titel={titel} size={13} />
+        <SiegerBadge titel={titel} size={12} />
       </View>
       <View style={styles.rangInfo}>
         <Text style={styles.rangName}>{displayName(member)}</Text>
@@ -758,7 +758,9 @@ const styles = StyleSheet.create({
   mitgliederHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
   mitgliederTitle: { fontSize: 14, fontWeight: "800", color: COLORS.textDark, letterSpacing: -0.2 },
   mitgliederLink: { fontSize: 13, color: COLORS.blue, fontWeight: "700" },
-  bubbleRow: { gap: 12, paddingHorizontal: 2 },
+  // paddingTop: das Badge ragt über den Avatar hinaus und wurde sonst
+  // am oberen Rand der horizontalen Liste abgeschnitten.
+  bubbleRow: { gap: 12, paddingHorizontal: 2, paddingTop: 8 },
   bubbleWrap: { alignItems: "center", gap: 5, width: 52 },
   bubble: { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center" },
   bubbleActive: { borderWidth: 2.5, borderColor: COLORS.blue },

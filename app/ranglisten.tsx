@@ -72,7 +72,7 @@ function RangRow({ eintrag, titel }: { eintrag: RangEintrag; titel: FuehrenderTi
             <Text style={{ fontSize: 13, fontWeight: "700", color: "#FFF" }}>{getInitial(member.name)}</Text>
           </View>
         )}
-        <SiegerBadge titel={titel} size={13} />
+        <SiegerBadge titel={titel} size={12} />
       </View>
       <View style={styles.rangInfo}>
         <Text style={styles.rangName}>{displayName(member)}</Text>
