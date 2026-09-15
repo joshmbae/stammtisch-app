@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -9,28 +9,31 @@ import { COLORS, SHADOWS } from "../constants/design";
 import { HamburgerButton } from "../components/HamburgerButton";
 import { BackButton } from "../components/BackButton";
 import LoadingSpinner from "../components/LoadingSpinner";
+import ErrorState from "../components/ErrorState";
+import OfflineBanner from "../components/OfflineBanner";
+import { useScreenLoad } from "../utils/useScreenLoad";
 
 export default function SpieleScreen() {
   const [spiele, setSpiele] = useState<Spiel[]>([]);
   const [verordnung, setVerordnung] = useState<StammtischVerordnung | null>(null);
-  const [loading, setLoading] = useState(true);
 
-  useFocusEffect(
-    useCallback(() => {
-      async function load() {
-        const [s, v] = await Promise.all([loadSpiele(), loadVerordnung()]);
-        setSpiele(s);
-        setVerordnung(v);
-        setLoading(false);
-      }
-      load();
-    }, [])
-  );
+  async function load() {
+    const [s, v] = await Promise.all([loadSpiele(), loadVerordnung()]);
+    setSpiele(s);
+    setVerordnung(v);
+  }
+
+  const { loading, refreshing, error, onRefresh, retry } = useScreenLoad(load, []);
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
-      {loading ? <LoadingSpinner /> : (
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      {loading ? <LoadingSpinner /> : error ? <ErrorState message={error} onRetry={retry} /> : (
+        <ScrollView
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.blue} />}
+        >
+          <OfflineBanner />
 
           <View style={styles.header}>
             <BackButton />

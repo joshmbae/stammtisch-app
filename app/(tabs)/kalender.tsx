@@ -10,6 +10,7 @@ import {
   Dimensions,
   Platform,
   KeyboardAvoidingView,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, router } from "expo-router";
@@ -29,6 +30,9 @@ import { displayName } from "../../utils/format";
 import { HamburgerButton } from "../../components/HamburgerButton";
 import { BackButton } from "../../components/BackButton";
 import LoadingSpinner from "../../components/LoadingSpinner";
+import ErrorState from "../../components/ErrorState";
+import OfflineBanner from "../../components/OfflineBanner";
+import { useScreenLoad } from "../../utils/useScreenLoad";
 import InlineDateTimePicker from "../../components/InlineDateTimePicker";
 import { toLocalIsoDate, toTimeString, parseTimeString } from "../../utils/date";
 
@@ -579,7 +583,6 @@ export default function KalenderTab() {
   const [selectedDay, setSelectedDay] = useState<string | null>(todayIso());
   const [termine, setTermine] = useState<StammtischTermin[]>([]);
   const [showForm, setShowForm] = useState(false);
-  const [loading, setLoading] = useState(true);
 
   async function load() {
     const [ts, members] = await Promise.all([loadTermine(), loadMembers()]);
@@ -587,10 +590,9 @@ export default function KalenderTab() {
       .filter((m) => m.geburtsdatum)
       .map(memberBirthdayEvent);
     setTermine([...ts, ...birthdayEvents]);
-    setLoading(false);
   }
 
-  useFocusEffect(useCallback(() => { load(); }, []));
+  const { loading, refreshing, error, onRefresh, retry } = useScreenLoad(load, []);
 
   function prevMonth() {
     if (viewMonth === 0) { setViewYear((y) => y - 1); setViewMonth(11); }
@@ -638,8 +640,13 @@ export default function KalenderTab() {
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={0}>
     <SafeAreaView style={styles.safe} edges={["top"]}>
-      {loading ? <LoadingSpinner /> : (
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      {loading ? <LoadingSpinner /> : error ? <ErrorState message={error} onRetry={retry} /> : (
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.blue} />}
+      >
+        <OfflineBanner />
 
         {/* ── Header ── */}
         <View style={styles.header}>

@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react";
-import { View, Text, StyleSheet, ScrollView, Image } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Image, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "expo-router";
 import { ActivityLogEntry, MemberProfile, StrafKategorieDef } from "../types";
@@ -10,6 +10,9 @@ import { COLORS, SHADOWS } from "../constants/design";
 import { HamburgerButton } from "../components/HamburgerButton";
 import { BackButton } from "../components/BackButton";
 import LoadingSpinner from "../components/LoadingSpinner";
+import ErrorState from "../components/ErrorState";
+import OfflineBanner from "../components/OfflineBanner";
+import { useScreenLoad } from "../utils/useScreenLoad";
 import { supabase } from "../utils/supabase";
 import { subscribeToActivityFeed } from "../utils/realtime";
 import { useStammtisch } from "../contexts/StammtischContext";
@@ -50,20 +53,19 @@ export default function FeedScreen() {
   const [entries, setEntries] = useState<ActivityLogEntry[]>([]);
   const [members, setMembers] = useState<MemberProfile[]>([]);
   const [strafKategorien, setStrafKategorien] = useState<StrafKategorieDef[]>([]);
-  const [loading, setLoading] = useState(true);
   const { stammtischId } = useStammtisch();
+
+  async function load() {
+    const [feed, ms, kats] = await Promise.all([loadActivityFeed(200), loadMembers(), loadStrafKategorien()]);
+    setEntries(feed);
+    setMembers(ms);
+    setStrafKategorien(kats);
+  }
+
+  const { loading, refreshing, error, onRefresh, retry } = useScreenLoad(load, []);
 
   useFocusEffect(
     useCallback(() => {
-      async function load() {
-        const [feed, ms, kats] = await Promise.all([loadActivityFeed(200), loadMembers(), loadStrafKategorien()]);
-        setEntries(feed);
-        setMembers(ms);
-        setStrafKategorien(kats);
-        setLoading(false);
-      }
-      load();
-
       if (!stammtischId) return;
       const channel = subscribeToActivityFeed(stammtischId, (entry) => {
         setEntries((prev) => (prev.some((e) => e.id === entry.id) ? prev : [entry, ...prev]));
@@ -76,8 +78,13 @@ export default function FeedScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
-      {loading ? <LoadingSpinner /> : (
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      {loading ? <LoadingSpinner /> : error ? <ErrorState message={error} onRetry={retry} /> : (
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.blue} />}
+      >
+        <OfflineBanner />
         <View style={styles.header}>
           <BackButton />
           <HamburgerButton />

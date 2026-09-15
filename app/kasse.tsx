@@ -10,6 +10,7 @@ import {
   Image,
   Platform,
   KeyboardAvoidingView,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
@@ -31,6 +32,9 @@ import { COLORS, SHADOWS } from "../constants/design";
 import { HamburgerButton } from "../components/HamburgerButton";
 import { BackButton } from "../components/BackButton";
 import LoadingSpinner from "../components/LoadingSpinner";
+import ErrorState from "../components/ErrorState";
+import OfflineBanner from "../components/OfflineBanner";
+import { useScreenLoad } from "../utils/useScreenLoad";
 import { useSession } from "../contexts/SessionContext";
 import { formatEuro, getInitial } from "../utils/format";
 import { useSingleFlight } from "../utils/useSingleFlight";
@@ -123,7 +127,6 @@ export default function KasseScreen() {
   const [actorByRefId, setActorByRefId] = useState<Map<string, string>>(new Map());
   const [activeForm, setActiveForm] = useState<FormTyp>(null);
   const [showBeglichen, setShowBeglichen] = useState(false);
-  const [loading, setLoading] = useState(true);
 
   // Form state
   const [betrag, setBetrag] = useState("");
@@ -131,27 +134,23 @@ export default function KasseScreen() {
   const [bezahltVon, setBezahltVon] = useState<string | null>(null);
   const [teilnehmerIds, setTeilnehmerIds] = useState<string[]>([]);
 
-  useFocusEffect(
-    useCallback(() => {
-      async function load() {
-        const [k, ms, activity] = await Promise.all([loadKasse(), loadMembers(), loadActivityFeed(300)]);
-        setEintraege(k);
-        setMembers(ms);
-        const map = new Map<string, string>();
-        for (const a of activity) {
-          if (
-            (a.actionType === "kasse_einnahme_created" || a.actionType === "kasse_ausgabe_created") &&
-            a.refId && a.actorMemberId
-          ) {
-            map.set(a.refId, a.actorMemberId);
-          }
-        }
-        setActorByRefId(map);
-        setLoading(false);
+  async function load() {
+    const [k, ms, activity] = await Promise.all([loadKasse(), loadMembers(), loadActivityFeed(300)]);
+    setEintraege(k);
+    setMembers(ms);
+    const map = new Map<string, string>();
+    for (const a of activity) {
+      if (
+        (a.actionType === "kasse_einnahme_created" || a.actionType === "kasse_ausgabe_created") &&
+        a.refId && a.actorMemberId
+      ) {
+        map.set(a.refId, a.actorMemberId);
       }
-      load();
-    }, [])
-  );
+    }
+    setActorByRefId(map);
+  }
+
+  const { loading, refreshing, error, onRefresh, retry } = useScreenLoad(load, []);
 
   const kassenEintraege = eintraege.filter((e) => e.typ !== "abendkosten");
   const abendkostenEintraege = eintraege.filter((e) => e.typ === "abendkosten");
@@ -272,8 +271,14 @@ export default function KasseScreen() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={0}>
       <SafeAreaView style={styles.safe} edges={["top"]}>
-        {loading ? <LoadingSpinner /> : (
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        {loading ? <LoadingSpinner /> : error ? <ErrorState message={error} onRetry={retry} /> : (
+        <ScrollView
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.blue} />}
+        >
+          <OfflineBanner />
 
           {/* Header */}
           <View style={styles.header}>
