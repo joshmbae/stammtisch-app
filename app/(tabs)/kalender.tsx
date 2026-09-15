@@ -20,7 +20,7 @@ import { StammtischTermin, TerminArt, MemberProfile } from "../../types";
 import {
   loadTermine,
   loadMembers,
-  addTermin,
+  addTermine,
   deleteTermin,
   logActivity,
 } from "../../utils/storage";
@@ -333,6 +333,7 @@ function NeuerTerminForm({ initialDate, onSave, onCancel }: {
   const [wiederholen, setWiederholen] = useState(false);
   const [wiederholIntervall, setWiederholIntervall] = useState<WiederholIntervall>("woechentlich");
   const [wiederholAnzahl, setWiederholAnzahl] = useState("8");
+  const [saving, setSaving] = useState(false);
   const { activeMemberId } = useSession();
 
   const isStammtisch = art === "stammtisch";
@@ -358,9 +359,10 @@ function NeuerTerminForm({ initialDate, onSave, onCancel }: {
     }
     const anzahl = wiederholen ? Math.min(Math.max(parseInt(wiederholAnzahl, 10) || 1, 1), 52) : 1;
 
+    const entwuerfe: Parameters<typeof addTermine>[0] = [];
     let laufendesDatum = datum;
     for (let i = 0; i < anzahl; i++) {
-      const neuerTermin = await addTermin({
+      entwuerfe.push({
         art,
         titel: titel.trim() || undefined,
         datum: localIso(laufendesDatum),
@@ -370,15 +372,37 @@ function NeuerTerminForm({ initialDate, onSave, onCancel }: {
         ort: ort.trim() || undefined,
         notizen: notizen.trim() || undefined,
       });
+      laufendesDatum = naechsterTermin(laufendesDatum, wiederholIntervall);
+    }
+
+    setSaving(true);
+    try {
+      const angelegt = await addTermine(entwuerfe);
+      const erster = angelegt[0];
+      // Bewusst nur ein Aktivitäts-Eintrag für die ganze Serie: jeder Eintrag
+      // löst ein Push an alle anderen aus — bei 52 Wochen wären das 52
+      // Benachrichtigungen pro Mitglied gewesen.
       await logActivity({
         actorMemberId: activeMemberId ?? undefined,
         actionType: "termin_erstellt",
-        terminId: neuerTermin.id,
-        meta: { terminDatum: neuerTermin.datum, terminTitel: neuerTermin.titel, terminArt: neuerTermin.art },
+        terminId: erster.id,
+        meta: {
+          terminDatum: erster.datum,
+          terminTitel: erster.titel,
+          terminArt: erster.art,
+          anzahl: angelegt.length,
+          letztesDatum: angelegt[angelegt.length - 1].datum,
+        },
       });
-      laufendesDatum = naechsterTermin(laufendesDatum, wiederholIntervall);
+      onSave();
+    } catch (e) {
+      showAlert(
+        "Konnte nicht gespeichert werden",
+        e instanceof Error ? e.message : "Bitte prüf deine Verbindung und versuch es nochmal."
+      );
+    } finally {
+      setSaving(false);
     }
-    onSave();
   }
 
   return (
@@ -564,11 +588,14 @@ function NeuerTerminForm({ initialDate, onSave, onCancel }: {
       />
 
       <TouchableOpacity
-        style={[styles.saveBtn, { backgroundColor: ART_CONFIG[art].color }]}
+        style={[styles.saveBtn, { backgroundColor: ART_CONFIG[art].color }, saving && { opacity: 0.6 }]}
         onPress={speichern}
+        disabled={saving}
+        accessibilityRole="button"
+        accessibilityLabel="Eintrag anlegen"
       >
-        <Ionicons name="add" size={18} color="#FFFFFF" />
-        <Text style={styles.saveBtnText}>Eintrag anlegen</Text>
+        <Ionicons name={saving ? "hourglass-outline" : "add"} size={18} color="#FFFFFF" />
+        <Text style={styles.saveBtnText}>{saving ? "Wird angelegt …" : "Eintrag anlegen"}</Text>
       </TouchableOpacity>
     </View>
   );

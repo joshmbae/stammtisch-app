@@ -140,11 +140,24 @@ export function renderActivity(
         emoji: "❌",
         text: `${subjectName} hat für ${terminBezeichnung(meta)} abgesagt`,
       };
-    case "termin_erstellt":
+    case "termin_erstellt": {
+      // Serientermine erzeugen bewusst nur einen Eintrag für die ganze Serie
+      // (siehe speichern() im Kalender) — sonst gäbe es pro Termin ein Push.
+      const anzahl = Number(meta.anzahl ?? 1);
+      if (anzahl > 1) {
+        const bis = meta.letztesDatum
+          ? new Date(meta.letztesDatum + "T00:00:00").toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })
+          : null;
+        return {
+          emoji: "📅",
+          text: `${actorName} hat ${anzahl} Termine angelegt (${terminBezeichnung(meta)}${bis ? ` bis ${bis}` : ""})`,
+        };
+      }
       return {
         emoji: "📅",
         text: `${actorName} hat ${terminBezeichnung(meta)} angelegt`,
       };
+    }
     case "termin_verlegt": {
       const altDatum = meta.altDatum
         ? new Date(meta.altDatum + "T00:00:00").toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })
