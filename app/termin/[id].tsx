@@ -10,6 +10,7 @@ import {
   TextInput,
   Platform,
   KeyboardAvoidingView,
+  Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams, useFocusEffect } from "expo-router";
@@ -85,6 +86,14 @@ function duration(start: string, end?: string): string {
   const m = Math.floor((ms % 3600000) / 60000);
   if (h === 0) return `${m} Min.`;
   return `${h} Std. ${m} Min.`;
+}
+
+// Feste Farbrotation für Spiel-Ereignistypen (max. 4 pro Spiel, siehe reihenfolge 1-4) —
+// gibt Buttons und Verlaufszeilen desselben Ereignistyps dieselbe Farbe.
+const EREIGNIS_FARBEN = [COLORS.danger, COLORS.gold, COLORS.blue, COLORS.success];
+function ereignisFarbe(ereignisTypen: { id: string }[], ereignisTypId: string): string {
+  const index = ereignisTypen.findIndex((et) => et.id === ereignisTypId);
+  return EREIGNIS_FARBEN[index >= 0 ? index % EREIGNIS_FARBEN.length : 0];
 }
 
 // ─── Member Row (RSVP + Anwesenheit + Verspätung) ────────────────────────────
@@ -369,6 +378,7 @@ export default function TerminDetailScreen() {
   const [strafBetragOverride, setStrafBetragOverride] = useState("");
   const [strafNotiz, setStrafNotiz] = useState("");
   const [strafKategorie, setStrafKategorie] = useState<StrafKategorieDef | null>(null);
+  const [addStrafOpen, setAddStrafOpen] = useState(false);
 
   // Edit form
   const [showEditForm, setShowEditForm] = useState(false);
@@ -609,12 +619,22 @@ export default function TerminDetailScreen() {
 
   // ── Strafen handlers ────────────────────────────────────────────────────────
 
-  function openStrafForm(memberId: string) {
-    setStrafMemberId(memberId);
+  function openAddStraf() {
+    setStrafMemberId(null);
     setStrafKategorie(null);
     setStrafBetragOverride("");
     setStrafNotiz("");
-    setShowStrafForm(true);
+    setShowStrafForm(false);
+    setAddStrafOpen(true);
+  }
+
+  function closeAddStraf() {
+    setAddStrafOpen(false);
+    setStrafMemberId(null);
+    setStrafKategorie(null);
+    setStrafBetragOverride("");
+    setStrafNotiz("");
+    setShowStrafForm(false);
   }
 
   async function handleAddStraf() {
@@ -647,6 +667,7 @@ export default function TerminDetailScreen() {
     setStrafBetragOverride("");
     setStrafNotiz("");
     setShowStrafForm(false);
+    setAddStrafOpen(false);
   }
 
   async function handleToggleStrafBeglichen(memberId: string, logId: string, current: boolean) {
@@ -1074,100 +1095,12 @@ export default function TerminDetailScreen() {
                 )}
               </View>
 
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsScroll} contentContainerStyle={styles.chipsContent}>
-                {members.map((m) => {
-                  const isSelected = m.id === strafMemberId;
-                  return (
-                    <TouchableOpacity
-                      key={m.id}
-                      style={[styles.chip, isSelected && { backgroundColor: m.avatarColor, borderColor: m.avatarColor }]}
-                      onPress={() => { setStrafMemberId(m.id); setShowStrafForm(false); setStrafKategorie(null); }}
-                    >
-                      {m.photoUri ? (
-                        <Image source={{ uri: m.photoUri }} style={styles.chipAvatar} />
-                      ) : (
-                        <View style={[styles.chipAvatar, { backgroundColor: isSelected ? "rgba(255,255,255,0.35)" : m.avatarColor, alignItems: "center", justifyContent: "center" }]}>
-                          <Text style={{ fontSize: 11, fontWeight: "700", color: "#FFF" }}>{getInitial(m.name)}</Text>
-                        </View>
-                      )}
-                      <Text style={[styles.chipText, isSelected && { color: "#FFFFFF" }]}>{m.spitzname ?? m.name.split(" ")[0]}</Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
-
-              {strafMemberId && (
-                <>
-                  {waehlbareStrafKategorien.length === 0 ? (
-                    <Text style={styles.strafKeineKategorien}>Dieser Stammtisch hat keine Strafen.</Text>
-                  ) : (
-                  <View style={styles.strafGrid}>
-                    {waehlbareStrafKategorien.map((kat) => {
-                      const isSelected = strafKategorie?.id === kat.id;
-                      return (
-                        <TouchableOpacity
-                          key={kat.id}
-                          style={[styles.strafKatBtn, isSelected && styles.strafKatBtnActive]}
-                          onPress={() => {
-                            setStrafKategorie(isSelected ? null : kat);
-                            setStrafBetragOverride(kat.betrag > 0 ? String(kat.betrag).replace(".", ",") : "");
-                            setStrafNotiz("");
-                            setShowStrafForm(!isSelected);
-                          }}
-                          activeOpacity={0.8}
-                        >
-                          <Text style={styles.strafKatEmoji}>{kat.emoji}</Text>
-                          <Text style={[styles.strafKatLabel, isSelected && { color: "#FFFFFF" }]} numberOfLines={2}>{kat.label}</Text>
-                          {kat.betrag > 0 && (
-                            <Text style={[styles.strafKatBetrag, isSelected && { color: "rgba(255,255,255,0.85)" }]}>
-                              {kat.betrag.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €
-                            </Text>
-                          )}
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-                  )}
-
-                  {showStrafForm && strafKategorie && (
-                    <View style={styles.strafForm}>
-                      <Text style={styles.strafFormTitle}>
-                        {strafKategorie.emoji} {strafKategorie.label} — {strafSelMember?.name}
-                      </Text>
-                      {strafKategorie.beschreibung && (
-                        <Text style={styles.strafFormHint}>{strafKategorie.beschreibung}</Text>
-                      )}
-                      <View style={styles.strafFormRow}>
-                        <View style={{ flex: 1 }}>
-                          <Text style={styles.strafFormLabel}>Betrag (€)</Text>
-                          <TextInput
-                            style={styles.strafFormInput}
-                            value={strafBetragOverride}
-                            onChangeText={setStrafBetragOverride}
-                            placeholder={strafKategorie.betrag > 0 ? String(strafKategorie.betrag) : "0,00"}
-                            placeholderTextColor={COLORS.textLight}
-                            keyboardType="decimal-pad"
-                          />
-                        </View>
-                        <View style={{ flex: 2 }}>
-                          <Text style={styles.strafFormLabel}>Notiz (optional)</Text>
-                          <TextInput
-                            style={styles.strafFormInput}
-                            value={strafNotiz}
-                            onChangeText={setStrafNotiz}
-                            placeholder="z. B. 20 Min. zu spät, kein Grund"
-                            placeholderTextColor={COLORS.textLight}
-                          />
-                        </View>
-                      </View>
-                      <TouchableOpacity style={styles.strafSubmitBtn} onPress={() => guard(handleAddStraf)} activeOpacity={0.8}>
-                        <Ionicons name="checkmark" size={16} color="#FFFFFF" />
-                        <Text style={styles.strafSubmitText}>Strafe eintragen</Text>
-                      </TouchableOpacity>
-                    </View>
-                  )}
-                </>
-              )}
+              <TouchableOpacity style={styles.addStrafRow} onPress={openAddStraf} activeOpacity={0.8}>
+                <View style={styles.addStrafRowIcon}>
+                  <Ionicons name="add" size={22} color={COLORS.danger} />
+                </View>
+                <Text style={styles.addStrafRowText}>Strafe hinzufügen</Text>
+              </TouchableOpacity>
 
               {allStrafLogs.length > 0 && (
                 <>
@@ -1212,6 +1145,117 @@ export default function TerminDetailScreen() {
                   })}
                 </>
               )}
+
+              <Modal visible={addStrafOpen} transparent animationType="slide" onRequestClose={closeAddStraf}>
+                <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+                  <TouchableOpacity style={StyleSheet.absoluteFillObject} activeOpacity={1} onPress={closeAddStraf} />
+                  <View style={styles.modalSheet}>
+                    <View style={styles.modalHeader}>
+                      <Text style={styles.modalTitle}>💰 Neue Strafe</Text>
+                      <TouchableOpacity onPress={closeAddStraf} style={styles.modalCloseBtn}>
+                        <Ionicons name="close" size={20} color={COLORS.textMuted} />
+                      </TouchableOpacity>
+                    </View>
+
+                    <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+                      <View style={styles.chipsWrap}>
+                        {members.map((m) => {
+                          const isSelected = m.id === strafMemberId;
+                          return (
+                            <TouchableOpacity
+                              key={m.id}
+                              style={[styles.chip, isSelected && { backgroundColor: m.avatarColor, borderColor: m.avatarColor }]}
+                              onPress={() => { setStrafMemberId(m.id); setShowStrafForm(false); setStrafKategorie(null); }}
+                            >
+                              {m.photoUri ? (
+                                <Image source={{ uri: m.photoUri }} style={styles.chipAvatar} />
+                              ) : (
+                                <View style={[styles.chipAvatar, { backgroundColor: isSelected ? "rgba(255,255,255,0.35)" : m.avatarColor, alignItems: "center", justifyContent: "center" }]}>
+                                  <Text style={{ fontSize: 11, fontWeight: "700", color: "#FFF" }}>{getInitial(m.name)}</Text>
+                                </View>
+                              )}
+                              <Text style={[styles.chipText, isSelected && { color: "#FFFFFF" }]}>{m.spitzname ?? m.name.split(" ")[0]}</Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+
+                      {strafMemberId && (
+                        <>
+                          {waehlbareStrafKategorien.length === 0 ? (
+                            <Text style={styles.strafKeineKategorien}>Dieser Stammtisch hat keine Strafen.</Text>
+                          ) : (
+                          <View style={styles.strafGrid}>
+                            {waehlbareStrafKategorien.map((kat) => {
+                              const isSelected = strafKategorie?.id === kat.id;
+                              return (
+                                <TouchableOpacity
+                                  key={kat.id}
+                                  style={[styles.strafKatBtn, isSelected && styles.strafKatBtnActive]}
+                                  onPress={() => {
+                                    setStrafKategorie(isSelected ? null : kat);
+                                    setStrafBetragOverride(kat.betrag > 0 ? String(kat.betrag).replace(".", ",") : "");
+                                    setStrafNotiz("");
+                                    setShowStrafForm(!isSelected);
+                                  }}
+                                  activeOpacity={0.8}
+                                >
+                                  <Text style={styles.strafKatEmoji}>{kat.emoji}</Text>
+                                  <Text style={[styles.strafKatLabel, isSelected && { color: "#FFFFFF" }]} numberOfLines={2}>{kat.label}</Text>
+                                  {kat.betrag > 0 && (
+                                    <Text style={[styles.strafKatBetrag, isSelected && { color: "rgba(255,255,255,0.85)" }]}>
+                                      {kat.betrag.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €
+                                    </Text>
+                                  )}
+                                </TouchableOpacity>
+                              );
+                            })}
+                          </View>
+                          )}
+
+                          {showStrafForm && strafKategorie && (
+                            <View style={styles.strafForm}>
+                              <Text style={styles.strafFormTitle}>
+                                {strafKategorie.emoji} {strafKategorie.label} — {strafSelMember?.name}
+                              </Text>
+                              {strafKategorie.beschreibung && (
+                                <Text style={styles.strafFormHint}>{strafKategorie.beschreibung}</Text>
+                              )}
+                              <View style={styles.strafFormRow}>
+                                <View style={{ flex: 1 }}>
+                                  <Text style={styles.strafFormLabel}>Betrag (€)</Text>
+                                  <TextInput
+                                    style={styles.strafFormInput}
+                                    value={strafBetragOverride}
+                                    onChangeText={setStrafBetragOverride}
+                                    placeholder={strafKategorie.betrag > 0 ? String(strafKategorie.betrag) : "0,00"}
+                                    placeholderTextColor={COLORS.textLight}
+                                    keyboardType="decimal-pad"
+                                  />
+                                </View>
+                                <View style={{ flex: 2 }}>
+                                  <Text style={styles.strafFormLabel}>Notiz (optional)</Text>
+                                  <TextInput
+                                    style={styles.strafFormInput}
+                                    value={strafNotiz}
+                                    onChangeText={setStrafNotiz}
+                                    placeholder="z. B. 20 Min. zu spät, kein Grund"
+                                    placeholderTextColor={COLORS.textLight}
+                                  />
+                                </View>
+                              </View>
+                              <TouchableOpacity style={styles.strafSubmitBtn} onPress={() => guard(handleAddStraf)} activeOpacity={0.8}>
+                                <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                                <Text style={styles.strafSubmitText}>Strafe eintragen</Text>
+                              </TouchableOpacity>
+                            </View>
+                          )}
+                        </>
+                      )}
+                    </ScrollView>
+                  </View>
+                </KeyboardAvoidingView>
+              </Modal>
             </>
           )}
 
@@ -1225,64 +1269,61 @@ export default function TerminDetailScreen() {
                 )}
               </View>
 
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={styles.chipsScroll}
-                contentContainerStyle={styles.chipsContent}
-              >
-                {members.map((m) => {
-                  const isSelected = m.id === selectedSpielMemberId;
-                  return (
-                    <TouchableOpacity
-                      key={m.id}
-                      style={[styles.chip, isSelected && { backgroundColor: m.avatarColor, borderColor: m.avatarColor }]}
-                      onPress={() => setSelectedSpielMemberId(m.id)}
-                    >
-                      {m.photoUri ? (
-                        <Image source={{ uri: m.photoUri }} style={styles.chipAvatar} />
-                      ) : (
-                        <View style={[styles.chipAvatar, {
-                          backgroundColor: isSelected ? "rgba(255,255,255,0.35)" : m.avatarColor,
-                          alignItems: "center", justifyContent: "center",
-                        }]}>
-                          <Text style={{ fontSize: 11, fontWeight: "700", color: "#FFF" }}>
-                            {getInitial(m.name)}
-                          </Text>
-                        </View>
-                      )}
-                      <Text style={[styles.chipText, isSelected && { color: "#FFFFFF" }]}>
-                        {m.spitzname ?? m.name.split(" ")[0]}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsScrollFixed}>
+                <View style={styles.chipsGridTwoRows}>
+                  {members.map((m) => {
+                    const isSelected = m.id === selectedSpielMemberId;
+                    return (
+                      <TouchableOpacity
+                        key={m.id}
+                        style={[styles.chip, isSelected && { backgroundColor: m.avatarColor, borderColor: m.avatarColor }]}
+                        onPress={() => setSelectedSpielMemberId(m.id)}
+                      >
+                        {m.photoUri ? (
+                          <Image source={{ uri: m.photoUri }} style={styles.chipAvatar} />
+                        ) : (
+                          <View style={[styles.chipAvatar, {
+                            backgroundColor: isSelected ? "rgba(255,255,255,0.35)" : m.avatarColor,
+                            alignItems: "center", justifyContent: "center",
+                          }]}>
+                            <Text style={{ fontSize: 11, fontWeight: "700", color: "#FFF" }}>
+                              {getInitial(m.name)}
+                            </Text>
+                          </View>
+                        )}
+                        <Text style={[styles.chipText, isSelected && { color: "#FFFFFF" }]}>
+                          {m.spitzname ?? m.name.split(" ")[0]}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
               </ScrollView>
 
               {selMember && (
-                <>
-                  <View style={styles.spielStatsRow}>
-                    {aktiveEreignisTypen.map((et) => (
-                      <View key={et.id} style={styles.spielStatBox}>
-                        <Text style={styles.spielStatEmoji}>{et.emoji ?? "🎯"}</Text>
-                        <Text style={styles.spielStatValue}>
-                          {selSpielLogs.filter((l) => l.ereignisTypId === et.id).length}
-                        </Text>
-                        <Text style={styles.spielStatLabel} numberOfLines={1}>{et.label}</Text>
-                      </View>
-                    ))}
-                  </View>
-
-                  <View style={styles.spielActionRow}>
-                    {aktiveEreignisTypen.map((et) => (
-                      <TouchableOpacity key={et.id} style={styles.spielActionBtn} onPress={() => guard(() => handleLogSpielEreignis(et.id))}>
+                <View style={styles.spielCounterRow}>
+                  {aktiveEreignisTypen.map((et, index) => {
+                    const count = selSpielLogs.filter((l) => l.ereignisTypId === et.id).length;
+                    const farbe = EREIGNIS_FARBEN[index % EREIGNIS_FARBEN.length];
+                    return (
+                      <TouchableOpacity
+                        key={et.id}
+                        style={[styles.spielCounterBtn, { backgroundColor: farbe }]}
+                        onPress={() => guard(() => handleLogSpielEreignis(et.id))}
+                        activeOpacity={0.7}
+                      >
+                        <View style={styles.spielCounterPlusBadge}>
+                          <Text style={styles.spielCounterPlusText}>+1</Text>
+                        </View>
                         <Text style={styles.schockActionEmoji}>{et.emoji ?? "🎯"}</Text>
-                        <Text style={styles.spielActionLabel} numberOfLines={1}>{et.label}</Text>
-                        <View style={styles.plusBadge}><Text style={styles.plusText}>+1</Text></View>
+                        <Text style={[styles.spielActionLabel, { color: "#FFFFFF" }]} numberOfLines={1}>{et.label}</Text>
+                        <View style={styles.spielCounterBadge}>
+                          <Text style={[styles.spielCounterBadgeText, { color: farbe }]}>{count}</Text>
+                        </View>
                       </TouchableOpacity>
-                    ))}
-                  </View>
-                </>
+                    );
+                  })}
+                </View>
               )}
 
               {spielFeed.length > 0 && (
@@ -1291,6 +1332,7 @@ export default function TerminDetailScreen() {
                   {spielFeed.map((log) => {
                     const m = members.find((x) => x.id === log.memberId);
                     const et = aktiveEreignisTypen.find((e) => e.id === log.ereignisTypId);
+                    const farbe = ereignisFarbe(aktiveEreignisTypen, log.ereignisTypId);
                     return (
                       <Swipeable
                         key={log.id}
@@ -1303,7 +1345,7 @@ export default function TerminDetailScreen() {
                           </TouchableOpacity>
                         )}
                       >
-                        <View style={styles.schockFeedRow}>
+                        <View style={[styles.schockFeedRow, { borderLeftColor: farbe }]}>
                           <Text style={styles.schockFeedEmoji}>{et?.emoji ?? "🎯"}</Text>
                           <View style={{ flex: 1 }}>
                             <Text style={styles.schockFeedMember}>{m?.name ?? "Unbekannt"}</Text>
@@ -1522,8 +1564,6 @@ const styles = StyleSheet.create({
   verspätungLogMin: { fontSize: 13, fontWeight: "700", color: COLORS.danger, minWidth: 52 },
   verspätungLogGrund: { flex: 1, fontSize: 12, color: COLORS.textMuted, fontStyle: "italic" },
 
-  chipsScroll: { marginBottom: 12 },
-  chipsContent: { gap: 8, paddingRight: 4 },
   chip: {
     flexDirection: "row", alignItems: "center", gap: 7,
     paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20,
@@ -1532,29 +1572,30 @@ const styles = StyleSheet.create({
   chipAvatar: { width: 22, height: 22, borderRadius: 11 },
   chipText: { fontSize: 13, fontWeight: "600", color: COLORS.textDark },
 
-  spielStatsRow: { flexDirection: "row", gap: 10, marginBottom: 12, flexWrap: "wrap" },
-  spielStatBox: {
-    flex: 1, minWidth: 76, alignItems: "center", paddingVertical: 12,
-    backgroundColor: COLORS.card, borderRadius: 14,
-    borderWidth: 1.5, borderColor: COLORS.blue + "22", gap: 2, ...SHADOWS.light,
-  },
-  spielStatEmoji: { fontSize: 20 },
-  spielStatValue: { fontSize: 20, fontWeight: "800", color: COLORS.blue },
-  spielStatLabel: { fontSize: 10, color: COLORS.textMuted, fontWeight: "600" },
-
-  spielActionRow: { flexDirection: "row", gap: 10, marginBottom: 10, flexWrap: "wrap" },
-  spielActionBtn: {
+  spielCounterRow: { flexDirection: "row", gap: 10, marginBottom: 10, flexWrap: "wrap" },
+  spielCounterBtn: {
     flex: 1, minWidth: 100, alignItems: "center", paddingVertical: 14, borderRadius: 14,
-    backgroundColor: COLORS.blue + "10", borderWidth: 1.5, borderColor: COLORS.blue + "44", gap: 4,
+    gap: 6, position: "relative", ...SHADOWS.card,
   },
-  spielActionLabel: { fontSize: 13, fontWeight: "700", color: COLORS.blue },
+  spielCounterPlusBadge: {
+    position: "absolute", top: -8, right: -8,
+    minWidth: 26, height: 26, borderRadius: 13, paddingHorizontal: 4,
+    backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center",
+    borderWidth: 1.5, borderColor: COLORS.background, ...SHADOWS.light,
+  },
+  spielCounterPlusText: { fontSize: 11, fontWeight: "800", color: COLORS.textDark },
+  spielActionLabel: { fontSize: 13, fontWeight: "700" },
   schockActionEmoji: { fontSize: 26 },
-  plusBadge: { backgroundColor: COLORS.blue + "18", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 3 },
-  plusText: { fontSize: 12, fontWeight: "700", color: COLORS.blue },
+  spielCounterBadge: {
+    minWidth: 30, height: 30, borderRadius: 15, paddingHorizontal: 6,
+    backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center",
+  },
+  spielCounterBadgeText: { fontSize: 15, fontWeight: "800" },
 
   schockFeedRow: {
     flexDirection: "row", alignItems: "center", gap: 10,
-    backgroundColor: COLORS.blue + "0F", borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 6,
+    backgroundColor: COLORS.card, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 6,
+    borderWidth: 1, borderColor: COLORS.border, borderLeftWidth: 3,
   },
   schockFeedEmoji: { fontSize: 18 },
   schockFeedText: { fontSize: 11, color: COLORS.textMuted, marginTop: 1 },
@@ -1619,6 +1660,35 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.danger, borderRadius: 12, paddingVertical: 11,
   },
   strafSubmitText: { color: "#FFFFFF", fontWeight: "700", fontSize: 14 },
+
+  addStrafRow: {
+    flexDirection: "row", alignItems: "center", gap: 12,
+    backgroundColor: COLORS.card, borderRadius: 14, padding: 14, marginBottom: 10,
+    borderWidth: 1.5, borderColor: COLORS.danger + "33", borderStyle: "dashed",
+  },
+  addStrafRowIcon: {
+    width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.danger + "12",
+    alignItems: "center", justifyContent: "center",
+  },
+  addStrafRowText: { fontSize: 14, fontWeight: "700", color: COLORS.danger },
+  chipsWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 },
+  chipsScrollFixed: { marginBottom: 12 },
+  chipsGridTwoRows: {
+    flexDirection: "column", flexWrap: "wrap", height: 88, gap: 8, alignContent: "flex-start",
+  },
+  modalOverlay: { flex: 1, backgroundColor: "rgba(26,18,8,0.5)", justifyContent: "flex-end" },
+  modalSheet: {
+    backgroundColor: COLORS.background, borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    paddingHorizontal: 20, paddingTop: 16, paddingBottom: 24, maxHeight: "85%", ...SHADOWS.card,
+  },
+  modalHeader: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14,
+  },
+  modalTitle: { fontSize: 17, fontWeight: "800", color: COLORS.textDark },
+  modalCloseBtn: {
+    width: 30, height: 30, borderRadius: 15, backgroundColor: COLORS.cardAlt,
+    alignItems: "center", justifyContent: "center",
+  },
   strafFeedRow: {
     flexDirection: "row", alignItems: "center", gap: 10,
     backgroundColor: COLORS.card, borderRadius: 12, padding: 12, marginBottom: 6,

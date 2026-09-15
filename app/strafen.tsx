@@ -251,35 +251,37 @@ export default function StrafenScreen() {
           </View>
 
           {/* Filter nach Person */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={{ paddingRight: 8 }}>
-            <TouchableOpacity
-              style={[styles.memberChip, !filterMemberId && styles.memberChipActive]}
-              onPress={() => setFilterMemberId(null)}
-              activeOpacity={0.8}
-            >
-              <Text style={[styles.chipName, !filterMemberId && { color: "#FFFFFF" }]}>Alle</Text>
-            </TouchableOpacity>
-            {members.map((m) => (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
+            <View style={styles.filterGridTwoRows}>
               <TouchableOpacity
-                key={m.id}
-                style={[styles.memberChip, filterMemberId === m.id && { backgroundColor: m.avatarColor, borderColor: m.avatarColor }]}
-                onPress={() => setFilterMemberId(filterMemberId === m.id ? null : m.id)}
+                style={[styles.memberChip, !filterMemberId && styles.memberChipActive]}
+                onPress={() => setFilterMemberId(null)}
                 activeOpacity={0.8}
               >
-                {m.photoUri ? (
-                  <Image source={{ uri: m.photoUri }} style={styles.chipAvatar} />
-                ) : (
-                  <View style={[styles.chipAvatarFallback, { backgroundColor: filterMemberId === m.id ? "rgba(255,255,255,0.3)" : m.avatarColor + "33" }]}>
-                    <Text style={{ fontSize: 11, fontWeight: "700", color: filterMemberId === m.id ? "#FFF" : m.avatarColor }}>
-                      {getInitial(m.name)}
-                    </Text>
-                  </View>
-                )}
-                <Text style={[styles.chipName, filterMemberId === m.id && { color: "#FFFFFF" }]}>
-                  {m.name.split(" ")[0]}
-                </Text>
+                <Text style={[styles.chipName, !filterMemberId && { color: "#FFFFFF" }]}>Alle</Text>
               </TouchableOpacity>
-            ))}
+              {members.map((m) => (
+                <TouchableOpacity
+                  key={m.id}
+                  style={[styles.memberChip, filterMemberId === m.id && { backgroundColor: m.avatarColor, borderColor: m.avatarColor }]}
+                  onPress={() => setFilterMemberId(filterMemberId === m.id ? null : m.id)}
+                  activeOpacity={0.8}
+                >
+                  {m.photoUri ? (
+                    <Image source={{ uri: m.photoUri }} style={styles.chipAvatar} />
+                  ) : (
+                    <View style={[styles.chipAvatarFallback, { backgroundColor: filterMemberId === m.id ? "rgba(255,255,255,0.3)" : m.avatarColor + "33" }]}>
+                      <Text style={{ fontSize: 11, fontWeight: "700", color: filterMemberId === m.id ? "#FFF" : m.avatarColor }}>
+                        {getInitial(m.name)}
+                      </Text>
+                    </View>
+                  )}
+                  <Text style={[styles.chipName, filterMemberId === m.id && { color: "#FFFFFF" }]}>
+                    {m.name.split(" ")[0]}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </ScrollView>
 
           {/* Liste */}
@@ -407,10 +409,13 @@ const styles = StyleSheet.create({
   saldoValue: { fontSize: 34, fontWeight: "900", letterSpacing: -1 },
 
   filterScroll: { marginBottom: 16 },
+  filterGridTwoRows: {
+    flexDirection: "column", flexWrap: "wrap", height: 88, gap: 8, alignContent: "flex-start",
+  },
   memberChip: {
     flexDirection: "row", alignItems: "center", gap: 6,
     paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20,
-    backgroundColor: COLORS.background, borderWidth: 1.5, borderColor: COLORS.border, marginRight: 8,
+    backgroundColor: COLORS.background, borderWidth: 1.5, borderColor: COLORS.border,
   },
   memberChipActive: { backgroundColor: COLORS.blue, borderColor: COLORS.blue },
   chipAvatar: { width: 22, height: 22, borderRadius: 11 },
