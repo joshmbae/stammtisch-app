@@ -1,5 +1,6 @@
 import { supabase } from "./supabase";
 import { sendActivityPush } from "./push";
+import { withCache } from "./cache";
 import {
   MemberProfile,
   VerspätungLog,
@@ -172,13 +173,15 @@ function memberToRow(m: MemberProfile, stammtischId: string) {
 
 export async function loadMembers(): Promise<MemberProfile[]> {
   const stammtischId = await getStammtischId();
-  const { data, error } = await supabase
-    .from("members")
-    .select("*")
-    .eq("stammtisch_id", stammtischId)
-    .order("created_at", { ascending: true });
-  if (error) throw error;
-  return (data ?? []).map(rowToMember);
+  return withCache(`members_${stammtischId}`, async () => {
+    const { data, error } = await supabase
+      .from("members")
+      .select("*")
+      .eq("stammtisch_id", stammtischId)
+      .order("created_at", { ascending: true });
+    if (error) throw error;
+    return (data ?? []).map(rowToMember);
+  });
 }
 
 /** Ersetzt den kompletten Mitgliederbestand (Upsert + Löschen fehlender Einträge). */
@@ -270,13 +273,15 @@ const ROLLEN_OPTIONEN_DEFAULT = ["Mitglied", "Kassenwart", "Schriftführer"];
 
 export async function loadVerordnung(): Promise<StammtischVerordnung> {
   const stammtischId = await getStammtischId();
-  const { data, error } = await supabase
-    .from("verordnung")
-    .select("*")
-    .eq("stammtisch_id", stammtischId)
-    .single();
-  if (error || !data) return { name: "Mein Stammtisch", regeln: [], rollenOptionen: ROLLEN_OPTIONEN_DEFAULT };
-  return rowToVerordnung(data);
+  return withCache(`verordnung_${stammtischId}`, async () => {
+    const { data, error } = await supabase
+      .from("verordnung")
+      .select("*")
+      .eq("stammtisch_id", stammtischId)
+      .single();
+    if (error || !data) return { name: "Mein Stammtisch", regeln: [], rollenOptionen: ROLLEN_OPTIONEN_DEFAULT };
+    return rowToVerordnung(data);
+  });
 }
 
 export async function saveVerordnung(v: StammtischVerordnung): Promise<void> {
@@ -312,13 +317,34 @@ export function rowToVerspätungLog(row: any): VerspätungLog {
 }
 
 export async function loadVerspätungLogs(memberId: string): Promise<VerspätungLog[]> {
-  const { data, error } = await supabase
-    .from("verspaetung_logs")
-    .select("*")
-    .eq("member_id", memberId)
-    .order("datum", { ascending: false });
-  if (error) throw error;
-  return (data ?? []).map(rowToVerspätungLog);
+  return withCache(`verspaetung_${memberId}`, async () => {
+    const { data, error } = await supabase
+      .from("verspaetung_logs")
+      .select("*")
+      .eq("member_id", memberId)
+      .order("datum", { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map(rowToVerspätungLog);
+  });
+}
+
+/**
+ * Lädt die Verspätungen aller übergebenen Mitglieder in einer einzigen Abfrage.
+ * Gegenstück zu loadVerspätungLogs() für Screens, die ohnehin über alle
+ * Mitglieder aggregieren — spart dort eine Abfrage pro Mitglied.
+ */
+export async function loadAllVerspätungLogs(memberIds: string[]): Promise<VerspätungLog[]> {
+  if (memberIds.length === 0) return [];
+  const stammtischId = await getStammtischId();
+  return withCache(`verspaetung_all_${stammtischId}`, async () => {
+    const { data, error } = await supabase
+      .from("verspaetung_logs")
+      .select("*")
+      .in("member_id", memberIds)
+      .order("datum", { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map(rowToVerspätungLog);
+  });
 }
 
 export async function saveVerspätungLogs(memberId: string, logs: VerspätungLog[]): Promise<void> {
@@ -372,13 +398,15 @@ function rowToSpiel(row: any): Spiel {
 
 export async function loadSpiele(): Promise<Spiel[]> {
   const stammtischId = await getStammtischId();
-  const { data, error } = await supabase
-    .from("spiele")
-    .select("*")
-    .eq("stammtisch_id", stammtischId)
-    .order("created_at", { ascending: true });
-  if (error) throw error;
-  return (data ?? []).map(rowToSpiel);
+  return withCache(`spiele_${stammtischId}`, async () => {
+    const { data, error } = await supabase
+      .from("spiele")
+      .select("*")
+      .eq("stammtisch_id", stammtischId)
+      .order("created_at", { ascending: true });
+    if (error) throw error;
+    return (data ?? []).map(rowToSpiel);
+  });
 }
 
 export async function addSpiel(entry: Omit<Spiel, "id" | "createdAt">): Promise<Spiel> {
@@ -421,13 +449,30 @@ function rowToSpielEreignisTyp(row: any): SpielEreignisTyp {
 }
 
 export async function loadEreignisTypen(spielId: string): Promise<SpielEreignisTyp[]> {
-  const { data, error } = await supabase
-    .from("spiel_ereignis_typen")
-    .select("*")
-    .eq("spiel_id", spielId)
-    .order("reihenfolge", { ascending: true });
-  if (error) throw error;
-  return (data ?? []).map(rowToSpielEreignisTyp);
+  return withCache(`ereignistypen_${spielId}`, async () => {
+    const { data, error } = await supabase
+      .from("spiel_ereignis_typen")
+      .select("*")
+      .eq("spiel_id", spielId)
+      .order("reihenfolge", { ascending: true });
+    if (error) throw error;
+    return (data ?? []).map(rowToSpielEreignisTyp);
+  });
+}
+
+/** Ereignistypen aller übergebenen Spiele in einer Abfrage statt einer pro Spiel. */
+export async function loadAllEreignisTypen(spielIds: string[]): Promise<SpielEreignisTyp[]> {
+  if (spielIds.length === 0) return [];
+  const stammtischId = await getStammtischId();
+  return withCache(`ereignistypen_all_${stammtischId}`, async () => {
+    const { data, error } = await supabase
+      .from("spiel_ereignis_typen")
+      .select("*")
+      .in("spiel_id", spielIds)
+      .order("reihenfolge", { ascending: true });
+    if (error) throw error;
+    return (data ?? []).map(rowToSpielEreignisTyp);
+  });
 }
 
 /**
@@ -548,13 +593,30 @@ export function rowToSpielLog(row: any): SpielLog {
 }
 
 export async function loadSpielLogs(memberId: string): Promise<SpielLog[]> {
-  const { data, error } = await supabase
-    .from("spiel_logs")
-    .select("*")
-    .eq("member_id", memberId)
-    .order("logged_at", { ascending: false });
-  if (error) throw error;
-  return (data ?? []).map(rowToSpielLog);
+  return withCache(`spiellogs_${memberId}`, async () => {
+    const { data, error } = await supabase
+      .from("spiel_logs")
+      .select("*")
+      .eq("member_id", memberId)
+      .order("logged_at", { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map(rowToSpielLog);
+  });
+}
+
+/** Spiel-Einträge aller übergebenen Mitglieder in einer einzigen Abfrage. */
+export async function loadAllSpielLogs(memberIds: string[]): Promise<SpielLog[]> {
+  if (memberIds.length === 0) return [];
+  const stammtischId = await getStammtischId();
+  return withCache(`spiellogs_all_${stammtischId}`, async () => {
+    const { data, error } = await supabase
+      .from("spiel_logs")
+      .select("*")
+      .in("member_id", memberIds)
+      .order("logged_at", { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map(rowToSpielLog);
+  });
 }
 
 export async function addSpielLog(
@@ -624,13 +686,15 @@ export function rowToTermin(row: any): StammtischTermin {
 
 export async function loadTermine(): Promise<StammtischTermin[]> {
   const stammtischId = await getStammtischId();
-  const { data, error } = await supabase
-    .from("termine")
-    .select("*")
-    .eq("stammtisch_id", stammtischId)
-    .order("datum", { ascending: true });
-  if (error) throw error;
-  return (data ?? []).map(rowToTermin);
+  return withCache(`termine_${stammtischId}`, async () => {
+    const { data, error } = await supabase
+      .from("termine")
+      .select("*")
+      .eq("stammtisch_id", stammtischId)
+      .order("datum", { ascending: true });
+    if (error) throw error;
+    return (data ?? []).map(rowToTermin);
+  });
 }
 
 export async function saveTermine(termine: StammtischTermin[]): Promise<void> {
@@ -690,6 +754,46 @@ export async function addTermin(entry: Omit<StammtischTermin, "id" | "createdAt"
   return termin;
 }
 
+/**
+ * Legt mehrere Termine in einem einzigen Insert an (Serientermine). Vermeidet
+ * die frühere Schleife mit einem Roundtrip pro Termin — bei 52 Wochen Serie
+ * war das spürbar zäh und brach bei einem Fehler mitten im Bestand ab.
+ */
+export async function addTermine(
+  entries: Omit<StammtischTermin, "id" | "createdAt" | "aktiv">[]
+): Promise<StammtischTermin[]> {
+  if (entries.length === 0) return [];
+  const stammtischId = await getStammtischId();
+  const createdAt = new Date().toISOString();
+  const termine: StammtischTermin[] = entries.map((entry) => ({
+    ...entry,
+    id: nextId(),
+    aktiv: false,
+    createdAt,
+  }));
+  const rows = termine.map((termin) => ({
+    id: termin.id,
+    stammtisch_id: stammtischId,
+    art: termin.art,
+    titel: termin.titel ?? null,
+    datum: termin.datum,
+    datum_bis: termin.datumBis ?? null,
+    start_zeit: termin.startZeit ?? null,
+    end_zeit: termin.endZeit ?? null,
+    ort: termin.ort ?? null,
+    notizen: termin.notizen ?? null,
+    aktiv: false,
+    created_at: termin.createdAt,
+    anwesenheit: [],
+    absagen: [],
+    absage_gruende: {},
+    bild_url: null,
+  }));
+  const { error } = await supabase.from("termine").insert(rows);
+  if (error) throw error;
+  return termine;
+}
+
 function terminPatchToRow(partial: Partial<StammtischTermin>): Record<string, unknown> {
   const patch: Record<string, unknown> = {};
   if (partial.art !== undefined) patch.art = partial.art;
@@ -736,12 +840,14 @@ function rowToProtokoll(row: any): Protokoll {
 
 export async function loadProtokolle(): Promise<Protokoll[]> {
   const stammtischId = await getStammtischId();
-  const { data, error } = await supabase
-    .from("protokolle")
-    .select("*, termine!inner(stammtisch_id)")
-    .eq("termine.stammtisch_id", stammtischId);
-  if (error) throw error;
-  return (data ?? []).map(rowToProtokoll);
+  return withCache(`protokolle_${stammtischId}`, async () => {
+    const { data, error } = await supabase
+      .from("protokolle")
+      .select("*, termine!inner(stammtisch_id)")
+      .eq("termine.stammtisch_id", stammtischId);
+    if (error) throw error;
+    return (data ?? []).map(rowToProtokoll);
+  });
 }
 
 export async function loadProtokoll(terminId: string): Promise<Protokoll | null> {
@@ -805,13 +911,15 @@ export function rowToStrafLog(row: any): StrafLog {
 }
 
 export async function loadStrafLogs(memberId: string): Promise<StrafLog[]> {
-  const { data, error } = await supabase
-    .from("straf_logs")
-    .select("*")
-    .eq("member_id", memberId)
-    .order("logged_at", { ascending: false });
-  if (error) throw error;
-  return (data ?? []).map(rowToStrafLog);
+  return withCache(`straflogs_${memberId}`, async () => {
+    const { data, error } = await supabase
+      .from("straf_logs")
+      .select("*")
+      .eq("member_id", memberId)
+      .order("logged_at", { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map(rowToStrafLog);
+  });
 }
 
 export async function saveStrafLogs(memberId: string, logs: StrafLog[]): Promise<void> {
@@ -870,12 +978,15 @@ export async function deleteStrafLog(memberId: string, logId: string): Promise<v
 
 export async function loadAllStrafLogs(memberIds: string[]): Promise<StrafLog[]> {
   if (memberIds.length === 0) return [];
-  const { data, error } = await supabase
-    .from("straf_logs")
-    .select("*")
-    .in("member_id", memberIds);
-  if (error) throw error;
-  return (data ?? []).map(rowToStrafLog);
+  const stammtischId = await getStammtischId();
+  return withCache(`straflogs_all_${stammtischId}`, async () => {
+    const { data, error } = await supabase
+      .from("straf_logs")
+      .select("*")
+      .in("member_id", memberIds);
+    if (error) throw error;
+    return (data ?? []).map(rowToStrafLog);
+  });
 }
 
 // ─── Strafenkategorien (pro Stammtisch anpassbar) ──────────────────────────────
@@ -896,13 +1007,15 @@ function rowToStrafKategorieDef(row: any): StrafKategorieDef {
 
 export async function loadStrafKategorien(): Promise<StrafKategorieDef[]> {
   const stammtischId = await getStammtischId();
-  const { data, error } = await supabase
-    .from("straf_kategorien")
-    .select("*")
-    .eq("stammtisch_id", stammtischId)
-    .order("reihenfolge", { ascending: true });
-  if (error) throw error;
-  return (data ?? []).map(rowToStrafKategorieDef);
+  return withCache(`strafkategorien_${stammtischId}`, async () => {
+    const { data, error } = await supabase
+      .from("straf_kategorien")
+      .select("*")
+      .eq("stammtisch_id", stammtischId)
+      .order("reihenfolge", { ascending: true });
+    if (error) throw error;
+    return (data ?? []).map(rowToStrafKategorieDef);
+  });
 }
 
 export async function addStrafKategorie(
@@ -973,13 +1086,15 @@ function rowToKassenEintrag(row: any): KassenEintrag {
 
 export async function loadKasse(): Promise<KassenEintrag[]> {
   const stammtischId = await getStammtischId();
-  const { data, error } = await supabase
-    .from("kasse")
-    .select("*")
-    .eq("stammtisch_id", stammtischId)
-    .order("datum", { ascending: false });
-  if (error) throw error;
-  return (data ?? []).map(rowToKassenEintrag);
+  return withCache(`kasse_${stammtischId}`, async () => {
+    const { data, error } = await supabase
+      .from("kasse")
+      .select("*")
+      .eq("stammtisch_id", stammtischId)
+      .order("datum", { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map(rowToKassenEintrag);
+  });
 }
 
 export async function addKassenEintrag(
@@ -1142,12 +1257,14 @@ export async function logActivity(entry: {
 
 export async function loadActivityFeed(limitCount = 100): Promise<ActivityLogEntry[]> {
   const stammtischId = await getStammtischId();
-  const { data, error } = await supabase
-    .from("activity_log")
-    .select("*")
-    .eq("stammtisch_id", stammtischId)
-    .order("created_at", { ascending: false })
-    .limit(limitCount);
-  if (error) throw error;
-  return (data ?? []).map(rowToActivity);
+  return withCache(`activity_${stammtischId}_${limitCount}`, async () => {
+    const { data, error } = await supabase
+      .from("activity_log")
+      .select("*")
+      .eq("stammtisch_id", stammtischId)
+      .order("created_at", { ascending: false })
+      .limit(limitCount);
+    if (error) throw error;
+    return (data ?? []).map(rowToActivity);
+  });
 }

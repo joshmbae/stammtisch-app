@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ensureAuthSession } from "../utils/supabase";
+import { clearCache } from "../utils/cache";
 import { getLegacySingleStammtischId, setActiveStammtischId as cacheStammtischId, clearActiveStammtischId } from "../utils/storage";
 
 const STAMMTISCH_KEY = "st_active_stammtisch";
@@ -61,6 +62,9 @@ export function StammtischProvider({ children }: { children: React.ReactNode }) 
   }
 
   async function clearStammtisch() {
+    // Cache gehört zum verlassenen Stammtisch — sonst blitzen dessen Daten
+    // beim nächsten Beitritt kurz im neuen Tenant auf.
+    await clearCache();
     await AsyncStorage.removeItem(STAMMTISCH_KEY);
     await AsyncStorage.removeItem(STAMMTISCH_NAME_KEY);
     clearActiveStammtischId();
