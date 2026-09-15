@@ -218,6 +218,21 @@ export async function uploadAvatar(memberId: string, localUri: string): Promise<
   return data.publicUrl;
 }
 
+/** Lädt ein lokales Bild als Titelbild für einen Termin hoch und gibt die öffentliche URL zurück. */
+export async function uploadTerminBild(terminId: string, localUri: string): Promise<string> {
+  const response = await fetch(localUri);
+  const arrayBuffer = await response.arrayBuffer();
+  const ext = localUri.split(".").pop()?.split("?")[0] || "jpg";
+  const path = `termin-bild_${terminId}_${Date.now()}.${ext}`;
+  const { error } = await supabase.storage.from("avatars").upload(path, arrayBuffer, {
+    contentType: `image/${ext === "jpg" ? "jpeg" : ext}`,
+    upsert: true,
+  });
+  if (error) throw error;
+  const { data } = supabase.storage.from("avatars").getPublicUrl(path);
+  return data.publicUrl;
+}
+
 /** Lädt ein lokales Bild als Stammtisch-Logo hoch und gibt die öffentliche URL zurück. */
 export async function uploadStammtischLogo(stammtischId: string, localUri: string): Promise<string> {
   const response = await fetch(localUri);
@@ -602,6 +617,8 @@ export function rowToTermin(row: any): StammtischTermin {
     createdAt: row.created_at,
     anwesenheit: row.anwesenheit ?? [],
     absagen: row.absagen ?? [],
+    absageGruende: row.absage_gruende ?? {},
+    bildUrl: row.bild_url ?? undefined,
   };
 }
 
@@ -635,6 +652,8 @@ export async function saveTermine(termine: StammtischTermin[]): Promise<void> {
     created_at: t.createdAt,
     anwesenheit: t.anwesenheit ?? [],
     absagen: t.absagen ?? [],
+    absage_gruende: t.absageGruende ?? {},
+    bild_url: t.bildUrl ?? null,
   }));
   if (rows.length === 0) return;
   const { error } = await supabase.from("termine").upsert(rows);
@@ -664,6 +683,8 @@ export async function addTermin(entry: Omit<StammtischTermin, "id" | "createdAt"
     created_at: termin.createdAt,
     anwesenheit: [],
     absagen: [],
+    absage_gruende: {},
+    bild_url: null,
   });
   if (error) throw error;
   return termin;
@@ -684,6 +705,8 @@ function terminPatchToRow(partial: Partial<StammtischTermin>): Record<string, un
   if (partial.endedAt !== undefined) patch.ended_at = partial.endedAt ?? null;
   if (partial.anwesenheit !== undefined) patch.anwesenheit = partial.anwesenheit;
   if (partial.absagen !== undefined) patch.absagen = partial.absagen;
+  if (partial.absageGruende !== undefined) patch.absage_gruende = partial.absageGruende;
+  if (partial.bildUrl !== undefined) patch.bild_url = partial.bildUrl ?? null;
   return patch;
 }
 
@@ -1038,19 +1061,41 @@ export async function saveAgenda(terminId: string, text: string): Promise<void> 
 export async function setRsvpStatus(
   terminId: string,
   memberId: string,
-  status: "ja" | "nein" | null
+  status: "ja" | "nein" | null,
+  grund?: string
 ): Promise<void> {
   const { data, error } = await supabase
     .from("termine")
-    .select("anwesenheit, absagen")
+    .select("anwesenheit, absagen, absage_gruende")
     .eq("id", terminId)
     .single();
   if (error || !data) return;
   const anwesenheit: string[] = (data.anwesenheit ?? []).filter((id: string) => id !== memberId);
   const absagen: string[] = (data.absagen ?? []).filter((id: string) => id !== memberId);
+  const absageGruende: Record<string, string> = { ...(data.absage_gruende ?? {}) };
   if (status === "ja") anwesenheit.push(memberId);
-  if (status === "nein") absagen.push(memberId);
-  await updateTermin(terminId, { anwesenheit, absagen });
+  if (status === "nein") {
+    absagen.push(memberId);
+    if (grund?.trim()) absageGruende[memberId] = grund.trim();
+    else delete absageGruende[memberId];
+  } else {
+    delete absageGruende[memberId];
+  }
+  await updateTermin(terminId, { anwesenheit, absagen, absageGruende });
+}
+
+/** Setzt/ändert nur die Begründung einer bestehenden Absage, ohne den Status anzufassen. */
+export async function setAbsageGrund(terminId: string, memberId: string, grund: string): Promise<void> {
+  const { data, error } = await supabase
+    .from("termine")
+    .select("absage_gruende")
+    .eq("id", terminId)
+    .single();
+  if (error || !data) return;
+  const absageGruende: Record<string, string> = { ...(data.absage_gruende ?? {}) };
+  if (grund.trim()) absageGruende[memberId] = grund.trim();
+  else delete absageGruende[memberId];
+  await updateTermin(terminId, { absageGruende });
 }
 
 // ─── Activity-Feed ─────────────────────────────────────────────────────────────

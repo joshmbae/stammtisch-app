@@ -17,6 +17,7 @@ import { router, useLocalSearchParams, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import Swipeable from "react-native-gesture-handler/Swipeable";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import * as ImagePicker from "expo-image-picker";
 import InlineDateTimePicker from "../../components/InlineDateTimePicker";
 import { showAlert } from "../../utils/alert";
 import {
@@ -58,6 +59,7 @@ import {
   deleteTermin,
   logActivity,
   addKassenEintrag,
+  uploadTerminBild,
 } from "../../utils/storage";
 import { supabase } from "../../utils/supabase";
 import { subscribeToTerminChanges, dedupeInsert, patchById, removeByIdEverywhere } from "../../utils/realtime";
@@ -104,6 +106,7 @@ function MemberRow({
   verspätungen,
   verordnung,
   rsvpStatus,
+  absageGrund,
   isActiveUser,
   onToggle,
   onRsvp,
@@ -115,15 +118,19 @@ function MemberRow({
   verspätungen: VerspätungLog[];
   verordnung: StammtischVerordnung | null;
   rsvpStatus: "ja" | "nein" | null;
+  absageGrund?: string;
   isActiveUser: boolean;
   onToggle: () => void;
-  onRsvp: (status: "ja" | "nein" | null) => void;
+  onRsvp: (status: "ja" | "nein" | null, grund?: string) => void;
   onAddVerspätung: (minuten: number, grund?: string) => Promise<void>;
   onDeleteVerspätung: (logId: string) => void;
 }) {
   const [showInput, setShowInput] = useState(false);
   const [minuten, setMinuten] = useState("");
   const [grund, setGrund] = useState("");
+  const [showAbsageGrundInput, setShowAbsageGrundInput] = useState(false);
+  const [absageGrundText, setAbsageGrundText] = useState(absageGrund ?? "");
+  useEffect(() => { setAbsageGrundText(absageGrund ?? ""); }, [absageGrund]);
   const submitting = useRef(false);
 
   async function submit() {
@@ -195,6 +202,36 @@ function MemberRow({
             <Text style={[styles.selfRsvpBtnText, rsvpStatus === "nein" && { color: "#FFF" }]}>Ich kann nicht</Text>
           </TouchableOpacity>
         </View>
+
+        {rsvpStatus === "nein" && (
+          <View style={styles.absageGrundBox}>
+            {showAbsageGrundInput ? (
+              <>
+                <TextInput
+                  style={styles.grundInput}
+                  placeholder="Grund für die Absage (optional)"
+                  placeholderTextColor={COLORS.textLight}
+                  value={absageGrundText}
+                  onChangeText={setAbsageGrundText}
+                  autoFocus
+                />
+                <TouchableOpacity
+                  style={styles.eintragenBtn}
+                  onPress={() => { onRsvp("nein", absageGrundText); setShowAbsageGrundInput(false); }}
+                >
+                  <Text style={styles.eintragenBtnText}>Speichern</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <TouchableOpacity onPress={() => setShowAbsageGrundInput(true)} style={styles.absageGrundRow} activeOpacity={0.7}>
+                <Ionicons name="create-outline" size={14} color={COLORS.textMuted} />
+                <Text style={styles.absageGrundText} numberOfLines={2}>
+                  {absageGrund ? `„${absageGrund}"` : "Grund hinzufügen (optional)"}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
 
         {showInput && (
           <View style={styles.verspätungForm}>
@@ -273,6 +310,9 @@ function MemberRow({
           </Text>
           {gesamtMinuten > 0 && (
             <Text style={styles.memberVerspätungSmall}>⏱ {gesamtMinuten} Min.</Text>
+          )}
+          {rsvpStatus === "nein" && absageGrund && (
+            <Text style={styles.absageGrundTextSmall} numberOfLines={1}>„{absageGrund}"</Text>
           )}
         </View>
 
@@ -382,6 +422,7 @@ export default function TerminDetailScreen() {
 
   // Edit form
   const [showEditForm, setShowEditForm] = useState(false);
+  const [uploadingBild, setUploadingBild] = useState(false);
   const [editTitel, setEditTitel] = useState("");
   const [editDatum, setEditDatum] = useState(new Date());
   const [editStartZeit, setEditStartZeit] = useState<Date | null>(null);
@@ -730,6 +771,40 @@ export default function TerminDetailScreen() {
     ]);
   }
 
+  // ── Titelbild ────────────────────────────────────────────────────────────────
+
+  async function pickTerminBild() {
+    if (!termin) return;
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      showAlert("Kein Zugriff", "Bitte erlaube den Zugriff auf die Fotobibliothek in den Einstellungen.");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: "images",
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.8,
+    });
+    if (result.canceled) return;
+    setUploadingBild(true);
+    try {
+      const url = await uploadTerminBild(termin.id, result.assets[0].uri);
+      await updateTermin(termin.id, { bildUrl: url });
+      setTermin((prev) => (prev ? { ...prev, bildUrl: url } : prev));
+    } catch {
+      showAlert("Fehler", "Bild konnte nicht hochgeladen werden.");
+    } finally {
+      setUploadingBild(false);
+    }
+  }
+
+  function removeTerminBild() {
+    if (!termin) return;
+    updateTermin(termin.id, { bildUrl: undefined });
+    setTermin((prev) => (prev ? { ...prev, bildUrl: undefined } : prev));
+  }
+
   // ── Edit handler ────────────────────────────────────────────────────────────
 
   function openEditForm() {
@@ -781,9 +856,9 @@ export default function TerminDetailScreen() {
 
   // ── RSVP handler ────────────────────────────────────────────────────────────
 
-  async function handleRsvp(status: "ja" | "nein" | null) {
+  async function handleRsvp(status: "ja" | "nein" | null, grund?: string) {
     if (!termin || !activeMemberId) return;
-    await setRsvpStatus(termin.id, activeMemberId, status);
+    await setRsvpStatus(termin.id, activeMemberId, status, grund);
     const updated = await loadTermine();
     const fresh = updated.find((t) => t.id === termin.id) ?? null;
     if (fresh) setTermin(fresh);
@@ -866,7 +941,27 @@ export default function TerminDetailScreen() {
           </TouchableOpacity>
 
           {/* ── Header card ── */}
-          <View style={styles.headerCard}>
+          <View style={[styles.headerCard, { overflow: "hidden" }]}>
+            {termin.bildUrl ? (
+              <TouchableOpacity onPress={pickTerminBild} activeOpacity={0.85} style={styles.terminBildWrap} disabled={uploadingBild}>
+                <Image source={{ uri: termin.bildUrl }} style={styles.terminBild} resizeMode="cover" />
+                <TouchableOpacity onPress={removeTerminBild} style={styles.terminBildRemoveBtn}>
+                  <Ionicons name="close" size={14} color="#FFFFFF" />
+                </TouchableOpacity>
+                {uploadingBild && (
+                  <View style={styles.terminBildUploadingOverlay}>
+                    <Text style={styles.terminBildUploadingText}>Lädt hoch…</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity onPress={pickTerminBild} style={styles.terminBildAddRow} activeOpacity={0.8} disabled={uploadingBild}>
+                <Ionicons name="image-outline" size={16} color={COLORS.textMuted} />
+                <Text style={styles.terminBildAddText}>
+                  {uploadingBild ? "Lädt hoch…" : "Titelbild hinzufügen"}
+                </Text>
+              </TouchableOpacity>
+            )}
             <View style={styles.headerTop}>
               <View style={[styles.typIcon, { backgroundColor: isStammtisch ? COLORS.blue + "18" : "#6B3A8A18" }]}>
                 {isStammtisch && verordnung.logoUrl ? (
@@ -1072,9 +1167,10 @@ export default function TerminDetailScreen() {
                     verspätungen={verspätungMap[m.id] ?? []}
                     verordnung={verordnung}
                     rsvpStatus={mRsvp}
+                    absageGrund={termin.absageGruende?.[m.id]}
                     isActiveUser={m.id === activeMemberId}
                     onToggle={() => handleToggleAnwesenheit(m.id)}
-                    onRsvp={(status) => handleRsvp(status)}
+                    onRsvp={(status, grund) => handleRsvp(status, grund)}
                     onAddVerspätung={(min, g) => handleAddVerspätung(m.id, min, g)}
                     onDeleteVerspätung={(lid) => handleDeleteVerspätung(m.id, lid)}
                   />
@@ -1437,6 +1533,25 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.card, borderRadius: 20, padding: 16, marginBottom: 20,
     borderWidth: 1, borderColor: COLORS.border, ...SHADOWS.card,
   },
+  terminBildWrap: {
+    marginTop: -16, marginHorizontal: -16, marginBottom: 12, height: 140, backgroundColor: COLORS.cardAlt,
+  },
+  terminBild: { width: "100%", height: "100%" },
+  terminBildRemoveBtn: {
+    position: "absolute", top: 8, right: 8, width: 26, height: 26, borderRadius: 13,
+    backgroundColor: "rgba(26,18,8,0.55)", alignItems: "center", justifyContent: "center",
+  },
+  terminBildUploadingOverlay: {
+    ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(26,18,8,0.4)",
+    alignItems: "center", justifyContent: "center",
+  },
+  terminBildUploadingText: { color: "#FFFFFF", fontWeight: "700", fontSize: 13 },
+  terminBildAddRow: {
+    flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12,
+    paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12,
+    borderWidth: 1.5, borderColor: COLORS.border, borderStyle: "dashed",
+  },
+  terminBildAddText: { fontSize: 13, fontWeight: "600", color: COLORS.textMuted },
   headerTop: { flexDirection: "row", alignItems: "flex-start", gap: 14 },
   typIcon: { width: 52, height: 52, borderRadius: 26, alignItems: "center", justifyContent: "center", overflow: "hidden" },
   typLogo: { width: 36, height: 36 },
@@ -1563,6 +1678,11 @@ const styles = StyleSheet.create({
   },
   verspätungLogMin: { fontSize: 13, fontWeight: "700", color: COLORS.danger, minWidth: 52 },
   verspätungLogGrund: { flex: 1, fontSize: 12, color: COLORS.textMuted, fontStyle: "italic" },
+
+  absageGrundBox: { marginTop: 4 },
+  absageGrundRow: { flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 2 },
+  absageGrundText: { flex: 1, fontSize: 12, color: COLORS.textMuted, fontStyle: "italic" },
+  absageGrundTextSmall: { fontSize: 11, color: COLORS.textMuted, fontStyle: "italic", marginTop: 1 },
 
   chip: {
     flexDirection: "row", alignItems: "center", gap: 7,

@@ -37,6 +37,8 @@ export interface StammtischTermin {
   createdAt: string;
   anwesenheit?: string[];                   // memberId-Liste der Anwesenden (Zusagen)
   absagen?: string[];                        // memberId-Liste der Absagen
+  absageGruende?: Record<string, string>;   // memberId -> Begründung, nur für Mitglieder in absagen
+  bildUrl?: string;                          // optionales Titelbild für diesen Termin
 }
 
 // ─── Verspätungs-Logs ─────────────────────────────────────────────────────────

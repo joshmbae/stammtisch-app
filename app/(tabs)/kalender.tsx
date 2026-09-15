@@ -298,6 +298,13 @@ function EventCard({
   );
 }
 
+type WiederholIntervall = "woechentlich" | "alle2wochen" | "monatlich";
+const WIEDERHOL_OPTIONEN: { key: WiederholIntervall; label: string }[] = [
+  { key: "woechentlich", label: "Wöchentlich" },
+  { key: "alle2wochen", label: "Alle 2 Wochen" },
+  { key: "monatlich", label: "Monatlich" },
+];
+
 // ─── Neuer Termin – Formular ──────────────────────────────────────────────────
 
 function NeuerTerminForm({ initialDate, onSave, onCancel }: {
@@ -319,6 +326,9 @@ function NeuerTerminForm({ initialDate, onSave, onCancel }: {
   const [showEndZeit, setShowEndZeit] = useState(false);
   const [ort, setOrt] = useState("");
   const [notizen, setNotizen] = useState("");
+  const [wiederholen, setWiederholen] = useState(false);
+  const [wiederholIntervall, setWiederholIntervall] = useState<WiederholIntervall>("woechentlich");
+  const [wiederholAnzahl, setWiederholAnzahl] = useState("8");
   const { activeMemberId } = useSession();
 
   const isStammtisch = art === "stammtisch";
@@ -329,27 +339,41 @@ function NeuerTerminForm({ initialDate, onSave, onCancel }: {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   }
 
+  function naechsterTermin(d: Date, intervall: WiederholIntervall): Date {
+    const next = new Date(d);
+    if (intervall === "woechentlich") next.setDate(next.getDate() + 7);
+    else if (intervall === "alle2wochen") next.setDate(next.getDate() + 14);
+    else next.setMonth(next.getMonth() + 1);
+    return next;
+  }
+
   async function speichern() {
     if ((isVeranstaltung || isGeburtstag) && !titel.trim()) {
       showAlert("Bitte Titel angeben");
       return;
     }
-    const neuerTermin = await addTermin({
-      art,
-      titel: titel.trim() || undefined,
-      datum: localIso(datum),
-      datumBis: datumBis ? localIso(datumBis) : undefined,
-      startZeit: startZeit ? toTimeString(startZeit) : undefined,
-      endZeit: endZeit ? toTimeString(endZeit) : undefined,
-      ort: ort.trim() || undefined,
-      notizen: notizen.trim() || undefined,
-    });
-    await logActivity({
-      actorMemberId: activeMemberId ?? undefined,
-      actionType: "termin_erstellt",
-      terminId: neuerTermin.id,
-      meta: { terminDatum: neuerTermin.datum, terminTitel: neuerTermin.titel, terminArt: neuerTermin.art },
-    });
+    const anzahl = wiederholen ? Math.min(Math.max(parseInt(wiederholAnzahl, 10) || 1, 1), 52) : 1;
+
+    let laufendesDatum = datum;
+    for (let i = 0; i < anzahl; i++) {
+      const neuerTermin = await addTermin({
+        art,
+        titel: titel.trim() || undefined,
+        datum: localIso(laufendesDatum),
+        datumBis: datumBis ? localIso(datumBis) : undefined,
+        startZeit: startZeit ? toTimeString(startZeit) : undefined,
+        endZeit: endZeit ? toTimeString(endZeit) : undefined,
+        ort: ort.trim() || undefined,
+        notizen: notizen.trim() || undefined,
+      });
+      await logActivity({
+        actorMemberId: activeMemberId ?? undefined,
+        actionType: "termin_erstellt",
+        terminId: neuerTermin.id,
+        meta: { terminDatum: neuerTermin.datum, terminTitel: neuerTermin.titel, terminArt: neuerTermin.art },
+      });
+      laufendesDatum = naechsterTermin(laufendesDatum, wiederholIntervall);
+    }
     onSave();
   }
 
@@ -470,6 +494,47 @@ function NeuerTerminForm({ initialDate, onSave, onCancel }: {
           onChange={setEndZeit}
           onClose={() => setShowEndZeit(false)}
         />
+      )}
+
+      {/* Serientermine (nicht bei Geburtstag) */}
+      {!isGeburtstag && (
+        <>
+          <TouchableOpacity style={styles.wiederholToggle} onPress={() => setWiederholen((v) => !v)} activeOpacity={0.8}>
+            <Ionicons name={wiederholen ? "checkbox" : "square-outline"} size={20} color={wiederholen ? COLORS.blue : COLORS.textMuted} />
+            <Text style={styles.wiederholToggleText}>Wiederholen (Serientermin)</Text>
+          </TouchableOpacity>
+
+          {wiederholen && (
+            <View style={styles.wiederholOptionen}>
+              <View style={styles.artRow}>
+                {WIEDERHOL_OPTIONEN.map((opt) => {
+                  const active = wiederholIntervall === opt.key;
+                  return (
+                    <TouchableOpacity
+                      key={opt.key}
+                      style={[styles.artChip, active && { backgroundColor: COLORS.blue, borderColor: COLORS.blue }]}
+                      onPress={() => setWiederholIntervall(opt.key)}
+                    >
+                      <Text style={[styles.artChipText, active && { color: "#FFFFFF" }]}>{opt.label}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+              <View style={styles.wiederholAnzahlRow}>
+                <Text style={styles.wiederholAnzahlLabel}>Anzahl Termine (inkl. diesem)</Text>
+                <TextInput
+                  style={styles.wiederholAnzahlInput}
+                  value={wiederholAnzahl}
+                  onChangeText={(t) => setWiederholAnzahl(t.replace(/\D/g, ""))}
+                  keyboardType="number-pad"
+                  placeholder="8"
+                  placeholderTextColor={COLORS.textLight}
+                  maxLength={2}
+                />
+              </View>
+            </View>
+          )}
+        </>
       )}
 
       {/* Ort (nicht bei Geburtstag) */}
@@ -832,6 +897,15 @@ const styles = StyleSheet.create({
   },
   dateBtnText: { flex: 1, fontSize: 14, color: COLORS.textDark, fontWeight: "600" },
   zeitRow: { flexDirection: "row", gap: 10 },
+  wiederholToggle: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 },
+  wiederholToggleText: { fontSize: 14, fontWeight: "600", color: COLORS.textDark },
+  wiederholOptionen: { marginBottom: 4 },
+  wiederholAnzahlRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10, gap: 10 },
+  wiederholAnzahlLabel: { fontSize: 13, color: COLORS.textMuted, flex: 1 },
+  wiederholAnzahlInput: {
+    backgroundColor: COLORS.background, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border,
+    paddingHorizontal: 12, paddingVertical: 8, fontSize: 14, color: COLORS.textDark, width: 56, textAlign: "center",
+  },
   saveBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
     borderRadius: 12, paddingVertical: 12, marginTop: 4,

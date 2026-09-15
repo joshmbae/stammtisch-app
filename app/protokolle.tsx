@@ -48,7 +48,16 @@ export default function ProtokollListeScreen() {
         const terminMap = Object.fromEntries(termine.map((t) => [t.id, t]));
         const merged: ProtokollMitTermin[] = protokolle
           .map((p) => ({ ...p, termin: terminMap[p.terminId] ?? null }))
-          .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+          .sort((a, b) => {
+            // Chronologisch nach Termin-Datum (neuester zuerst), nicht nach letzter
+            // Bearbeitung — ein alt bearbeitetes Protokoll soll nicht nach oben springen.
+            const da = a.termin?.datum;
+            const db = b.termin?.datum;
+            if (!da && !db) return 0;
+            if (!da) return 1;
+            if (!db) return -1;
+            return db.localeCompare(da);
+          });
         setItems(merged);
         setLoading(false);
       }
