@@ -39,12 +39,20 @@ export interface RangEintrag {
   anzeige: string;
   label: string;
   sub?: string;
+  /**
+   * Platz ab 1. Gleiche Werte teilen sich den Platz, der nächste Platz wird
+   * entsprechend übersprungen (12, 12, 10 → 1., 1., 3.) — sonst bekäme bei
+   * Gleichstand einer Gold und der andere Silber.
+   */
+  platz: number;
 }
 
 export interface Rangliste {
   key: string;
   emoji: string;
   titel: string;
+  /** Kurzform für Badges und Titel-Chips, z. B. "Verspätung" */
+  kurz: string;
   untertitel: string;
   eintraege: RangEintrag[];
 }
@@ -85,6 +93,19 @@ export function verfuegbareJahre(daten: StatsDaten): string[] {
 
 // ─── Ranglisten ───────────────────────────────────────────────────────────────
 
+/** Vergibt Plätze auf einer bereits absteigend sortierten Liste (Gleichstand teilt den Platz). */
+function mitPlatz<T extends { wert: number }>(eintraege: T[]): (T & { platz: number })[] {
+  let letzterWert: number | null = null;
+  let letzterPlatz = 0;
+  return eintraege.map((e, i) => {
+    if (letzterWert === null || e.wert !== letzterWert) {
+      letzterPlatz = i + 1;
+      letzterWert = e.wert;
+    }
+    return { ...e, platz: letzterPlatz };
+  });
+}
+
 export function computeRanglisten(daten: StatsDaten, jahr: JahrFilter): Rangliste[] {
   const { members, termine, verspätungLogs, spielLogs, strafLogs, spiele } = daten;
   if (members.length === 0) return [];
@@ -114,8 +135,9 @@ export function computeRanglisten(daten: StatsDaten, jahr: JahrFilter): Ranglist
     key: "teilnahme",
     emoji: "🏆",
     titel: "Teilnahme-Rangliste",
+    kurz: "Teilnahme",
     untertitel: `${stammtische.length} ${stammtische.length === 1 ? "Stammtisch" : "Stammtische"}${jahr === ALLZEIT ? " insgesamt" : ""}`,
-    eintraege: teilnahme,
+    eintraege: mitPlatz(teilnahme),
   });
 
   // Spiele — pro Spiel und Ereignistyp eine eigene Liste
@@ -137,8 +159,9 @@ export function computeRanglisten(daten: StatsDaten, jahr: JahrFilter): Ranglist
         key: `spiel_${et.id}`,
         emoji: et.emoji ?? spiel.emoji ?? "🎮",
         titel: `${spiel.name} — ${et.label}`,
+        kurz: et.label,
         untertitel: `Wer hat am meisten „${et.label}"`,
-        eintraege,
+        eintraege: mitPlatz(eintraege),
       });
     }
   }
@@ -159,8 +182,9 @@ export function computeRanglisten(daten: StatsDaten, jahr: JahrFilter): Ranglist
       key: "verspaetung",
       emoji: "⏱️",
       titel: "Verspätungs-Rangliste",
+      kurz: "Verspätung",
       untertitel: "Verspätungsminuten",
-      eintraege: verspaetung,
+      eintraege: mitPlatz(verspaetung),
     });
   }
 
@@ -189,8 +213,9 @@ export function computeRanglisten(daten: StatsDaten, jahr: JahrFilter): Ranglist
       key: "strafen",
       emoji: "💰",
       titel: "Strafen-Rangliste",
+      kurz: "Strafen",
       untertitel: "Strafbeträge",
-      eintraege: strafen,
+      eintraege: mitPlatz(strafen),
     });
   }
 
@@ -198,12 +223,6 @@ export function computeRanglisten(daten: StatsDaten, jahr: JahrFilter): Ranglist
 }
 
 // ─── Sieger & Titel ───────────────────────────────────────────────────────────
-
-/** Kurzform des Ranglisten-Titels für Badges ("Schocken — Niederlage" → "Niederlage"). */
-function kurzTitel(liste: Rangliste): string {
-  const teil = liste.titel.split(" — ").pop() ?? liste.titel;
-  return teil.replace("-Rangliste", "");
-}
 
 /**
  * Wer steht in dieser Liste auf Platz 1? Bei Gleichstand gewinnen alle
@@ -222,7 +241,7 @@ export function jahresTitelFuer(daten: StatsDaten, memberId: string): Jahrestite
   for (const jahr of verfuegbareJahre(daten)) {
     for (const liste of computeRanglisten(daten, jahr)) {
       if (siegerIds(liste).includes(memberId)) {
-        titel.push({ jahr, ranglisteKey: liste.key, emoji: liste.emoji, titel: kurzTitel(liste) });
+        titel.push({ jahr, ranglisteKey: liste.key, emoji: liste.emoji, titel: liste.kurz });
       }
     }
   }
@@ -237,7 +256,7 @@ export function fuehrendeTitel(daten: StatsDaten, jahr: JahrFilter): Map<string,
   const map = new Map<string, string[]>();
   for (const liste of computeRanglisten(daten, jahr)) {
     for (const id of siegerIds(liste)) {
-      map.set(id, [...(map.get(id) ?? []), kurzTitel(liste)]);
+      map.set(id, [...(map.get(id) ?? []), liste.kurz]);
     }
   }
   return map;

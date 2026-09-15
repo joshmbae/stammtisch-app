@@ -1,6 +1,7 @@
 import { supabase } from "./supabase";
 import { sendActivityPush } from "./push";
 import { withCache } from "./cache";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   MemberProfile,
   VerspätungLog,
@@ -23,6 +24,9 @@ function nextId(): string {
 
 // ─── Stammtisch (Multi-Tenant) ────────────────────────────────────────────────
 
+/** Schlüssel der persistierten Stammtisch-Auswahl (siehe StammtischContext). */
+export const STAMMTISCH_STORAGE_KEY = "st_active_stammtisch";
+
 let cachedStammtischId: string | null = null;
 
 /** Wird beim App-Start (bzw. bei Anlegen/Beitreten) von StammtischContext gesetzt. */
@@ -36,10 +40,16 @@ export function clearActiveStammtischId(): void {
 }
 
 export async function getStammtischId(): Promise<string> {
-  if (!cachedStammtischId) {
-    throw new Error("Kein aktiver Stammtisch gesetzt — Routing hätte das vorher auflösen müssen.");
+  if (cachedStammtischId) return cachedStammtischId;
+  // Rückfall auf die persistierte Auswahl: der In-Memory-Cache kann leer sein,
+  // obwohl längst ein Stammtisch gewählt ist (Fast Refresh, neu geladenes
+  // Modul). Vorher schlug das als Entwicklermeldung bis in die Oberfläche durch.
+  const stored = await AsyncStorage.getItem(STAMMTISCH_STORAGE_KEY);
+  if (stored) {
+    cachedStammtischId = stored;
+    return stored;
   }
-  return cachedStammtischId;
+  throw new Error("Kein Stammtisch ausgewählt.");
 }
 
 /**

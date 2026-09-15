@@ -49,18 +49,18 @@ import {
   verfuegbareJahre,
 } from "../utils/stats";
 
-function RangRow({ rank, eintrag }: { rank: number; eintrag: RangEintrag }) {
+function RangRow({ eintrag }: { eintrag: RangEintrag }) {
   const medals = ["🥇", "🥈", "🥉"];
-  const { member } = eintrag;
+  const { member, platz } = eintrag;
   return (
     <TouchableOpacity
       style={styles.rangRow}
       onPress={() => router.push(`/member/${member.id}`)}
       activeOpacity={0.85}
       accessibilityRole="button"
-      accessibilityLabel={`Platz ${rank + 1}: ${displayName(member)}, ${eintrag.anzeige} ${eintrag.label}`}
+      accessibilityLabel={`Platz ${platz}: ${displayName(member)}, ${eintrag.anzeige} ${eintrag.label}`}
     >
-      <Text style={styles.rangMedal}>{medals[rank] ?? `${rank + 1}.`}</Text>
+      <Text style={styles.rangMedal}>{medals[platz - 1] ?? `${platz}.`}</Text>
       {member.photoUri ? (
         <Image source={{ uri: member.photoUri }} style={styles.rangAvatar} />
       ) : (
@@ -186,8 +186,8 @@ export default function RanglistenScreen() {
             <View key={liste.key} style={styles.rangCard}>
               <Text style={styles.rangCardTitle}>{liste.emoji} {liste.titel}</Text>
               <Text style={styles.rangCardSub}>{liste.untertitel} · {jahrLabel}</Text>
-              {liste.eintraege.map((e, i) => (
-                <RangRow key={e.member.id} rank={i} eintrag={e} />
+              {liste.eintraege.map((e) => (
+                <RangRow key={e.member.id} eintrag={e} />
               ))}
             </View>
           ))

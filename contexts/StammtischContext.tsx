@@ -2,10 +2,12 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ensureAuthSession } from "../utils/supabase";
 import { clearCache } from "../utils/cache";
-import { getLegacySingleStammtischId, setActiveStammtischId as cacheStammtischId, clearActiveStammtischId } from "../utils/storage";
+import { getLegacySingleStammtischId, setActiveStammtischId as cacheStammtischId, clearActiveStammtischId, STAMMTISCH_STORAGE_KEY } from "../utils/storage";
 
-const STAMMTISCH_KEY = "st_active_stammtisch";
+const STAMMTISCH_KEY = STAMMTISCH_STORAGE_KEY;
 const STAMMTISCH_NAME_KEY = "st_active_stammtisch_name";
+/** Nach dieser Zeit ohne Auth-Antwort startet die App mit gecachten Daten weiter. */
+const AUTH_TIMEOUT_MS = 5000;
 
 interface StammtischContextType {
   stammtischId: string | null;
@@ -31,7 +33,24 @@ export function StammtischProvider({ children }: { children: React.ReactNode }) 
   useEffect(() => { resolveStammtisch(); }, []);
 
   async function resolveStammtisch() {
-    await ensureAuthSession();
+    // Offline darf der Start nicht hier hängenbleiben: ohne Netz wirft
+    // ensureAuthSession(), der Stammtisch würde nie aufgelöst und die Screens
+    // kämen gar nicht erst bis zum Lesecache. Steht die Auswahl schon lokal,
+    // reicht sie zum Anzeigen der gecachten Daten; Schreibzugriffe scheitern
+    // ohnehin sichtbar.
+    // Zusätzlich gedeckelt: der Auth-Client wiederholt fehlgeschlagene Logins
+    // intern über lange Zeit, ohne Timeout bliebe der Start bei schlechtem
+    // Netz minutenlang auf dem Splash stehen statt in die gecachte Ansicht zu
+    // fallen.
+    try {
+      await Promise.race([
+        ensureAuthSession(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Auth-Timeout")), AUTH_TIMEOUT_MS)),
+      ]);
+    } catch {
+      // bewusst geschluckt — beim nächsten Start mit Netz zieht sich die
+      // Session von selbst wieder.
+    }
     const id = await AsyncStorage.getItem(STAMMTISCH_KEY);
     const name = await AsyncStorage.getItem(STAMMTISCH_NAME_KEY);
     if (id) {
@@ -43,7 +62,7 @@ export function StammtischProvider({ children }: { children: React.ReactNode }) 
     }
     // Bestandsinstallation ohne gespeicherte Auswahl: automatisch übernehmen,
     // wenn es genau einen (legacy) Stammtisch gibt.
-    const legacyId = await getLegacySingleStammtischId();
+    const legacyId = await getLegacySingleStammtischId().catch(() => null);
     if (legacyId) {
       await AsyncStorage.setItem(STAMMTISCH_KEY, legacyId);
       cacheStammtischId(legacyId);
