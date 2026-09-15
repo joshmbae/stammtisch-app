@@ -48,6 +48,8 @@ import StammtischLogo from "../../components/StammtischLogo";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import ErrorState from "../../components/ErrorState";
 import OfflineBanner from "../../components/OfflineBanner";
+import SiegerBadge from "../../components/SiegerBadge";
+import { StatsDaten, aktuellesJahr, fuehrendeTitel } from "../../utils/stats";
 import { useScreenLoad } from "../../utils/useScreenLoad";
 import { formatEuro, getInitial, gruendungsDauer, formatDauer, formatGruendungMonat, displayName, anwesenheitsQuote } from "../../utils/format";
 import { toLocalIsoDate, formatActivityZeit } from "../../utils/date";
@@ -106,7 +108,7 @@ function getNextBirthday(members: MemberProfile[]): {
 
 // ─── Mitglieder Avatar (horizontal) ──────────────────────────────────────────
 
-function MemberBubble({ member, isActive }: { member: MemberProfile; isActive: boolean }) {
+function MemberBubble({ member, isActive, titel }: { member: MemberProfile; isActive: boolean; titel: string[] }) {
   const firstName = member.spitzname ?? member.name.split(" ")[0];
   return (
     <TouchableOpacity
@@ -122,9 +124,12 @@ function MemberBubble({ member, isActive }: { member: MemberProfile; isActive: b
         )}
         {isActive && <View style={styles.bubbleActiveDot} />}
       </View>
-      <Text style={[styles.bubbleName, isActive && { color: COLORS.blue, fontWeight: "700" }]} numberOfLines={1}>
-        {firstName}
-      </Text>
+      <View style={styles.bubbleNameRow}>
+        <Text style={[styles.bubbleName, isActive && { color: COLORS.blue, fontWeight: "700" }]} numberOfLines={1}>
+          {firstName}
+        </Text>
+        <SiegerBadge titel={titel} />
+      </View>
     </TouchableOpacity>
   );
 }
@@ -193,6 +198,7 @@ export default function HomeScreen() {
   const [terminCount, setTerminCount]         = useState(0);
   const [lastActivity, setLastActivity]       = useState<ActivityLogEntry | null>(null);
   const [strafKategorien, setStrafKategorien] = useState<StrafKategorieDef[]>([]);
+  const [siegerTitel, setSiegerTitel] = useState<Map<string, string[]>>(new Map());
 
   const { loading, refreshing, error, onRefresh, retry } = useScreenLoad(load, []);
 
@@ -259,6 +265,13 @@ export default function HomeScreen() {
     const combos = spieleMitTypen.flatMap(({ spiel, ereignisTypen }) => ereignisTypen.map((et) => ({ spiel, ereignisTyp: et })))
       .filter(({ spiel, ereignisTyp }) => stats.some((s) => s.spielLogs.some((l) => l.spielId === spiel.id && l.ereignisTypId === ereignisTyp.id)));
     setFeaturedSpiel(combos.length > 0 ? combos[Math.floor(Math.random() * combos.length)] : null);
+
+    const statsDaten: StatsDaten = {
+      members: ms, termine: alle,
+      verspätungLogs: alleVLogs, spielLogs: alleSpLogs, strafLogs: alleStLogs,
+      spiele: spieleMitTypen,
+    };
+    setSiegerTitel(fuehrendeTitel(statsDaten, aktuellesJahr()));
   }
 
   // ── Derived ───────────────────────────────────────────────────────────────
@@ -525,7 +538,7 @@ export default function HomeScreen() {
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.bubbleRow}>
               {members.map((m) => (
-                <MemberBubble key={m.id} member={m} isActive={m.id === activeMemberId} />
+                <MemberBubble key={m.id} member={m} isActive={m.id === activeMemberId} titel={siegerTitel.get(m.id) ?? []} />
               ))}
               <TouchableOpacity style={styles.bubbleWrap} onPress={() => router.push("/member/new")} activeOpacity={0.8}>
                 <View style={styles.bubbleAdd}>
@@ -745,6 +758,7 @@ const styles = StyleSheet.create({
     width: 12, height: 12, borderRadius: 6,
     backgroundColor: COLORS.blue, borderWidth: 2, borderColor: COLORS.card,
   },
+  bubbleNameRow: { flexDirection: "row", alignItems: "center", gap: 3, maxWidth: 74 },
   bubbleName: { fontSize: 11, color: COLORS.textMuted, textAlign: "center", fontWeight: "500" },
   bubbleAdd: {
     width: 48, height: 48, borderRadius: 24,

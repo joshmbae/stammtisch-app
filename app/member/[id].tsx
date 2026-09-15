@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Image,
   Alert,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams, useFocusEffect } from "expo-router";
@@ -23,11 +24,11 @@ import {
 } from "../../types";
 import {
   loadMembers,
-  loadVerspätungLogs,
   loadSpiele,
-  loadEreignisTypen,
-  loadSpielLogs,
-  loadStrafLogs,
+  loadAllEreignisTypen,
+  loadAllVerspätungLogs,
+  loadAllSpielLogs,
+  loadAllStrafLogs,
   loadVerordnung,
   loadTermine,
 } from "../../utils/storage";
@@ -35,7 +36,17 @@ import { COLORS, SHADOWS } from "../../constants/design";
 import { formatEuro, getInitial, displayName, anwesenheitsQuote } from "../../utils/format";
 import PinPrompt from "../../components/PinPrompt";
 import LoadingSpinner from "../../components/LoadingSpinner";
+import ErrorState from "../../components/ErrorState";
+import OfflineBanner from "../../components/OfflineBanner";
+import SiegerBadge from "../../components/SiegerBadge";
+import { useScreenLoad } from "../../utils/useScreenLoad";
 import { verifyPin } from "../../utils/pin";
+import {
+  StatsDaten,
+  aktuellesJahr,
+  fuehrendeTitel,
+  jahresTitelFuer,
+} from "../../utils/stats";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -126,38 +137,44 @@ export default function MemberDetailScreen() {
   const [showAllTermine, setShowAllTermine] = useState(false);
   const [pinPromptVisible, setPinPromptVisible] = useState(false);
   const [pinError, setPinError] = useState<string | undefined>(undefined);
-  const [loading, setLoading] = useState(true);
+  // Alle Mitglieder samt Logs — für die Jahrestitel muss die komplette
+  // Rangliste gerechnet werden, nicht nur die eigenen Zahlen.
+  const [alleMembers, setAlleMembers] = useState<MemberProfile[]>([]);
+  const [alleVerspätungLogs, setAlleVerspätungLogs] = useState<VerspätungLog[]>([]);
+  const [alleSpielLogs, setAlleSpielLogs] = useState<SpielLog[]>([]);
+  const [alleStrafLogs, setAlleStrafLogs] = useState<StrafLog[]>([]);
 
-  useFocusEffect(
-    useCallback(() => {
-      async function load() {
-        const [members, vl, spl, stl, v, ts, alleSpiele] = await Promise.all([
-          loadMembers(),
-          loadVerspätungLogs(id),
-          loadSpielLogs(id),
-          loadStrafLogs(id),
-          loadVerordnung(),
-          loadTermine(),
-          loadSpiele(),
-        ]);
-        const spieleMitTypen = await Promise.all(
-          alleSpiele.map(async (spiel) => ({ spiel, ereignisTypen: await loadEreignisTypen(spiel.id) }))
-        );
-        setMember(members.find((m) => m.id === id) ?? null);
-        setVerspätungLogs(vl);
-        setSpielLogs(spl);
-        setSpiele(spieleMitTypen);
-        setStrafLogs(stl);
-        setVerordnung(v);
-        // Sort termine newest first
-        setTermine([...ts].sort((a, b) => b.datum.localeCompare(a.datum)));
-        setLoading(false);
-      }
-      load();
-    }, [id])
-  );
+  async function load() {
+    const [members, v, ts, alleSpiele] = await Promise.all([
+      loadMembers(), loadVerordnung(), loadTermine(), loadSpiele(),
+    ]);
+    const alleTypen = await loadAllEreignisTypen(alleSpiele.map((sp) => sp.id));
+    const memberIds = members.map((m) => m.id);
+    const [vl, spl, stl] = await Promise.all([
+      loadAllVerspätungLogs(memberIds), loadAllSpielLogs(memberIds), loadAllStrafLogs(memberIds),
+    ]);
+
+    setMember(members.find((m) => m.id === id) ?? null);
+    setAlleMembers(members);
+    setSpiele(alleSpiele.map((spiel) => ({
+      spiel,
+      ereignisTypen: alleTypen.filter((et) => et.spielId === spiel.id),
+    })));
+    setAlleVerspätungLogs(vl);
+    setAlleSpielLogs(spl);
+    setAlleStrafLogs(stl);
+    setVerspätungLogs(vl.filter((l) => l.memberId === id));
+    setSpielLogs(spl.filter((l) => l.memberId === id));
+    setStrafLogs(stl.filter((l) => l.memberId === id));
+    setVerordnung(v);
+    // Sort termine newest first
+    setTermine([...ts].sort((a, b) => b.datum.localeCompare(a.datum)));
+  }
+
+  const { loading, refreshing, error, onRefresh, retry } = useScreenLoad(load, [id]);
 
   if (loading) return <LoadingSpinner />;
+  if (error) return <ErrorState message={error} onRetry={retry} />;
   if (!member) return null;
 
   function handleEditPress() {
@@ -193,12 +210,33 @@ export default function MemberDetailScreen() {
   const strafOffen = strafLogs.filter((l) => !l.beglichen).reduce((s, l) => s + l.betrag, 0);
   const { count: anwesenheitCount, total: anwesenheitTotal, pct: anwesenheitPct } = anwesenheitsQuote(termine, id, member.mitgliedSeit);
 
+  // ── Jahrestitel ─────────────────────────────────────────────────────────────
+  const statsDaten: StatsDaten = {
+    members: alleMembers,
+    termine,
+    verspätungLogs: alleVerspätungLogs,
+    spielLogs: alleSpielLogs,
+    strafLogs: alleStrafLogs,
+    spiele,
+  };
+  const titel = jahresTitelFuer(statsDaten, id);
+  const titelNachJahr = titel.reduce<Record<string, typeof titel>>((acc, t) => {
+    acc[t.jahr] = [...(acc[t.jahr] ?? []), t];
+    return acc;
+  }, {});
+  const fuehrtAktuell = fuehrendeTitel(statsDaten, aktuellesJahr()).get(id) ?? [];
+
   // ── Per-termin history ──────────────────────────────────────────────────────
   const displayedTermine = showAllTermine ? termine : termine.slice(0, 8);
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.blue} />}
+      >
+        <OfflineBanner />
 
         {/* Header */}
         <View style={styles.header}>
@@ -221,12 +259,39 @@ export default function MemberDetailScreen() {
             </View>
           )}
           <View style={styles.heroInfo}>
-            <Text style={styles.heroName}>{displayName(member)}</Text>
+            <View style={styles.heroNameRow}>
+              <Text style={styles.heroName}>{displayName(member)}</Text>
+              <SiegerBadge titel={fuehrtAktuell} />
+            </View>
             <View style={[styles.rolleBadge, { backgroundColor: member.avatarColor + "22", borderColor: member.avatarColor + "66" }]}>
               <Text style={[styles.rolleBadgeText, { color: member.avatarColor }]}>{member.rollen.join(", ")}</Text>
             </View>
           </View>
         </View>
+
+        {/* Jahrestitel */}
+        {titel.length > 0 && (
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>🏅 Jahrestitel</Text>
+            {Object.keys(titelNachJahr).sort((a, b) => b.localeCompare(a)).map((jahr) => (
+              <View key={jahr} style={styles.titelJahrRow}>
+                <Text style={styles.titelJahr}>{jahr}</Text>
+                <View style={styles.titelChips}>
+                  {titelNachJahr[jahr].map((t) => (
+                    <View key={t.ranglisteKey} style={styles.titelChip}>
+                      <Text style={styles.titelChipText}>{t.emoji} {t.titel}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            ))}
+            <Text style={styles.titelHinweis}>
+              {fuehrtAktuell.length > 0
+                ? `Führt aktuell: ${fuehrtAktuell.join(", ")}`
+                : "Platz 1 im jeweiligen Kalenderjahr"}
+            </Text>
+          </View>
+        )}
 
         {/* Info */}
         <View style={styles.card}>
@@ -385,6 +450,17 @@ const styles = StyleSheet.create({
   heroAvatarPlaceholder: { width: 64, height: 64, borderRadius: 32, alignItems: "center", justifyContent: "center" },
   heroAvatarLetter: { fontSize: 26, fontWeight: "700", color: "#FFFFFF" },
   heroInfo: { flex: 1, gap: 4 },
+  heroNameRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  titelJahrRow: { flexDirection: "row", alignItems: "flex-start", gap: 10, paddingVertical: 6 },
+  titelJahr: { fontSize: 13, fontWeight: "800", color: COLORS.textMuted, width: 44, paddingTop: 3 },
+  titelChips: { flex: 1, flexDirection: "row", flexWrap: "wrap", gap: 6 },
+  titelChip: {
+    backgroundColor: COLORS.goldBg, borderRadius: 10,
+    borderWidth: 1, borderColor: COLORS.gold + "44",
+    paddingHorizontal: 9, paddingVertical: 4,
+  },
+  titelChipText: { fontSize: 12, fontWeight: "700", color: COLORS.textMid },
+  titelHinweis: { fontSize: 11, color: COLORS.textLight, marginTop: 8 },
   heroName: { fontSize: 18, fontWeight: "800", color: COLORS.textDark },
   rolleBadge: { alignSelf: "flex-start", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10, borderWidth: 1 },
   rolleBadgeText: { fontSize: 12, fontWeight: "700" },
