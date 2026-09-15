@@ -158,7 +158,7 @@ export default function MitgliederScreen() {
                     <Text style={styles.avatarLetter}>{getInitial(m.name)}</Text>
                   )}
                 </View>
-                <SiegerBadge titel={siegerTitel.get(m.id) ?? []} size={14} />
+                <SiegerBadge titel={siegerTitel.get(m.id) ?? []} size={16} />
               </View>
               <View style={styles.memberInfo}>
                 <Text style={styles.memberName}>{displayName(m)}</Text>

@@ -259,7 +259,7 @@ export default function MemberDetailScreen() {
                 <Text style={styles.heroAvatarLetter}>{getInitial(member.name)}</Text>
               </View>
             )}
-            <SiegerBadge titel={fuehrtAktuell} size={18} />
+            <SiegerBadge titel={fuehrtAktuell} size={20} />
           </View>
           <View style={styles.heroInfo}>
             <Text style={styles.heroName}>{displayName(member)}</Text>

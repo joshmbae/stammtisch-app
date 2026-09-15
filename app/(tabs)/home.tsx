@@ -132,7 +132,7 @@ function MemberBubble({ member, isActive, titel }: { member: MemberProfile; isAc
           )}
           {isActive && <View style={styles.bubbleActiveDot} />}
         </View>
-        <SiegerBadge titel={titel} size={14} />
+        <SiegerBadge titel={titel} size={16} />
       </View>
       <Text style={[styles.bubbleName, isActive && { color: COLORS.blue, fontWeight: "700" }]} numberOfLines={1}>
         {firstName}
@@ -162,7 +162,7 @@ function RangRow({ rank, member, value, valueLabel, sub, titel }: {
             <Text style={{ fontSize: 13, fontWeight: "700", color: "#FFF" }}>{getInitial(member.name)}</Text>
           </View>
         )}
-        <SiegerBadge titel={titel} size={12} />
+        <SiegerBadge titel={titel} size={13} />
       </View>
       <View style={styles.rangInfo}>
         <Text style={styles.rangName}>{displayName(member)}</Text>

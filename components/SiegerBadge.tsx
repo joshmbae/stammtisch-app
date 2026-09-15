@@ -28,8 +28,8 @@ export default function SiegerBadge({ titel, size = 16 }: { titel: FuehrenderTit
 const styles = StyleSheet.create({
   badge: {
     position: "absolute",
-    top: -5,
-    right: -7,
+    top: -3,
+    right: -4,
     textShadowColor: "#FFFFFF",
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 4,
