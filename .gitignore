@@ -41,3 +41,9 @@ yarn-error.*
 /ios
 /android
 .claude/
+
+# Google-Dienstkonto für Play-Uploads — gehört nie ins Repo.
+# Der Schlüssel liegt normalerweise bei EAS; falls doch mal lokal, greift das hier.
+*service-account*.json
+play-store-key*.json
+google-play-*.json
