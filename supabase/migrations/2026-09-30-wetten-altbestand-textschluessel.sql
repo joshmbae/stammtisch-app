@@ -23,10 +23,25 @@ where sl.member_id = m.id
   and sonstiges.stammtisch_id = m.stammtisch_id
   and sonstiges.system_key = 'sonstiges';
 
--- OFFEN (bewusst nicht Teil dieser Migration): Es gibt weitere Strafen mit
--- Textschlüsseln statt Zeilen-Verweis, die nichts mit Wetten zu tun haben —
--- in Prod drei mit 'fehlen_entschuldigt' und eine mit 'sonstiges'. Wohin die
--- gehören, ist eine inhaltliche Entscheidung und kein reines Datenthema:
+-- Gleiches Muster ohne Wetten-Bezug: Strafen, deren `kategorie` den
+-- Textschlüssel einer weiterhin existierenden Kategorie enthält, lassen sich
+-- verlustfrei über `system_key` auflösen. In Prod betraf das drei Einträge
+-- mit 'fehlen_entschuldigt' (Stammtisch "die_hellen", je 10 EUR) — Betrag und
+-- Bezeichnung der Zielkategorie stimmten exakt überein.
+
+update dev.straf_logs sl
+set kategorie = k.id
+from dev.members m, dev.straf_kategorien k
+where sl.member_id = m.id
+  and sl.kategorie = 'fehlen_entschuldigt'
+  and k.stammtisch_id = m.stammtisch_id
+  and k.system_key = 'fehlen_entschuldigt';
+
+-- OFFEN (bewusst nicht Teil dieser Migration): In Prod bleibt ein Eintrag mit
+-- dem Textschlüssel 'sonstiges' übrig (Stammtisch "die_hellen", 10 EUR, Notiz
+-- "Max Wetter auf Matthis niedrig. Josh liefert"). Er liesse sich technisch
+-- genauso auf die Sonstiges-Zeile umhaengen; ob der Eintrag inhaltlich dorthin
+-- gehoert, ist eine Entscheidung der Runde:
 --   select sl.id, sl.kategorie, sl.betrag, sl.notiz
 --   from public.straf_logs sl
 --   left join public.straf_kategorien k on k.id = sl.kategorie
