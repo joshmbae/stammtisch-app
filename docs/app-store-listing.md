@@ -152,3 +152,53 @@ Ich kann die iOS-Simulator-Screenshots übernehmen, sobald du magst — sag Besc
 3. Alle Felder oben ausfüllen → **Zur Prüfung einreichen**.
 
 Review-Dauer bei Apple meist 24–48 Stunden.
+
+---
+
+# Android / Google Play
+
+Stand: 30.09.2026. Die Play Console hat den früheren Weg über „Einstellungen →
+API-Zugriff" abgelöst — das Dienstkonto wird heute in der **Google Cloud
+Console** angelegt und in der Play Console unter **Nutzer und Berechtigungen**
+eingeladen. Quelle: [Expos Anleitung](https://expo.fyi/creating-google-service-account).
+
+## Einmalig: Dienstkonto für automatische Uploads
+
+1. **Cloud-Projekt** anlegen, falls noch keins verknüpft ist:
+   <https://console.cloud.google.com/projectcreate>
+2. **Dienstkonto erstellen**:
+   <https://console.cloud.google.com/iam-admin/serviceaccounts> → „Dienstkonto
+   erstellen" → Name z. B. `eas-submit` → „Erstellen und schließen".
+   Im Cloud-Projekt ist **keine Rolle** nötig, die Rechte kommen aus der Play Console.
+3. **E-Mail-Adresse des Dienstkontos kopieren** (endet auf `iam.gserviceaccount.com`).
+4. **Schlüssel erzeugen**: beim Dienstkonto „Schlüssel verwalten → Neuen Schlüssel
+   erstellen → JSON". Die Datei gehört **nicht ins Repo** — `.gitignore` fängt die
+   üblichen Namen ab, aber sie wird ohnehin nur einmal gebraucht.
+5. **API aktivieren**: [Google Play Android Developer API](https://console.cloud.google.com/apis/library/androidpublisher.googleapis.com)
+   → „Aktivieren". Ohne diesen Schritt scheitert der Upload mit einer
+   unverständlichen Fehlermeldung.
+6. **In der Play Console einladen**: Play Console → „Nutzer und Berechtigungen" →
+   „Neue Nutzer einladen" → Dienstkonto-E-Mail einfügen → App auswählen → Rechte:
+   - App-Zugriff: App-Informationen ansehen (schreibgeschützt)
+   - Entwurfs-Apps bearbeiten und löschen
+   - Releases: in Produktion veröffentlichen, in Testkanälen veröffentlichen,
+     Testkanäle verwalten
+   - Store-Präsenz verwalten
+7. **Schlüssel hochladen**: beim ersten `eas submit --platform android` fragt die
+   CLI nach der JSON-Datei und legt sie bei EAS ab. Danach kann die lokale Datei weg.
+
+## Bei jedem Release
+
+```bash
+eas build --platform all --profile production
+eas submit --platform all --latest
+```
+
+`eas.json` schickt Android in den Track `internal` (Gegenstück zu TestFlight).
+Für eine öffentliche Veröffentlichung `submit.production.android.track` auf
+`production` setzen.
+
+**Achtung bei der allerersten Veröffentlichung:** Die Google-API darf keinen
+neuen Store-Eintrag anlegen. War die App noch nie im Play Store, muss die erste
+`.aab` von Hand über die Console hochgeladen werden; ab dem zweiten Mal
+übernimmt `eas submit`.
