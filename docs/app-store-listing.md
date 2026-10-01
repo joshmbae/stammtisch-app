@@ -1,157 +1,227 @@
-# App Store Connect — Einreichung DeinStammtisch v1.3.0
+# App Store Connect — Einreichung DeinStammtisch v1.6.0
 
-## 1. Vorbereitende Schritte (einmalig)
+Alles, was in App Store Connect einzutragen ist, in der Reihenfolge der Oberfläche.
+Zeichenlimits sind geprüft. Die App-ID `6789122309` (ascAppId in `eas.json`) existiert bereits.
 
-### GitHub Pages aktivieren (für Datenschutz- & Support-URL)
-1. Auf GitHub im Repo `joshmbae/stammtisch-app` → **Settings → Pages**
-2. Unter „Build and deployment" → Source: **Deploy from a branch**
-3. Branch: `main`, Ordner: `/docs` → **Save**
-4. Nach ein paar Minuten erreichbar unter:
-   - Datenschutz: `https://joshmbae.github.io/stammtisch-app/privacy.html`
-   - Support: `https://joshmbae.github.io/stammtisch-app/support.html`
-5. **Vorher:** in `docs/privacy.html` die Platzhalter `[Vor- und Nachname]`, `[Straße, Hausnummer]`, `[PLZ, Ort]` sowie die Supabase-Hosting-Region ausfüllen (Abschnitt „TODO" oben in der Datei).
+## 0. Vorab erledigen
 
-⚠️ **Impressumspflicht:** Da die App öffentlich im Store für die Allgemeinheit angeboten wird, greift in Deutschland vermutlich §5 TMG/DDG (Impressumspflicht), auch als Privatperson bei einer kostenlosen, aber öffentlich angebotenen App. Die Datenschutzerklärung deckt das nicht automatisch ab — im Zweifel kurz gegenprüfen (z. B. e-recht24.de) oder anwaltlich absichern, ob ein Impressum zusätzlich nötig ist.
+1. **Datenschutz- & Support-Seite live?** GitHub → Repo `joshmbae/stammtisch-app` →
+   Settings → Pages → Branch `main`, Ordner `/docs`. Danach erreichbar unter
+   - `https://joshmbae.github.io/stammtisch-app/privacy.html`
+   - `https://joshmbae.github.io/stammtisch-app/support.html`
+   Die Seiten müssen **vor** dem Einreichen online sein (Apple ruft sie ab).
+2. **Impressum:** Eine öffentlich im Store angebotene App braucht in Deutschland
+   vermutlich ein Impressum (§ 5 DDG), auch als Privatperson. Die Support-Seite
+   nennt bisher nur eine E-Mail. Empfehlung: Impressum-Abschnitt mit ladungsfähiger
+   Anschrift auf `support.html` ergänzen (Entwurf, vor Veröffentlichung selbst prüfen
+   bzw. rechtlich absichern lassen).
+3. **AVV mit Supabase** abschließen (Datenschutzerklärung sagt „liegt vor / ist abzuschließen“;
+   Region laut Erklärung eu-west-1, Irland).
+4. **Build hochladen:**
+   ```bash
+   eas build --platform ios --profile production
+   eas submit --platform ios --latest
+   ```
+   Processing dauert 15–60 Minuten; erst dann ist der Build in der Version auswählbar.
 
-### iOS-Build einreichen
-```bash
-npx eas submit --platform ios --latest
+## 1. Version 1.6.0 — Seite „Distribution → iOS-App → 1.6.0“
+
+### Promotional Text (max. 170 Zeichen, jederzeit ohne Review änderbar)
 ```
-Lädt den zuletzt gebauten iOS-Build zu App Store Connect hoch. Dauert je nach Apple-Verarbeitung (Processing) 15–60 Minuten, bis der Build in App Store Connect als Version auswählbar ist.
-
-## 2. App in App Store Connect anlegen
-
-[appstoreconnect.apple.com](https://appstoreconnect.apple.com) → **Meine Apps → „+" → Neue App**
-
-| Feld | Wert |
-|---|---|
-| Plattform | iOS |
-| Name | `DeinStammtisch` |
-| Hauptsprache | Deutsch |
-| Bundle-ID | `com.diehellen.stammtischapp` (aus Dropdown, bereits über EAS registriert) |
-| SKU | z. B. `stammtischapp001` (beliebig, intern, einmalig) |
-| Nutzerzugriff | Vollzugriff |
-
-## 3. App-Informationen
-
-- **Kategorie (primär):** Lifestyle
-- **Kategorie (sekundär, optional):** Soziale Netzwerke
-- **Altersfreigabe:** Fragebogen durchgehen — bei dieser App überall „Nein"/„Keine" ankreuzen (kein Nutzer-generierter öffentlicher Content, kein Glücksspiel um echtes Geld, keine Werbung), Ergebnis sollte 4+ sein.
-- **Datenschutzrichtlinien-URL:** `https://joshmbae.github.io/stammtisch-app/privacy.html`
-
-## 4. App-Datenschutz (App Privacy Fragebogen)
-
-Apple fragt Datentypen einzeln ab. Basierend darauf, was die App tatsächlich sammelt:
-
-| Datentyp | Erfasst? | Verknüpft mit Identität? | Zweck |
-|---|---|---|---|
-| Name | Ja | Ja | App-Funktionalität |
-| E-Mail-Adresse | Nein | – | – |
-| Fotos | Ja (Profilbild, optional) | Ja | App-Funktionalität |
-| Finanzinformationen (Kassen-Beträge) | Ja | Ja | App-Funktionalität |
-| Nutzungsdaten / Tracking | Nein | – | – |
-
-Bei „Wird dieses Datum zum Tracking verwendet?" → **überall Nein** (kein SDK von Drittanbietern, kein Werbe-Tracking — bestätigt durch package.json: nur Supabase + Standard-Expo-Module).
-
-## 5. Store-Texte
-
-**App-Name** (max. 30 Zeichen)
+Termine, Kasse, Strafen und Ranglisten für eure feste Runde. Eigener Strafenkatalog, Jahreswertung mit Sieger-Badges und Serientermine – alles in einer App.
 ```
-DeinStammtisch
-```
+(156 Zeichen)
 
-**Untertitel** (max. 30 Zeichen)
+### Description (max. 4000 Zeichen)
 ```
-Termine, Kasse & Strafen
-```
-
-**Werbetext** (max. 170 Zeichen, jederzeit ohne neues Review änderbar)
-```
-Alles für eure Stammtischrunde an einem Ort: Termine planen, Kasse führen, Strafen verwalten — mit Live-Updates für alle Mitglieder.
-```
-
-**Beschreibung** (max. 4000 Zeichen)
-```
-DeinStammtisch ist die App für eure feste Stammtischrunde — egal ob Kartenrunde, Vereinsstammtisch oder Freundeskreis mit eigenen Regeln.
+DeinStammtisch ist die App für eure feste Runde – ob Kartenabend, Vereinsstammtisch oder Freundeskreis mit eigenen Regeln. Alles, was ihr sonst in Chatgruppen und Zettelwirtschaft verliert, liegt hier an einem Ort.
 
 TERMINE
-Behaltet den Überblick über alle Stammtische im Kalender. Mitglieder sagen zu oder ab, tragen Anwesenheit und Verspätungen direkt im Termin ein.
+Alle Stammtische im Kalender. Mitglieder sagen zu oder ab (auf Wunsch mit Grund), tragen Anwesenheit und Verspätung direkt im Termin ein. Termine lassen sich wöchentlich, alle 2 Wochen oder monatlich wiederholen und bekommen ein eigenes Titelbild.
 
-STRAFEN
-Wer absagt, zu spät kommt oder eine Runde verliert, kassiert eine Strafe — automatisch bei Spielereignissen und Wetten, oder manuell erfasst. Alle Strafen auf einen Blick, mit Status „offen" oder „beglichen".
+STRAFEN – NACH EUREN REGELN
+Jeder Stammtisch legt seinen Strafenkatalog selbst fest: Kategorien anlegen, umbenennen, Beträge ändern oder Vorlagen mit einem Tipp übernehmen. Wer absagt, zu spät kommt oder ein Spiel verliert, kassiert eine Strafe. Alle Strafen auf einen Blick, offen oder beglichen.
 
 KASSE
-Einnahmen, Ausgaben und Abendkosten sauber dokumentiert — inklusive Kostenteilung, wer schon bezahlt hat.
+Einnahmen, Ausgaben und Abendkosten sauber dokumentiert, inklusive Kostenteilung und Übersicht, wer schon bezahlt hat.
+
+SPIELE
+Legt eigene Spiele mit individuellen Ereignissen an, zum Beispiel Schocken oder Skat. Pro Ereignis ein großer Button: antippen, +1, fertig. Strafen bei bestimmten Ergebnissen entstehen automatisch.
+
+RANGLISTEN & SIEGER-BADGES
+Die Wertungen zeigen das laufende Jahr, die ewige Tabelle gibt es unter „Allzeit“. Wer eine Wertung anführt, trägt das Badge am Profilbild. Bei Gleichstand teilt ihr euch den Platz.
 
 MITGLIEDER & ROLLEN
-Jede Person hat ihr eigenes Profil mit Rollen wie Kassenwart, Bierwart oder Schriftführer — optional per PIN geschützt.
-
-SPIELE & WETTEN
-Legt eigene Spiele mit individuellen Ereignistypen an (z. B. Schocken, Skat) — inklusive automatischer Strafen bei bestimmten Ergebnissen. Wettet gegeneinander und behaltet die Ranglisten im Auge.
+Jede Person hat ein eigenes Profil mit Rollen wie Kassenwart oder Schriftführer, optional mit PIN geschützt.
 
 SATZUNG
-Haltet eure Stammtisch-Regeln, Treffpunkt und Termine fest — für alle jederzeit einsehbar.
+Regeln, Treffpunkt und Termine eurer Runde, für alle jederzeit einsehbar.
 
-LIVE-AKTIVITÄT
-Ein Aktivitäts-Feed zeigt in Echtzeit, was in der Runde passiert — neue Strafen, Kassen-Einträge, Zu-/Absagen.
+AKTIVITÄTS-FEED & BENACHRICHTIGUNGEN
+Seht in Echtzeit, was in der Runde passiert, und lasst euch an neue Termine erinnern.
 
-Keine Werbung, kein Tracking, keine Drittanbieter-Analyse. Eure Daten gehören eurer Runde.
+AUCH OHNE NETZ DABEI
+Im Funkloch zeigt die App den letzten Stand an. Zum Aktualisieren einfach nach unten ziehen.
+
+DATENSCHUTZ
+Keine Werbung, kein Tracking, keine Analyse-Dienste von Drittanbietern. Die Daten gehören eurer Runde. Eine Registrierung mit E-Mail ist nicht nötig: Ihr legt einen Stammtisch mit Name und Passwort an, die anderen treten mit denselben Zugangsdaten bei.
 ```
 
-**Schlüsselwörter** (max. 100 Zeichen, kommagetrennt, keine Leerzeichen nach Komma)
+### Keywords (max. 100 Zeichen, ohne Leerzeichen nach Komma)
 ```
-stammtisch,verein,kneipenrunde,kasse,strafen,termine,rangliste,schocken,kartenrunde,vereinsapp
+stammtisch,verein,kneipenrunde,kasse,strafen,termine,rangliste,schocken,kartenrunde,skat,vereinsapp
 ```
+(99 Zeichen. Name und Untertitel zählen schon als Suchbegriffe, daher dort nicht wiederholt.)
 
-**Werbe-URL (Marketing URL)** — optional, leer lassen falls keine eigene Website existiert.
-
-**Support-URL**
+### Support URL
 ```
 https://joshmbae.github.io/stammtisch-app/support.html
 ```
 
-**Was ist neu in dieser Version** (Release Notes für 1.3.0)
+### Marketing URL
+Leer lassen (optional).
+
+### Version / Copyright
 ```
-- Neu: Onboarding für neue Mitglieder — kurzer Rundgang durch die wichtigsten Funktionen beim ersten Login
-- Neu: Live-Updates — Termine, Strafen & Aktivitäten aktualisieren sich in Echtzeit bei allen Mitgliedern
-- Neu: Strafen lassen sich jetzt auch direkt (ohne Termin-Bezug) mit freiem Text erfassen
-- Verbessert: Anwesenheitsquote berücksichtigt jetzt den Mitgliedsbeginn
-- Verbessert: Navigation im Menü, klarere Hinweise in den Einstellungen
+2026 Joshua Bär
+```
+(Apple ergänzt das ©-Zeichen nicht selbst: Feld ohne „©“ ausfüllen oder „© 2026 Joshua Bär“ eintragen, beides ist üblich.)
+
+### What's New in This Version (max. 4000 Zeichen)
+```
+Das ist neu für eure Runde:
+
+• Eigener Strafenkatalog: Kategorien anlegen, umbenennen, Beträge ändern oder Vorlagen übernehmen (Einstellungen → Strafenkategorien verwalten)
+• Jahresranglisten: Die Wertungen zeigen das laufende Jahr, „Allzeit“ bleibt als ewige Tabelle. Bei Gleichstand teilt ihr euch den Platz
+• Sieger-Badges: Wer eine Wertung anführt, trägt das Icon am Profilbild. Im Profil seht ihr, wer in welchem Jahr vorne lag
+• Serientermine: wöchentlich, alle 2 Wochen oder monatlich, mit nur einer Benachrichtigung
+• Titelbild für Termine
+• Absage mit Grund
+• Offline-Anzeige: Ohne Netz seht ihr den letzten Stand, überall lässt sich per Ziehen aktualisieren
+• „Strafe hinzufügen“ öffnet ein eigenes Fenster, im Spiel-Tab zählt ein großer Button pro Ereignis
+• Strafen-Kachel mit Gesamtsumme und offenem Betrag, Strafen-Tab pro Stammtisch ausblendbar
+• Einstellungen übersichtlich gruppiert, Protokolle nach Termin-Datum sortiert
+• Schnelleres Laden von Startseite und Terminen
+
+Behoben: Doppeltes Antippen bucht Strafen, Kasse und Termine nicht mehr doppelt, ungespeicherte Eingaben in den Einstellungen gehen nicht mehr verloren, lange Strafen-Namen werden vollständig angezeigt.
+
+Der Wetten-Bereich ist entfallen. Bestehende Wetten-Strafen bleiben als normale Strafen erhalten.
 ```
 
-**Copyright**
-```
-© 2026 [Vor- und Nachname]
-```
+## 2. App-Informationen (links unter „Allgemein“)
+
+| Feld | Wert |
+|---|---|
+| Name | `DeinStammtisch` (14/30) |
+| Untertitel | `Termine, Kasse & Strafen` (24/30) |
+| Hauptsprache | Deutsch |
+| Bundle-ID | `com.diehellen.stammtischapp` |
+| SKU | wie bei Anlage vergeben (unveränderlich) |
+| Primäre Kategorie | Lifestyle |
+| Sekundäre Kategorie | Soziale Netzwerke |
+| Inhaltsrechte | „Nein, enthält keine Inhalte Dritter“ |
+| Datenschutzrichtlinie-URL | `https://joshmbae.github.io/stammtisch-app/privacy.html` |
+| Preis | Kostenlos (Preisstufe 0), alle Länder |
+| Verfügbarkeit | Zunächst nur DE/AT/CH ist möglich, sonst alle Länder; Texte sind deutsch |
+
+## 3. Altersfreigabe (Fragebogen)
+
+Alle Fragen mit **Keine / Nein** beantworten, mit zwei Ausnahmen, die ehrlich zu beantworten sind:
+
+| Frage | Antwort | Begründung |
+|---|---|---|
+| Alkohol, Tabak, Drogen: Verweise/Darstellung | **Selten/Mild** | Bier-Emojis und Rollen wie „Bierwart“, Lieblingsgetränk im Profil |
+| Gelegentliche/häufige Simulation von Glücksspiel | Keine | Wetten-Tab wurde entfernt; Würfelspiele werden nur protokolliert, kein Geldeinsatz in der App |
+| Echtes Glücksspiel | Nein | |
+| Nutzergenerierte Inhalte / Chat | Nein bzw. nur innerhalb geschlossener Gruppen | Kein öffentlicher Feed, kein Chat |
+| Unbeschränkter Web-Zugriff | Nein | |
+
+Erwartetes Ergebnis: 4+ oder 9+ (wegen Alkohol-Verweisen). Das ist in Ordnung.
+
+## 4. App-Datenschutz („App Privacy“)
+
+„Datenschutzpraktiken“ → **Daten erfassen: Ja**. **Tracking: überall Nein** (keine Drittanbieter-SDKs, keine Werbe-ID).
+Alle erfassten Daten: **mit der Identität verknüpft = Ja**, **Tracking = Nein**, **Zweck = App-Funktionalität**.
+
+| Apple-Kategorie → Datentyp | Quelle in der App |
+|---|---|
+| Kontaktinfo → Name | Mitgliedsname, Spitzname |
+| Nutzerinhalte → Fotos oder Videos | Profilbild, Termin-Titelbild |
+| Nutzerinhalte → Sonstige Nutzerinhalte | Notizen, Absagegründe, Strafen- und Kassen-Einträge, Protokolle, Satzung |
+| Kennungen → Geräte-ID | Push-Token (Expo Push Service) |
+| Sonstige Daten → Sonstige Datentypen | Geburtsdatum, Beruf, Lieblingsgetränk (freiwillige Profilfelder) |
+| Finanzinformationen → Sonstige Finanzinfos | Optional: Beträge in Kasse/Strafen sind interne Buchführung, keine Zahlungsdaten. Konservativ angeben ist unkritisch |
+
+**Nicht erfasst:** E-Mail, Telefon, Standort, Kontakte, Browserverlauf, Nutzungsdaten/Analytics, Diagnosedaten, Zahlungsdaten.
+
+## 5. Screenshots
+
+| Gerät | Pflicht? | Größe (Hochformat) |
+|---|---|---|
+| iPhone 6,9" (17 Pro Max, 16 Pro Max …) | **Ja** | 1320 × 2868 px |
+| iPad 13" | **Ja**, solange `supportsTablet: true` | 2064 × 2752 px |
+
+Kleinere iPhone-Größen skaliert Apple aus den 6,9"-Bildern. 3 bis 10 Bilder pro Gerät,
+empfohlen 6 in dieser Reihenfolge (Bildunterschrift = Overlay-Text, falls ihr welche setzt):
+
+1. **Startseite** – „Alles für eure Runde auf einen Blick“
+2. **Kalender / Termin-Detail** mit Zu-/Absagen – „Termine planen, Zu- und Absagen sammeln“
+3. **Strafen** – „Strafen nach euren Regeln“
+4. **Strafenkategorien** (Vorlagen) – „Euer Strafenkatalog, euer Spiel“
+5. **Kasse** – „Kasse und Abendkosten im Griff“
+6. **Rangliste mit Sieger-Badges** – „Wer führt dieses Jahr?“
+
+Wichtig: Nur Demo-Daten mit erfundenen Namen und Beträgen verwenden, keine echten Mitglieder (DSGVO, Einwilligung).
+Wenn ihr den iPad-Aufwand sparen wollt: `supportsTablet` auf `false` setzen und neu bauen.
 
 ## 6. App-Überprüfung (App Review Information)
 
-Da die App ohne zentrale Nutzerkonten funktioniert (jede:r legt selbst einen Stammtisch an oder tritt bei), braucht Apple **kein Demo-Login** — trotzdem unbedingt Hinweise dalassen, sonst bleibt der Reviewer beim ersten Screen hängen:
+**Anmeldeinformationen:** „Anmeldung erforderlich“ → **aus**, außer ihr stellt einen Demo-Stammtisch bereit (empfohlen, siehe unten), dann Benutzername = Stammtisch-Name, Passwort = Stammtisch-Passwort.
 
-**Kontaktinformationen:** deine Telefonnummer + E-Mail eintragen.
+**Kontakt:** Joshua Bär, Telefonnummer + E-Mail `joshmbaer@googlemail.com`.
 
-**Notizen für den Prüfer:**
+**Notizen für das Review (kopierbar):**
 ```
-Diese App benötigt keinen Demo-Account. Bitte zum Testen:
-1. Auf "Stammtisch anlegen" tippen, beliebigen Namen + Passwort eingeben
-2. Ein Mitglied-Profil anlegen (Name reicht, PIN ist optional)
-3. Damit ist die App vollständig nutzbar — Termine, Kasse, Strafen etc. lassen sich frei anlegen und testen
+DeinStammtisch ist eine App zur Organisation privater Stammtisch-Runden (Termine, Kasse, Strafen, Ranglisten). Es gibt keine zentralen Nutzerkonten und keine E-Mail-Registrierung.
+
+Zum Testen entweder
+A) mit dem Demo-Stammtisch beitreten:
+   Name: [DEMO-NAME]
+   Passwort: [DEMO-PASSWORT]
+   dann ein vorhandenes Mitglied auswählen (kein PIN nötig),
+oder
+B) einen eigenen Stammtisch anlegen: Auf "Stammtisch anlegen" tippen, beliebigen Namen und ein Passwort vergeben, danach ein Mitglied-Profil anlegen (Name genügt, PIN optional).
+
+Hinweise:
+- Strafen sind reine Spaß-Buchführung innerhalb der Gruppe. Es werden keine Zahlungen abgewickelt und es gibt keine In-App-Käufe. Geldbeträge sind nur interne Anzeige.
+- Die App enthält kein Glücksspiel und keine Wetten.
+- Inhalte sind nur für Mitglieder der jeweiligen geschlossenen Gruppe sichtbar (kein öffentlicher Feed, kein Chat).
+- Der Stammtisch samt aller Daten kann unter Einstellungen → Gefahrenzone gelöscht werden.
+- Push-Benachrichtigungen erinnern an Termine. Kamera/Fotos werden nur für das optionale Profilbild genutzt.
 ```
 
-## 7. Screenshots
+**Empfehlung:** Demo-Stammtisch anlegen (Option A mit gefüllten Beispieldaten). Ein leerer
+Stammtisch zeigt dem Prüfer fast nichts, das verlängert das Review oder führt zu Rückfragen.
 
-Pflicht: **6,9"-Display** (iPhone 16 Pro Max o. ä., 1320×2868 px) — mindestens 3, besser 5–6 Stück.
-Falls „iPad unterstützt" aktiv bleibt (aktuell `supportsTablet: true` in app.json): zusätzlich **13"-iPad-Screenshots** nötig, sonst iPad-Unterstützung in App Store Connect deaktivieren, um das zu umgehen.
+**Apple-Prüfpunkte, die hier relevant sind:**
+- 1.2 (nutzergenerierte Inhalte): Inhalte sind nur in geschlossenen Gruppen sichtbar. Falls Apple nachfragt: Löschfunktion und Kontakt über Support-Seite verweisen.
+- 5.1.1(v) (Kontolöschung): Stammtisch lässt sich in der App löschen. Einzelne Mitglieder-Profile ebenfalls.
+- 5.3 (Glücksspiel): Wetten sind entfernt, Hinweis in den Notizen oben.
 
-Ich kann die iOS-Simulator-Screenshots übernehmen, sobald du magst — sag Bescheid, dann fahre ich den Simulator in den passenden Auflösungen hoch und schieße Screens von Home, Kalender, Kasse und Strafen.
+## 7. Export-Compliance & Content Rights
+
+- Verschlüsselung: `ITSAppUsesNonExemptEncryption: false` ist gesetzt, die Frage entfällt.
+- Werbe-ID (IDFA): **Nein**.
+- Inhalte Dritter: Nein.
 
 ## 8. Build zuordnen & einreichen
 
-1. In der Versionsseite (1.3.0) unter „Build" → „+" → den Build auswählen, der über `eas submit` hochgeladen wurde (erscheint nach Processing).
-2. Exportkonformität: Frage nach Verschlüsselung → **Nein** (bereits in `app.json` als `ITSAppUsesNonExemptEncryption: false` hinterlegt, sollte automatisch vorausgefüllt sein).
-3. Alle Felder oben ausfüllen → **Zur Prüfung einreichen**.
+1. Version 1.6.0 → „Build“ → „+“ → den hochgeladenen Build auswählen.
+2. Alle Pflichtfelder prüfen (Screenshots, Beschreibung, Support-URL, Datenschutz, Review-Kontakt).
+3. „Zur Prüfung hinzufügen“ → „Zur Prüfung einreichen“.
+4. Release-Methode: „Manuell veröffentlichen“ empfohlen, dann bestimmt ihr den Zeitpunkt nach Freigabe.
 
-Review-Dauer bei Apple meist 24–48 Stunden.
+Review-Dauer meist 24–48 Stunden.
 
 ---
 
