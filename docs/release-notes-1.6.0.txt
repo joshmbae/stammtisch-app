@@ -1,0 +1,52 @@
+🍻 *DeinStammtisch 1.6.0 ist da!*
+
+Frisch aus der Werkstatt, das ist neu für eure Runde:
+
+⚖️ *Eure Strafen, eure Regeln*
+Jeder Stammtisch legt seinen Strafenkatalog jetzt selbst fest: Kategorien anlegen, umbenennen, Beträge ändern oder löschen. Wer nicht bei null anfangen will, übernimmt Vorlagen mit einem Tipp. Zu finden in den Einstellungen unter „Strafenkategorien verwalten“.
+
+🏆 *Jahresranglisten*
+Die Ranglisten zeigen jetzt standardmäßig das laufende Jahr, die ewige Tabelle gibt's weiter über „Allzeit“. Und wer gleich viel hat, teilt sich den Platz, keiner wird mehr unfair auf Silber geschoben.
+
+🥇 *Sieger-Badges*
+Wer eine Wertung im laufenden Jahr anführt, trägt jetzt deren Icon am Profilbild, überall in der App. Im Profil seht ihr außerdem, wer in welchem Jahr wo ganz vorne lag.
+
+🔁 *Serientermine*
+Beim Anlegen könnt ihr einen Termin wöchentlich, alle 2 Wochen oder monatlich wiederholen. Jeder Termin bleibt einzeln bearbeitbar, und es gibt nur *eine* Benachrichtigung statt 52.
+
+🖼️ *Titelbild für Termine*
+Gebt jedem Abend sein eigenes Bild.
+
+💬 *Absage mit Grund*
+Bei „Ich kann nicht“ könnt ihr optional dazuschreiben, warum. Die anderen sehen's im Termin.
+
+📴 *Funkloch? Kein Problem*
+Die App zeigt euch ohne Netz den letzten Stand an, ein Hinweis sagt euch Bescheid. Außerdem: überall nach unten ziehen zum Aktualisieren, und statt Endlos-Ladekreis gibt's eine Meldung mit „Nochmal versuchen“.
+
+💸 *Strafen & Spiele aufgeräumt*
+- „Strafe hinzufügen“ öffnet ein eigenes Fenster, die Liste bleibt sofort sichtbar
+- Im Spiel-Tab gibt's pro Ereignis einen großen Button: antippen, +1, fertig
+- Spiel-Strafen zeigen jetzt, wofür sie waren (z. B. „Schock-Aus“ statt „Spiel-Ereignis“)
+- Ein Tipp auf die Strafen-Kachel führt direkt zu euren offenen Strafen
+- Die Kachel zeigt die Gesamtsumme groß, darunter rot, was noch offen ist, oder ✓ alles beglichen
+- Der Strafen-Tab lässt sich pro Stammtisch ausblenden, falls ihr ihn nicht braucht
+
+✨ *Außerdem*
+- Einstellungen übersichtlich in Gruppen sortiert
+- Protokolle nach Termin-Datum sortiert
+- Bei „Strafe beglichen“ steht im Aktivitätsprotokoll jetzt auch, welche Strafe es war
+- „✓ Dabei“ im Profil-Verlauf ist immer sichtbar, auch an Abenden mit Strafe
+- Startseite und Termine laden spürbar schneller
+
+🐞 *Behoben*
+- Doppeltes Antippen bucht Strafen, Kasse und Termine nicht mehr doppelt
+- Ungespeicherte Eingaben in den Einstellungen gehen beim Wechseln nicht mehr verloren
+- Lange Strafen-Namen werden in der Liste nicht mehr abgeschnitten
+- „Sonstiges“ ist bei Strafen wieder auswählbar
+
+👋 *Tschüss, Wetten*
+Den Wetten-Tab gibt's leider nicht mehr, sonst hätte die App nicht in den App Store gedurft. Für verlorene Wetten ist eine neue Strafenkategorie erstellt worden.
+
+Einfach in Testflight/PlayStore updaten und los geht's. Prost! 🍺
+
+Schaut gerne mal rein, ob es irgendwas zerschossen hat (vor allem bei offenen Strafen)

@@ -154,25 +154,26 @@ Alle erfassten Daten: **mit der Identität verknüpft = Ja**, **Tracking = Nein*
 
 **Nicht erfasst:** E-Mail, Telefon, Standort, Kontakte, Browserverlauf, Nutzungsdaten/Analytics, Diagnosedaten, Zahlungsdaten.
 
-## 5. Screenshots
+## 5. Screenshots (fertig, liegen lokal in `store-assets/`)
 
-| Gerät | Pflicht? | Größe (Hochformat) |
+Die Dateien sind nicht im Repo (`.gitignore`). Aufgenommen im Simulator gegen den Demo-Stammtisch, Statusleiste auf 9:41, erfundene Namen und Beträge.
+
+**iPhone 6,9" (1320 × 2868), Ordner `store-assets/iphone-6.9/`**
+
+| Reihenfolge | Datei | Overlay-Text (optional) |
 |---|---|---|
-| iPhone 6,9" (17 Pro Max, 16 Pro Max …) | **Ja** | 1320 × 2868 px |
-| iPad 13" | **Ja**, solange `supportsTablet: true` | 2064 × 2752 px |
+| 1 | `01-startseite.png` | Alles für eure Runde auf einen Blick |
+| 2 | `02-kalender.png` | Termine planen, auch als Serie |
+| 3 | `03-termin.png` | Zu- und Absagen, auf Wunsch mit Grund |
+| 4 | `04-strafen.png` | Strafen nach euren Regeln |
+| 5 | `05-kasse.png` | Kasse und Abendkosten im Griff |
+| 6 | `06-ranglisten.png` | Wer führt dieses Jahr? |
+| 7 | `07-strafenkatalog.png` | Euer Strafenkatalog, euer Spiel |
+| 8 | `08-menue.png` | Alles an einem Ort |
 
-Kleinere iPhone-Größen skaliert Apple aus den 6,9"-Bildern. 3 bis 10 Bilder pro Gerät,
-empfohlen 6 in dieser Reihenfolge (Bildunterschrift = Overlay-Text, falls ihr welche setzt):
+**iPad 13" (2064 × 2752), Ordner `store-assets/ipad-13/`:** `01-startseite.png`, `02-kalender.png`, `03-strafen.png`, `04-ranglisten.png`.
 
-1. **Startseite** – „Alles für eure Runde auf einen Blick“
-2. **Kalender / Termin-Detail** mit Zu-/Absagen – „Termine planen, Zu- und Absagen sammeln“
-3. **Strafen** – „Strafen nach euren Regeln“
-4. **Strafenkategorien** (Vorlagen) – „Euer Strafenkatalog, euer Spiel“
-5. **Kasse** – „Kasse und Abendkosten im Griff“
-6. **Rangliste mit Sieger-Badges** – „Wer führt dieses Jahr?“
-
-Wichtig: Nur Demo-Daten mit erfundenen Namen und Beträgen verwenden, keine echten Mitglieder (DSGVO, Einwilligung).
-Wenn ihr den iPad-Aufwand sparen wollt: `supportsTablet` auf `false` setzen und neu bauen.
+In App Store Connect: Version 1.6.0 → „Bildschirmfotos“ → „6,9"-Display“ bzw. „13"-iPad“, Dateien per Drag-and-drop in der Reihenfolge oben.
 
 ## 6. App-Überprüfung (App Review Information)
 
@@ -200,8 +201,7 @@ Hinweise:
 - Push-Benachrichtigungen erinnern an Termine. Kamera/Fotos werden nur für das optionale Profilbild genutzt.
 ```
 
-**Empfehlung:** Demo-Stammtisch anlegen (Option A mit gefüllten Beispieldaten). Ein leerer
-Stammtisch zeigt dem Prüfer fast nichts, das verlängert das Review oder führt zu Rückfragen.
+**Demo-Stammtisch:** Das Seed-Skript für die Produktion liegt lokal unter `store-assets/private/seed-prod.sql`, Zugangsdaten und fertiger Prüfer-Text unter `store-assets/private/`. Das Skript einmal im Supabase-SQL-Editor gegen `public` ausführen, vor dem Einreichen.
 
 **Apple-Prüfpunkte, die hier relevant sind:**
 - 1.2 (nutzergenerierte Inhalte): Inhalte sind nur in geschlossenen Gruppen sichtbar. Falls Apple nachfragt: Löschfunktion und Kontakt über Support-Seite verweisen.
