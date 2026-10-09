@@ -229,7 +229,7 @@ function MemberRow({
             ) : (
               <TouchableOpacity onPress={() => setShowAbsageGrundInput(true)} style={styles.absageGrundRow} activeOpacity={0.7}>
                 <Ionicons name="create-outline" size={14} color={COLORS.textMuted} />
-                <Text style={styles.absageGrundText} numberOfLines={2}>
+                <Text style={styles.absageGrundText}>
                   {absageGrund ? `„${absageGrund}"` : "Grund hinzufügen (optional)"}
                 </Text>
               </TouchableOpacity>
@@ -316,7 +316,7 @@ function MemberRow({
             <Text style={styles.memberVerspätungSmall}>⏱ {gesamtMinuten} Min.</Text>
           )}
           {rsvpStatus === "nein" && absageGrund && (
-            <Text style={styles.absageGrundTextSmall} numberOfLines={1}>„{absageGrund}"</Text>
+            <Text style={styles.absageGrundTextSmall}>„{absageGrund}"</Text>
           )}
         </View>
 

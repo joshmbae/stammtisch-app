@@ -326,7 +326,7 @@ export default function StrafenScreen() {
                         <Text style={styles.eintragTypLabel}>{member?.name ?? "Unbekannt"}</Text>
                         <Text style={styles.eintragDesc}>{kat?.label ?? log.kategorie}</Text>
                         {log.notiz && (
-                          <Text style={styles.eintragNotiz} numberOfLines={2}>„{log.notiz}"</Text>
+                          <Text style={styles.eintragNotiz}>„{log.notiz}"</Text>
                         )}
                         <Text style={styles.eintragDatum}>{formatDatum(log.loggedAt)}</Text>
                       </View>

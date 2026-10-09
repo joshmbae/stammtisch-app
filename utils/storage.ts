@@ -1278,3 +1278,17 @@ export async function loadActivityFeed(limitCount = 100): Promise<ActivityLogEnt
     return (data ?? []).map(rowToActivity);
   });
 }
+
+/** Ältere Feed-Einträge vor `beforeCreatedAt` nachladen ("Mehr laden") — ungecacht, nur online sinnvoll. */
+export async function loadActivityFeedBefore(beforeCreatedAt: string, limitCount = 50): Promise<ActivityLogEntry[]> {
+  const stammtischId = await getStammtischId();
+  const { data, error } = await supabase
+    .from("activity_log")
+    .select("*")
+    .eq("stammtisch_id", stammtischId)
+    .lt("created_at", beforeCreatedAt)
+    .order("created_at", { ascending: false })
+    .limit(limitCount);
+  if (error) throw error;
+  return (data ?? []).map(rowToActivity);
+}

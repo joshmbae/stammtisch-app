@@ -39,3 +39,34 @@ export function formatActivityZeit(iso: string): string {
   if (diffDays === 1) return `Gestern, ${time}`;
   return date.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }) + `, ${time}`;
 }
+
+const WOCHENTAGE = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
+
+/** "Do, 15.10." — Wochentag ohne Punkt (toLocaleDateString liefert je nach Engine "Do.," ). */
+export function formatWochentagDatum(d: Date, mitJahr = false): string {
+  const tag = String(d.getDate()).padStart(2, "0");
+  const monat = String(d.getMonth() + 1).padStart(2, "0");
+  return `${WOCHENTAGE[d.getDay()]}, ${tag}.${monat}.${mitJahr ? d.getFullYear() : ""}`;
+}
+
+/** Kalendertag-Schlüssel (lokal) eines ISO-Zeitstempels, z.B. zum Gruppieren im Feed. */
+export function tagesSchluessel(iso: string): string {
+  return toLocalIsoDate(new Date(iso));
+}
+
+/** Überschrift für eine Tagesgruppe im Feed: "Heute", "Gestern" oder "Do, 02.10." (mit Jahr, falls nicht aktuell). */
+export function formatTagUeberschrift(iso: string): string {
+  const date = new Date(iso);
+  const now = new Date();
+  const dateDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const nowDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const diffDays = Math.round((nowDay.getTime() - dateDay.getTime()) / 86400000);
+  if (diffDays === 0) return "Heute";
+  if (diffDays === 1) return "Gestern";
+  return formatWochentagDatum(date, date.getFullYear() !== now.getFullYear());
+}
+
+/** Nur die Uhrzeit "19:42" eines ISO-Zeitstempels. */
+export function formatUhrzeit(iso: string): string {
+  return new Date(iso).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+}

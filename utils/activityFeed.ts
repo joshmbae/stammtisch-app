@@ -1,5 +1,6 @@
 import { ActivityLogEntry, MemberProfile, StrafKategorieDef } from "../types";
 import { formatEuro as formatEuroBase } from "./format";
+import { formatWochentagDatum } from "./date";
 
 function formatEuro(n: number): string {
   return formatEuroBase(n) + " €";
@@ -10,11 +11,15 @@ function displayName(m: MemberProfile | undefined): string {
   return m.spitzname ?? m.name.split(" ")[0];
 }
 
-/** Baut z.B. "Stammtisch am 06.08." oder "Weihnachtsfeier am 19.12." aus den im meta eingefrorenen Termin-Daten. */
-function terminBezeichnung(meta: Record<string, any>): string {
+/** Baut z.B. "Stammtisch am 06.08." oder "Weihnachtsfeier am 19.12." aus den im meta eingefrorenen Termin-Daten.
+ *  Mit `mitWochentag` wird daraus "Stammtisch am Do, 06.08." (für Push-Texte). */
+export function terminBezeichnung(meta: Record<string, any>, mitWochentag = false): string {
   const label = meta.terminTitel || (meta.terminArt === "geburtstag" ? "Geburtstag" : meta.terminArt === "veranstaltung" ? "Veranstaltung" : "Stammtisch");
   if (!meta.terminDatum) return label;
-  const datum = new Date(meta.terminDatum + "T00:00:00").toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
+  const d = new Date(meta.terminDatum + "T00:00:00");
+  const datum = mitWochentag
+    ? formatWochentagDatum(d)
+    : d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
   return `${label} am ${datum}`;
 }
 
@@ -22,6 +27,39 @@ export interface RenderedActivity {
   emoji: string;
   text: string;
   actorText?: string;
+  /** Zusatzinfo unter dem Haupttext, z.B. die Notiz zu einer Strafe. */
+  detail?: string;
+}
+
+/**
+ * Wohin ein Tipp auf einen Aktivitäts-Eintrag (Feed, Home, Push) führt.
+ * null = kein sinnvolles Ziel (z.B. Altbestand ohne Bezug).
+ */
+export function activityRoute(entry: ActivityLogEntry): string | null {
+  switch (entry.actionType) {
+    case "straf_log_created":
+    case "straf_log_beglichen":
+    case "straf_log_deleted":
+      return entry.subjectMemberId ? `/strafen?memberId=${entry.subjectMemberId}` : "/strafen";
+    case "kasse_einnahme_created":
+    case "kasse_ausgabe_created":
+    case "abendkosten_created":
+    case "kasse_beglichen":
+      return entry.refId ? `/kasse?eintragId=${entry.refId}` : "/kasse";
+    case "kasse_eintrag_deleted":
+      return "/kasse";
+    case "protokoll_updated":
+      return entry.terminId ? `/protokoll/${entry.terminId}` : "/protokolle";
+    case "spiel_log_created":
+    case "spiel_log_deleted":
+    case "termin_zusage":
+    case "termin_absage":
+    case "termin_erstellt":
+    case "termin_verlegt":
+      return entry.terminId ? `/termin/${entry.terminId}` : null;
+    default:
+      return entry.subjectMemberId ? `/member/${entry.subjectMemberId}` : null;
+  }
 }
 
 /** Baut den lesbaren Feed-Text aus einem Activity-Log-Eintrag zur Laufzeit. */
@@ -47,6 +85,7 @@ export function renderActivity(
         emoji: kat?.emoji ?? "💰",
         text: `${subjectName} hat eine Strafe bekommen: ${kat?.label ?? meta.kategorie} (${formatEuro(Number(meta.betrag ?? 0))})`,
         actorText: eingetragenVon,
+        detail: meta.notiz ? `„${meta.notiz}“` : undefined,
       };
     }
     case "straf_log_beglichen": {
@@ -76,9 +115,13 @@ export function renderActivity(
         actorText: eingetragenVon,
       };
     case "kasse_beglichen":
+      // meta.anteil: ein Teilnehmer hat seinen Anteil zurückgezahlt (subject = Schuldner).
+      // Ohne Flag (Altbestand/Rechnung ohne Teilnehmer): subject = Zahler, der sein Geld zurückbekommen hat.
       return {
         emoji: "✅",
-        text: `Stammtischrechnung beglichen: ${subjectName} wurde zurückgezahlt (${formatEuro(Number(meta.betrag ?? 0))})`,
+        text: meta.anteil
+          ? `${subjectName} hat den Anteil an der Stammtischrechnung zurückgezahlt (${formatEuro(Number(meta.betrag ?? 0))})`
+          : `Stammtischrechnung beglichen: ${subjectName} wurde zurückgezahlt (${formatEuro(Number(meta.betrag ?? 0))})`,
         actorText: eingetragenVon,
       };
     case "kasse_eintrag_deleted":

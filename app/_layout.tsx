@@ -19,8 +19,10 @@ Notifications.setNotificationHandler({
 export default function RootLayout() {
   useEffect(() => {
     const sub = Notifications.addNotificationResponseReceivedListener((response) => {
-      const terminId = response.notification.request.content.data?.terminId;
-      if (terminId) router.push(`/termin/${terminId}`);
+      const data = response.notification.request.content.data ?? {};
+      // Neue Pushes tragen das Ziel als url (activityRoute), ältere nur terminId.
+      if (typeof data.url === "string") router.push(data.url as any);
+      else if (data.terminId) router.push(`/termin/${data.terminId}`);
     });
     return () => sub.remove();
   }, []);

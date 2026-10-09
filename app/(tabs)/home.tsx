@@ -37,7 +37,7 @@ import {
   loadActivityFeed,
   loadStrafKategorien,
 } from "../../utils/storage";
-import { renderActivity } from "../../utils/activityFeed";
+import { activityRoute, renderActivity } from "../../utils/activityFeed";
 import { useSession } from "../../contexts/SessionContext";
 import { useStammtisch } from "../../contexts/StammtischContext";
 import { supabase } from "../../utils/supabase";
@@ -206,7 +206,7 @@ export default function HomeScreen() {
   const [featuredRang, setFeaturedRang]       = useState<Rangliste | null>(null);
   const [kasse, setKasse]                     = useState<KassenEintrag[]>([]);
   const [terminCount, setTerminCount]         = useState(0);
-  const [lastActivity, setLastActivity]       = useState<ActivityLogEntry | null>(null);
+  const [lastActivities, setLastActivities]   = useState<ActivityLogEntry[]>([]);
   const [strafKategorien, setStrafKategorien] = useState<StrafKategorieDef[]>([]);
   const [siegerTitel, setSiegerTitel] = useState<Map<string, FuehrenderTitel[]>>(new Map());
 
@@ -216,7 +216,7 @@ export default function HomeScreen() {
     useCallback(() => {
       if (!stammtischId) return;
       const channel = subscribeToActivityFeed(stammtischId, (entry) => {
-        setLastActivity(entry);
+        setLastActivities((prev) => (prev.some((e) => e.id === entry.id) ? prev : [entry, ...prev].slice(0, 3)));
       });
       return () => { supabase.removeChannel(channel); };
     }, [stammtischId])
@@ -224,13 +224,13 @@ export default function HomeScreen() {
 
   async function load() {
     const [ms, v, alle, kasseData, activityFeed, alleSpiele, kats] = await Promise.all([
-      loadMembers(), loadVerordnung(), loadTermine(), loadKasse(), loadActivityFeed(1), loadSpiele(), loadStrafKategorien(),
+      loadMembers(), loadVerordnung(), loadTermine(), loadKasse(), loadActivityFeed(3), loadSpiele(), loadStrafKategorien(),
     ]);
 
     setVerordnung(v);
     setKasse(kasseData);
     setMembers(ms);
-    setLastActivity(activityFeed[0] ?? null);
+    setLastActivities(activityFeed.slice(0, 3));
     setStrafKategorien(kats);
 
     const alleTypen = await loadAllEreignisTypen(alleSpiele.map((s) => s.id));
@@ -313,7 +313,6 @@ export default function HomeScreen() {
   const naechsterZusagePct = members.length > 0 ? Math.round((naechsterZusagen / members.length) * 100) : 0;
 
   const membersById = new Map(members.map((m) => [m.id, m]));
-  const lastActivityRendered = lastActivity ? renderActivity(lastActivity, membersById, strafKategorien) : null;
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
@@ -490,25 +489,39 @@ export default function HomeScreen() {
               <Text style={styles.activityLink}>Alle →</Text>
             </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            style={styles.activityRow}
-            onPress={() => router.push("/feed")}
-            activeOpacity={0.88}
-          >
-            <View style={styles.activityIcon}>
-              <Text style={{ fontSize: 22 }}>{lastActivityRendered?.emoji ?? "📋"}</Text>
-            </View>
-            <View style={styles.activityTexts}>
-              <Text style={styles.activityTitle} numberOfLines={2}>
-                {lastActivityRendered?.text ?? "Noch keine Aktivität"}
-              </Text>
-              <Text style={styles.activitySub}>
-                {lastActivity
-                  ? formatActivityZeit(lastActivity.createdAt) + (lastActivityRendered?.actorText ? ` · ${lastActivityRendered.actorText}` : "")
-                  : "Strafen, Bezahlungen & Spiel-Ergebnisse tauchen hier auf"}
-              </Text>
-            </View>
-          </TouchableOpacity>
+          {lastActivities.length === 0 ? (
+            <TouchableOpacity style={styles.activityRow} onPress={() => router.push("/feed")} activeOpacity={0.88}>
+              <View style={styles.activityIcon}>
+                <Text style={{ fontSize: 22 }}>📋</Text>
+              </View>
+              <View style={styles.activityTexts}>
+                <Text style={styles.activityTitle}>Noch keine Aktivität</Text>
+                <Text style={styles.activitySub}>Strafen, Bezahlungen & Spiel-Ergebnisse tauchen hier auf</Text>
+              </View>
+            </TouchableOpacity>
+          ) : lastActivities.map((a, i) => {
+            const rendered = renderActivity(a, membersById, strafKategorien);
+            const route = activityRoute(a) ?? "/feed";
+            return (
+              <TouchableOpacity
+                key={a.id}
+                style={[styles.activityRow, i > 0 && styles.activityRowDivider]}
+                onPress={() => router.push(route as any)}
+                activeOpacity={0.88}
+              >
+                <View style={styles.activityIcon}>
+                  <Text style={{ fontSize: 22 }}>{rendered.emoji}</Text>
+                </View>
+                <View style={styles.activityTexts}>
+                  <Text style={styles.activityTitle}>{rendered.text}</Text>
+                  <Text style={styles.activitySub}>
+                    {formatActivityZeit(a.createdAt) + (rendered.actorText ? ` · ${rendered.actorText}` : "")}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={COLORS.textLight} />
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         {/* ── Rotierende Spiel-Rangliste des laufenden Jahres (wechselt bei jedem Öffnen) ── */}
@@ -742,6 +755,7 @@ const styles = StyleSheet.create({
   activityHeader: { fontSize: 14, fontWeight: "800", color: COLORS.textDark, letterSpacing: -0.2 },
   activityLink: { fontSize: 13, fontWeight: "700", color: COLORS.blue },
   activityRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  activityRowDivider: { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: COLORS.border },
   activityIcon: {
     width: 42, height: 42, borderRadius: 21,
     backgroundColor: COLORS.background, alignItems: "center", justifyContent: "center",

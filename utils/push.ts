@@ -3,7 +3,8 @@ import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import Constants from "expo-constants";
 import { supabase } from "./supabase";
-import { renderActivity } from "./activityFeed";
+import { activityRoute } from "./activityFeed";
+import { renderPushText, PushContext } from "./pushText";
 import { ActivityLogEntry } from "../types";
 
 function nextId(): string {
@@ -53,7 +54,8 @@ export async function registerForPushNotifications(memberId: string): Promise<vo
  * Schickt allen anderen Mitgliedern des Stammtischs (nicht dem Verursacher)
  * eine Push-Benachrichtigung für einen neuen Aktivitätsprotokoll-Eintrag —
  * direkt vom Client an Expos Push-Dienst, keine Server-Funktion nötig.
- * Text/Emoji kommen aus derselben renderActivity()-Logik wie der Feed.
+ * Texte kommen aus renderPushText() (locker, wechselnde Formulierungen),
+ * das Tipp-Ziel aus activityRoute() — dieselbe Logik wie im Feed.
  */
 export async function sendActivityPush(stammtischId: string, activity: ActivityLogEntry): Promise<void> {
   try {
@@ -72,20 +74,26 @@ export async function sendActivityPush(stammtischId: string, activity: ActivityL
       .in("member_id", recipients.map((m: any) => m.id));
     if (tokensError || !tokenRows || tokenRows.length === 0) return;
 
-    const { data: strafKategorien } = await supabase
-      .from("straf_kategorien")
-      .select("id, label, emoji")
-      .eq("stammtisch_id", stammtischId);
+    const [{ data: strafKategorien }, stammtischName, zusagenAnzahl] = await Promise.all([
+      supabase.from("straf_kategorien").select("id, label, emoji").eq("stammtisch_id", stammtischId),
+      loadStammtischName(stammtischId),
+      activity.actionType === "termin_zusage" && activity.terminId
+        ? loadZusagenAnzahl(activity.terminId)
+        : Promise.resolve(undefined),
+    ]);
 
     const membersById = new Map(members.map((m: any) => [m.id, m]));
-    const rendered = renderActivity(activity, membersById, (strafKategorien ?? []) as any);
+    const ctx: PushContext = { zusagenAnzahl };
+    const { title, body } = renderPushText(activity, membersById, (strafKategorien ?? []) as any, ctx);
+    const url = activityRoute(activity);
 
     const messages = tokenRows.map((t: any) => ({
       to: t.token,
-      title: "DeinStammtisch",
-      body: `${rendered.emoji} ${rendered.text}`,
+      title,
+      ...(stammtischName ? { subtitle: stammtischName } : {}),
+      body,
       sound: "default",
-      data: { terminId: activity.terminId ?? null, actionType: activity.actionType },
+      data: { url, terminId: activity.terminId ?? null, actionType: activity.actionType },
     }));
 
     await fetch("https://exp.host/--/api/v2/push/send", {
@@ -96,4 +104,15 @@ export async function sendActivityPush(stammtischId: string, activity: ActivityL
   } catch (e) {
     console.warn("Push-Versand fehlgeschlagen:", e);
   }
+}
+
+/** Name des Stammtischs für die Push-Unterzeile (iOS subtitle), aus der Verordnung. */
+async function loadStammtischName(stammtischId: string): Promise<string | undefined> {
+  const { data } = await supabase.from("verordnung").select("name").eq("stammtisch_id", stammtischId).maybeSingle();
+  return data?.name || undefined;
+}
+
+async function loadZusagenAnzahl(terminId: string): Promise<number | undefined> {
+  const { data } = await supabase.from("termine").select("anwesenheit").eq("id", terminId).maybeSingle();
+  return Array.isArray(data?.anwesenheit) ? data!.anwesenheit.length : undefined;
 }

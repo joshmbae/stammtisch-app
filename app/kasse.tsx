@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,14 +11,15 @@ import {
   Platform,
   KeyboardAvoidingView,
   RefreshControl,
+  Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router, useFocusEffect } from "expo-router";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import Swipeable from "react-native-gesture-handler/Swipeable";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { showAlert } from "../utils/alert";
-import { KassenEintrag, KassenEintragTyp, MemberProfile } from "../types";
+import { KassenEintrag, KassenEintragTyp, MemberProfile, StammtischTermin } from "../types";
 import {
   loadKasse,
   addKassenEintrag,
@@ -27,7 +28,10 @@ import {
   loadMembers,
   logActivity,
   loadActivityFeed,
+  loadTermine,
 } from "../utils/storage";
+import { terminBezeichnung } from "../utils/activityFeed";
+import { formatUhrzeit, formatWochentagDatum } from "../utils/date";
 import { COLORS, SHADOWS } from "../constants/design";
 import { HamburgerButton } from "../components/HamburgerButton";
 import { BackButton } from "../components/BackButton";
@@ -69,16 +73,132 @@ const TYP_META: Record<KassenEintragTyp, { label: string; emoji: string; color: 
   abendkosten:  { label: "Stammtischrechnung", emoji: "🍺", color: COLORS.gold,    bg: COLORS.goldBg },
 };
 
+function formatDatumZeit(iso: string): string {
+  const d = new Date(iso);
+  return `${formatWochentagDatum(d, true)} · ${formatUhrzeit(iso)} Uhr`;
+}
+
+function kurzName(m: MemberProfile | undefined): string | undefined {
+  return m ? m.spitzname ?? m.name.split(" ")[0] : undefined;
+}
+
+// ─── Eintrag Detail ───────────────────────────────────────────────────────────
+
+function DetailZeile({ label, value, onPress }: { label: string; value: string; onPress?: () => void }) {
+  const content = (
+    <>
+      <Text style={styles.detailLabel}>{label}</Text>
+      <View style={styles.detailValueRow}>
+        <Text style={[styles.detailValue, onPress && { color: COLORS.blue }]}>{value}</Text>
+        {onPress ? <Ionicons name="chevron-forward" size={16} color={COLORS.blue} /> : null}
+      </View>
+    </>
+  );
+  return onPress ? (
+    <TouchableOpacity style={styles.detailZeile} onPress={onPress} activeOpacity={0.7}>{content}</TouchableOpacity>
+  ) : (
+    <View style={styles.detailZeile}>{content}</View>
+  );
+}
+
+/** Bottom-Sheet mit allen Infos zu einem Kassen-Eintrag — voller Text, wer, wann, verknüpfter Termin. */
+function EintragDetail({
+  eintrag,
+  members,
+  termin,
+  actorId,
+  onClose,
+}: {
+  eintrag: KassenEintrag | null;
+  members: MemberProfile[];
+  termin?: StammtischTermin;
+  actorId?: string;
+  onClose: () => void;
+}) {
+  if (!eintrag) return null;
+  const meta = TYP_META[eintrag.typ];
+  const isPositive = eintrag.typ === "einnahme";
+  const betragFarbe = eintrag.typ === "abendkosten" ? COLORS.gold : isPositive ? COLORS.success : COLORS.danger;
+  const zahler = members.find((m) => m.id === eintrag.bezahltVon);
+  const actor = actorId ? members.find((m) => m.id === actorId) : undefined;
+  const teilnehmer = (eintrag.teilnehmerIds ?? []).map((id) => members.find((m) => m.id === id)).filter(Boolean) as MemberProfile[];
+  const offen = schuldnerVon(eintrag).filter((id) => !(eintrag.beglichenIds ?? []).includes(id));
+
+  function geheZu(route: string) {
+    onClose();
+    router.push(route as any);
+  }
+
+  return (
+    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
+      <View style={styles.modalOverlay}>
+        <TouchableOpacity style={StyleSheet.absoluteFillObject} activeOpacity={1} onPress={onClose} />
+        <View style={styles.modalSheet}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>{meta.emoji} {meta.label}</Text>
+            <TouchableOpacity onPress={onClose} style={styles.modalCloseBtn}>
+              <Ionicons name="close" size={20} color={COLORS.textMuted} />
+            </TouchableOpacity>
+          </View>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <Text style={[styles.detailBetrag, { color: betragFarbe }]}>
+              {eintrag.typ === "abendkosten" ? "" : isPositive ? "+" : "−"}{formatEuro(eintrag.betrag)} €
+            </Text>
+            {eintrag.beschreibung?.trim() ? (
+              <Text style={styles.detailBeschreibung} selectable>{eintrag.beschreibung.trim()}</Text>
+            ) : null}
+
+            <View style={styles.detailCard}>
+              <DetailZeile label="Datum" value={formatDatumZeit(eintrag.datum)} />
+              {zahler && (
+                <DetailZeile label="Vorgestreckt von" value={zahler.name} onPress={() => geheZu(`/member/${zahler.id}`)} />
+              )}
+              {teilnehmer.length > 0 && (
+                <DetailZeile
+                  label="Dabei"
+                  value={`${teilnehmer.length} ${teilnehmer.length === 1 ? "Person" : "Personen"} · ${formatEuro(eintrag.betrag / teilnehmer.length)} € pro Kopf\n${teilnehmer.map((m) => kurzName(m)).join(", ")}`}
+                />
+              )}
+              {eintrag.typ === "abendkosten" && (
+                <DetailZeile
+                  label="Status"
+                  value={isEintragBeglichen(eintrag)
+                    ? "✅ Komplett beglichen"
+                    : offen.length > 0
+                      ? `Offen: ${offen.map((id) => kurzName(members.find((m) => m.id === id)) ?? "?").join(", ")}`
+                      : "Offen"}
+                />
+              )}
+              {actor && (
+                <DetailZeile label="Eingetragen von" value={actor.name} onPress={() => geheZu(`/member/${actor.id}`)} />
+              )}
+              {eintrag.terminId && (
+                <DetailZeile
+                  label="Termin"
+                  value={termin ? terminBezeichnung({ terminDatum: termin.datum, terminTitel: termin.titel, terminArt: termin.art }, true) : "Zum Termin"}
+                  onPress={() => geheZu(`/termin/${eintrag.terminId}`)}
+                />
+              )}
+            </View>
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 // ─── Eintrag Row ──────────────────────────────────────────────────────────────
 
 function EintragRow({
   eintrag,
   actorName,
   onDelete,
+  onOpen,
 }: {
   eintrag: KassenEintrag;
   actorName?: string;
   onDelete: () => void;
+  onOpen: () => void;
 }) {
   const meta = TYP_META[eintrag.typ];
   const isPositive = eintrag.typ === "einnahme";
@@ -99,18 +219,18 @@ function EintragRow({
 
   return (
     <Swipeable renderRightActions={renderRight} overshootRight={false}>
-      <View style={[styles.eintragRow, { borderLeftColor: meta.color }]}>
+      <TouchableOpacity style={[styles.eintragRow, { borderLeftColor: meta.color }]} onPress={onOpen} activeOpacity={0.8}>
         <View style={[styles.eintragIcon, { backgroundColor: meta.bg }]}>
           <Text style={{ fontSize: 18 }}>{meta.emoji}</Text>
         </View>
         <View style={styles.eintragMeta}>
-          <Text style={styles.eintragHeadline} numberOfLines={1}>{headline}</Text>
+          <Text style={styles.eintragHeadline}>{headline}</Text>
           <Text style={styles.eintragSub}>{subParts.join(" · ")}</Text>
         </View>
         <Text style={[styles.eintragBetrag, { color: isPositive ? COLORS.success : COLORS.danger }]}>
           {isPositive ? "+" : "−"}{formatEuro(eintrag.betrag)} €
         </Text>
-      </View>
+      </TouchableOpacity>
     </Swipeable>
   );
 }
@@ -121,12 +241,15 @@ type FormTyp = KassenEintragTyp | null;
 
 export default function KasseScreen() {
   const { activeMemberId } = useSession();
+  const { eintragId } = useLocalSearchParams<{ eintragId?: string }>();
   const guard = useSingleFlight();
   const [eintraege, setEintraege] = useState<KassenEintrag[]>([]);
   const [members, setMembers] = useState<MemberProfile[]>([]);
   const [actorByRefId, setActorByRefId] = useState<Map<string, string>>(new Map());
   const [activeForm, setActiveForm] = useState<FormTyp>(null);
   const [showBeglichen, setShowBeglichen] = useState(false);
+  const [termineById, setTermineById] = useState<Map<string, StammtischTermin>>(new Map());
+  const [detailId, setDetailId] = useState<string | null>(null);
 
   // Form state
   const [betrag, setBetrag] = useState("");
@@ -135,13 +258,14 @@ export default function KasseScreen() {
   const [teilnehmerIds, setTeilnehmerIds] = useState<string[]>([]);
 
   async function load() {
-    const [k, ms, activity] = await Promise.all([loadKasse(), loadMembers(), loadActivityFeed(300)]);
+    const [k, ms, activity, termine] = await Promise.all([loadKasse(), loadMembers(), loadActivityFeed(300), loadTermine()]);
     setEintraege(k);
     setMembers(ms);
+    setTermineById(new Map(termine.map((t) => [t.id, t])));
     const map = new Map<string, string>();
     for (const a of activity) {
       if (
-        (a.actionType === "kasse_einnahme_created" || a.actionType === "kasse_ausgabe_created") &&
+        (a.actionType === "kasse_einnahme_created" || a.actionType === "kasse_ausgabe_created" || a.actionType === "abendkosten_created") &&
         a.refId && a.actorMemberId
       ) {
         map.set(a.refId, a.actorMemberId);
@@ -151,6 +275,13 @@ export default function KasseScreen() {
   }
 
   const { loading, refreshing, error, onRefresh, retry } = useScreenLoad(load, []);
+
+  // Deep-Link aus Feed/Push: /kasse?eintragId=… öffnet direkt die Detailansicht.
+  useEffect(() => {
+    if (!loading && eintragId && eintraege.some((e) => e.id === eintragId)) setDetailId(eintragId);
+  }, [loading, eintragId]);
+
+  const detailEintrag = detailId ? eintraege.find((e) => e.id === detailId) ?? null : null;
 
   const kassenEintraege = eintraege.filter((e) => e.typ !== "abendkosten");
   const abendkostenEintraege = eintraege.filter((e) => e.typ === "abendkosten");
@@ -211,7 +342,11 @@ export default function KasseScreen() {
         eintrag.typ === "abendkosten" ? "abendkosten_created" :
         eintrag.typ === "einnahme" ? "kasse_einnahme_created" : "kasse_ausgabe_created",
       refId: eintrag.id,
-      meta: { betrag: eintrag.betrag, beschreibung: eintrag.beschreibung },
+      meta: {
+        betrag: eintrag.betrag,
+        beschreibung: eintrag.beschreibung,
+        teilnehmerAnzahl: eintrag.teilnehmerIds?.length,
+      },
     });
     closeForm();
   }
@@ -260,7 +395,7 @@ export default function KasseScreen() {
         subjectMemberId: memberId,
         actionType: "kasse_beglichen",
         refId: entryId,
-        meta: { betrag: anteil },
+        meta: { betrag: anteil, anteil: true },
       });
     }
   }
@@ -494,7 +629,7 @@ export default function KasseScreen() {
                       { borderLeftColor: beglichen ? COLORS.success : meta.color },
                       beglichen && { backgroundColor: "#F8FDF9" },
                     ]}>
-                      <View style={styles.eintragRowInner}>
+                      <TouchableOpacity style={styles.eintragRowInner} onPress={() => setDetailId(e.id)} activeOpacity={0.8}>
                         <View style={[styles.eintragIcon, { backgroundColor: beglichen ? COLORS.success + "15" : meta.bg }]}>
                           <Text style={{ fontSize: 18 }}>{beglichen ? "✅" : meta.emoji}</Text>
                         </View>
@@ -526,7 +661,7 @@ export default function KasseScreen() {
                             />
                           </TouchableOpacity>
                         )}
-                      </View>
+                      </TouchableOpacity>
 
                       {hatTeilnehmer && schuldner.length > 0 && (
                         <View style={styles.schuldnerList}>
@@ -576,6 +711,7 @@ export default function KasseScreen() {
                     eintrag={e}
                     actorName={actor?.spitzname ?? actor?.name.split(" ")[0]}
                     onDelete={() => handleDelete(e.id)}
+                    onOpen={() => setDetailId(e.id)}
                   />
                 );
               })}
@@ -590,6 +726,13 @@ export default function KasseScreen() {
 
         </ScrollView>
         )}
+        <EintragDetail
+          eintrag={detailEintrag}
+          members={members}
+          termin={detailEintrag?.terminId ? termineById.get(detailEintrag.terminId) : undefined}
+          actorId={detailEintrag ? actorByRefId.get(detailEintrag.id) : undefined}
+          onClose={() => setDetailId(null)}
+        />
       </SafeAreaView>
       </KeyboardAvoidingView>
     </GestureHandlerRootView>
@@ -692,7 +835,7 @@ const styles = StyleSheet.create({
   eintragDesc: { fontSize: 12, color: COLORS.textMuted, marginTop: 1 },
   eintragZahler: { fontSize: 12, color: COLORS.blue, marginTop: 1, fontWeight: "600" },
   eintragDatum: { fontSize: 11, color: COLORS.textLight, marginTop: 2 },
-  eintragHeadline: { fontSize: 14, fontWeight: "700", color: COLORS.textDark },
+  eintragHeadline: { fontSize: 14, fontWeight: "700", color: COLORS.textDark, lineHeight: 19 },
   eintragSub: { fontSize: 11, color: COLORS.textMuted, marginTop: 2 },
   eintragBetrag: { fontSize: 16, fontWeight: "800", minWidth: 80, textAlign: "right" },
 
@@ -717,4 +860,34 @@ const styles = StyleSheet.create({
   emptyEmoji: { fontSize: 40 },
   emptyTitle: { fontSize: 17, fontWeight: "800", color: COLORS.textDark },
   emptySub: { fontSize: 13, color: COLORS.textMuted, textAlign: "center" },
+
+  // ── Detail-Sheet ──────────────────────────────────────────────────────────
+  modalOverlay: { flex: 1, backgroundColor: "rgba(26,18,8,0.5)", justifyContent: "flex-end" },
+  modalSheet: {
+    backgroundColor: COLORS.background, borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    paddingHorizontal: 20, paddingTop: 16, paddingBottom: 32, maxHeight: "85%", ...SHADOWS.card,
+  },
+  modalHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 },
+  modalTitle: { fontSize: 17, fontWeight: "800", color: COLORS.textDark },
+  modalCloseBtn: {
+    width: 30, height: 30, borderRadius: 15, backgroundColor: COLORS.cardAlt,
+    alignItems: "center", justifyContent: "center",
+  },
+  detailBetrag: { fontSize: 32, fontWeight: "800", textAlign: "center", marginVertical: 8 },
+  detailBeschreibung: {
+    fontSize: 15, color: COLORS.textDark, lineHeight: 21, textAlign: "center",
+    marginBottom: 14, paddingHorizontal: 8,
+  },
+  detailCard: {
+    backgroundColor: COLORS.card, borderRadius: 16, borderWidth: 1, borderColor: COLORS.border,
+    paddingHorizontal: 14, overflow: "hidden", ...SHADOWS.light,
+  },
+  // marginBottom -1: die Trennlinie der letzten Zeile verschwindet unter dem Kartenrand.
+  detailZeile: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: COLORS.border, marginBottom: -1 },
+  detailLabel: {
+    fontSize: 11, fontWeight: "700", color: COLORS.textMuted,
+    textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 3,
+  },
+  detailValueRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  detailValue: { flex: 1, fontSize: 14, fontWeight: "600", color: COLORS.textDark, lineHeight: 20 },
 });

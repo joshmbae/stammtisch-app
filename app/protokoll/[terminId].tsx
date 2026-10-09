@@ -119,6 +119,7 @@ export default function ProtokollEditor() {
       actionType: "protokoll_updated",
       terminId,
       refId: saved.id,
+      meta: termin ? { terminDatum: termin.datum, terminTitel: termin.titel, terminArt: termin.art } : {},
     });
   }
 
