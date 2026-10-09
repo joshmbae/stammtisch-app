@@ -6,7 +6,7 @@ import { formatWochentagDatum } from "./date";
  * Push-Texte für Aktivitäts-Einträge. Bewusst lockerer als der Feed: Titel
  * sagt in einem Satz, was passiert ist, der Text liefert den Kontext. Pro
  * Ereignis gibt's mehrere Formulierungen, damit's nicht jedes Mal gleich
- * klingt — leicht bayrisch, aber noch für jeden lesbar.
+ * klingt — locker, aber Hochdeutsch (die App wird deutschlandweit genutzt).
  */
 
 export interface PushText {
@@ -67,39 +67,39 @@ function notizSatz(v: Vars): string {
 
 const VARIANTEN: Partial<Record<ActivityLogEntry["actionType"], Variante[]>> = {
   straf_log_created: [
-    (v) => ({ title: `${v.katEmoji} ${v.wer} muss blechen`, body: `${v.kat} – ${v.betrag} wandern in d'Kass.${notizSatz(v)}${vonSatz(v)}` }),
-    (v) => ({ title: `${v.katEmoji} Zack, Strafe für ${v.wer}`, body: `Wegen „${v.kat}“ san ${v.betrag} fällig.${notizSatz(v)}${vonSatz(v)}` }),
-    (v) => ({ title: `${v.katEmoji} ${v.wer} hat's erwischt`, body: `${v.kat}: ${v.betrag} für d'Stammtischkasse. Vergelt's Gott!${notizSatz(v)}${vonSatz(v)}` }),
+    (v) => ({ title: `${v.katEmoji} ${v.wer} muss zahlen`, body: `${v.kat} – ${v.betrag} wandern in die Kasse.${notizSatz(v)}${vonSatz(v)}` }),
+    (v) => ({ title: `${v.katEmoji} Zack, Strafe für ${v.wer}`, body: `Wegen „${v.kat}“ sind ${v.betrag} fällig.${notizSatz(v)}${vonSatz(v)}` }),
+    (v) => ({ title: `${v.katEmoji} ${v.wer} hat's erwischt`, body: `${v.kat}: ${v.betrag} für die Stammtischkasse. Danke für die Spende!${notizSatz(v)}${vonSatz(v)}` }),
   ],
   straf_log_beglichen: [
-    (v) => ({ title: `✅ ${v.wer} hat bezahlt`, body: `${v.kat} (${v.betrag}) is beglichen. Sauber!` }),
-    (v) => ({ title: `✅ Sauber, ${v.wer}!`, body: `${v.betrag} für „${v.kat}“ san in da Kass.` }),
-    (v) => ({ title: `💶 ${v.wer} hat d'Schulden beglichen`, body: `${v.kat} – ${v.betrag} bezahlt. Passt scho!` }),
+    (v) => ({ title: `✅ ${v.wer} hat bezahlt`, body: `${v.kat} (${v.betrag}) ist beglichen. Sauber!` }),
+    (v) => ({ title: `✅ Sauber, ${v.wer}!`, body: `${v.betrag} für „${v.kat}“ sind in der Kasse.` }),
+    (v) => ({ title: `💶 ${v.wer} ist die Strafe los`, body: `${v.kat} – ${v.betrag} bezahlt. Passt!` }),
   ],
   straf_log_deleted: [
-    (v) => ({ title: `🍀 Glück ghabt, ${v.wer}!`, body: `Die Strafe „${v.kat}“ (${v.betrag}) is wieder gestrichen.${vonSatz(v)}` }),
+    (v) => ({ title: `🍀 Glück gehabt, ${v.wer}!`, body: `Die Strafe „${v.kat}“ (${v.betrag}) ist wieder gestrichen.${vonSatz(v)}` }),
     (v) => ({ title: `🗑️ Strafe zurückgenommen`, body: `${v.wer} kommt um „${v.kat}“ (${v.betrag}) herum.${vonSatz(v)}` }),
   ],
   kasse_einnahme_created: [
-    (v) => ({ title: `💰 Geld in da Kass`, body: `${v.beschreibung ?? "Einnahme"}: +${v.betrag}. Eingetragen von ${v.von}.` }),
+    (v) => ({ title: `💰 Geld in der Kasse`, body: `${v.beschreibung ?? "Einnahme"}: +${v.betrag}. Eingetragen von ${v.von}.` }),
     (v) => ({ title: `➕ Neue Einnahme: ${v.betrag}`, body: `${v.beschreibung ?? "Ohne Beschreibung"} – ${v.von} hat's verbucht.` }),
   ],
   kasse_ausgabe_created: [
-    (v) => ({ title: `💸 Ausgabe aus da Kass`, body: `${v.beschreibung ?? "Ausgabe"}: −${v.betrag}. Eingetragen von ${v.von}.` }),
+    (v) => ({ title: `💸 Ausgabe aus der Kasse`, body: `${v.beschreibung ?? "Ausgabe"}: −${v.betrag}. Eingetragen von ${v.von}.` }),
     (v) => ({ title: `➖ ${v.betrag} ausgegeben`, body: `${v.beschreibung ?? "Ohne Beschreibung"} – ${v.von} hat's verbucht.` }),
   ],
   abendkosten_created: [
-    (v) => ({ title: `🍺 ${v.wer} hat d'Zeche übernommen`, body: rechnungsText(v) }),
+    (v) => ({ title: `🍺 ${v.wer} hat die Rechnung übernommen`, body: rechnungsText(v) }),
     (v) => ({ title: `🍺 ${v.wer} hat für alle gezahlt`, body: rechnungsText(v) }),
     (v) => ({ title: `🧾 Stammtischrechnung: ${v.betrag}`, body: `${v.wer} hat vorgestreckt. ${rechnungsText(v)}` }),
   ],
   kasse_beglichen: [
     (v) => v.meta.anteil
-      ? { title: `✅ ${v.wer} hat zurückgezahlt`, body: `${v.betrag} Anteil an der Stammtischrechnung san beglichen.` }
-      : { title: `✅ Rechnung beglichen`, body: `${v.wer} hat sei Geld z'ruck (${v.betrag}).` },
+      ? { title: `✅ ${v.wer} hat zurückgezahlt`, body: `${v.betrag} Anteil an der Stammtischrechnung sind beglichen.` }
+      : { title: `✅ Rechnung beglichen`, body: `${v.wer} hat das Geld zurück (${v.betrag}).` },
     (v) => v.meta.anteil
-      ? { title: `💶 ${v.wer} is quitt`, body: `Den Anteil von ${v.betrag} an der Stammtischrechnung hat ${v.wer} beglichen.` }
-      : { title: `💶 Alles quitt`, body: `Die Stammtischrechnung von ${v.wer} (${v.betrag}) is erledigt.` },
+      ? { title: `💶 ${v.wer} ist quitt`, body: `Den Anteil von ${v.betrag} an der Stammtischrechnung hat ${v.wer} beglichen.` }
+      : { title: `💶 Alles quitt`, body: `Die Stammtischrechnung von ${v.wer} (${v.betrag}) ist erledigt.` },
   ],
   kasse_eintrag_deleted: [
     (v) => ({ title: `🗑️ Kassen-Eintrag gelöscht`, body: `${v.beschreibung ?? "Eintrag"} (${v.betrag}) – gelöscht von ${v.von}.` }),
@@ -109,25 +109,25 @@ const VARIANTEN: Partial<Record<ActivityLogEntry["actionType"], Variante[]>> = {
     (v) => ({ title: `${v.meta.spielEmoji ?? "🎲"} Neues vom ${v.meta.spielName ?? "Spiel"}`, body: `${v.wer}: ${v.meta.ereignisLabel ?? "Ereignis"}.${vonSatz(v)}` }),
   ],
   spiel_log_deleted: [
-    (v) => ({ title: `🗑️ ${v.meta.spielName ?? "Spiel"}-Eintrag gelöscht`, body: `„${v.meta.ereignisLabel ?? "Ereignis"}“ von ${v.wer} is wieder raus.${vonSatz(v)}` }),
+    (v) => ({ title: `🗑️ ${v.meta.spielName ?? "Spiel"}-Eintrag gelöscht`, body: `„${v.meta.ereignisLabel ?? "Ereignis"}“ von ${v.wer} ist wieder raus.${vonSatz(v)}` }),
   ],
   protokoll_updated: [
-    (v) => ({ title: `📝 Neues im Protokoll`, body: `${v.von} hat ${v.meta.terminDatum ? `des Protokoll vom ${v.termin}` : "des Protokoll"} aktualisiert. Schau rein!` }),
-    (v) => ({ title: `📝 Protokoll aktualisiert`, body: `${v.von} hat mitgschriebn${v.meta.terminDatum ? ` (${v.termin})` : ""}. Was is ganga?` }),
+    (v) => ({ title: `📝 Neues im Protokoll`, body: `${v.von} hat ${v.meta.terminDatum ? `das Protokoll vom ${v.termin}` : "das Protokoll"} aktualisiert. Schau rein!` }),
+    (v) => ({ title: `📝 Protokoll aktualisiert`, body: `${v.von} hat mitgeschrieben${v.meta.terminDatum ? ` (${v.termin})` : ""}. Was ist passiert?` }),
   ],
   termin_zusage: [
-    (v) => ({ title: `🍻 ${v.wer} is dabei!`, body: `${v.termin}${zusagenSatz(v)}` }),
-    (v) => ({ title: `🍻 ${v.wer} kimmt!`, body: `Zusage für ${v.termin}${zusagenSatz(v)}` }),
-    (v) => ({ title: `🙌 Zusage von ${v.wer}`, body: `${v.termin} – i gfrei mi!${zusagenSatz(v)}` }),
+    (v) => ({ title: `🍻 ${v.wer} ist dabei!`, body: `${v.termin}${zusagenSatz(v)}` }),
+    (v) => ({ title: `🍻 ${v.wer} kommt!`, body: `Zusage für ${v.termin}${zusagenSatz(v)}` }),
+    (v) => ({ title: `🙌 Zusage von ${v.wer}`, body: `${v.termin} – das wird gut!${zusagenSatz(v)}` }),
   ],
   termin_absage: [
-    (v) => ({ title: `😢 ${v.wer} kann ned`, body: `Absage für ${v.termin} Schad!` }),
+    (v) => ({ title: `😢 ${v.wer} kann nicht`, body: `Absage für ${v.termin} Schade!` }),
     (v) => ({ title: `❌ Absage von ${v.wer}`, body: `${v.termin} – diesmal ohne ${v.wer}.` }),
-    (v) => ({ title: `😢 ${v.wer} muss passen`, body: `${v.termin} wird ohne ${v.wer} stattfinden.` }),
+    (v) => ({ title: `😢 ${v.wer} muss passen`, body: `${v.termin} findet ohne ${v.wer} statt.` }),
   ],
   termin_erstellt: [
-    (v) => ({ title: `📅 Neuer Termin`, body: `${terminErstelltText(v)} Sagt's zu oder ab!` }),
-    (v) => ({ title: `📅 Merkt's eich des vor!`, body: `${terminErstelltText(v)} Wer is dabei?` }),
+    (v) => ({ title: `📅 Neuer Termin`, body: `${terminErstelltText(v)} Sagt zu oder ab!` }),
+    (v) => ({ title: `📅 Vormerken!`, body: `${terminErstelltText(v)} Wer ist dabei?` }),
   ],
   termin_verlegt: [
     (v) => ({ title: `🔁 Termin verlegt`, body: `${v.termin} (statt ${kurzDatum(v.meta.altDatum)}). Bitte neu einplanen!` }),
@@ -139,15 +139,15 @@ function rechnungsText(v: Vars): string {
   const n = Number(v.meta.teilnehmerAnzahl ?? 0);
   if (n > 1) {
     const proKopf = euro(Number(v.meta.betrag ?? 0) / n);
-    return `${v.betrag} für ${n} Leit – macht ${proKopf} pro Kopf. Bitte z'ruckzahln!`;
+    return `${v.betrag} für ${n} Leute – macht ${proKopf} pro Kopf. Bitte zurückzahlen!`;
   }
-  return `${v.betrag} hat ${v.wer} vorgestreckt. Bitte z'ruckzahln!`;
+  return `${v.betrag} hat ${v.wer} vorgestreckt. Bitte zurückzahlen!`;
 }
 
 function zusagenSatz(v: Vars): string {
   const n = v.ctx.zusagenAnzahl;
   if (!n || n < 2) return "";
-  return ` Jetzt san's scho ${n} Zusagen.`;
+  return ` Damit sind's schon ${n} Zusagen.`;
 }
 
 function terminErstelltText(v: Vars): string {
