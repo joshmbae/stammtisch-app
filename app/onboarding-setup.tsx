@@ -2,10 +2,12 @@ import React from "react";
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
-import { COLORS, SHADOWS } from "../constants/design";
+import { SHADOWS, ThemeColors } from "../constants/design";
+import { useThemedStyles } from "../contexts/ThemeContext";
 import StammtischLogo from "../components/StammtischLogo";
 
 export default function OnboardingSetupScreen() {
+  const styles = useThemedStyles(makeStyles);
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -39,25 +41,25 @@ export default function OnboardingSetupScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: COLORS.background },
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   content: { padding: 24, paddingBottom: 40, alignItems: "center", flexGrow: 1, justifyContent: "center" },
 
   header: { alignItems: "center", marginBottom: 32, gap: 10 },
-  title: { fontSize: 26, fontWeight: "800", color: COLORS.textDark, marginTop: 8 },
-  subtitle: { fontSize: 15, color: COLORS.textMuted, textAlign: "center", lineHeight: 21 },
+  title: { fontSize: 26, fontWeight: "800", color: c.textDark, marginTop: 8 },
+  subtitle: { fontSize: 15, color: c.textMuted, textAlign: "center", lineHeight: 21 },
 
   primaryBtn: {
     width: "100%",
-    backgroundColor: COLORS.blue,
+    backgroundColor: c.blue,
     borderRadius: 16,
     paddingVertical: 16,
     alignItems: "center",
     justifyContent: "center",
     ...SHADOWS.card,
   },
-  primaryBtnText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
+  primaryBtnText: { color: c.onAccent, fontSize: 16, fontWeight: "700" },
 
   secondaryBtn: { marginTop: 16, paddingVertical: 8 },
-  secondaryBtnText: { fontSize: 14, color: COLORS.textMuted, textDecorationLine: "underline" },
+  secondaryBtnText: { fontSize: 14, color: c.textMuted, textDecorationLine: "underline" },
 });

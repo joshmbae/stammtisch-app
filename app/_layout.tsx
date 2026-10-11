@@ -2,6 +2,10 @@ import { useEffect } from "react";
 import { Stack, router } from "expo-router";
 import * as Notifications from "expo-notifications";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { StatusBar } from "expo-status-bar";
+import * as SystemUI from "expo-system-ui";
+import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } from "@react-navigation/native";
+import { ThemeProvider, useTheme } from "../contexts/ThemeContext";
 import { MenuProvider } from "../contexts/MenuContext";
 import { SessionProvider } from "../contexts/SessionContext";
 import { StammtischProvider } from "../contexts/StammtischContext";
@@ -29,11 +33,41 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
+      <ThemeProvider>
+        <ThemedApp />
+      </ThemeProvider>
+    </SafeAreaProvider>
+  );
+}
+
+/** Alles unterhalb des ThemeProviders, damit Navigation & Statusleiste dem Farbschema folgen. */
+function ThemedApp() {
+  const { colors, scheme } = useTheme();
+  // Nativer Hintergrund hinter allen Screens — verhindert weiße Blitzer bei Übergängen und Modals.
+  useEffect(() => {
+    SystemUI.setBackgroundColorAsync(colors.background).catch(() => {});
+  }, [colors.background]);
+  const base = scheme === "dark" ? DarkTheme : DefaultTheme;
+  const navigationTheme = {
+    ...base,
+    colors: {
+      ...base.colors,
+      background: colors.background,
+      card: colors.card,
+      text: colors.textDark,
+      border: colors.border,
+      primary: colors.blue,
+    },
+  };
+
+  return (
+    <NavigationThemeProvider value={navigationTheme}>
+      <StatusBar style={scheme === "dark" ? "light" : "dark"} />
       <StammtischProvider>
         <SessionProvider>
           <MenuProvider>
             <MenuDrawer />
-            <Stack screenOptions={{ headerShown: false }}>
+            <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
               <Stack.Screen name="index" />
               <Stack.Screen name="stammtisch-waehlen" />
               <Stack.Screen name="onboarding-setup" />
@@ -58,6 +92,6 @@ export default function RootLayout() {
           </MenuProvider>
         </SessionProvider>
       </StammtischProvider>
-    </SafeAreaProvider>
+    </NavigationThemeProvider>
   );
 }

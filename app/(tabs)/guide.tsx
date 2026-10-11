@@ -21,7 +21,8 @@ import { showAlert } from "../../utils/alert";
 import { StammtischVerordnung, Spiel, SPIEL_VORLAGEN, StrafKategorieDef } from "../../types";
 import { loadVerordnung, saveVerordnung, uploadStammtischLogo, loadSpiele, loadStrafKategorien, instantiateSpielVorlage, deleteStammtisch } from "../../utils/storage";
 import { hashStammtischPassword } from "../../utils/pin";
-import { COLORS, SHADOWS } from "../../constants/design";
+import { SHADOWS, ThemeColors } from "../../constants/design";
+import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { HamburgerButton } from "../../components/HamburgerButton";
 import { BackButton } from "../../components/BackButton";
 import LoadingSpinner from "../../components/LoadingSpinner";
@@ -43,6 +44,8 @@ function formatGruendungMonat(value?: string): string {
 }
 
 export default function EinstellungenScreen() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const [verordnung, setVerordnung] = useState<StammtischVerordnung>({ name: "Mein Stammtisch", regeln: [] });
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -240,7 +243,7 @@ export default function EinstellungenScreen() {
             value={verordnung.name}
             onChangeText={(t) => update({ name: t })}
             placeholder="z.B. Die Hellen"
-            placeholderTextColor={COLORS.textLight}
+            placeholderTextColor={c.textLight}
           />
         </View>
 
@@ -253,13 +256,13 @@ export default function EinstellungenScreen() {
               {verordnung.logoUrl ? (
                 <Image source={{ uri: verordnung.logoUrl }} style={styles.logoImg} resizeMode="contain" />
               ) : (
-                <Ionicons name="image-outline" size={26} color={COLORS.textLight} />
+                <Ionicons name="image-outline" size={26} color={c.textLight} />
               )}
             </View>
             <View style={styles.logoActions}>
               <TouchableOpacity style={styles.logoBtn} onPress={pickLogo} disabled={uploadingLogo}>
                 {uploadingLogo ? (
-                  <ActivityIndicator size="small" color={COLORS.blue} />
+                  <ActivityIndicator size="small" color={c.blue} />
                 ) : (
                   <Text style={styles.logoBtnText}>{verordnung.logoUrl ? "Logo ändern" : "Logo hochladen"}</Text>
                 )}
@@ -280,7 +283,7 @@ export default function EinstellungenScreen() {
             value={verordnung.treffpunkt ?? ""}
             onChangeText={(t) => update({ treffpunkt: t })}
             placeholder="z.B. Gasthof Zum Wirt, hinten links"
-            placeholderTextColor={COLORS.textLight}
+            placeholderTextColor={c.textLight}
           />
         </View>
 
@@ -292,7 +295,7 @@ export default function EinstellungenScreen() {
               value={verordnung.stammtischTag ?? ""}
               onChangeText={(t) => update({ stammtischTag: t })}
               placeholder="Jeden Donnerstag"
-              placeholderTextColor={COLORS.textLight}
+              placeholderTextColor={c.textLight}
             />
           </View>
           <View style={[styles.card, { flex: 1 }]}>
@@ -302,7 +305,7 @@ export default function EinstellungenScreen() {
               value={verordnung.stammtischzeit ?? ""}
               onChangeText={(t) => update({ stammtischzeit: t })}
               placeholder="19:30 Uhr"
-              placeholderTextColor={COLORS.textLight}
+              placeholderTextColor={c.textLight}
             />
           </View>
         </View>
@@ -310,8 +313,8 @@ export default function EinstellungenScreen() {
         <View style={styles.card}>
           <Text style={styles.fieldLabel}>Gegründet</Text>
           <TouchableOpacity style={styles.dateBtn} onPress={() => setShowGruendungPicker(true)}>
-            <Ionicons name="calendar-outline" size={18} color={COLORS.blue} />
-            <Text style={[styles.dateBtnText, !verordnung.gruendungsjahr && { color: COLORS.textLight }]}>
+            <Ionicons name="calendar-outline" size={18} color={c.blue} />
+            <Text style={[styles.dateBtnText, !verordnung.gruendungsjahr && { color: c.textLight }]}>
               {verordnung.gruendungsjahr ? formatGruendungMonat(verordnung.gruendungsjahr) : "Monat & Jahr auswählen"}
             </Text>
           </TouchableOpacity>
@@ -339,7 +342,7 @@ export default function EinstellungenScreen() {
         <Text style={styles.sectionTitle}>📋 Regeln</Text>
 
         <View style={styles.infoBox}>
-          <Ionicons name="information-circle-outline" size={18} color={COLORS.blue} />
+          <Ionicons name="information-circle-outline" size={18} color={c.blue} />
           <Text style={styles.infoBoxText}>
             Eure Stammtisch-Regeln, für alle sichtbar unter „Satzung“. Rein informativ — z. B.
             wer eine Runde ausgibt oder was am Stammtischabend gilt. Strafen selbst tragt ihr
@@ -352,7 +355,7 @@ export default function EinstellungenScreen() {
             <Text style={styles.regelNr}>{i + 1}.</Text>
             <Text style={styles.regelText} numberOfLines={3}>{regel}</Text>
             <TouchableOpacity onPress={() => regelLöschen(i)} style={styles.regelDelete}>
-              <Ionicons name="close-circle" size={20} color={COLORS.danger} />
+              <Ionicons name="close-circle" size={20} color={c.danger} />
             </TouchableOpacity>
           </View>
         ))}
@@ -365,11 +368,11 @@ export default function EinstellungenScreen() {
               value={neueRegel}
               onChangeText={setNeueRegel}
               placeholder="Wer zu spät kommt..."
-              placeholderTextColor={COLORS.textLight}
+              placeholderTextColor={c.textLight}
               multiline
             />
             <TouchableOpacity style={styles.regelAddBtn} onPress={regelHinzufügen}>
-              <Ionicons name="add" size={22} color="#FFFFFF" />
+              <Ionicons name="add" size={22} color={c.onAccent} />
             </TouchableOpacity>
           </View>
         </View>
@@ -378,7 +381,7 @@ export default function EinstellungenScreen() {
         <Text style={styles.sectionTitle}>🎩 Rollen</Text>
 
         <View style={styles.infoBox}>
-          <Ionicons name="information-circle-outline" size={18} color={COLORS.blue} />
+          <Ionicons name="information-circle-outline" size={18} color={c.blue} />
           <Text style={styles.infoBoxText}>
             Die Rollen, die beim Anlegen/Bearbeiten eines Mitglieds zur Auswahl stehen
             (z. B. Kassenwart, Bierwart, ...). Rein organisatorisch, ohne Zugriffsrechte.
@@ -390,7 +393,7 @@ export default function EinstellungenScreen() {
             <View key={rolle} style={styles.rolleTag}>
               <Text style={styles.rolleTagText}>{rolle}</Text>
               <TouchableOpacity onPress={() => rolleLöschen(i)}>
-                <Ionicons name="close-circle" size={16} color={COLORS.danger} />
+                <Ionicons name="close-circle" size={16} color={c.danger} />
               </TouchableOpacity>
             </View>
           ))}
@@ -404,11 +407,11 @@ export default function EinstellungenScreen() {
               value={neueRolle}
               onChangeText={setNeueRolle}
               placeholder="z.B. Bierwart"
-              placeholderTextColor={COLORS.textLight}
+              placeholderTextColor={c.textLight}
               onSubmitEditing={rolleHinzufügen}
             />
             <TouchableOpacity style={styles.regelAddBtn} onPress={rolleHinzufügen}>
-              <Ionicons name="add" size={22} color="#FFFFFF" />
+              <Ionicons name="add" size={22} color={c.onAccent} />
             </TouchableOpacity>
           </View>
         </View>
@@ -423,7 +426,7 @@ export default function EinstellungenScreen() {
         <Text style={styles.sectionTitle}>🎲 Spiele</Text>
 
         <View style={styles.infoBox}>
-          <Ionicons name="information-circle-outline" size={18} color={COLORS.blue} />
+          <Ionicons name="information-circle-outline" size={18} color={c.blue} />
           <Text style={styles.infoBoxText}>
             Wählt hier das Spiel, das ihr am Stammtisch spielt (z. B. Schocken). Es erscheint dann
             als eigener Tab im Termin, wo ihr Spielereignisse protokolliert — manche davon lösen
@@ -440,9 +443,9 @@ export default function EinstellungenScreen() {
             <Text style={styles.spielRowEmoji}>🚫</Text>
             <Text style={styles.spielRowLabel}>Kein Spiel</Text>
             {activatingSpiel === "none" ? (
-              <ActivityIndicator size="small" color={COLORS.blue} />
+              <ActivityIndicator size="small" color={c.blue} />
             ) : !verordnung.aktivesSpielId ? (
-              <Ionicons name="checkmark-circle" size={20} color={COLORS.blue} />
+              <Ionicons name="checkmark-circle" size={20} color={c.blue} />
             ) : null}
           </TouchableOpacity>
 
@@ -456,9 +459,9 @@ export default function EinstellungenScreen() {
               <Text style={styles.spielRowEmoji}>{s.emoji ?? "🎮"}</Text>
               <Text style={styles.spielRowLabel}>{s.name}</Text>
               {activatingSpiel === s.id ? (
-                <ActivityIndicator size="small" color={COLORS.blue} />
+                <ActivityIndicator size="small" color={c.blue} />
               ) : verordnung.aktivesSpielId === s.id ? (
-                <Ionicons name="checkmark-circle" size={20} color={COLORS.blue} />
+                <Ionicons name="checkmark-circle" size={20} color={c.blue} />
               ) : null}
             </TouchableOpacity>
           ))}
@@ -473,7 +476,7 @@ export default function EinstellungenScreen() {
               <Text style={styles.spielRowEmoji}>{v.emoji}</Text>
               <Text style={styles.spielRowLabel}>{v.name}</Text>
               {activatingSpiel === v.name ? (
-                <ActivityIndicator size="small" color={COLORS.blue} />
+                <ActivityIndicator size="small" color={c.blue} />
               ) : (
                 <Text style={styles.spielRowHint}>+ Vorlage</Text>
               )}
@@ -497,7 +500,7 @@ export default function EinstellungenScreen() {
             <Switch
               value={verordnung.tabStrafenAktiv !== false}
               onValueChange={(v) => update({ tabStrafenAktiv: v })}
-              trackColor={{ false: COLORS.border, true: COLORS.blue }}
+              trackColor={{ false: c.border, true: c.blue }}
             />
           </View>
           {verordnung.tabStrafenAktiv !== false && (
@@ -533,7 +536,7 @@ export default function EinstellungenScreen() {
             value={verordnung.sonstiges ?? ""}
             onChangeText={(t) => update({ sonstiges: t })}
             placeholder="Weitere Hinweise für den Stammtisch..."
-            placeholderTextColor={COLORS.textLight}
+            placeholderTextColor={c.textLight}
             multiline
             textAlignVertical="top"
           />
@@ -545,7 +548,7 @@ export default function EinstellungenScreen() {
           onPress={speichern}
           disabled={!dirty}
         >
-          <Ionicons name="checkmark" size={20} color="#FFFFFF" />
+          <Ionicons name="checkmark" size={20} color={c.onAccent} />
           <Text style={styles.saveBtnText}>Speichern</Text>
         </TouchableOpacity>
 
@@ -557,7 +560,7 @@ export default function EinstellungenScreen() {
             onPress={() => router.push("/onboarding-intro?replay=1")}
             activeOpacity={0.85}
           >
-            <Ionicons name="school-outline" size={18} color="#FFFFFF" />
+            <Ionicons name="school-outline" size={18} color={c.onAccent} />
             <Text style={styles.devBtnText}>Tutorial erneut ansehen</Text>
           </TouchableOpacity>
         </View>
@@ -575,7 +578,7 @@ export default function EinstellungenScreen() {
               onPress={() => setShowDeleteForm(true)}
               activeOpacity={0.85}
             >
-              <Ionicons name="trash-outline" size={18} color="#FFFFFF" />
+              <Ionicons name="trash-outline" size={18} color={c.onAccent} />
               <Text style={styles.devBtnText}>Stammtisch löschen</Text>
             </TouchableOpacity>
           ) : (
@@ -585,7 +588,7 @@ export default function EinstellungenScreen() {
                 value={deletePassword}
                 onChangeText={setDeletePassword}
                 placeholder="Stammtisch-Passwort zur Bestätigung"
-                placeholderTextColor={COLORS.textLight}
+                placeholderTextColor={c.textLight}
                 secureTextEntry
                 autoCapitalize="none"
               />
@@ -596,9 +599,9 @@ export default function EinstellungenScreen() {
                 activeOpacity={0.85}
               >
                 {deleting ? (
-                  <ActivityIndicator color="#FFFFFF" size="small" />
+                  <ActivityIndicator color={c.onAccent} size="small" />
                 ) : (
-                  <Ionicons name="warning-outline" size={18} color="#FFFFFF" />
+                  <Ionicons name="warning-outline" size={18} color={c.onAccent} />
                 )}
                 <Text style={styles.devBtnText}>
                   {deleting ? "Wird gelöscht …" : "Endgültig löschen"}
@@ -618,134 +621,134 @@ export default function EinstellungenScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: COLORS.background },
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   content: { padding: 20, paddingBottom: 48 },
 
   header: {
     flexDirection: "row", alignItems: "center", gap: 12,
-    backgroundColor: COLORS.cardAlt, borderRadius: 20,
+    backgroundColor: c.cardAlt, borderRadius: 20,
     padding: 16, marginBottom: 16, ...SHADOWS.card,
-    borderWidth: 1, borderColor: COLORS.border,
+    borderWidth: 1, borderColor: c.border,
   },
   headerTexts: { flex: 1 },
-  headerTitle: { fontSize: 18, fontWeight: "800", color: COLORS.textDark },
-  headerSub: { fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
+  headerTitle: { fontSize: 18, fontWeight: "800", color: c.textDark },
+  headerSub: { fontSize: 12, color: c.textMuted, marginTop: 2 },
 
   sectionTitle: {
-    fontSize: 15, fontWeight: "800", color: COLORS.textDark,
+    fontSize: 15, fontWeight: "800", color: c.textDark,
     marginBottom: 10, marginTop: 8, letterSpacing: -0.2,
   },
-  optionalHint: { fontSize: 12, fontWeight: "600", color: COLORS.textLight },
+  optionalHint: { fontSize: 12, fontWeight: "600", color: c.textLight },
 
   groupHeader: {
-    borderTopWidth: 2, borderTopColor: COLORS.gold + "40",
+    borderTopWidth: 2, borderTopColor: c.gold + "40",
     paddingTop: 16, marginBottom: 4,
   },
   groupHeaderSpaced: { marginTop: 20 },
-  groupTitle: { fontSize: 19, fontWeight: "800", color: COLORS.textDark, letterSpacing: -0.3 },
-  groupSubtitle: { fontSize: 13, color: COLORS.textMuted, marginTop: 3, marginBottom: 4 },
+  groupTitle: { fontSize: 19, fontWeight: "800", color: c.textDark, letterSpacing: -0.3 },
+  groupSubtitle: { fontSize: 13, color: c.textMuted, marginTop: 3, marginBottom: 4 },
 
   fieldLabelRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
   pflichtBadge: {
-    fontSize: 10, fontWeight: "800", color: COLORS.blue, backgroundColor: COLORS.blue + "18",
+    fontSize: 10, fontWeight: "800", color: c.blue, backgroundColor: c.blue + "18",
     borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2, textTransform: "uppercase", letterSpacing: 0.3,
   },
-  strafKatPreisText: { fontSize: 12, fontWeight: "700", color: COLORS.danger },
+  strafKatPreisText: { fontSize: 12, fontWeight: "700", color: c.danger },
 
   card: {
-    backgroundColor: COLORS.card, borderRadius: 14, padding: 14, marginBottom: 10,
-    borderWidth: 1, borderColor: COLORS.border,
+    backgroundColor: c.card, borderRadius: 14, padding: 14, marginBottom: 10,
+    borderWidth: 1, borderColor: c.border,
   },
   cardRow: { flexDirection: "row", gap: 10 },
 
   infoBox: {
     flexDirection: "row", gap: 8, alignItems: "flex-start",
-    backgroundColor: COLORS.blue + "12", borderRadius: 12, padding: 12, marginBottom: 10,
+    backgroundColor: c.blue + "12", borderRadius: 12, padding: 12, marginBottom: 10,
   },
-  infoBoxText: { flex: 1, fontSize: 12.5, color: COLORS.textMid, lineHeight: 18 },
+  infoBoxText: { flex: 1, fontSize: 12.5, color: c.textMid, lineHeight: 18 },
 
-  fieldLabel: { fontSize: 12, fontWeight: "700", color: COLORS.textMuted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 },
+  fieldLabel: { fontSize: 12, fontWeight: "700", color: c.textMuted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 },
   switchRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-  switchHint: { fontSize: 12, color: COLORS.textLight, marginTop: -4 },
+  switchHint: { fontSize: 12, color: c.textLight, marginTop: -4 },
 
   input: {
-    backgroundColor: COLORS.background, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border,
-    paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: COLORS.textDark,
+    backgroundColor: c.background, borderRadius: 10, borderWidth: 1, borderColor: c.border,
+    paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: c.textDark,
   },
   dateBtn: {
     flexDirection: "row", alignItems: "center", gap: 8,
-    backgroundColor: COLORS.background, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border,
+    backgroundColor: c.background, borderRadius: 10, borderWidth: 1, borderColor: c.border,
     paddingHorizontal: 12, paddingVertical: 10,
   },
-  dateBtnText: { fontSize: 14, color: COLORS.textDark, fontWeight: "600" },
+  dateBtnText: { fontSize: 14, color: c.textDark, fontWeight: "600" },
 
   logoRow: { flexDirection: "row", alignItems: "center", gap: 14 },
   logoPreview: {
-    width: 56, height: 56, borderRadius: 14, backgroundColor: COLORS.background,
-    alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: COLORS.border, overflow: "hidden",
+    width: 56, height: 56, borderRadius: 14, backgroundColor: c.background,
+    alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: c.border, overflow: "hidden",
   },
   logoImg: { width: 56, height: 56 },
   logoActions: { gap: 6 },
   logoBtn: {
-    backgroundColor: COLORS.background, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border,
+    backgroundColor: c.background, borderRadius: 10, borderWidth: 1, borderColor: c.border,
     paddingHorizontal: 14, paddingVertical: 8, alignSelf: "flex-start", minWidth: 120, alignItems: "center",
   },
-  logoBtnText: { fontSize: 13, fontWeight: "700", color: COLORS.blue },
-  logoRemoveText: { fontSize: 12, color: COLORS.danger, fontWeight: "600" },
+  logoBtnText: { fontSize: 13, fontWeight: "700", color: c.blue },
+  logoRemoveText: { fontSize: 12, color: c.danger, fontWeight: "600" },
 
   regelRow: {
     flexDirection: "row", alignItems: "flex-start", gap: 8,
-    backgroundColor: COLORS.card, borderRadius: 12, padding: 12, marginBottom: 8,
-    borderWidth: 1, borderColor: COLORS.border,
+    backgroundColor: c.card, borderRadius: 12, padding: 12, marginBottom: 8,
+    borderWidth: 1, borderColor: c.border,
   },
-  regelNr: { fontSize: 14, fontWeight: "700", color: COLORS.gold, minWidth: 20 },
-  regelText: { flex: 1, fontSize: 14, color: COLORS.textDark, lineHeight: 20 },
+  regelNr: { fontSize: 14, fontWeight: "700", color: c.gold, minWidth: 20 },
+  regelText: { flex: 1, fontSize: 14, color: c.textDark, lineHeight: 20 },
   regelDelete: { padding: 2 },
 
   regelInputRow: { flexDirection: "row", gap: 8, alignItems: "flex-end" },
   regelAddBtn: {
     width: 42, height: 42, borderRadius: 21,
-    backgroundColor: COLORS.blue, alignItems: "center", justifyContent: "center", flexShrink: 0,
+    backgroundColor: c.blue, alignItems: "center", justifyContent: "center", flexShrink: 0,
   },
 
   rollenWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 },
   rolleTag: {
     flexDirection: "row", alignItems: "center", gap: 6,
-    backgroundColor: COLORS.card, borderRadius: 16, paddingVertical: 6, paddingHorizontal: 10,
-    borderWidth: 1, borderColor: COLORS.border,
+    backgroundColor: c.card, borderRadius: 16, paddingVertical: 6, paddingHorizontal: 10,
+    borderWidth: 1, borderColor: c.border,
   },
-  rolleTagText: { fontSize: 13, fontWeight: "600", color: COLORS.textDark },
+  rolleTagText: { fontSize: 13, fontWeight: "600", color: c.textDark },
 
   spielRow: {
     flexDirection: "row", alignItems: "center", gap: 10,
     paddingVertical: 10, paddingHorizontal: 4, borderRadius: 10,
   },
-  spielRowActive: { backgroundColor: COLORS.blue + "10" },
+  spielRowActive: { backgroundColor: c.blue + "10" },
   spielRowEmoji: { fontSize: 20, width: 26, textAlign: "center" },
-  spielRowLabel: { flex: 1, fontSize: 14, fontWeight: "600", color: COLORS.textDark },
-  spielRowHint: { fontSize: 12, fontWeight: "700", color: COLORS.blue },
+  spielRowLabel: { flex: 1, fontSize: 14, fontWeight: "600", color: c.textDark },
+  spielRowHint: { fontSize: 12, fontWeight: "700", color: c.blue },
   spielManageLink: { marginTop: 6, paddingVertical: 6 },
-  spielManageLinkText: { fontSize: 13, fontWeight: "700", color: COLORS.blue },
+  spielManageLinkText: { fontSize: 13, fontWeight: "700", color: c.blue },
 
   saveBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-    backgroundColor: COLORS.blue, borderRadius: 16, paddingVertical: 16, marginTop: 8,
+    backgroundColor: c.blue, borderRadius: 16, paddingVertical: 16, marginTop: 8,
   },
   saveBtnDisabled: { opacity: 0.4 },
-  saveBtnText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
+  saveBtnText: { color: c.onAccent, fontSize: 16, fontWeight: "700" },
 
   devCard: {
-    backgroundColor: COLORS.card, borderRadius: 16, padding: 16, marginBottom: 12,
-    borderWidth: 1.5, borderColor: COLORS.danger + "44", gap: 10,
+    backgroundColor: c.card, borderRadius: 16, padding: 16, marginBottom: 12,
+    borderWidth: 1.5, borderColor: c.danger + "44", gap: 10,
   },
-  devHint: { fontSize: 13, color: COLORS.textMuted, lineHeight: 19 },
+  devHint: { fontSize: 13, color: c.textMuted, lineHeight: 19 },
   devBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
     borderRadius: 14, paddingVertical: 13,
   },
-  devBtnPrimary: { backgroundColor: "#1A4480" },
-  devBtnDanger:  { backgroundColor: COLORS.danger },
+  devBtnPrimary: { backgroundColor: c.blue },
+  devBtnDanger:  { backgroundColor: c.danger },
   devBtnDisabled: { opacity: 0.5 },
-  devBtnText: { color: "#FFFFFF", fontSize: 15, fontWeight: "700" },
+  devBtnText: { color: c.onAccent, fontSize: 15, fontWeight: "700" },
 });

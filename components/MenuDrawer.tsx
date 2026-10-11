@@ -15,7 +15,8 @@ import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { useMenu } from "../contexts/MenuContext";
 import { useSession } from "../contexts/SessionContext";
 import { useStammtisch } from "../contexts/StammtischContext";
-import { COLORS } from "../constants/design";
+import { ThemeColors } from "../constants/design";
+import { ThemePreference, useTheme, useThemedStyles } from "../contexts/ThemeContext";
 import { getInitial, displayName } from "../utils/format";
 
 const DRAWER_WIDTH = Math.min(Dimensions.get("window").width * 0.78, 300);
@@ -33,7 +34,15 @@ const NAV_ITEMS = [
   { route: "/(tabs)/guide",    label: "Einstellungen", icon: "settings-outline",       activeIcon: "settings" },
 ] as const;
 
+const ERSCHEINUNGSBILD_OPTIONEN: { value: ThemePreference; label: string }[] = [
+  { value: "system", label: "System" },
+  { value: "light",  label: "Hell" },
+  { value: "dark",   label: "Dunkel" },
+];
+
 export function MenuDrawer() {
+  const { colors: c, preference, setPreference } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const { menuOpen, closeMenu } = useMenu();
   const { activeMember } = useSession();
   const { stammtischName } = useStammtisch();
@@ -150,7 +159,7 @@ export function MenuDrawer() {
                       <Ionicons
                         name={(isActive ? item.activeIcon : item.icon) as never}
                         size={20}
-                        color={isActive ? COLORS.blue : "rgba(255,255,255,0.65)"}
+                        color={isActive ? c.blueDark : "rgba(255,255,255,0.65)"}
                       />
                     </View>
                     <Text style={[styles.navLabel, isActive && styles.navLabelActive]}>
@@ -167,6 +176,28 @@ export function MenuDrawer() {
             {/* Footer */}
             <View style={styles.drawerFooter}>
               <View style={styles.footerDivider} />
+              {/* Erscheinungsbild: gilt pro Gerät, siehe contexts/ThemeContext.tsx */}
+              <Text style={styles.themeLabel}>Erscheinungsbild</Text>
+              <View style={styles.themeSegments}>
+                {ERSCHEINUNGSBILD_OPTIONEN.map((opt) => {
+                  const selected = preference === opt.value;
+                  return (
+                    <TouchableOpacity
+                      key={opt.value}
+                      style={[styles.themeSegment, selected && styles.themeSegmentActive]}
+                      onPress={() => setPreference(opt.value)}
+                      activeOpacity={0.75}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Erscheinungsbild: ${opt.label}`}
+                      accessibilityState={{ selected }}
+                    >
+                      <Text style={[styles.themeSegmentText, selected && styles.themeSegmentTextActive]}>
+                        {opt.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
               <TouchableOpacity
                 style={styles.profilWechseln}
                 onPress={() => { closeMenu(); setTimeout(() => router.push("/mitglied-waehlen"), 50); }}
@@ -185,7 +216,7 @@ export function MenuDrawer() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   root: {
     flex: 1,
     flexDirection: "row",
@@ -196,7 +227,7 @@ const styles = StyleSheet.create({
   },
   drawer: {
     width: DRAWER_WIDTH,
-    backgroundColor: COLORS.blueDark,
+    backgroundColor: c.blueDark,
     shadowColor: "#000",
     shadowOffset: { width: 6, height: 0 },
     shadowOpacity: 0.35,
@@ -221,16 +252,16 @@ const styles = StyleSheet.create({
     width: 40, height: 40, borderRadius: 20,
     alignItems: "center", justifyContent: "center", flexShrink: 0,
   },
-  memberAvatarLetter: { fontSize: 17, fontWeight: "700", color: "#FFFFFF" },
+  memberAvatarLetter: { fontSize: 17, fontWeight: "700", color: c.onAccent },
   drawerTitle: {
     fontSize: 17,
     fontWeight: "800",
-    color: "#FFFFFF",
+    color: c.onAccent,
     letterSpacing: -0.3,
   },
   drawerSub: {
     fontSize: 11,
-    color: COLORS.gold,
+    color: c.gold,
     fontWeight: "600",
     marginTop: 1,
   },
@@ -279,7 +310,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   navIconBoxActive: {
-    backgroundColor: COLORS.gold,
+    backgroundColor: c.gold,
   },
   navLabel: {
     flex: 1,
@@ -288,14 +319,14 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.65)",
   },
   navLabelActive: {
-    color: "#FFFFFF",
+    color: c.onAccent,
     fontWeight: "700",
   },
   activeIndicator: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: COLORS.gold,
+    backgroundColor: c.gold,
   },
 
   drawerFooter: {
@@ -306,6 +337,41 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: "rgba(255,255,255,0.1)",
     marginBottom: 12,
+  },
+  themeLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "rgba(255,255,255,0.45)",
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+    marginBottom: 6,
+  },
+  themeSegments: {
+    flexDirection: "row",
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderRadius: 10,
+    padding: 3,
+    gap: 3,
+    marginBottom: 8,
+  },
+  themeSegment: {
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: 7,
+    borderRadius: 8,
+  },
+  // Der Drawer ist in beiden Modi blau — helles Segment wie bei iOS hebt sich sicher ab.
+  themeSegmentActive: {
+    backgroundColor: "rgba(255,255,255,0.92)",
+  },
+  themeSegmentText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "rgba(255,255,255,0.65)",
+  },
+  themeSegmentTextActive: {
+    color: c.blueDark,
+    fontWeight: "700",
   },
   profilWechseln: {
     flexDirection: "row", alignItems: "center", justifyContent: "center",

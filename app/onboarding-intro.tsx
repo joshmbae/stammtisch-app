@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
-import { COLORS, SHADOWS } from "../constants/design";
+import { SHADOWS, ThemeColors } from "../constants/design";
+import { useThemedStyles } from "../contexts/ThemeContext";
 import { useSession } from "../contexts/SessionContext";
 import { markAppIntroSeen } from "../utils/onboarding";
 
@@ -41,6 +42,7 @@ const STEPS: Step[] = [
 ];
 
 export default function OnboardingIntroScreen() {
+  const styles = useThemedStyles(makeStyles);
   const { replay } = useLocalSearchParams<{ replay?: string }>();
   const isReplay = replay === "1";
   const { activeMemberId } = useSession();
@@ -100,20 +102,20 @@ export default function OnboardingIntroScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: COLORS.background },
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
 
   header: { flexDirection: "row", justifyContent: "flex-end", paddingHorizontal: 20, paddingTop: 8 },
-  skipText: { fontSize: 14, color: COLORS.textMuted, fontWeight: "600" },
+  skipText: { fontSize: 14, color: c.textMuted, fontWeight: "600" },
 
   content: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 32, gap: 14 },
   icon: { fontSize: 64 },
-  title: { fontSize: 24, fontWeight: "800", color: COLORS.textDark, textAlign: "center" },
-  text: { fontSize: 15, color: COLORS.textMuted, textAlign: "center", lineHeight: 22 },
+  title: { fontSize: 24, fontWeight: "800", color: c.textDark, textAlign: "center" },
+  text: { fontSize: 15, color: c.textMuted, textAlign: "center", lineHeight: 22 },
 
   dots: { flexDirection: "row", justifyContent: "center", gap: 8, marginBottom: 24 },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.border },
-  dotActive: { backgroundColor: COLORS.blue, width: 20 },
+  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: c.border },
+  dotActive: { backgroundColor: c.blue, width: 20 },
 
   footer: { flexDirection: "row", gap: 10, paddingHorizontal: 24, paddingBottom: 24 },
   backBtn: {
@@ -122,16 +124,16 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: c.border,
   },
-  backBtnText: { fontSize: 15, fontWeight: "700", color: COLORS.textMuted },
+  backBtnText: { fontSize: 15, fontWeight: "700", color: c.textMuted },
   nextBtn: {
     flex: 2,
-    backgroundColor: COLORS.blue,
+    backgroundColor: c.blue,
     borderRadius: 16,
     paddingVertical: 16,
     alignItems: "center",
     ...SHADOWS.card,
   },
-  nextBtnText: { color: "#FFFFFF", fontSize: 15, fontWeight: "700" },
+  nextBtnText: { color: c.onAccent, fontSize: 15, fontWeight: "700" },
 });

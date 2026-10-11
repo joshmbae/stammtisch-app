@@ -7,7 +7,8 @@ import { ActivityLogEntry, MemberProfile, StrafKategorieDef } from "../types";
 import { loadActivityFeed, loadActivityFeedBefore, loadMembers, loadStrafKategorien } from "../utils/storage";
 import { activityRoute, renderActivity } from "../utils/activityFeed";
 import { formatTagUeberschrift, formatUhrzeit, tagesSchluessel } from "../utils/date";
-import { COLORS, SHADOWS } from "../constants/design";
+import { SHADOWS, ThemeColors } from "../constants/design";
+import { useColors, useThemedStyles } from "../contexts/ThemeContext";
 import { HamburgerButton } from "../components/HamburgerButton";
 import { BackButton } from "../components/BackButton";
 import LoadingSpinner from "../components/LoadingSpinner";
@@ -31,6 +32,8 @@ function FeedRow({
   strafKategorien: StrafKategorieDef[];
   last: boolean;
 }) {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const rendered = renderActivity(entry, membersById, strafKategorien);
   const subjectId = entry.subjectMemberId ?? entry.actorMemberId;
   const subject = subjectId ? membersById.get(subjectId) : undefined;
@@ -39,7 +42,7 @@ function FeedRow({
   const avatar = subject?.photoUri ? (
     <Image source={{ uri: subject.photoUri }} style={styles.avatar} />
   ) : (
-    <View style={[styles.avatar, { backgroundColor: subject?.avatarColor ?? COLORS.border, alignItems: "center", justifyContent: "center" }]}>
+    <View style={[styles.avatar, { backgroundColor: subject?.avatarColor ?? c.border, alignItems: "center", justifyContent: "center" }]}>
       <Text style={{ fontSize: 16 }}>{rendered.emoji}</Text>
     </View>
   );
@@ -66,7 +69,7 @@ function FeedRow({
           {rendered.actorText ? ` · ${rendered.actorText}` : ""}
         </Text>
       </View>
-      {route ? <Ionicons name="chevron-forward" size={16} color={COLORS.textLight} style={{ marginTop: 10 }} /> : null}
+      {route ? <Ionicons name="chevron-forward" size={16} color={c.textLight} style={{ marginTop: 10 }} /> : null}
     </TouchableOpacity>
   );
 }
@@ -84,6 +87,8 @@ function nachTagen(entries: ActivityLogEntry[]): { key: string; label: string; e
 }
 
 export default function FeedScreen() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const [entries, setEntries] = useState<ActivityLogEntry[]>([]);
   const [members, setMembers] = useState<MemberProfile[]>([]);
   const [strafKategorien, setStrafKategorien] = useState<StrafKategorieDef[]>([]);
@@ -134,7 +139,7 @@ export default function FeedScreen() {
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.blue} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.blue} />}
       >
         <OfflineBanner />
         <View style={styles.header}>
@@ -173,7 +178,7 @@ export default function FeedScreen() {
             {hasMore && (
               <TouchableOpacity style={styles.moreBtn} onPress={loadMore} disabled={loadingMore} activeOpacity={0.8}>
                 {loadingMore
-                  ? <ActivityIndicator size="small" color={COLORS.blue} />
+                  ? <ActivityIndicator size="small" color={c.blue} />
                   : <Text style={styles.moreBtnText}>Ältere Einträge laden</Text>}
               </TouchableOpacity>
             )}
@@ -185,48 +190,48 @@ export default function FeedScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: COLORS.background },
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   content: { padding: 20, paddingBottom: 48 },
 
   header: {
     flexDirection: "row", alignItems: "center", gap: 12,
-    backgroundColor: COLORS.cardAlt, borderRadius: 20,
+    backgroundColor: c.cardAlt, borderRadius: 20,
     padding: 16, marginBottom: 16, ...SHADOWS.card,
-    borderWidth: 1, borderColor: COLORS.border,
+    borderWidth: 1, borderColor: c.border,
   },
   headerTexts: { flex: 1 },
-  headerTitle: { fontSize: 18, fontWeight: "800", color: COLORS.textDark },
-  headerSub: { fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
+  headerTitle: { fontSize: 18, fontWeight: "800", color: c.textDark },
+  headerSub: { fontSize: 12, color: c.textMuted, marginTop: 2 },
 
   card: {
-    backgroundColor: COLORS.card, borderRadius: 18,
-    borderWidth: 1, borderColor: COLORS.border, ...SHADOWS.light,
+    backgroundColor: c.card, borderRadius: 18,
+    borderWidth: 1, borderColor: c.border, ...SHADOWS.light,
     paddingHorizontal: 14,
   },
   row: {
     flexDirection: "row", alignItems: "flex-start", gap: 12,
-    paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.border,
+    paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: c.border,
   },
   avatar: { width: 36, height: 36, borderRadius: 18, marginTop: 1 },
   rowBody: { flex: 1 },
-  rowText: { fontSize: 14, fontWeight: "600", color: COLORS.textDark, lineHeight: 19 },
-  rowDetail: { fontSize: 13, color: COLORS.textMuted, fontStyle: "italic", marginTop: 3, lineHeight: 18 },
-  rowMeta: { fontSize: 11, color: COLORS.textLight, marginTop: 3 },
+  rowText: { fontSize: 14, fontWeight: "600", color: c.textDark, lineHeight: 19 },
+  rowDetail: { fontSize: 13, color: c.textMuted, fontStyle: "italic", marginTop: 3, lineHeight: 18 },
+  rowMeta: { fontSize: 11, color: c.textLight, marginTop: 3 },
 
   dayGroup: { marginBottom: 14 },
   dayLabel: {
-    fontSize: 12, fontWeight: "800", color: COLORS.textMuted,
+    fontSize: 12, fontWeight: "800", color: c.textMuted,
     textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6, marginLeft: 4,
   },
   moreBtn: {
     alignItems: "center", justifyContent: "center", paddingVertical: 14, marginTop: 4,
-    borderRadius: 14, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.card,
+    borderRadius: 14, borderWidth: 1, borderColor: c.border, backgroundColor: c.card,
   },
-  moreBtnText: { fontSize: 14, fontWeight: "700", color: COLORS.blue },
+  moreBtnText: { fontSize: 14, fontWeight: "700", color: c.blue },
 
   emptyState: { alignItems: "center", paddingVertical: 60, gap: 8 },
   emptyEmoji: { fontSize: 40 },
-  emptyTitle: { fontSize: 17, fontWeight: "800", color: COLORS.textDark },
-  emptySub: { fontSize: 13, color: COLORS.textMuted, textAlign: "center", paddingHorizontal: 30 },
+  emptyTitle: { fontSize: 17, fontWeight: "800", color: c.textDark },
+  emptySub: { fontSize: 13, color: c.textMuted, textAlign: "center", paddingHorizontal: 30 },
 });

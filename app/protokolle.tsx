@@ -12,7 +12,8 @@ import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Protokoll, StammtischTermin } from "../types";
 import { loadProtokolle, loadTermine } from "../utils/storage";
-import { COLORS, SHADOWS } from "../constants/design";
+import { SHADOWS, ThemeColors } from "../constants/design";
+import { useColors, useThemedStyles } from "../contexts/ThemeContext";
 import { HamburgerButton } from "../components/HamburgerButton";
 import { BackButton } from "../components/BackButton";
 import LoadingSpinner from "../components/LoadingSpinner";
@@ -42,6 +43,8 @@ function formatUpdated(iso: string): string {
 }
 
 export default function ProtokollListeScreen() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const [items, setItems] = useState<ProtokollMitTermin[]>([]);
 
   async function load() {
@@ -70,7 +73,7 @@ export default function ProtokollListeScreen() {
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.blue} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.blue} />}
       >
         <OfflineBanner />
 
@@ -109,7 +112,7 @@ export default function ProtokollListeScreen() {
                 <View style={styles.cardHeader}>
                   <View style={[
                     styles.typIcon,
-                    { backgroundColor: isStammtisch ? COLORS.blue + "18" : "#6B3A8A18" }
+                    { backgroundColor: isStammtisch ? c.blue + "18" : c.purple + "18" }
                   ]}>
                     <Text style={styles.typEmoji}>{isStammtisch ? "🍺" : "🎉"}</Text>
                   </View>
@@ -123,7 +126,7 @@ export default function ProtokollListeScreen() {
                     <Text style={styles.cardDate}>
                       {formatUpdated(item.updatedAt)}
                     </Text>
-                    <Ionicons name="chevron-forward" size={16} color={COLORS.textLight} />
+                    <Ionicons name="chevron-forward" size={16} color={c.textLight} />
                   </View>
                 </View>
                 <Text style={styles.cardExcerpt} numberOfLines={3}>
@@ -139,35 +142,35 @@ export default function ProtokollListeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: COLORS.background },
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   content: { padding: 20, paddingBottom: 48 },
 
   header: {
     flexDirection: "row", alignItems: "center", gap: 12,
-    backgroundColor: COLORS.cardAlt, borderRadius: 20,
+    backgroundColor: c.cardAlt, borderRadius: 20,
     padding: 16, marginBottom: 16, ...SHADOWS.card,
-    borderWidth: 1, borderColor: COLORS.border,
+    borderWidth: 1, borderColor: c.border,
   },
   headerTexts: { flex: 1 },
-  headerTitle: { fontSize: 18, fontWeight: "800", color: COLORS.textDark },
-  headerSub: { fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
+  headerTitle: { fontSize: 18, fontWeight: "800", color: c.textDark },
+  headerSub: { fontSize: 12, color: c.textMuted, marginTop: 2 },
 
   empty: { alignItems: "center", paddingTop: 60, gap: 12 },
   emptyIcon: { fontSize: 48 },
-  emptyText: { fontSize: 15, color: COLORS.textMuted, textAlign: "center", lineHeight: 22 },
+  emptyText: { fontSize: 15, color: c.textMuted, textAlign: "center", lineHeight: 22 },
 
   card: {
-    backgroundColor: COLORS.card, borderRadius: 18, padding: 14, marginBottom: 12,
-    borderWidth: 1, borderColor: COLORS.border, ...SHADOWS.light,
+    backgroundColor: c.card, borderRadius: 18, padding: 14, marginBottom: 12,
+    borderWidth: 1, borderColor: c.border, ...SHADOWS.light,
   },
   cardHeader: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 10 },
   typIcon: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   typEmoji: { fontSize: 20 },
   cardMeta: { flex: 1 },
-  cardTitel: { fontSize: 15, fontWeight: "800", color: COLORS.textDark },
-  cardDatum: { fontSize: 12, color: COLORS.blue, fontWeight: "600", marginTop: 2 },
+  cardTitel: { fontSize: 15, fontWeight: "800", color: c.textDark },
+  cardDatum: { fontSize: 12, color: c.blue, fontWeight: "600", marginTop: 2 },
   cardRight: { alignItems: "flex-end", gap: 4 },
-  cardDate: { fontSize: 12, color: COLORS.textLight },
-  cardExcerpt: { fontSize: 13, color: COLORS.textMuted, lineHeight: 19 },
+  cardDate: { fontSize: 12, color: c.textLight },
+  cardExcerpt: { fontSize: 13, color: c.textMuted, lineHeight: 19 },
 });

@@ -15,12 +15,15 @@ import { router } from "expo-router";
 import { createStammtisch, findStammtischByName } from "../utils/storage";
 import { hashStammtischPassword } from "../utils/pin";
 import { useStammtisch } from "../contexts/StammtischContext";
-import { COLORS, SHADOWS } from "../constants/design";
+import { SHADOWS, ThemeColors } from "../constants/design";
+import { useColors, useThemedStyles } from "../contexts/ThemeContext";
 import StammtischLogo from "../components/StammtischLogo";
 
 type Mode = "join" | "create";
 
 export default function StammtischWaehlenScreen() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const [mode, setMode] = useState<Mode>("join");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
@@ -123,7 +126,7 @@ export default function StammtischWaehlenScreen() {
               value={name}
               onChangeText={setName}
               placeholder="z.B. Die Hellen"
-              placeholderTextColor={COLORS.textLight}
+              placeholderTextColor={c.textLight}
               autoCapitalize="words"
             />
           </View>
@@ -135,7 +138,7 @@ export default function StammtischWaehlenScreen() {
               value={password}
               onChangeText={setPassword}
               placeholder="Passwort"
-              placeholderTextColor={COLORS.textLight}
+              placeholderTextColor={c.textLight}
               secureTextEntry
               autoCapitalize="none"
             />
@@ -149,7 +152,7 @@ export default function StammtischWaehlenScreen() {
                 value={passwordRepeat}
                 onChangeText={setPasswordRepeat}
                 placeholder="Passwort wiederholen"
-                placeholderTextColor={COLORS.textLight}
+                placeholderTextColor={c.textLight}
                 secureTextEntry
                 autoCapitalize="none"
               />
@@ -165,7 +168,7 @@ export default function StammtischWaehlenScreen() {
             activeOpacity={0.85}
           >
             {loading ? (
-              <ActivityIndicator color="#FFFFFF" />
+              <ActivityIndicator color={c.onAccent} />
             ) : (
               <Text style={styles.submitBtnText}>
                 {mode === "create" ? "Stammtisch anlegen" : "Beitreten"}
@@ -179,50 +182,50 @@ export default function StammtischWaehlenScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: COLORS.background },
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   content: { padding: 24, paddingBottom: 40, alignItems: "center" },
 
   header: { alignItems: "center", marginBottom: 28, marginTop: 8, gap: 10 },
-  title: { fontSize: 28, fontWeight: "800", color: COLORS.textDark, marginTop: 8 },
-  subtitle: { fontSize: 15, color: COLORS.textMuted, textAlign: "center" },
+  title: { fontSize: 28, fontWeight: "800", color: c.textDark, marginTop: 8 },
+  subtitle: { fontSize: 15, color: c.textMuted, textAlign: "center" },
 
   toggleRow: {
     flexDirection: "row",
-    backgroundColor: COLORS.card,
+    backgroundColor: c.card,
     borderRadius: 14,
     padding: 4,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: c.border,
     width: "100%",
   },
   toggleBtn: { flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: "center" },
-  toggleBtnActive: { backgroundColor: COLORS.blue },
-  toggleText: { fontSize: 13, fontWeight: "700", color: COLORS.textMuted },
-  toggleTextActive: { color: "#FFFFFF" },
+  toggleBtnActive: { backgroundColor: c.blue },
+  toggleText: { fontSize: 13, fontWeight: "700", color: c.textMuted },
+  toggleTextActive: { color: c.onAccent },
 
   card: {
     width: "100%",
-    backgroundColor: COLORS.card,
+    backgroundColor: c.card,
     borderRadius: 14,
     padding: 14,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: c.border,
     ...SHADOWS.card,
   },
-  fieldLabel: { fontSize: 12, fontWeight: "700", color: COLORS.textMuted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 },
+  fieldLabel: { fontSize: 12, fontWeight: "700", color: c.textMuted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 },
   input: {
-    backgroundColor: COLORS.background, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border,
-    paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: COLORS.textDark,
+    backgroundColor: c.background, borderRadius: 10, borderWidth: 1, borderColor: c.border,
+    paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: c.textDark,
   },
 
-  error: { color: COLORS.danger, fontSize: 13, textAlign: "center", marginTop: 4, marginBottom: 8 },
+  error: { color: c.danger, fontSize: 13, textAlign: "center", marginTop: 4, marginBottom: 8 },
 
   submitBtn: {
     width: "100%",
-    backgroundColor: COLORS.blue,
+    backgroundColor: c.blue,
     borderRadius: 16,
     paddingVertical: 16,
     alignItems: "center",
@@ -230,5 +233,5 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   submitBtnDisabled: { opacity: 0.7 },
-  submitBtnText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
+  submitBtnText: { color: c.onAccent, fontSize: 16, fontWeight: "700" },
 });

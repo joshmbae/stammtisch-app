@@ -23,7 +23,8 @@ import {
   logActivity,
 } from "../../utils/storage";
 import { useSession } from "../../contexts/SessionContext";
-import { COLORS, SHADOWS } from "../../constants/design";
+import { SHADOWS, ThemeColors } from "../../constants/design";
+import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import LoadingSpinner from "../../components/LoadingSpinner";
 
 function formatDatum(iso: string): string {
@@ -46,6 +47,8 @@ function formatUpdated(iso: string): string {
 }
 
 export default function ProtokollEditor() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const { activeMemberId } = useSession();
   const { terminId } = useLocalSearchParams<{ terminId: string }>();
   const [termin, setTermin] = useState<StammtischTermin | null>(null);
@@ -156,13 +159,13 @@ export default function ProtokollEditor() {
         {/* Top bar */}
         <View style={styles.topBar}>
           <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-            <Ionicons name="chevron-back" size={20} color={COLORS.blue} />
+            <Ionicons name="chevron-back" size={20} color={c.blue} />
             <Text style={styles.backText}>Zurück</Text>
           </TouchableOpacity>
           <View style={styles.topActions}>
             {protokoll && (
               <TouchableOpacity onPress={handleDelete} style={styles.topBtn}>
-                <Ionicons name="trash-outline" size={20} color={COLORS.danger} />
+                <Ionicons name="trash-outline" size={20} color={c.danger} />
               </TouchableOpacity>
             )}
             {editing ? (
@@ -171,12 +174,12 @@ export default function ProtokollEditor() {
                 onPress={handleSave}
                 disabled={!dirty || saving}
               >
-                <Ionicons name="checkmark" size={18} color="#FFFFFF" />
+                <Ionicons name="checkmark" size={18} color={c.onAccent} />
                 <Text style={styles.saveBtnText}>{saving ? "Speichert…" : "Speichern"}</Text>
               </TouchableOpacity>
             ) : (
               <TouchableOpacity style={styles.saveBtn} onPress={() => setEditing(true)}>
-                <Ionicons name="pencil" size={16} color="#FFFFFF" />
+                <Ionicons name="pencil" size={16} color={c.onAccent} />
                 <Text style={styles.saveBtnText}>Bearbeiten</Text>
               </TouchableOpacity>
             )}
@@ -200,7 +203,7 @@ export default function ProtokollEditor() {
           {/* Status */}
           {protokoll && (
             <View style={styles.statusRow}>
-              <Ionicons name="checkmark-circle" size={14} color={COLORS.success} />
+              <Ionicons name="checkmark-circle" size={14} color={c.success} />
               <Text style={styles.statusText}>
                 Gespeichert · {formatUpdated(protokoll.updatedAt)}
               </Text>
@@ -216,7 +219,7 @@ export default function ProtokollEditor() {
                 value={titel}
                 onChangeText={(v) => handleChange("titel", v)}
                 placeholder="Protokolltitel (optional)"
-                placeholderTextColor={COLORS.textLight}
+                placeholderTextColor={c.textLight}
                 returnKeyType="next"
               />
 
@@ -226,7 +229,7 @@ export default function ProtokollEditor() {
                 value={inhalt}
                 onChangeText={(v) => handleChange("inhalt", v)}
                 placeholder={`Stammtisch vom ${termin ? formatDatum(termin.datum) : "…"}\n\nAnwesende: …\n\nThemen & Beschlüsse:\n1. …\n\nSonstiges: …`}
-                placeholderTextColor={COLORS.textLight}
+                placeholderTextColor={c.textLight}
                 multiline
                 textAlignVertical="top"
                 autoCorrect
@@ -248,8 +251,8 @@ export default function ProtokollEditor() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: COLORS.background },
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
 
   topBar: {
     flexDirection: "row",
@@ -258,59 +261,59 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-    backgroundColor: COLORS.card,
+    borderBottomColor: c.border,
+    backgroundColor: c.card,
   },
   backBtn: { flexDirection: "row", alignItems: "center", gap: 4 },
-  backText: { fontSize: 15, color: COLORS.blue, fontWeight: "600" },
+  backText: { fontSize: 15, color: c.blue, fontWeight: "600" },
   topActions: { flexDirection: "row", alignItems: "center", gap: 10 },
   topBtn: { padding: 4 },
   saveBtn: {
     flexDirection: "row", alignItems: "center", gap: 6,
-    backgroundColor: COLORS.blue, borderRadius: 10,
+    backgroundColor: c.blue, borderRadius: 10,
     paddingHorizontal: 14, paddingVertical: 8,
   },
   saveBtnDim: { opacity: 0.45 },
-  saveBtnText: { color: "#FFFFFF", fontWeight: "700", fontSize: 14 },
+  saveBtnText: { color: c.onAccent, fontWeight: "700", fontSize: 14 },
 
   content: { padding: 20, paddingBottom: 60 },
 
   terminBadge: {
     flexDirection: "row", alignItems: "center", gap: 8,
-    backgroundColor: COLORS.goldBg, borderRadius: 10,
+    backgroundColor: c.goldBg, borderRadius: 10,
     paddingHorizontal: 12, paddingVertical: 8, marginBottom: 10,
-    borderWidth: 1, borderColor: COLORS.gold + "55",
+    borderWidth: 1, borderColor: c.gold + "55",
     alignSelf: "flex-start",
   },
   terminBadgeEmoji: { fontSize: 16 },
-  terminBadgeText: { fontSize: 13, fontWeight: "700", color: COLORS.gold },
+  terminBadgeText: { fontSize: 13, fontWeight: "700", color: c.gold },
 
   statusRow: {
     flexDirection: "row", alignItems: "center", gap: 5,
     marginBottom: 14,
   },
-  statusText: { fontSize: 12, color: COLORS.success, fontWeight: "500" },
-  dirtyDot: { fontSize: 12, color: COLORS.warning },
+  statusText: { fontSize: 12, color: c.success, fontWeight: "500" },
+  dirtyDot: { fontSize: 12, color: c.warning },
 
   titelInput: {
     fontSize: 22,
     fontWeight: "800",
-    color: COLORS.textDark,
+    color: c.textDark,
     marginBottom: 14,
     paddingVertical: 4,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: c.border,
   },
   inhaltInput: {
     fontSize: 15,
-    color: COLORS.textDark,
+    color: c.textDark,
     lineHeight: 24,
     minHeight: 340,
-    backgroundColor: COLORS.card,
+    backgroundColor: c.card,
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: c.border,
     marginBottom: 16,
     ...SHADOWS.light,
   },
@@ -318,18 +321,18 @@ const styles = StyleSheet.create({
   readTitel: {
     fontSize: 22,
     fontWeight: "800",
-    color: COLORS.textDark,
+    color: c.textDark,
     marginBottom: 14,
   },
   readInhalt: {
     fontSize: 15,
-    color: COLORS.textDark,
+    color: c.textDark,
     lineHeight: 24,
-    backgroundColor: COLORS.card,
+    backgroundColor: c.card,
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: c.border,
     marginBottom: 16,
     ...SHADOWS.light,
   },

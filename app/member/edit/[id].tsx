@@ -18,7 +18,8 @@ import * as ImagePicker from "expo-image-picker";
 import { showAlert } from "../../../utils/alert";
 import { MemberProfile } from "../../../types";
 import { loadMembers, saveMembers, uploadAvatar, loadVerordnung } from "../../../utils/storage";
-import { COLORS, AVATAR_COLORS } from "../../../constants/design";
+import { AVATAR_COLORS, ThemeColors } from "../../../constants/design";
+import { useColors, useThemedStyles } from "../../../contexts/ThemeContext";
 import { getInitial } from "../../../utils/format";
 import LoadingSpinner from "../../../components/LoadingSpinner";
 import { toLocalIsoDate } from "../../../utils/date";
@@ -27,6 +28,8 @@ import { hashPin, isValidPin } from "../../../utils/pin";
 
 export default function EditMemberScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const [name, setName] = useState("");
   const [spitzname, setSpitzname] = useState("");
   const [rollen, setRollen] = useState<MemberProfile["rollen"]>(["Mitglied"]);
@@ -135,7 +138,7 @@ export default function EditMemberScreen() {
 
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="chevron-back" size={20} color={COLORS.blue} />
+            <Ionicons name="chevron-back" size={20} color={c.blue} />
           </TouchableOpacity>
           <Text style={styles.title}>Mitglied bearbeiten</Text>
         </View>
@@ -153,17 +156,17 @@ export default function EditMemberScreen() {
                 </View>
               )}
               <View style={styles.avatarCameraBtn}>
-                <Ionicons name="camera" size={14} color="#FFFFFF" />
+                <Ionicons name="camera" size={14} color={c.onAccent} />
               </View>
             </TouchableOpacity>
             <View style={styles.colorGrid}>
-              {AVATAR_COLORS.map((c) => (
+              {AVATAR_COLORS.map((farbe) => (
                 <TouchableOpacity
-                  key={c}
-                  style={[styles.colorDot, { backgroundColor: c }, avatarColor === c && styles.colorDotSelected]}
-                  onPress={() => setAvatarColor(c)}
+                  key={farbe}
+                  style={[styles.colorDot, { backgroundColor: farbe }, avatarColor === farbe && styles.colorDotSelected]}
+                  onPress={() => setAvatarColor(farbe)}
                 >
-                  {avatarColor === c && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
+                  {avatarColor === farbe && <Ionicons name="checkmark" size={14} color={c.onAccent} />}
                 </TouchableOpacity>
               ))}
             </View>
@@ -177,12 +180,12 @@ export default function EditMemberScreen() {
 
         <View style={styles.card}>
           <Text style={styles.fieldLabel}>Name *</Text>
-          <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="z.B. Franz Huber" placeholderTextColor={COLORS.textLight} />
+          <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="z.B. Franz Huber" placeholderTextColor={c.textLight} />
         </View>
 
         <View style={styles.card}>
           <Text style={styles.fieldLabel}>Spitzname</Text>
-          <TextInput style={styles.input} value={spitzname} onChangeText={setSpitzname} placeholder="z.B. Franzi" placeholderTextColor={COLORS.textLight} />
+          <TextInput style={styles.input} value={spitzname} onChangeText={setSpitzname} placeholder="z.B. Franzi" placeholderTextColor={c.textLight} />
         </View>
 
         <View style={styles.card}>
@@ -193,14 +196,14 @@ export default function EditMemberScreen() {
               return (
                 <TouchableOpacity
                   key={r}
-                  style={[styles.rolleChip, selected && { backgroundColor: COLORS.blue, borderColor: COLORS.blue }]}
+                  style={[styles.rolleChip, selected && { backgroundColor: c.blue, borderColor: c.blue }]}
                   onPress={() => setRollen((prev) =>
                     prev.includes(r)
                       ? (prev.length > 1 ? prev.filter((x) => x !== r) : prev)
                       : [...prev, r]
                   )}
                 >
-                  <Text style={[styles.rolleChipText, selected && { color: "#FFFFFF" }]}>{r}</Text>
+                  <Text style={[styles.rolleChipText, selected && { color: c.onAccent }]}>{r}</Text>
                 </TouchableOpacity>
               );
             })}
@@ -210,7 +213,7 @@ export default function EditMemberScreen() {
         <View style={styles.card}>
           <Text style={styles.fieldLabel}>Mitglied seit</Text>
           <TouchableOpacity style={styles.dateBtn} onPress={() => setShowDatePicker(true)}>
-            <Ionicons name="calendar-outline" size={18} color={COLORS.blue} />
+            <Ionicons name="calendar-outline" size={18} color={c.blue} />
             <Text style={styles.dateBtnText}>
               {mitgliedSeit.toLocaleDateString("de-DE", { day: "2-digit", month: "long", year: "numeric" })}
             </Text>
@@ -230,14 +233,14 @@ export default function EditMemberScreen() {
           <Text style={styles.fieldLabel}>Geburtstag</Text>
           <TouchableOpacity style={styles.dateBtn} onPress={() => setShowBirthdayPicker(true)}>
             <Text style={{ fontSize: 16 }}>🎂</Text>
-            <Text style={[styles.dateBtnText, !geburtsdatum && { color: COLORS.textLight }]}>
+            <Text style={[styles.dateBtnText, !geburtsdatum && { color: c.textLight }]}>
               {geburtsdatum
                 ? geburtsdatum.toLocaleDateString("de-DE", { day: "2-digit", month: "long", year: "numeric" })
                 : "Geburtstag eintragen (optional)"}
             </Text>
             {geburtsdatum && (
               <TouchableOpacity onPress={() => setGeburtsdatum(null)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                <Ionicons name="close-circle" size={18} color={COLORS.textMuted} />
+                <Ionicons name="close-circle" size={18} color={c.textMuted} />
               </TouchableOpacity>
             )}
           </TouchableOpacity>
@@ -254,12 +257,12 @@ export default function EditMemberScreen() {
 
         <View style={styles.card}>
           <Text style={styles.fieldLabel}>Lieblingsgetränk</Text>
-          <TextInput style={styles.input} value={lieblingsgetraenk} onChangeText={setLieblingsgetraenk} placeholder="z.B. Helles, Weißbier" placeholderTextColor={COLORS.textLight} />
+          <TextInput style={styles.input} value={lieblingsgetraenk} onChangeText={setLieblingsgetraenk} placeholder="z.B. Helles, Weißbier" placeholderTextColor={c.textLight} />
         </View>
 
         <View style={styles.card}>
           <Text style={styles.fieldLabel}>Beruf</Text>
-          <TextInput style={styles.input} value={beruf} onChangeText={setBeruf} placeholder="z.B. Bäckermeister" placeholderTextColor={COLORS.textLight} />
+          <TextInput style={styles.input} value={beruf} onChangeText={setBeruf} placeholder="z.B. Bäckermeister" placeholderTextColor={c.textLight} />
         </View>
 
         <View style={styles.card}>
@@ -269,7 +272,7 @@ export default function EditMemberScreen() {
             value={notizen}
             onChangeText={setNotizen}
             placeholder="Besonderheiten..."
-            placeholderTextColor={COLORS.textLight}
+            placeholderTextColor={c.textLight}
             multiline
             textAlignVertical="top"
           />
@@ -291,7 +294,7 @@ export default function EditMemberScreen() {
               secureTextEntry
               maxLength={4}
               placeholder={pinHash ? "Neuer PIN" : "PIN"}
-              placeholderTextColor={COLORS.textLight}
+              placeholderTextColor={c.textLight}
             />
             <TextInput
               style={[styles.input, styles.pinInput]}
@@ -301,7 +304,7 @@ export default function EditMemberScreen() {
               secureTextEntry
               maxLength={4}
               placeholder="Bestätigen"
-              placeholderTextColor={COLORS.textLight}
+              placeholderTextColor={c.textLight}
             />
           </View>
           {pinHash && (
@@ -312,7 +315,7 @@ export default function EditMemberScreen() {
         </View>
 
         <TouchableOpacity style={styles.saveBtn} onPress={save}>
-          <Ionicons name="checkmark" size={20} color="#FFFFFF" />
+          <Ionicons name="checkmark" size={20} color={c.onAccent} />
           <Text style={styles.saveBtnText}>Änderungen speichern</Text>
         </TouchableOpacity>
 
@@ -323,39 +326,39 @@ export default function EditMemberScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: COLORS.background },
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   content: { padding: 20, paddingBottom: 48 },
   header: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 20, paddingTop: 4 },
   backBtn: { padding: 4 },
-  title: { fontSize: 22, fontWeight: "800", color: COLORS.textDark },
-  card: { backgroundColor: COLORS.card, borderRadius: 14, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: COLORS.border },
-  fieldLabel: { fontSize: 12, fontWeight: "700", color: COLORS.textMuted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 },
-  input: { backgroundColor: COLORS.background, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: COLORS.textDark },
+  title: { fontSize: 22, fontWeight: "800", color: c.textDark },
+  card: { backgroundColor: c.card, borderRadius: 14, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: c.border },
+  fieldLabel: { fontSize: 12, fontWeight: "700", color: c.textMuted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 },
+  input: { backgroundColor: c.background, borderRadius: 10, borderWidth: 1, borderColor: c.border, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: c.textDark },
   avatarRow: { flexDirection: "row", alignItems: "center", gap: 16 },
   avatarPreview: { width: 72, height: 72, borderRadius: 36, alignItems: "center", justifyContent: "center" },
-  avatarPreviewText: { fontSize: 28, fontWeight: "700", color: "#FFFFFF" },
+  avatarPreviewText: { fontSize: 28, fontWeight: "700", color: c.onAccent },
   avatarCameraBtn: {
     position: "absolute", bottom: 0, right: 0,
     width: 24, height: 24, borderRadius: 12,
-    backgroundColor: COLORS.blue, alignItems: "center", justifyContent: "center",
-    borderWidth: 2, borderColor: COLORS.card,
+    backgroundColor: c.blue, alignItems: "center", justifyContent: "center",
+    borderWidth: 2, borderColor: c.card,
   },
   colorGrid: { flex: 1, flexDirection: "row", gap: 8, flexWrap: "wrap" },
   colorDot: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center" },
-  colorDotSelected: { borderWidth: 3, borderColor: "#FFFFFF" },
+  colorDotSelected: { borderWidth: 3, borderColor: c.card },
   removePhoto: { marginTop: 8 },
-  removePhotoText: { fontSize: 12, color: COLORS.danger, fontWeight: "600" },
+  removePhotoText: { fontSize: 12, color: c.danger, fontWeight: "600" },
   rollenGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  rolleChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: COLORS.background, borderWidth: 1.5, borderColor: COLORS.border },
-  rolleChipText: { fontSize: 13, fontWeight: "600", color: COLORS.textDark },
-  dateBtn: { flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: COLORS.background, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border, paddingHorizontal: 12, paddingVertical: 10 },
-  dateBtnText: { fontSize: 14, color: COLORS.textDark, fontWeight: "600" },
-  pinHint: { fontSize: 12, color: COLORS.textMuted, lineHeight: 17, marginBottom: 10 },
+  rolleChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: c.background, borderWidth: 1.5, borderColor: c.border },
+  rolleChipText: { fontSize: 13, fontWeight: "600", color: c.textDark },
+  dateBtn: { flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: c.background, borderRadius: 10, borderWidth: 1, borderColor: c.border, paddingHorizontal: 12, paddingVertical: 10 },
+  dateBtnText: { fontSize: 14, color: c.textDark, fontWeight: "600" },
+  pinHint: { fontSize: 12, color: c.textMuted, lineHeight: 17, marginBottom: 10 },
   pinRow: { flexDirection: "row", gap: 8 },
   pinInput: { flex: 1, textAlign: "center", letterSpacing: 4 },
   pinRemoveBtn: { marginTop: 10 },
-  pinRemoveText: { fontSize: 12, color: COLORS.danger, fontWeight: "600" },
-  saveBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: COLORS.blue, borderRadius: 16, paddingVertical: 16, marginTop: 8 },
-  saveBtnText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
+  pinRemoveText: { fontSize: 12, color: c.danger, fontWeight: "600" },
+  saveBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: c.blue, borderRadius: 16, paddingVertical: 16, marginTop: 8 },
+  saveBtnText: { color: c.onAccent, fontSize: 16, fontWeight: "700" },
 });

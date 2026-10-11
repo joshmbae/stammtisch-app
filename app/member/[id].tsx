@@ -32,7 +32,8 @@ import {
   loadVerordnung,
   loadTermine,
 } from "../../utils/storage";
-import { COLORS, SHADOWS } from "../../constants/design";
+import { SHADOWS, ThemeColors } from "../../constants/design";
+import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { formatEuro, getInitial, displayName, anwesenheitsQuote } from "../../utils/format";
 import PinPrompt from "../../components/PinPrompt";
 import LoadingSpinner from "../../components/LoadingSpinner";
@@ -78,6 +79,8 @@ function TerminHistoryRow({
   spielChips: { key: string; emoji: string; count: number }[];
   strafen: StrafLog[];
 }) {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const strafSumme = strafen.reduce((s, l) => s + l.betrag, 0);
 
   return (
@@ -86,7 +89,7 @@ function TerminHistoryRow({
       onPress={() => router.push(`/termin/${termin.id}`)}
       activeOpacity={0.85}
     >
-      <View style={[styles.historyDot, { backgroundColor: anwesend ? COLORS.success : COLORS.border }]} />
+      <View style={[styles.historyDot, { backgroundColor: anwesend ? c.success : c.border }]} />
       <View style={styles.historyInfo}>
         <Text style={styles.historyTitel}>
           {termin.titel ?? (termin.art === "stammtisch" ? "Stammtisch" : "Veranstaltung")}
@@ -105,14 +108,14 @@ function TerminHistoryRow({
               <Text style={styles.historyChipText}>⏱️ {verspätungMin} Min.</Text>
             </View>
           )}
-          {spielChips.map((c) => (
-            <View key={c.key} style={[styles.historyChip, { backgroundColor: COLORS.blue + "12" }]}>
-              <Text style={[styles.historyChipText, { color: COLORS.blue }]}>{c.emoji} {c.count}</Text>
+          {spielChips.map((chip) => (
+            <View key={chip.key} style={[styles.historyChip, { backgroundColor: c.blue + "12" }]}>
+              <Text style={[styles.historyChipText, { color: c.blue }]}>{chip.emoji} {chip.count}</Text>
             </View>
           ))}
           {strafSumme > 0 && (
-            <View style={[styles.historyChip, { backgroundColor: "#FFF3D6" }]}>
-              <Text style={[styles.historyChipText, { color: COLORS.gold }]}>
+            <View style={[styles.historyChip, { backgroundColor: c.goldBg }]}>
+              <Text style={[styles.historyChipText, { color: c.gold }]}>
                 💰 {strafSumme.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €
               </Text>
             </View>
@@ -129,6 +132,8 @@ function TerminHistoryRow({
 
 export default function MemberDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const [member, setMember] = useState<MemberProfile | null>(null);
   const [verspätungLogs, setVerspätungLogs] = useState<VerspätungLog[]>([]);
   const [spielLogs, setSpielLogs] = useState<SpielLog[]>([]);
@@ -236,7 +241,7 @@ export default function MemberDetailScreen() {
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.blue} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.blue} />}
       >
         <OfflineBanner />
 
@@ -247,7 +252,7 @@ export default function MemberDetailScreen() {
           </TouchableOpacity>
           <Text style={styles.headerTitle} numberOfLines={1}>{member.name}</Text>
           <TouchableOpacity onPress={handleEditPress} style={styles.editBtn}>
-            <Ionicons name="pencil-outline" size={18} color={COLORS.blue} />
+            <Ionicons name="pencil-outline" size={18} color={c.blue} />
           </TouchableOpacity>
         </View>
 
@@ -299,7 +304,7 @@ export default function MemberDetailScreen() {
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Informationen</Text>
           <View style={styles.infoRow}>
-            <Ionicons name="calendar-outline" size={16} color={COLORS.textMuted} />
+            <Ionicons name="calendar-outline" size={16} color={c.textMuted} />
             <Text style={styles.infoText}>{getMitgliedSeit(member.mitgliedSeit)}</Text>
           </View>
           {member.geburtsdatum && (
@@ -320,13 +325,13 @@ export default function MemberDetailScreen() {
           )}
           {member.beruf && (
             <View style={styles.infoRow}>
-              <Ionicons name="briefcase-outline" size={16} color={COLORS.textMuted} />
+              <Ionicons name="briefcase-outline" size={16} color={c.textMuted} />
               <Text style={styles.infoText}>{member.beruf}</Text>
             </View>
           )}
           {member.notizen && (
             <View style={styles.infoRow}>
-              <Ionicons name="document-text-outline" size={16} color={COLORS.textMuted} />
+              <Ionicons name="document-text-outline" size={16} color={c.textMuted} />
               <Text style={styles.infoText}>{member.notizen}</Text>
             </View>
           )}
@@ -339,21 +344,21 @@ export default function MemberDetailScreen() {
             {anwesenheitPct !== null && (
               <View style={styles.statBox}>
                 <Text style={styles.statEmoji}>✅</Text>
-                <Text style={[styles.statValue, { color: COLORS.success }]}>{anwesenheitPct} %</Text>
+                <Text style={[styles.statValue, { color: c.success }]}>{anwesenheitPct} %</Text>
                 <Text style={styles.statLabel}>{anwesenheitCount}/{anwesenheitTotal} Abende</Text>
               </View>
             )}
             {verspätungGesamt > 0 && (
               <View style={styles.statBox}>
                 <Text style={styles.statEmoji}>⏱️</Text>
-                <Text style={[styles.statValue, { color: COLORS.danger }]}>{verspätungGesamt}</Text>
+                <Text style={[styles.statValue, { color: c.danger }]}>{verspätungGesamt}</Text>
                 <Text style={styles.statLabel}>Min. zu spät</Text>
               </View>
             )}
             {spielStatsGesamt.map((s) => (
               <View key={s.key} style={styles.statBox}>
                 <Text style={styles.statEmoji}>{s.emoji}</Text>
-                <Text style={[styles.statValue, { color: COLORS.blue }]}>{s.count}</Text>
+                <Text style={[styles.statValue, { color: c.blue }]}>{s.count}</Text>
                 <Text style={styles.statLabel}>{s.label}</Text>
               </View>
             ))}
@@ -375,7 +380,7 @@ export default function MemberDetailScreen() {
                   {formatEuro(strafGesamt)} €
                 </Text>
                 <Text style={styles.statLabel}>Strafen gesamt</Text>
-                <Text style={[styles.statLabel, { fontWeight: "700", color: strafOffen > 0 ? COLORS.danger : COLORS.success }]}>
+                <Text style={[styles.statLabel, { fontWeight: "700", color: strafOffen > 0 ? c.danger : c.success }]}>
                   {strafOffen > 0 ? `offen: ${formatEuro(strafOffen)} €` : "✓ alles beglichen"}
                 </Text>
               </TouchableOpacity>
@@ -419,7 +424,7 @@ export default function MemberDetailScreen() {
                 <Ionicons
                   name={showAllTermine ? "chevron-up" : "chevron-down"}
                   size={14}
-                  color={COLORS.blue}
+                  color={c.blue}
                 />
               </TouchableOpacity>
             )}
@@ -442,93 +447,93 @@ export default function MemberDetailScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: COLORS.background },
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   content: { padding: 20, paddingBottom: 48 },
 
   header: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 16, paddingTop: 4 },
   backBtn: { padding: 4 },
-  backText: { fontSize: 32, color: COLORS.blue, lineHeight: 36 },
-  headerTitle: { fontSize: 20, fontWeight: "800", color: COLORS.textDark, flex: 1 },
+  backText: { fontSize: 32, color: c.blue, lineHeight: 36 },
+  headerTitle: { fontSize: 20, fontWeight: "800", color: c.textDark, flex: 1 },
   editBtn: {
-    width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.card,
-    alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: COLORS.border,
+    width: 36, height: 36, borderRadius: 18, backgroundColor: c.card,
+    alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: c.border,
   },
 
   heroCard: {
     flexDirection: "row", alignItems: "center", gap: 14,
-    backgroundColor: COLORS.card, borderRadius: 20, padding: 16, marginBottom: 12,
+    backgroundColor: c.card, borderRadius: 20, padding: 16, marginBottom: 12,
     borderWidth: 1.5, ...SHADOWS.card,
   },
   heroAvatar: { width: 64, height: 64, borderRadius: 32 },
   heroAvatarPlaceholder: { width: 64, height: 64, borderRadius: 32, alignItems: "center", justifyContent: "center" },
-  heroAvatarLetter: { fontSize: 26, fontWeight: "700", color: "#FFFFFF" },
+  heroAvatarLetter: { fontSize: 26, fontWeight: "700", color: c.onAccent },
   heroInfo: { flex: 1, gap: 4 },
   heroAvatarWrap: { width: 64, height: 64 },
   titelJahrRow: { flexDirection: "row", alignItems: "flex-start", gap: 10, paddingVertical: 6 },
-  titelJahr: { fontSize: 13, fontWeight: "800", color: COLORS.textMuted, width: 44, paddingTop: 3 },
+  titelJahr: { fontSize: 13, fontWeight: "800", color: c.textMuted, width: 44, paddingTop: 3 },
   titelChips: { flex: 1, flexDirection: "row", flexWrap: "wrap", gap: 6 },
   titelChip: {
-    backgroundColor: COLORS.goldBg, borderRadius: 10,
-    borderWidth: 1, borderColor: COLORS.gold + "44",
+    backgroundColor: c.goldBg, borderRadius: 10,
+    borderWidth: 1, borderColor: c.gold + "44",
     paddingHorizontal: 9, paddingVertical: 4,
   },
-  titelChipText: { fontSize: 12, fontWeight: "700", color: COLORS.textMid },
-  titelHinweis: { fontSize: 11, color: COLORS.textLight, marginTop: 8 },
-  heroName: { fontSize: 18, fontWeight: "800", color: COLORS.textDark },
+  titelChipText: { fontSize: 12, fontWeight: "700", color: c.textMid },
+  titelHinweis: { fontSize: 11, color: c.textLight, marginTop: 8 },
+  heroName: { fontSize: 18, fontWeight: "800", color: c.textDark },
   rolleBadge: { alignSelf: "flex-start", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10, borderWidth: 1 },
   rolleBadgeText: { fontSize: 12, fontWeight: "700" },
 
   card: {
-    backgroundColor: COLORS.card, borderRadius: 16, padding: 16, marginBottom: 12,
-    borderWidth: 1, borderColor: COLORS.border,
+    backgroundColor: c.card, borderRadius: 16, padding: 16, marginBottom: 12,
+    borderWidth: 1, borderColor: c.border,
   },
-  sectionTitle: { fontSize: 14, fontWeight: "800", color: COLORS.textDark, marginBottom: 12, letterSpacing: -0.1 },
+  sectionTitle: { fontSize: 14, fontWeight: "800", color: c.textDark, marginBottom: 12, letterSpacing: -0.1 },
 
   infoRow: { flexDirection: "row", alignItems: "flex-start", gap: 8, marginBottom: 8 },
   infoEmoji: { fontSize: 16, lineHeight: 20 },
-  infoText: { fontSize: 14, color: COLORS.textMid, flex: 1, lineHeight: 20 },
+  infoText: { fontSize: 14, color: c.textMid, flex: 1, lineHeight: 20 },
 
   statsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   statBox: {
     flex: 1, minWidth: "40%", alignItems: "center", gap: 4,
-    backgroundColor: COLORS.background, borderRadius: 12, padding: 12,
+    backgroundColor: c.background, borderRadius: 12, padding: 12,
   },
   statBoxOffen: {
-    backgroundColor: "#FFF0F0",
-    borderWidth: 1, borderColor: COLORS.danger + "33",
+    backgroundColor: c.dangerBg,
+    borderWidth: 1, borderColor: c.danger + "33",
   },
   statBoxBeglichen: {
-    backgroundColor: "#EDF6F1",
-    borderWidth: 1, borderColor: COLORS.success + "33",
+    backgroundColor: c.successBg,
+    borderWidth: 1, borderColor: c.success + "33",
   },
   statEmoji: { fontSize: 22 },
-  statValue: { fontSize: 20, fontWeight: "800", color: COLORS.textDark },
-  statLabel: { fontSize: 11, color: COLORS.textMuted, textAlign: "center" },
+  statValue: { fontSize: 20, fontWeight: "800", color: c.textDark },
+  statLabel: { fontSize: 11, color: c.textMuted, textAlign: "center" },
 
   // Termin history
   historyRow: {
     flexDirection: "row", alignItems: "center", gap: 10,
-    paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: COLORS.border,
+    paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: c.border,
   },
   historyDot: { width: 8, height: 8, borderRadius: 4 },
   historyInfo: { minWidth: 90 },
-  historyTitel: { fontSize: 13, fontWeight: "700", color: COLORS.textDark },
-  historyDatum: { fontSize: 11, color: COLORS.textMuted, marginTop: 1 },
+  historyTitel: { fontSize: 13, fontWeight: "700", color: c.textDark },
+  historyDatum: { fontSize: 11, color: c.textMuted, marginTop: 1 },
   historyChips: { flex: 1, flexDirection: "row", flexWrap: "wrap", gap: 4, justifyContent: "flex-end" },
   historyChip: {
-    backgroundColor: "#FFF0F0", borderRadius: 8, paddingHorizontal: 7, paddingVertical: 3,
+    backgroundColor: c.dangerBg, borderRadius: 8, paddingHorizontal: 7, paddingVertical: 3,
   },
-  historyChipText: { fontSize: 11, fontWeight: "700", color: COLORS.danger },
+  historyChipText: { fontSize: 11, fontWeight: "700", color: c.danger },
   historyChipDabei: {
-    backgroundColor: COLORS.success + "16", borderRadius: 8,
+    backgroundColor: c.success + "16", borderRadius: 8,
     paddingHorizontal: 7, paddingVertical: 3,
   },
-  historyChipDabeiText: { fontSize: 11, fontWeight: "700", color: COLORS.success },
-  historyAbwesend: { fontSize: 12, color: COLORS.textLight, fontStyle: "italic" },
+  historyChipDabeiText: { fontSize: 11, fontWeight: "700", color: c.success },
+  historyAbwesend: { fontSize: 12, color: c.textLight, fontStyle: "italic" },
   showMoreBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5,
     paddingTop: 12, marginTop: 4,
   },
-  showMoreText: { fontSize: 13, fontWeight: "600", color: COLORS.blue },
+  showMoreText: { fontSize: 13, fontWeight: "600", color: c.blue },
 });

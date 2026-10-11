@@ -15,10 +15,13 @@ import { BackButton } from "../components/BackButton";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { StammtischVerordnung } from "../types";
 import { loadVerordnung } from "../utils/storage";
-import { COLORS, SHADOWS } from "../constants/design";
+import { SHADOWS, ThemeColors } from "../constants/design";
+import { useColors, useThemedStyles } from "../contexts/ThemeContext";
 import { gruendungsDauer, formatDauer, formatGruendungMonat } from "../utils/format";
 
 export default function SatzungScreen() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const [verordnung, setVerordnung] = useState<StammtischVerordnung>({ name: "Mein Stammtisch", regeln: [] });
   const [loading, setLoading] = useState(true);
 
@@ -135,7 +138,7 @@ export default function SatzungScreen() {
               onPress={() => router.push("/(tabs)/guide")}
               activeOpacity={0.85}
             >
-              <Ionicons name="settings-outline" size={15} color={COLORS.blue} />
+              <Ionicons name="settings-outline" size={15} color={c.blue} />
               <Text style={styles.emptyBtnText}>Zu den Einstellungen</Text>
             </TouchableOpacity>
           </View>
@@ -147,28 +150,28 @@ export default function SatzungScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: COLORS.background },
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   content: { padding: 20, paddingBottom: 60 },
 
   header: {
     flexDirection: "row", alignItems: "center", gap: 12,
-    backgroundColor: COLORS.cardAlt, borderRadius: 20,
+    backgroundColor: c.cardAlt, borderRadius: 20,
     padding: 16, marginBottom: 16, ...SHADOWS.card,
-    borderWidth: 1, borderColor: COLORS.border,
+    borderWidth: 1, borderColor: c.border,
   },
   headerTexts: { flex: 1 },
-  headerTitle: { fontSize: 18, fontWeight: "800", color: COLORS.textDark },
-  headerSub: { fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
+  headerTitle: { fontSize: 18, fontWeight: "800", color: c.textDark },
+  headerSub: { fontSize: 12, color: c.textMuted, marginTop: 2 },
 
   // ── Banner ────────────────────────────────────────────────────────────────
   banner: {
-    backgroundColor: COLORS.blueDark, borderRadius: 24, padding: 28,
+    backgroundColor: c.blueDark, borderRadius: 24, padding: 28,
     alignItems: "center", marginBottom: 16, ...SHADOWS.card,
   },
   bannerEmoji: { fontSize: 40, marginBottom: 10 },
   bannerTitle: {
-    fontSize: 30, fontWeight: "900", color: "#FFFFFF",
+    fontSize: 30, fontWeight: "900", color: c.onAccent,
     letterSpacing: -0.5, textAlign: "center", marginBottom: 4,
   },
   bannerSub: {
@@ -177,69 +180,69 @@ const styles = StyleSheet.create({
   },
   bannerBadge: {
     marginTop: 14, paddingHorizontal: 14, paddingVertical: 6,
-    backgroundColor: COLORS.gold + "33", borderRadius: 20,
-    borderWidth: 1, borderColor: COLORS.gold + "55",
+    backgroundColor: c.gold + "33", borderRadius: 20,
+    borderWidth: 1, borderColor: c.gold + "55",
   },
-  bannerBadgeText: { fontSize: 12, fontWeight: "700", color: COLORS.gold },
+  bannerBadgeText: { fontSize: 12, fontWeight: "700", color: c.gold },
 
   // ── Eckdaten ──────────────────────────────────────────────────────────────
   eckdatenCard: {
-    backgroundColor: COLORS.card, borderRadius: 20, padding: 4,
-    marginBottom: 20, borderWidth: 1, borderColor: COLORS.border, ...SHADOWS.light,
+    backgroundColor: c.card, borderRadius: 20, padding: 4,
+    marginBottom: 20, borderWidth: 1, borderColor: c.border, ...SHADOWS.light,
   },
   eckdatenRow: {
     flexDirection: "row", alignItems: "center", gap: 14,
     paddingVertical: 14, paddingHorizontal: 16,
   },
-  eckdatenRowBorder: { borderTopWidth: 1, borderTopColor: COLORS.border },
+  eckdatenRowBorder: { borderTopWidth: 1, borderTopColor: c.border },
   eckdatenIcon: {
     width: 40, height: 40, borderRadius: 20,
-    backgroundColor: COLORS.background, alignItems: "center", justifyContent: "center",
+    backgroundColor: c.background, alignItems: "center", justifyContent: "center",
   },
   eckdatenEmoji: { fontSize: 20 },
-  eckdatenLabel: { fontSize: 11, fontWeight: "700", color: COLORS.textMuted, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 2 },
-  eckdatenValue: { fontSize: 15, fontWeight: "600", color: COLORS.textDark },
+  eckdatenLabel: { fontSize: 11, fontWeight: "700", color: c.textMuted, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 2 },
+  eckdatenValue: { fontSize: 15, fontWeight: "600", color: c.textDark },
 
   // ── Section Divider ───────────────────────────────────────────────────────
   sectionHeader: {
     flexDirection: "row", alignItems: "center", gap: 10,
     marginBottom: 14, marginTop: 4,
   },
-  sectionLine: { flex: 1, height: 1, backgroundColor: COLORS.border },
-  sectionLabel: { fontSize: 11, fontWeight: "800", color: COLORS.textMuted, textTransform: "uppercase", letterSpacing: 0.8 },
+  sectionLine: { flex: 1, height: 1, backgroundColor: c.border },
+  sectionLabel: { fontSize: 11, fontWeight: "800", color: c.textMuted, textTransform: "uppercase", letterSpacing: 0.8 },
 
   // ── Regeln ────────────────────────────────────────────────────────────────
   regelCard: {
     flexDirection: "row", alignItems: "flex-start", gap: 14,
-    backgroundColor: COLORS.card, borderRadius: 16, padding: 16, marginBottom: 8,
-    borderWidth: 1, borderColor: COLORS.border, ...SHADOWS.light,
+    backgroundColor: c.card, borderRadius: 16, padding: 16, marginBottom: 8,
+    borderWidth: 1, borderColor: c.border, ...SHADOWS.light,
   },
   regelNrWrap: {
     width: 32, height: 32, borderRadius: 16,
-    backgroundColor: COLORS.blueDark, alignItems: "center", justifyContent: "center",
+    backgroundColor: c.blueDark, alignItems: "center", justifyContent: "center",
     flexShrink: 0, marginTop: 1,
   },
-  regelNr: { fontSize: 14, fontWeight: "900", color: COLORS.gold },
-  regelText: { flex: 1, fontSize: 15, color: COLORS.textDark, lineHeight: 22, fontWeight: "500" },
+  regelNr: { fontSize: 14, fontWeight: "900", color: c.gold },
+  regelText: { flex: 1, fontSize: 15, color: c.textDark, lineHeight: 22, fontWeight: "500" },
 
   // ── Sonstiges ─────────────────────────────────────────────────────────────
   sonstigesCard: {
-    backgroundColor: COLORS.card, borderRadius: 16, padding: 16,
-    borderWidth: 1, borderColor: COLORS.border, ...SHADOWS.light,
+    backgroundColor: c.card, borderRadius: 16, padding: 16,
+    borderWidth: 1, borderColor: c.border, ...SHADOWS.light,
   },
-  sonstigesText: { fontSize: 14, color: COLORS.textMid, lineHeight: 22 },
+  sonstigesText: { fontSize: 14, color: c.textMid, lineHeight: 22 },
 
   // ── Empty ─────────────────────────────────────────────────────────────────
   emptyCard: {
-    backgroundColor: COLORS.card, borderRadius: 20, padding: 24,
-    alignItems: "center", borderWidth: 1, borderColor: COLORS.border,
+    backgroundColor: c.card, borderRadius: 20, padding: 24,
+    alignItems: "center", borderWidth: 1, borderColor: c.border,
     borderStyle: "dashed", gap: 16,
   },
-  emptyText: { fontSize: 14, color: COLORS.textMuted, textAlign: "center", lineHeight: 21 },
+  emptyText: { fontSize: 14, color: c.textMuted, textAlign: "center", lineHeight: 21 },
   emptyBtn: {
     flexDirection: "row", alignItems: "center", gap: 6,
     paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12,
-    backgroundColor: COLORS.blue + "12", borderWidth: 1, borderColor: COLORS.blue + "33",
+    backgroundColor: c.blue + "12", borderWidth: 1, borderColor: c.blue + "33",
   },
-  emptyBtnText: { fontSize: 14, fontWeight: "700", color: COLORS.blue },
+  emptyBtnText: { fontSize: 14, fontWeight: "700", color: c.blue },
 });

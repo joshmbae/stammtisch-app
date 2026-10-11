@@ -21,7 +21,8 @@ import {
   deleteStrafKategorie,
   instantiateStrafKategorieVorlage,
 } from "../utils/storage";
-import { COLORS, SHADOWS } from "../constants/design";
+import { SHADOWS, ThemeColors } from "../constants/design";
+import { useColors, useThemedStyles } from "../contexts/ThemeContext";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { useSingleFlight } from "../utils/useSingleFlight";
 
@@ -30,6 +31,8 @@ function leereForm() {
 }
 
 export default function StrafenKategorienScreen() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const guard = useSingleFlight();
   const [kategorien, setKategorien] = useState<StrafKategorieDef[]>([]);
   const [loading, setLoading] = useState(true);
@@ -121,7 +124,7 @@ export default function StrafenKategorienScreen() {
 
           <View style={styles.header}>
             <TouchableOpacity onPress={() => router.back()} style={{ padding: 4 }}>
-              <Ionicons name="chevron-back" size={22} color={COLORS.textDark} />
+              <Ionicons name="chevron-back" size={22} color={c.textDark} />
             </TouchableOpacity>
             <View style={styles.headerTexts}>
               <Text style={styles.headerTitle}>Strafenkategorien</Text>
@@ -130,7 +133,7 @@ export default function StrafenKategorienScreen() {
           </View>
 
           <View style={styles.infoBox}>
-            <Ionicons name="information-circle-outline" size={18} color={COLORS.blue} />
+            <Ionicons name="information-circle-outline" size={18} color={c.blue} />
             <Text style={styles.infoBoxText}>
               Strafen, die bei einem Spiel-Ereignis automatisch entstehen (z. B. "Schock-Niederlage"),
               verwaltet ihr direkt beim jeweiligen Spiel unter „Spiele verwalten" — hier nur alles Manuelle.
@@ -153,7 +156,7 @@ export default function StrafenKategorienScreen() {
                       value={editForm.label}
                       onChangeText={(t) => setEditForm((f) => ({ ...f, label: t }))}
                       placeholder="Bezeichnung"
-                      placeholderTextColor={COLORS.textLight}
+                      placeholderTextColor={c.textLight}
                     />
                   </View>
                   <TextInput
@@ -161,7 +164,7 @@ export default function StrafenKategorienScreen() {
                     value={editForm.betrag}
                     onChangeText={(t) => setEditForm((f) => ({ ...f, betrag: t }))}
                     placeholder="Betrag in €"
-                    placeholderTextColor={COLORS.textLight}
+                    placeholderTextColor={c.textLight}
                     keyboardType="decimal-pad"
                   />
                   <TextInput
@@ -169,7 +172,7 @@ export default function StrafenKategorienScreen() {
                     value={editForm.beschreibung}
                     onChangeText={(t) => setEditForm((f) => ({ ...f, beschreibung: t }))}
                     placeholder="Beschreibung (optional)"
-                    placeholderTextColor={COLORS.textLight}
+                    placeholderTextColor={c.textLight}
                   />
                   <View style={styles.editActions}>
                     <TouchableOpacity onPress={() => setEditingId(null)} style={styles.editCancelBtn}>
@@ -193,7 +196,7 @@ export default function StrafenKategorienScreen() {
                   <Text style={styles.katBetrag}>{k.betrag.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €</Text>
                   {!k.istSystem && (
                     <TouchableOpacity onPress={() => handleDelete(k)} style={{ padding: 4 }}>
-                      <Ionicons name="trash-outline" size={18} color={COLORS.danger} />
+                      <Ionicons name="trash-outline" size={18} color={c.danger} />
                     </TouchableOpacity>
                   )}
                 </TouchableOpacity>
@@ -216,7 +219,7 @@ export default function StrafenKategorienScreen() {
                   value={addForm.label}
                   onChangeText={(t) => setAddForm((f) => ({ ...f, label: t }))}
                   placeholder="Bezeichnung"
-                  placeholderTextColor={COLORS.textLight}
+                  placeholderTextColor={c.textLight}
                   autoFocus
                 />
               </View>
@@ -225,7 +228,7 @@ export default function StrafenKategorienScreen() {
                 value={addForm.betrag}
                 onChangeText={(t) => setAddForm((f) => ({ ...f, betrag: t }))}
                 placeholder="Betrag in €"
-                placeholderTextColor={COLORS.textLight}
+                placeholderTextColor={c.textLight}
                 keyboardType="decimal-pad"
               />
               <TextInput
@@ -233,7 +236,7 @@ export default function StrafenKategorienScreen() {
                 value={addForm.beschreibung}
                 onChangeText={(t) => setAddForm((f) => ({ ...f, beschreibung: t }))}
                 placeholder="Beschreibung (optional)"
-                placeholderTextColor={COLORS.textLight}
+                placeholderTextColor={c.textLight}
               />
               <View style={styles.editActions}>
                 <TouchableOpacity onPress={() => { setShowAddForm(false); setAddForm(leereForm()); }} style={styles.editCancelBtn}>
@@ -246,7 +249,7 @@ export default function StrafenKategorienScreen() {
             </View>
           ) : (
             <TouchableOpacity style={styles.addBtn} onPress={() => setShowAddForm(true)} activeOpacity={0.85}>
-              <Ionicons name="add" size={20} color="#FFFFFF" />
+              <Ionicons name="add" size={20} color={c.onAccent} />
               <Text style={styles.addBtnText}>Neue Kategorie</Text>
             </TouchableOpacity>
           )}
@@ -255,7 +258,7 @@ export default function StrafenKategorienScreen() {
             <>
               <Text style={styles.sectionTitle}>Vorlagen</Text>
               <View style={styles.infoBox}>
-                <Ionicons name="information-circle-outline" size={18} color={COLORS.blue} />
+                <Ionicons name="information-circle-outline" size={18} color={c.blue} />
                 <Text style={styles.infoBoxText}>
                   Gängige Regeln zum Ein-Klick-Übernehmen — passt danach jederzeit Betrag & Text an.
                 </Text>
@@ -268,7 +271,7 @@ export default function StrafenKategorienScreen() {
                     {v.beschreibung && <Text style={styles.katBeschreibung} numberOfLines={2}>{v.beschreibung}</Text>}
                   </View>
                   <TouchableOpacity onPress={() => guard(() => handleVorlageHinzufuegen(v))} style={styles.vorlageAddBtn}>
-                    <Ionicons name="add" size={18} color={COLORS.blue} />
+                    <Ionicons name="add" size={18} color={c.blue} />
                   </TouchableOpacity>
                 </View>
               ))}
@@ -282,68 +285,68 @@ export default function StrafenKategorienScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: COLORS.background },
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   content: { padding: 20, paddingBottom: 48 },
 
   header: {
     flexDirection: "row", alignItems: "center", gap: 12,
-    backgroundColor: COLORS.cardAlt, borderRadius: 20,
+    backgroundColor: c.cardAlt, borderRadius: 20,
     padding: 16, marginBottom: 16, ...SHADOWS.card,
-    borderWidth: 1, borderColor: COLORS.border,
+    borderWidth: 1, borderColor: c.border,
   },
   headerTexts: { flex: 1 },
-  headerTitle: { fontSize: 18, fontWeight: "800", color: COLORS.textDark },
-  headerSub: { fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
+  headerTitle: { fontSize: 18, fontWeight: "800", color: c.textDark },
+  headerSub: { fontSize: 12, color: c.textMuted, marginTop: 2 },
 
-  sectionTitle: { fontSize: 15, fontWeight: "800", color: COLORS.textDark, marginTop: 12, marginBottom: 8 },
+  sectionTitle: { fontSize: 15, fontWeight: "800", color: c.textDark, marginTop: 12, marginBottom: 8 },
 
   infoBox: {
-    flexDirection: "row", gap: 8, backgroundColor: COLORS.blue + "0F",
+    flexDirection: "row", gap: 8, backgroundColor: c.blue + "0F",
     borderRadius: 12, padding: 12, marginBottom: 12,
   },
-  infoBoxText: { flex: 1, fontSize: 12, color: COLORS.textMuted, lineHeight: 17 },
+  infoBoxText: { flex: 1, fontSize: 12, color: c.textMuted, lineHeight: 17 },
 
   card: {
-    backgroundColor: COLORS.card, borderRadius: 16, padding: 14, marginBottom: 10,
-    borderWidth: 1, borderColor: COLORS.border, ...SHADOWS.light,
+    backgroundColor: c.card, borderRadius: 16, padding: 14, marginBottom: 10,
+    borderWidth: 1, borderColor: c.border, ...SHADOWS.light,
   },
   katRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   katEmoji: { fontSize: 22, width: 30, textAlign: "center" },
-  katLabel: { fontSize: 14, fontWeight: "700", color: COLORS.textDark },
+  katLabel: { fontSize: 14, fontWeight: "700", color: c.textDark },
   systemBadge: {
-    fontSize: 10, fontWeight: "700", color: COLORS.textLight,
-    backgroundColor: COLORS.border, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2,
+    fontSize: 10, fontWeight: "700", color: c.textLight,
+    backgroundColor: c.border, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2,
   },
-  katBeschreibung: { fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
-  katBetrag: { fontSize: 14, fontWeight: "800", color: COLORS.danger },
+  katBeschreibung: { fontSize: 12, color: c.textMuted, marginTop: 2 },
+  katBetrag: { fontSize: 14, fontWeight: "800", color: c.danger },
 
   input: {
-    borderWidth: 1, borderColor: COLORS.border, borderRadius: 10,
-    paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: COLORS.textDark,
-    marginBottom: 8, backgroundColor: COLORS.background,
+    borderWidth: 1, borderColor: c.border, borderRadius: 10,
+    paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: c.textDark,
+    marginBottom: 8, backgroundColor: c.background,
   },
   editRow: { flexDirection: "row", gap: 8, marginBottom: 8 },
   editActions: { flexDirection: "row", justifyContent: "flex-end", gap: 10, marginTop: 4 },
   editCancelBtn: { paddingVertical: 8, paddingHorizontal: 12 },
-  editCancelText: { color: COLORS.textMuted, fontWeight: "600", fontSize: 13 },
-  editSaveBtn: { backgroundColor: COLORS.blue, borderRadius: 10, paddingVertical: 8, paddingHorizontal: 16 },
-  editSaveText: { color: "#FFFFFF", fontWeight: "700", fontSize: 13 },
+  editCancelText: { color: c.textMuted, fontWeight: "600", fontSize: 13 },
+  editSaveBtn: { backgroundColor: c.blue, borderRadius: 10, paddingVertical: 8, paddingHorizontal: 16 },
+  editSaveText: { color: c.onAccent, fontWeight: "700", fontSize: 13 },
 
-  addCardTitle: { fontSize: 14, fontWeight: "800", color: COLORS.textDark, marginBottom: 10 },
+  addCardTitle: { fontSize: 14, fontWeight: "800", color: c.textDark, marginBottom: 10 },
   addBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-    backgroundColor: COLORS.blue, borderRadius: 16, paddingVertical: 16, marginTop: 4, marginBottom: 8,
+    backgroundColor: c.blue, borderRadius: 16, paddingVertical: 16, marginTop: 4, marginBottom: 8,
   },
-  addBtnText: { color: "#FFFFFF", fontSize: 15, fontWeight: "700" },
+  addBtnText: { color: c.onAccent, fontSize: 15, fontWeight: "700" },
 
   vorlageRow: {
     flexDirection: "row", alignItems: "center", gap: 12,
-    backgroundColor: COLORS.card, borderRadius: 14, padding: 12, marginBottom: 8,
-    borderWidth: 1, borderColor: COLORS.border,
+    backgroundColor: c.card, borderRadius: 14, padding: 12, marginBottom: 8,
+    borderWidth: 1, borderColor: c.border,
   },
   vorlageAddBtn: {
     width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center",
-    backgroundColor: COLORS.blue + "18",
+    backgroundColor: c.blue + "18",
   },
 });

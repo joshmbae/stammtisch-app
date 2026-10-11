@@ -42,7 +42,8 @@ import { useSession } from "../../contexts/SessionContext";
 import { useStammtisch } from "../../contexts/StammtischContext";
 import { supabase } from "../../utils/supabase";
 import { subscribeToActivityFeed } from "../../utils/realtime";
-import { COLORS, SHADOWS } from "../../constants/design";
+import { SHADOWS, ThemeColors } from "../../constants/design";
+import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { HamburgerButton } from "../../components/HamburgerButton";
 import StammtischLogo from "../../components/StammtischLogo";
 import LoadingSpinner from "../../components/LoadingSpinner";
@@ -116,6 +117,8 @@ function getNextBirthday(members: MemberProfile[]): {
 // ─── Mitglieder Avatar (horizontal) ──────────────────────────────────────────
 
 function MemberBubble({ member, isActive, titel }: { member: MemberProfile; isActive: boolean; titel: FuehrenderTitel[] }) {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const firstName = member.spitzname ?? member.name.split(" ")[0];
   return (
     <TouchableOpacity
@@ -134,7 +137,7 @@ function MemberBubble({ member, isActive, titel }: { member: MemberProfile; isAc
         </View>
         <SiegerBadge titel={titel} size={16} />
       </View>
-      <Text style={[styles.bubbleName, isActive && { color: COLORS.blue, fontWeight: "700" }]} numberOfLines={1}>
+      <Text style={[styles.bubbleName, isActive && { color: c.blue, fontWeight: "700" }]} numberOfLines={1}>
         {firstName}
       </Text>
     </TouchableOpacity>
@@ -146,6 +149,8 @@ function MemberBubble({ member, isActive, titel }: { member: MemberProfile; isAc
 function RangRow({ rank, member, value, valueLabel, sub, titel }: {
   rank: number; member: MemberProfile; value: string; valueLabel: string; sub?: string; titel: FuehrenderTitel[];
 }) {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const medals = ["🥇", "🥈", "🥉"];
   return (
     <TouchableOpacity
@@ -159,7 +164,7 @@ function RangRow({ rank, member, value, valueLabel, sub, titel }: {
           <Image source={{ uri: member.photoUri }} style={styles.rangAvatar} />
         ) : (
           <View style={[styles.rangAvatar, { backgroundColor: member.avatarColor, alignItems: "center", justifyContent: "center" }]}>
-            <Text style={{ fontSize: 13, fontWeight: "700", color: "#FFF" }}>{getInitial(member.name)}</Text>
+            <Text style={{ fontSize: 13, fontWeight: "700", color: c.onAccent }}>{getInitial(member.name)}</Text>
           </View>
         )}
         <SiegerBadge titel={titel} size={13} />
@@ -181,7 +186,8 @@ function RangRow({ rank, member, value, valueLabel, sub, titel }: {
 interface MemberStats {
   member: MemberProfile;
   anwesenheitCount: number;
-  anwesenheitPct: number;
+  /** null = in diesem Jahr noch kein Stammtisch seit Mitgliedsbeginn */
+  anwesenheitPct: number | null;
   verspätungMin: number;
   spielLogs: SpielLog[];
   strafGesamt: number;
@@ -194,6 +200,8 @@ interface SpielMitTypen {
 }
 
 export default function HomeScreen() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const { activeMemberId, activeMember } = useSession();
   const { stammtischId } = useStammtisch();
 
@@ -206,7 +214,7 @@ export default function HomeScreen() {
   const [featuredRang, setFeaturedRang]       = useState<Rangliste | null>(null);
   const [kasse, setKasse]                     = useState<KassenEintrag[]>([]);
   const [terminCount, setTerminCount]         = useState(0);
-  const [lastActivities, setLastActivities]   = useState<ActivityLogEntry[]>([]);
+  const [lastActivity, setLastActivity]       = useState<ActivityLogEntry | null>(null);
   const [strafKategorien, setStrafKategorien] = useState<StrafKategorieDef[]>([]);
   const [siegerTitel, setSiegerTitel] = useState<Map<string, FuehrenderTitel[]>>(new Map());
 
@@ -216,7 +224,7 @@ export default function HomeScreen() {
     useCallback(() => {
       if (!stammtischId) return;
       const channel = subscribeToActivityFeed(stammtischId, (entry) => {
-        setLastActivities((prev) => (prev.some((e) => e.id === entry.id) ? prev : [entry, ...prev].slice(0, 3)));
+        setLastActivity(entry);
       });
       return () => { supabase.removeChannel(channel); };
     }, [stammtischId])
@@ -224,13 +232,13 @@ export default function HomeScreen() {
 
   async function load() {
     const [ms, v, alle, kasseData, activityFeed, alleSpiele, kats] = await Promise.all([
-      loadMembers(), loadVerordnung(), loadTermine(), loadKasse(), loadActivityFeed(3), loadSpiele(), loadStrafKategorien(),
+      loadMembers(), loadVerordnung(), loadTermine(), loadKasse(), loadActivityFeed(1), loadSpiele(), loadStrafKategorien(),
     ]);
 
     setVerordnung(v);
     setKasse(kasseData);
     setMembers(ms);
-    setLastActivities(activityFeed.slice(0, 3));
+    setLastActivity(activityFeed[0] ?? null);
     setStrafKategorien(kats);
 
     const alleTypen = await loadAllEreignisTypen(alleSpiele.map((s) => s.id));
@@ -255,17 +263,21 @@ export default function HomeScreen() {
     const [alleVLogs, alleSpLogs, alleStLogs]: [VerspätungLog[], SpielLog[], StrafLog[]] = await Promise.all([
       loadAllVerspätungLogs(memberIds), loadAllSpielLogs(memberIds), loadAllStrafLogs(memberIds),
     ]);
+    // "Meine Bilanz" wertet das laufende Jahr — wie die Ranglisten. Ausnahme:
+    // offene Strafen sind ein Kontostand und zählen über alle Jahre, sonst
+    // verschwänden unbezahlte Strafen aus dem Vorjahr am 1. Januar.
+    const jahr = aktuellesJahr();
+    const termineImJahr = alle.filter((t) => t.datum.startsWith(jahr));
     const stats = ms.map((m) => {
-      const vLogs = alleVLogs.filter((l) => l.memberId === m.id);
-      const spLogs = alleSpLogs.filter((l) => l.memberId === m.id);
+      const vLogs = alleVLogs.filter((l) => l.memberId === m.id && l.datum.startsWith(jahr));
+      const spLogs = alleSpLogs.filter((l) => l.memberId === m.id && l.loggedAt.startsWith(jahr));
       const stLogs = alleStLogs.filter((l) => l.memberId === m.id);
-      const { count: anwesenheitCount, pct } = anwesenheitsQuote(alle, m.id, m.mitgliedSeit);
-      const anwesenheitPct = pct ?? 0;
+      const { count: anwesenheitCount, pct: anwesenheitPct } = anwesenheitsQuote(termineImJahr, m.id, m.mitgliedSeit);
       return {
         member: m, anwesenheitCount, anwesenheitPct,
         verspätungMin: vLogs.reduce((s, l) => s + l.minutenVerspätet, 0),
         spielLogs: spLogs,
-        strafGesamt: stLogs.reduce((s, l) => s + l.betrag, 0),
+        strafGesamt: stLogs.filter((l) => l.loggedAt.startsWith(jahr)).reduce((s, l) => s + l.betrag, 0),
         strafOffen: stLogs.filter((l) => !l.beglichen).reduce((s, l) => s + l.betrag, 0),
       };
     });
@@ -298,8 +310,6 @@ export default function HomeScreen() {
   const dauer = gruendungsjahr ? gruendungsDauer(gruendungsjahr) : null;
 
   const spielRang = featuredRang?.eintraege ?? [];
-  // "Meine Bilanz" bleibt eine Lebenszeit-Bilanz — anders als die Rangliste
-  // darunter, die nur das laufende Jahr wertet.
   const featuredEreignisTypId = featuredRang?.key.replace("spiel_", "") ?? null;
   const myFeaturedSpielCount = featuredEreignisTypId
     ? (myStats?.spielLogs.filter((l) => l.ereignisTypId === featuredEreignisTypId).length ?? 0)
@@ -320,7 +330,7 @@ export default function HomeScreen() {
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.blue} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.blue} />}
       >
         <OfflineBanner />
 
@@ -401,18 +411,18 @@ export default function HomeScreen() {
         {myStats && activeMember && (
           <View style={[styles.myStatsCard, { borderColor: activeMember.avatarColor + "55" }]}>
             <TouchableOpacity onPress={() => router.push(`/member/${activeMember.id}`)} activeOpacity={0.7}>
-              <Text style={styles.myStatsTitle}>Meine Bilanz</Text>
+              <Text style={styles.myStatsTitle}>Meine Bilanz {aktuellesJahr()}</Text>
             </TouchableOpacity>
             <View style={styles.myStatsRow}>
               <TouchableOpacity style={styles.myStatBox} onPress={() => router.push(`/member/${activeMember.id}`)} activeOpacity={0.7}>
                 <Text style={styles.myStatEmoji}>✅</Text>
-                <Text style={[styles.myStatValue, { color: COLORS.success }]}>{myStats.anwesenheitPct} %</Text>
+                <Text style={[styles.myStatValue, { color: c.success }]}>{myStats.anwesenheitPct !== null ? `${myStats.anwesenheitPct} %` : "–"}</Text>
                 <Text style={styles.myStatLabel}>Anwesenheit</Text>
               </TouchableOpacity>
               <View style={styles.myStatDivider} />
               <TouchableOpacity style={styles.myStatBox} onPress={() => router.push(`/member/${activeMember.id}`)} activeOpacity={0.7}>
                 <Text style={styles.myStatEmoji}>⏱️</Text>
-                <Text style={[styles.myStatValue, myStats.verspätungMin > 0 ? { color: COLORS.danger } : {}]}>
+                <Text style={[styles.myStatValue, myStats.verspätungMin > 0 ? { color: c.danger } : {}]}>
                   {myStats.verspätungMin} Min.
                 </Text>
                 <Text style={styles.myStatLabel}>Verspätung</Text>
@@ -424,7 +434,7 @@ export default function HomeScreen() {
                 activeOpacity={0.7}
               >
                 <Text style={styles.myStatEmoji}>💰</Text>
-                <Text style={[styles.myStatValue, myStats.strafOffen > 0 ? { color: COLORS.danger } : { color: COLORS.success }]}>
+                <Text style={[styles.myStatValue, myStats.strafOffen > 0 ? { color: c.danger } : { color: c.success }]}>
                   {myStats.strafOffen > 0 ? `${formatEuro(myStats.strafOffen)} €` : "✓"}
                 </Text>
                 <Text style={styles.myStatLabel}>{myStats.strafOffen > 0 ? "Offen" : "Beglichen"}</Text>
@@ -446,7 +456,7 @@ export default function HomeScreen() {
         {/* ── Kassenstand + Nächster Geburtstag ── */}
         <View style={styles.quickRow}>
           <TouchableOpacity style={styles.quickCard} onPress={() => router.push("/kasse")} activeOpacity={0.85}>
-            <Text style={[styles.quickValue, { fontSize: 24, color: saldoPositiv ? COLORS.success : COLORS.danger }]}>
+            <Text style={[styles.quickValue, { fontSize: 24, color: saldoPositiv ? c.success : c.danger }]}>
               {saldoPositiv ? "+" : "−"}{Math.round(Math.abs(saldo)).toLocaleString("de-DE")} €
             </Text>
             <Text style={styles.quickLabel}>💰 Kassenstand</Text>
@@ -489,39 +499,27 @@ export default function HomeScreen() {
               <Text style={styles.activityLink}>Alle →</Text>
             </TouchableOpacity>
           </View>
-          {lastActivities.length === 0 ? (
-            <TouchableOpacity style={styles.activityRow} onPress={() => router.push("/feed")} activeOpacity={0.88}>
-              <View style={styles.activityIcon}>
-                <Text style={{ fontSize: 22 }}>📋</Text>
-              </View>
-              <View style={styles.activityTexts}>
-                <Text style={styles.activityTitle}>Noch keine Aktivität</Text>
-                <Text style={styles.activitySub}>Strafen, Bezahlungen & Spiel-Ergebnisse tauchen hier auf</Text>
-              </View>
-            </TouchableOpacity>
-          ) : lastActivities.map((a, i) => {
-            const rendered = renderActivity(a, membersById, strafKategorien);
-            const route = activityRoute(a) ?? "/feed";
+          {(() => {
+            const rendered = lastActivity ? renderActivity(lastActivity, membersById, strafKategorien) : null;
+            const route = lastActivity ? activityRoute(lastActivity) ?? "/feed" : "/feed";
             return (
-              <TouchableOpacity
-                key={a.id}
-                style={[styles.activityRow, i > 0 && styles.activityRowDivider]}
-                onPress={() => router.push(route as any)}
-                activeOpacity={0.88}
-              >
+              <TouchableOpacity style={styles.activityRow} onPress={() => router.push(route as any)} activeOpacity={0.88}>
                 <View style={styles.activityIcon}>
-                  <Text style={{ fontSize: 22 }}>{rendered.emoji}</Text>
+                  <Text style={{ fontSize: 22 }}>{rendered?.emoji ?? "📋"}</Text>
                 </View>
                 <View style={styles.activityTexts}>
-                  <Text style={styles.activityTitle}>{rendered.text}</Text>
+                  <Text style={styles.activityTitle}>{rendered?.text ?? "Noch keine Aktivität"}</Text>
+                  {rendered?.detail ? <Text style={styles.activityDetail}>{rendered.detail}</Text> : null}
                   <Text style={styles.activitySub}>
-                    {formatActivityZeit(a.createdAt) + (rendered.actorText ? ` · ${rendered.actorText}` : "")}
+                    {lastActivity
+                      ? formatActivityZeit(lastActivity.createdAt) + (rendered?.actorText ? ` · ${rendered.actorText}` : "")
+                      : "Strafen, Bezahlungen & Spiel-Ergebnisse tauchen hier auf"}
                   </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={16} color={COLORS.textLight} />
+                {lastActivity ? <Ionicons name="chevron-forward" size={16} color={c.textLight} /> : null}
               </TouchableOpacity>
             );
-          })}
+          })()}
         </View>
 
         {/* ── Rotierende Spiel-Rangliste des laufenden Jahres (wechselt bei jedem Öffnen) ── */}
@@ -547,7 +545,7 @@ export default function HomeScreen() {
         {memberStats.length > 0 && !(featuredRang && spielRang.length > 0) && (
           <TouchableOpacity style={styles.rangLinkCard} onPress={() => router.push("/ranglisten")}>
             <Text style={styles.rangLinkText}>🏆 Alle Ranglisten ansehen</Text>
-            <Ionicons name="chevron-forward" size={16} color={COLORS.blue} />
+            <Ionicons name="chevron-forward" size={16} color={c.blue} />
           </TouchableOpacity>
         )}
 
@@ -566,7 +564,7 @@ export default function HomeScreen() {
               ))}
               <TouchableOpacity style={styles.bubbleWrap} onPress={() => router.push("/member/new")} activeOpacity={0.8}>
                 <View style={styles.bubbleAdd}>
-                  <Ionicons name="add" size={22} color={COLORS.textMuted} />
+                  <Ionicons name="add" size={22} color={c.textMuted} />
                 </View>
                 <Text style={styles.bubbleName}>Neu</Text>
               </TouchableOpacity>
@@ -631,7 +629,7 @@ export default function HomeScreen() {
                 <Text style={styles.onboardingBtnEmoji}>🧔</Text>
                 <Text style={styles.onboardingBtnText}>Mitglied anlegen</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.onboardingBtn, { borderColor: COLORS.gold }]} onPress={() => router.push("/(tabs)/guide")}>
+              <TouchableOpacity style={[styles.onboardingBtn, { borderColor: c.gold }]} onPress={() => router.push("/(tabs)/guide")}>
                 <Text style={styles.onboardingBtnEmoji}>📜</Text>
                 <Text style={styles.onboardingBtnText}>Verordnung</Text>
               </TouchableOpacity>
@@ -647,35 +645,35 @@ export default function HomeScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: COLORS.background },
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   content: { padding: 20, paddingBottom: 48 },
 
   // ── Header ────────────────────────────────────────────────────────────────
   header: {
     flexDirection: "row", alignItems: "center", gap: 12,
-    backgroundColor: COLORS.cardAlt, borderRadius: 20,
+    backgroundColor: c.cardAlt, borderRadius: 20,
     padding: 16, marginBottom: 16, ...SHADOWS.card,
-    borderWidth: 1, borderColor: COLORS.border,
+    borderWidth: 1, borderColor: c.border,
   },
   headerCenter: { flex: 1 },
   headerStammtisch: {
-    fontSize: 20, fontWeight: "900", color: COLORS.textDark,
+    fontSize: 20, fontWeight: "900", color: c.textDark,
     letterSpacing: -0.5, lineHeight: 24,
   },
   headerGreeting: {
-    fontSize: 12, color: COLORS.textMuted, fontWeight: "500", marginTop: 2,
+    fontSize: 12, color: c.textMuted, fontWeight: "500", marginTop: 2,
   },
   myAvatarBtn: {
     width: 44, height: 44, borderRadius: 22,
     alignItems: "center", justifyContent: "center", flexShrink: 0,
   },
   myAvatarImg: { width: 44, height: 44, borderRadius: 22 },
-  myAvatarLetter: { fontSize: 18, fontWeight: "700", color: "#FFFFFF" },
+  myAvatarLetter: { fontSize: 18, fontWeight: "700", color: c.onAccent },
   myAvatarPlaceholder: {
     width: 44, height: 44, borderRadius: 22,
     alignItems: "center", justifyContent: "center",
-    backgroundColor: COLORS.goldBg, flexShrink: 0,
+    backgroundColor: c.goldBg, flexShrink: 0,
   },
 
   // ── Termin-Zeile ──────────────────────────────────────────────────────────
@@ -683,7 +681,7 @@ const styles = StyleSheet.create({
 
   countdownCard: {
     flex: 2,
-    backgroundColor: COLORS.blueDark, borderRadius: 20, padding: 16, ...SHADOWS.card,
+    backgroundColor: c.blueDark, borderRadius: 20, padding: 16, ...SHADOWS.card,
   },
   countdownLabel: {
     fontSize: 10, fontWeight: "700", color: "rgba(255,255,255,0.5)",
@@ -692,13 +690,13 @@ const styles = StyleSheet.create({
   countdownTitle: { fontSize: 15, fontWeight: "800", color: "#FFFFFF", marginBottom: 2 },
   countdownDate: { fontSize: 12, color: "rgba(255,255,255,0.6)" },
   countdownNumRow: { flexDirection: "row", alignItems: "baseline", gap: 4, marginTop: 10 },
-  countdownNum: { fontSize: 40, fontWeight: "900", color: COLORS.gold, lineHeight: 44 },
+  countdownNum: { fontSize: 40, fontWeight: "900", color: c.gold, lineHeight: 44 },
   countdownUnit: { fontSize: 14, fontWeight: "700", color: "rgba(255,255,255,0.7)" },
   countdownRsvp: { fontSize: 11, fontWeight: "600", color: "rgba(255,255,255,0.6)", marginTop: 8 },
 
   letzterCard: {
     flex: 1,
-    backgroundColor: COLORS.blueDark + "CC", borderRadius: 20, padding: 14,
+    backgroundColor: c.blueDark + "CC", borderRadius: 20, padding: 14,
     alignItems: "center", justifyContent: "center", ...SHADOWS.card,
     borderWidth: 1, borderColor: "rgba(255,255,255,0.08)",
   },
@@ -711,146 +709,146 @@ const styles = StyleSheet.create({
 
   // ── Meine Bilanz ──────────────────────────────────────────────────────────
   myStatsCard: {
-    backgroundColor: COLORS.card, borderRadius: 18, padding: 14, marginBottom: 12,
+    backgroundColor: c.card, borderRadius: 18, padding: 14, marginBottom: 12,
     borderWidth: 1.5, ...SHADOWS.light,
   },
-  myStatsTitle: { fontSize: 14, fontWeight: "800", color: COLORS.textDark, marginBottom: 12, letterSpacing: -0.2 },
+  myStatsTitle: { fontSize: 14, fontWeight: "800", color: c.textDark, marginBottom: 12, letterSpacing: -0.2 },
   myStatsRow: { flexDirection: "row", alignItems: "center" },
   myStatBox: { flex: 1, alignItems: "center", gap: 3 },
-  myStatDivider: { width: 1, height: 36, backgroundColor: COLORS.border },
+  myStatDivider: { width: 1, height: 36, backgroundColor: c.border },
   myStatEmoji: { fontSize: 18 },
-  myStatValue: { fontSize: 14, fontWeight: "800", color: COLORS.textDark },
-  myStatLabel: { fontSize: 10, color: COLORS.textMuted, fontWeight: "600" },
+  myStatValue: { fontSize: 14, fontWeight: "800", color: c.textDark },
+  myStatLabel: { fontSize: 10, color: c.textMuted, fontWeight: "600" },
 
   // ── Quick: Kasse + Geburtstag ─────────────────────────────────────────────
   quickRow: { flexDirection: "row", gap: 10, marginBottom: 12 },
   quickCard: {
-    flex: 1, backgroundColor: COLORS.card, borderRadius: 16,
+    flex: 1, backgroundColor: c.card, borderRadius: 16,
     paddingVertical: 16, paddingHorizontal: 14,
     alignItems: "center", justifyContent: "center", gap: 6,
-    borderWidth: 1, borderColor: COLORS.border, ...SHADOWS.light,
+    borderWidth: 1, borderColor: c.border, ...SHADOWS.light,
   },
-  quickValue: { fontSize: 20, fontWeight: "900", color: COLORS.textDark },
-  quickLabel: { fontSize: 12, color: COLORS.textMuted, fontWeight: "600" },
+  quickValue: { fontSize: 20, fontWeight: "900", color: c.textDark },
+  quickLabel: { fontSize: 12, color: c.textMuted, fontWeight: "600" },
   quickBirthdayAvatar: {
     width: 48, height: 48, borderRadius: 24,
     alignItems: "center", justifyContent: "center",
   },
   quickBirthdayImg: { width: 48, height: 48, borderRadius: 24 },
-  quickBirthdayLetter: { fontSize: 18, fontWeight: "700", color: "#FFFFFF" },
+  quickBirthdayLetter: { fontSize: 18, fontWeight: "700", color: c.onAccent },
   quickBirthdayBadge: {
     position: "absolute", bottom: -4, right: -4,
     width: 22, height: 22, borderRadius: 11,
-    backgroundColor: COLORS.card, alignItems: "center", justifyContent: "center",
-    borderWidth: 1.5, borderColor: COLORS.border,
+    backgroundColor: c.card, alignItems: "center", justifyContent: "center",
+    borderWidth: 1.5, borderColor: c.border,
   },
 
   // ── Letzte Aktivität ────────────────────────────────────────────────────────
   activityCard: {
-    backgroundColor: COLORS.card, borderRadius: 20,
+    backgroundColor: c.card, borderRadius: 20,
     padding: 16, marginBottom: 12,
-    borderWidth: 1, borderColor: COLORS.border, ...SHADOWS.light,
+    borderWidth: 1, borderColor: c.border, ...SHADOWS.light,
   },
   activityCardHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
-  activityHeader: { fontSize: 14, fontWeight: "800", color: COLORS.textDark, letterSpacing: -0.2 },
-  activityLink: { fontSize: 13, fontWeight: "700", color: COLORS.blue },
+  activityHeader: { fontSize: 14, fontWeight: "800", color: c.textDark, letterSpacing: -0.2 },
+  activityLink: { fontSize: 13, fontWeight: "700", color: c.blue },
   activityRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-  activityRowDivider: { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: COLORS.border },
   activityIcon: {
     width: 42, height: 42, borderRadius: 21,
-    backgroundColor: COLORS.background, alignItems: "center", justifyContent: "center",
+    backgroundColor: c.background, alignItems: "center", justifyContent: "center",
   },
   activityTexts: { flex: 1 },
-  activityTitle: { fontSize: 14, fontWeight: "700", color: COLORS.textDark, lineHeight: 19 },
-  activitySub: { fontSize: 12, color: COLORS.textMuted, marginTop: 3 },
+  activityTitle: { fontSize: 14, fontWeight: "700", color: c.textDark, lineHeight: 19 },
+  activityDetail: { fontSize: 13, color: c.textMuted, fontStyle: "italic", marginTop: 3, lineHeight: 18 },
+  activitySub: { fontSize: 12, color: c.textMuted, marginTop: 3 },
 
   // ── Die Runde ─────────────────────────────────────────────────────────────
   mitgliederCard: {
-    backgroundColor: COLORS.card, borderRadius: 20, padding: 14, marginBottom: 12,
-    borderWidth: 1, borderColor: COLORS.border, ...SHADOWS.light,
+    backgroundColor: c.card, borderRadius: 20, padding: 14, marginBottom: 12,
+    borderWidth: 1, borderColor: c.border, ...SHADOWS.light,
   },
   mitgliederHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
-  mitgliederTitle: { fontSize: 14, fontWeight: "800", color: COLORS.textDark, letterSpacing: -0.2 },
-  mitgliederLink: { fontSize: 13, color: COLORS.blue, fontWeight: "700" },
+  mitgliederTitle: { fontSize: 14, fontWeight: "800", color: c.textDark, letterSpacing: -0.2 },
+  mitgliederLink: { fontSize: 13, color: c.blue, fontWeight: "700" },
   // paddingTop: das Badge ragt über den Avatar hinaus und wurde sonst
   // am oberen Rand der horizontalen Liste abgeschnitten.
   bubbleRow: { gap: 12, paddingHorizontal: 2, paddingTop: 8 },
   bubbleWrap: { alignItems: "center", gap: 5, width: 52 },
   bubble: { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center" },
-  bubbleActive: { borderWidth: 2.5, borderColor: COLORS.blue },
+  bubbleActive: { borderWidth: 2.5, borderColor: c.blue },
   bubbleImg: { width: 48, height: 48, borderRadius: 24 },
-  bubbleLetter: { fontSize: 18, fontWeight: "700", color: "#FFFFFF" },
+  bubbleLetter: { fontSize: 18, fontWeight: "700", color: c.onAccent },
   bubbleActiveDot: {
     position: "absolute", bottom: 0, right: 0,
     width: 12, height: 12, borderRadius: 6,
-    backgroundColor: COLORS.blue, borderWidth: 2, borderColor: COLORS.card,
+    backgroundColor: c.blue, borderWidth: 2, borderColor: c.card,
   },
   bubbleAvatarWrap: { width: 48, height: 48 },
-  bubbleName: { fontSize: 11, color: COLORS.textMuted, textAlign: "center", fontWeight: "500" },
+  bubbleName: { fontSize: 11, color: c.textMuted, textAlign: "center", fontWeight: "500" },
   bubbleAdd: {
     width: 48, height: 48, borderRadius: 24,
-    backgroundColor: COLORS.background, alignItems: "center", justifyContent: "center",
-    borderWidth: 1.5, borderColor: COLORS.border, borderStyle: "dashed",
+    backgroundColor: c.background, alignItems: "center", justifyContent: "center",
+    borderWidth: 1.5, borderColor: c.border, borderStyle: "dashed",
   },
 
   // ── Stammtisch-Infos ──────────────────────────────────────────────────────
   faktenCard: {
-    backgroundColor: COLORS.card, borderRadius: 20, padding: 16, marginBottom: 12,
-    borderWidth: 1, borderColor: COLORS.border, ...SHADOWS.light,
+    backgroundColor: c.card, borderRadius: 20, padding: 16, marginBottom: 12,
+    borderWidth: 1, borderColor: c.border, ...SHADOWS.light,
   },
-  faktenTitle: { fontSize: 14, fontWeight: "800", color: COLORS.textDark, marginBottom: 12, letterSpacing: -0.2 },
+  faktenTitle: { fontSize: 14, fontWeight: "800", color: c.textDark, marginBottom: 12, letterSpacing: -0.2 },
   faktEmoji: { fontSize: 20 },
-  faktLabel: { fontSize: 10, color: COLORS.textMuted, fontWeight: "600", textAlign: "center" },
+  faktLabel: { fontSize: 10, color: c.textMuted, fontWeight: "600", textAlign: "center" },
 
   treffpunktRow: {
     flexDirection: "row", alignItems: "center", gap: 10,
-    backgroundColor: COLORS.background, borderRadius: 16,
+    backgroundColor: c.background, borderRadius: 16,
     paddingVertical: 12, paddingHorizontal: 14, marginTop: 10,
   },
-  treffpunktValue: { fontSize: 14, fontWeight: "800", color: COLORS.textDark, marginTop: 1 },
+  treffpunktValue: { fontSize: 14, fontWeight: "800", color: c.textDark, marginTop: 1 },
 
   // ── Schock-Aus Rangliste ──────────────────────────────────────────────────
   rangCard: {
-    backgroundColor: COLORS.card, borderRadius: 20, padding: 16, marginBottom: 14,
-    borderWidth: 1, borderColor: COLORS.border, ...SHADOWS.card,
+    backgroundColor: c.card, borderRadius: 20, padding: 16, marginBottom: 14,
+    borderWidth: 1, borderColor: c.border, ...SHADOWS.card,
   },
   rangCardHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
-  rangCardSub: { fontSize: 11, color: COLORS.textMuted, marginTop: -6, marginBottom: 8 },
-  rangCardTitle: { fontSize: 14, fontWeight: "800", color: COLORS.textDark, letterSpacing: -0.2 },
-  rangCardLink: { fontSize: 13, fontWeight: "700", color: COLORS.blue },
+  rangCardSub: { fontSize: 11, color: c.textMuted, marginTop: -6, marginBottom: 8 },
+  rangCardTitle: { fontSize: 14, fontWeight: "800", color: c.textDark, letterSpacing: -0.2 },
+  rangCardLink: { fontSize: 13, fontWeight: "700", color: c.blue },
   rangLinkCard: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    backgroundColor: COLORS.card, borderRadius: 16, padding: 16, marginBottom: 14,
-    borderWidth: 1, borderColor: COLORS.border,
+    backgroundColor: c.card, borderRadius: 16, padding: 16, marginBottom: 14,
+    borderWidth: 1, borderColor: c.border,
   },
-  rangLinkText: { fontSize: 14, fontWeight: "700", color: COLORS.textDark },
+  rangLinkText: { fontSize: 14, fontWeight: "700", color: c.textDark },
   rangRow: {
     flexDirection: "row", alignItems: "center", gap: 10,
-    paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: COLORS.border,
+    paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: c.border,
   },
   rangMedal: { fontSize: 18, width: 28, textAlign: "center" },
   rangAvatarWrap: { width: 36, height: 36 },
   rangAvatar: { width: 36, height: 36, borderRadius: 18 },
   rangInfo: { flex: 1 },
-  rangName: { fontSize: 14, fontWeight: "700", color: COLORS.textDark },
-  rangSub: { fontSize: 11, color: COLORS.textMuted, marginTop: 1 },
+  rangName: { fontSize: 14, fontWeight: "700", color: c.textDark },
+  rangSub: { fontSize: 11, color: c.textMuted, marginTop: 1 },
   rangValueWrap: { alignItems: "flex-end" },
-  rangValue: { fontSize: 16, fontWeight: "800", color: COLORS.blue },
-  rangValueLabel: { fontSize: 10, color: COLORS.textMuted },
+  rangValue: { fontSize: 16, fontWeight: "800", color: c.blue },
+  rangValueLabel: { fontSize: 10, color: c.textMuted },
 
   // ── Onboarding ────────────────────────────────────────────────────────────
   onboardingCard: {
-    backgroundColor: COLORS.cardAlt, borderRadius: 20, padding: 20, marginBottom: 16,
-    borderWidth: 1, borderColor: COLORS.border,
+    backgroundColor: c.cardAlt, borderRadius: 20, padding: 20, marginBottom: 16,
+    borderWidth: 1, borderColor: c.border,
   },
-  onboardingTitle: { fontSize: 17, fontWeight: "800", color: COLORS.textDark, marginBottom: 8 },
-  onboardingText: { fontSize: 14, color: COLORS.textMuted, lineHeight: 21, marginBottom: 18 },
+  onboardingTitle: { fontSize: 17, fontWeight: "800", color: c.textDark, marginBottom: 8 },
+  onboardingText: { fontSize: 14, color: c.textMuted, lineHeight: 21, marginBottom: 18 },
   onboardingBtns: { flexDirection: "row", gap: 10 },
   onboardingBtn: {
     flex: 1, borderRadius: 14, paddingVertical: 14,
     alignItems: "center", justifyContent: "center", gap: 6,
-    backgroundColor: COLORS.card, borderWidth: 1.5, borderColor: COLORS.blue + "55", ...SHADOWS.light,
+    backgroundColor: c.card, borderWidth: 1.5, borderColor: c.blue + "55", ...SHADOWS.light,
   },
   onboardingBtnEmoji: { fontSize: 24 },
-  onboardingBtnText: { fontSize: 13, fontWeight: "700", color: COLORS.textDark },
+  onboardingBtnText: { fontSize: 13, fontWeight: "700", color: c.textDark },
 });

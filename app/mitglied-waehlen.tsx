@@ -13,7 +13,8 @@ import { MemberProfile, StammtischVerordnung } from "../types";
 import { loadMembers, loadVerordnung } from "../utils/storage";
 import { useSession } from "../contexts/SessionContext";
 import { useStammtisch } from "../contexts/StammtischContext";
-import { COLORS, SHADOWS } from "../constants/design";
+import { SHADOWS, ThemeColors } from "../constants/design";
+import { useThemedStyles } from "../contexts/ThemeContext";
 import StammtischLogo from "../components/StammtischLogo";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { getInitial, displayName } from "../utils/format";
@@ -22,6 +23,7 @@ import { verifyPin } from "../utils/pin";
 import { hasSeenAppIntro } from "../utils/onboarding";
 
 export default function MitgliedWaehlenScreen() {
+  const styles = useThemedStyles(makeStyles);
   const [members, setMembers] = useState<MemberProfile[]>([]);
   const [verordnung, setVerordnung] = useState<StammtischVerordnung | null>(null);
   const [loading, setLoading] = useState(true);
@@ -157,13 +159,13 @@ export default function MitgliedWaehlenScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: COLORS.background },
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   content: { padding: 24, paddingBottom: 40, alignItems: "center" },
 
   header: { alignItems: "center", marginBottom: 32, marginTop: 8, gap: 10 },
-  title: { fontSize: 28, fontWeight: "800", color: COLORS.textDark, marginTop: 8 },
-  subtitle: { fontSize: 15, color: COLORS.textMuted },
+  title: { fontSize: 28, fontWeight: "800", color: c.textDark, marginTop: 8 },
+  subtitle: { fontSize: 15, color: c.textMuted },
 
   grid: {
     flexDirection: "row",
@@ -174,13 +176,13 @@ const styles = StyleSheet.create({
   },
   card: {
     width: 140,
-    backgroundColor: COLORS.card,
+    backgroundColor: c.card,
     borderRadius: 20,
     padding: 16,
     alignItems: "center",
     gap: 6,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: c.border,
     ...SHADOWS.card,
   },
   avatar: {
@@ -192,8 +194,8 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   avatarImg: { width: 60, height: 60, borderRadius: 30 },
-  avatarLetter: { fontSize: 24, fontWeight: "700", color: "#FFFFFF" },
-  cardName: { fontSize: 15, fontWeight: "700", color: COLORS.textDark, textAlign: "center" },
+  avatarLetter: { fontSize: 24, fontWeight: "700", color: c.onAccent },
+  cardName: { fontSize: 15, fontWeight: "700", color: c.textDark, textAlign: "center" },
   rolleBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -204,13 +206,13 @@ const styles = StyleSheet.create({
 
   empty: { alignItems: "center", gap: 12, paddingVertical: 40 },
   emptyIcon: { fontSize: 52 },
-  emptyText: { fontSize: 15, color: COLORS.textMuted, textAlign: "center", lineHeight: 22 },
+  emptyText: { fontSize: 15, color: c.textMuted, textAlign: "center", lineHeight: 22 },
   emptyBtn: {
-    backgroundColor: COLORS.blue, borderRadius: 14,
+    backgroundColor: c.blue, borderRadius: 14,
     paddingVertical: 12, paddingHorizontal: 24,
   },
-  emptyBtnText: { color: "#FFFFFF", fontWeight: "700", fontSize: 15 },
+  emptyBtnText: { color: c.onAccent, fontWeight: "700", fontSize: 15 },
 
   gastBtn: { marginTop: 24 },
-  gastText: { fontSize: 14, color: COLORS.textMuted, textDecorationLine: "underline" },
+  gastText: { fontSize: 14, color: c.textMuted, textDecorationLine: "underline" },
 });

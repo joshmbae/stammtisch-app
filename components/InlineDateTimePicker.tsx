@@ -1,7 +1,8 @@
 import React from "react";
 import { Platform, TouchableOpacity, Text, StyleSheet } from "react-native";
 import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker";
-import { COLORS } from "../constants/design";
+import { ThemeColors } from "../constants/design";
+import { useTheme, useThemedStyles } from "../contexts/ThemeContext";
 
 type Props = {
   value: Date;
@@ -26,6 +27,8 @@ export default function InlineDateTimePicker({
   maximumDate,
   is24Hour,
 }: Props) {
+  const { scheme } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const handleChange = (event: DateTimePickerEvent, date?: Date) => {
     if (Platform.OS === "android") {
       onClose();
@@ -43,6 +46,7 @@ export default function InlineDateTimePicker({
         maximumDate={maximumDate}
         is24Hour={is24Hour}
         onChange={handleChange}
+        themeVariant={scheme}
       />
       {Platform.OS === "ios" && (
         <TouchableOpacity style={styles.doneBtn} onPress={onClose}>
@@ -53,14 +57,14 @@ export default function InlineDateTimePicker({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   doneBtn: {
     alignSelf: "flex-end",
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
   doneBtnText: {
-    color: COLORS.blue,
+    color: c.blue,
     fontSize: 16,
     fontWeight: "600",
   },

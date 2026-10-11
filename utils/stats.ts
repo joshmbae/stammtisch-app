@@ -283,3 +283,89 @@ export function fuehrendeTitel(daten: StatsDaten, jahr: JahrFilter): Map<string,
   }
   return map;
 }
+
+// ─── Verlauf ──────────────────────────────────────────────────────────────────
+
+export interface VerlaufPunkt {
+  /** Stichtag "YYYY-MM-DD" — gewertet wird alles bis einschließlich dieses Tages. */
+  datum: string;
+  /** true für den nachgezogenen Stand "heute" nach dem letzten Stammtisch. */
+  heute: boolean;
+  /** true für den Endstand 31.12. eines abgeschlossenen Jahres. */
+  jahresende?: boolean;
+}
+
+export interface RangVerlauf {
+  punkte: VerlaufPunkt[];
+  /** Ranglisten-Key -> Mitglieds-Id -> Platz je Punkt (null = an dem Tag noch nicht in der Liste). */
+  plaetze: Map<string, Map<string, (number | null)[]>>;
+}
+
+/** Alle Daten, die bis einschließlich `bis` bekannt waren — Basis für den Stand an einem Stichtag. */
+function datenBis(daten: StatsDaten, bis: string): StatsDaten {
+  const bisTag = (iso: string) => iso.slice(0, 10) <= bis;
+  return {
+    ...daten,
+    members: daten.members.filter((m) => bisTag(m.mitgliedSeit)),
+    termine: daten.termine.filter((t) => t.datum <= bis),
+    verspätungLogs: daten.verspätungLogs.filter((l) => bisTag(l.datum)),
+    spielLogs: daten.spielLogs.filter((l) => bisTag(l.loggedAt)),
+    strafLogs: daten.strafLogs.filter((l) => bisTag(l.loggedAt)),
+  };
+}
+
+/**
+ * Wie haben sich die Plätze über die Zeit entwickelt? Stichtage sind die
+ * Stammtische im gewählten Zeitraum; liegt danach noch etwas (z. B. eine
+ * nachgetragene Strafe), kommt ein Punkt "heute" dazu. Jeder Stichtag nutzt
+ * exakt dieselbe Rechnung wie die Rangliste selbst (computeRanglisten), nur
+ * auf den bis dahin bekannten Daten — der letzte Punkt entspricht also immer
+ * der angezeigten Liste.
+ */
+export function computeRangVerlauf(daten: StatsDaten, jahr: JahrFilter): RangVerlauf {
+  const heute = toLocalIsoDate(new Date());
+  const stichtage = [...new Set(
+    stattgefunden(daten.termine)
+      .filter((t) => t.art === "stammtisch" && imJahr(t.datum, jahr))
+      .map((t) => t.datum)
+  )].sort();
+
+  const punkte: VerlaufPunkt[] = stichtage.map((datum) => ({ datum, heute: false }));
+  const stande = stichtage.map((datum) => computeRanglisten(datenBis(daten, datum), jahr));
+
+  // Endstand anhängen, wenn sich nach dem letzten Stammtisch noch etwas getan
+  // hat (z. B. Strafen bei einer Veranstaltung): im laufenden Jahr als "heute",
+  // bei abgeschlossenen Jahren als 31.12. — so entspricht der letzte Punkt
+  // immer der angezeigten Liste.
+  const endstand = computeRanglisten(daten, jahr);
+  const letzter = stande[stande.length - 1];
+  const signatur = (listen: Rangliste[]) =>
+    JSON.stringify(listen.map((l) => [l.key, l.eintraege.map((e) => [e.member.id, e.platz])]));
+  const laufendesJahr = jahr === ALLZEIT || jahr === aktuellesJahr();
+  const enddatum = laufendesJahr ? heute : `${jahr}-12-31`;
+  if ((!letzter || signatur(letzter) !== signatur(endstand)) && enddatum !== stichtage[stichtage.length - 1]) {
+    punkte.push({ datum: enddatum, heute: laufendesJahr, jahresende: !laufendesJahr });
+    stande.push(endstand);
+  }
+
+  const plaetze = new Map<string, Map<string, (number | null)[]>>();
+  stande.forEach((listen, i) => {
+    for (const liste of listen) {
+      let proMember = plaetze.get(liste.key);
+      if (!proMember) {
+        proMember = new Map();
+        plaetze.set(liste.key, proMember);
+      }
+      for (const e of liste.eintraege) {
+        let reihe = proMember.get(e.member.id);
+        if (!reihe) {
+          reihe = new Array(punkte.length).fill(null);
+          proMember.set(e.member.id, reihe);
+        }
+        reihe[i] = e.platz;
+      }
+    }
+  });
+
+  return { punkte, plaetze };
+}

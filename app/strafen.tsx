@@ -25,7 +25,8 @@ import {
   logActivity,
   addKassenEintrag,
 } from "../utils/storage";
-import { COLORS, SHADOWS } from "../constants/design";
+import { SHADOWS, ThemeColors } from "../constants/design";
+import { useColors, useThemedStyles } from "../contexts/ThemeContext";
 import { HamburgerButton } from "../components/HamburgerButton";
 import { BackButton } from "../components/BackButton";
 import LoadingSpinner from "../components/LoadingSpinner";
@@ -51,6 +52,8 @@ function katMeta(kategorie: StrafLog["kategorie"], strafKategorien: StrafKategor
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function StrafenScreen() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const { memberId: memberIdParam } = useLocalSearchParams<{ memberId?: string }>();
   const { activeMemberId } = useSession();
   const guard = useSingleFlight();
@@ -160,7 +163,7 @@ export default function StrafenScreen() {
         <ScrollView
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.blue} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.blue} />}
         >
           <OfflineBanner />
 
@@ -176,7 +179,7 @@ export default function StrafenScreen() {
               <Ionicons
                 name={showAddForm ? "close-circle" : "add-circle"}
                 size={32}
-                color={COLORS.blue}
+                color={c.blue}
               />
             </TouchableOpacity>
           </View>
@@ -199,12 +202,12 @@ export default function StrafenScreen() {
                         <Image source={{ uri: m.photoUri }} style={styles.chipAvatar} />
                       ) : (
                         <View style={[styles.chipAvatarFallback, { backgroundColor: isSelected ? "rgba(255,255,255,0.3)" : m.avatarColor + "33" }]}>
-                          <Text style={{ fontSize: 11, fontWeight: "700", color: isSelected ? "#FFF" : m.avatarColor }}>
+                          <Text style={{ fontSize: 11, fontWeight: "700", color: isSelected ? c.onAccent : m.avatarColor }}>
                             {getInitial(m.name)}
                           </Text>
                         </View>
                       )}
-                      <Text style={[styles.chipName, isSelected && { color: "#FFFFFF" }]}>
+                      <Text style={[styles.chipName, isSelected && { color: c.onAccent }]}>
                         {m.spitzname ?? m.name.split(" ")[0]}
                       </Text>
                     </TouchableOpacity>
@@ -222,7 +225,7 @@ export default function StrafenScreen() {
                         value={newBetrag}
                         onChangeText={setNewBetrag}
                         placeholder="0,00"
-                        placeholderTextColor={COLORS.textLight}
+                        placeholderTextColor={c.textLight}
                         keyboardType="decimal-pad"
                       />
                     </View>
@@ -233,12 +236,12 @@ export default function StrafenScreen() {
                         value={newNotiz}
                         onChangeText={setNewNotiz}
                         placeholder="z. B. 20 Min. zu spät, kein Grund"
-                        placeholderTextColor={COLORS.textLight}
+                        placeholderTextColor={c.textLight}
                       />
                     </View>
                   </View>
                   <TouchableOpacity style={styles.strafSubmitBtn} onPress={() => guard(handleAddStraf)} activeOpacity={0.8}>
-                    <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                    <Ionicons name="checkmark" size={16} color={c.onAccent} />
                     <Text style={styles.strafSubmitText}>Strafe eintragen</Text>
                   </TouchableOpacity>
                 </>
@@ -247,9 +250,9 @@ export default function StrafenScreen() {
           )}
 
           {/* Summe offen */}
-          <View style={[styles.saldoCard, { borderColor: summeOffen > 0 ? COLORS.danger + "44" : COLORS.success + "44" }]}>
+          <View style={[styles.saldoCard, { borderColor: summeOffen > 0 ? c.danger + "44" : c.success + "44" }]}>
             <Text style={styles.saldoLabel}>Offene Strafen{filterMemberId ? ` · ${membersById.get(filterMemberId)?.name.split(" ")[0]}` : ""}</Text>
-            <Text style={[styles.saldoValue, { color: summeOffen > 0 ? COLORS.danger : COLORS.success }]}>
+            <Text style={[styles.saldoValue, { color: summeOffen > 0 ? c.danger : c.success }]}>
               {formatEuro(summeOffen)} €
             </Text>
           </View>
@@ -262,7 +265,7 @@ export default function StrafenScreen() {
                 onPress={() => setFilterMemberId(null)}
                 activeOpacity={0.8}
               >
-                <Text style={[styles.chipName, !filterMemberId && { color: "#FFFFFF" }]}>Alle</Text>
+                <Text style={[styles.chipName, !filterMemberId && { color: c.onAccent }]}>Alle</Text>
               </TouchableOpacity>
               {members.map((m) => (
                 <TouchableOpacity
@@ -275,12 +278,12 @@ export default function StrafenScreen() {
                     <Image source={{ uri: m.photoUri }} style={styles.chipAvatar} />
                   ) : (
                     <View style={[styles.chipAvatarFallback, { backgroundColor: filterMemberId === m.id ? "rgba(255,255,255,0.3)" : m.avatarColor + "33" }]}>
-                      <Text style={{ fontSize: 11, fontWeight: "700", color: filterMemberId === m.id ? "#FFF" : m.avatarColor }}>
+                      <Text style={{ fontSize: 11, fontWeight: "700", color: filterMemberId === m.id ? c.onAccent : m.avatarColor }}>
                         {getInitial(m.name)}
                       </Text>
                     </View>
                   )}
-                  <Text style={[styles.chipName, filterMemberId === m.id && { color: "#FFFFFF" }]}>
+                  <Text style={[styles.chipName, filterMemberId === m.id && { color: c.onAccent }]}>
                     {m.name.split(" ")[0]}
                   </Text>
                 </TouchableOpacity>
@@ -309,17 +312,17 @@ export default function StrafenScreen() {
                     key={log.id}
                     renderRightActions={() => (
                       <TouchableOpacity style={styles.deleteAction} onPress={() => handleDelete(log)} activeOpacity={0.8}>
-                        <Ionicons name="trash-outline" size={20} color="#FFFFFF" />
+                        <Ionicons name="trash-outline" size={20} color={c.onAccent} />
                       </TouchableOpacity>
                     )}
                     overshootRight={false}
                   >
                     <View style={[
                       styles.eintragRow,
-                      { borderLeftColor: log.beglichen ? COLORS.success : COLORS.danger },
-                      log.beglichen && { backgroundColor: "#F8FDF9" },
+                      { borderLeftColor: log.beglichen ? c.success : c.danger },
+                      log.beglichen && { backgroundColor: c.successBg },
                     ]}>
-                      <View style={[styles.eintragIcon, { backgroundColor: log.beglichen ? COLORS.success + "15" : COLORS.danger + "12" }]}>
+                      <View style={[styles.eintragIcon, { backgroundColor: log.beglichen ? c.success + "15" : c.danger + "12" }]}>
                         <Text style={{ fontSize: 18 }}>{log.beglichen ? "✅" : kat?.emoji ?? "💰"}</Text>
                       </View>
                       <View style={styles.eintragMeta}>
@@ -332,7 +335,7 @@ export default function StrafenScreen() {
                       </View>
                       <Text style={[
                         styles.eintragBetrag,
-                        { color: log.beglichen ? COLORS.textLight : COLORS.danger },
+                        { color: log.beglichen ? c.textLight : c.danger },
                         log.beglichen && { textDecorationLine: "line-through" },
                       ]}>
                         {formatEuro(log.betrag)} €
@@ -345,7 +348,7 @@ export default function StrafenScreen() {
                         <Ionicons
                           name={log.beglichen ? "checkmark-circle" : "ellipse-outline"}
                           size={22}
-                          color={log.beglichen ? COLORS.success : COLORS.border}
+                          color={log.beglichen ? c.success : c.border}
                         />
                       </TouchableOpacity>
                     </View>
@@ -372,44 +375,44 @@ export default function StrafenScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: COLORS.background },
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   content: { padding: 20, paddingBottom: 60 },
 
   header: {
     flexDirection: "row", alignItems: "center", gap: 12,
-    backgroundColor: COLORS.cardAlt, borderRadius: 20,
+    backgroundColor: c.cardAlt, borderRadius: 20,
     padding: 16, marginBottom: 16, ...SHADOWS.card,
-    borderWidth: 1, borderColor: COLORS.border,
+    borderWidth: 1, borderColor: c.border,
   },
   headerTexts: { flex: 1 },
-  headerTitle: { fontSize: 18, fontWeight: "800", color: COLORS.textDark },
-  headerSub: { fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
+  headerTitle: { fontSize: 18, fontWeight: "800", color: c.textDark },
+  headerSub: { fontSize: 12, color: c.textMuted, marginTop: 2 },
 
   addCard: {
-    backgroundColor: COLORS.card, borderRadius: 18, padding: 16,
-    marginBottom: 14, borderWidth: 1.5, borderColor: COLORS.blue + "33", gap: 10, ...SHADOWS.card,
+    backgroundColor: c.card, borderRadius: 18, padding: 16,
+    marginBottom: 14, borderWidth: 1.5, borderColor: c.blue + "33", gap: 10, ...SHADOWS.card,
   },
-  addCardTitle: { fontSize: 14, fontWeight: "800", color: COLORS.textDark },
+  addCardTitle: { fontSize: 14, fontWeight: "800", color: c.textDark },
 
   strafFormRow: { flexDirection: "row", gap: 10 },
-  strafFormLabel: { fontSize: 11, fontWeight: "700", color: COLORS.textMuted, textTransform: "uppercase", letterSpacing: 0.3, marginBottom: 5 },
+  strafFormLabel: { fontSize: 11, fontWeight: "700", color: c.textMuted, textTransform: "uppercase", letterSpacing: 0.3, marginBottom: 5 },
   strafFormInput: {
-    backgroundColor: COLORS.background, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9,
-    fontSize: 14, color: COLORS.textDark, borderWidth: 1, borderColor: COLORS.border,
+    backgroundColor: c.background, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9,
+    fontSize: 14, color: c.textDark, borderWidth: 1, borderColor: c.border,
   },
   strafSubmitBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7,
-    backgroundColor: COLORS.danger, borderRadius: 12, paddingVertical: 12,
+    backgroundColor: c.danger, borderRadius: 12, paddingVertical: 12,
   },
-  strafSubmitText: { color: "#FFFFFF", fontWeight: "700", fontSize: 14 },
+  strafSubmitText: { color: c.onAccent, fontWeight: "700", fontSize: 14 },
 
   saldoCard: {
-    backgroundColor: COLORS.card, borderRadius: 20, padding: 18,
+    backgroundColor: c.card, borderRadius: 20, padding: 18,
     marginBottom: 14, borderWidth: 1.5, ...SHADOWS.card,
     alignItems: "center",
   },
-  saldoLabel: { fontSize: 13, fontWeight: "700", color: COLORS.textMuted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 },
+  saldoLabel: { fontSize: 13, fontWeight: "700", color: c.textMuted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 },
   saldoValue: { fontSize: 34, fontWeight: "900", letterSpacing: -1 },
 
   filterScroll: { marginBottom: 16 },
@@ -419,38 +422,38 @@ const styles = StyleSheet.create({
   memberChip: {
     flexDirection: "row", alignItems: "center", gap: 6,
     paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20,
-    backgroundColor: COLORS.background, borderWidth: 1.5, borderColor: COLORS.border,
+    backgroundColor: c.background, borderWidth: 1.5, borderColor: c.border,
   },
-  memberChipActive: { backgroundColor: COLORS.blue, borderColor: COLORS.blue },
+  memberChipActive: { backgroundColor: c.blue, borderColor: c.blue },
   chipAvatar: { width: 22, height: 22, borderRadius: 11 },
   chipAvatarFallback: { width: 22, height: 22, borderRadius: 11, alignItems: "center", justifyContent: "center" },
-  chipName: { fontSize: 13, fontWeight: "600", color: COLORS.textMid },
+  chipName: { fontSize: 13, fontWeight: "600", color: c.textMid },
 
   section: { marginBottom: 8 },
   sectionTitleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 },
-  sectionTitle: { fontSize: 13, fontWeight: "800", color: COLORS.textMid, letterSpacing: 0.2 },
-  sectionToggle: { fontSize: 12, fontWeight: "600", color: COLORS.blue },
+  sectionTitle: { fontSize: 13, fontWeight: "800", color: c.textMid, letterSpacing: 0.2 },
+  sectionToggle: { fontSize: 12, fontWeight: "600", color: c.blue },
 
   eintragRow: {
     flexDirection: "row", alignItems: "center", gap: 12,
-    backgroundColor: COLORS.card, borderRadius: 14, padding: 12, marginBottom: 8,
-    borderWidth: 1, borderColor: COLORS.border, borderLeftWidth: 3, ...SHADOWS.light,
+    backgroundColor: c.card, borderRadius: 14, padding: 12, marginBottom: 8,
+    borderWidth: 1, borderColor: c.border, borderLeftWidth: 3, ...SHADOWS.light,
   },
   eintragIcon: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   eintragMeta: { flex: 1 },
-  eintragTypLabel: { fontSize: 13, fontWeight: "700", color: COLORS.textDark },
-  eintragDesc: { fontSize: 12, color: COLORS.textMuted, marginTop: 1 },
-  eintragNotiz: { fontSize: 12, color: COLORS.textLight, fontStyle: "italic", marginTop: 1 },
-  eintragDatum: { fontSize: 11, color: COLORS.textLight, marginTop: 2 },
+  eintragTypLabel: { fontSize: 13, fontWeight: "700", color: c.textDark },
+  eintragDesc: { fontSize: 12, color: c.textMuted, marginTop: 1 },
+  eintragNotiz: { fontSize: 12, color: c.textLight, fontStyle: "italic", marginTop: 1 },
+  eintragDatum: { fontSize: 11, color: c.textLight, marginTop: 2 },
   eintragBetrag: { fontSize: 16, fontWeight: "800", minWidth: 70, textAlign: "right" },
 
   deleteAction: {
-    backgroundColor: COLORS.danger, borderRadius: 14, marginBottom: 8,
+    backgroundColor: c.danger, borderRadius: 14, marginBottom: 8,
     justifyContent: "center", alignItems: "center", width: 64,
   },
 
   emptyState: { alignItems: "center", paddingVertical: 40, gap: 8 },
   emptyEmoji: { fontSize: 40 },
-  emptyTitle: { fontSize: 17, fontWeight: "800", color: COLORS.textDark },
-  emptySub: { fontSize: 13, color: COLORS.textMuted, textAlign: "center", paddingHorizontal: 20 },
+  emptyTitle: { fontSize: 17, fontWeight: "800", color: c.textDark },
+  emptySub: { fontSize: 13, color: c.textMuted, textAlign: "center", paddingHorizontal: 20 },
 });

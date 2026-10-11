@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Modal, View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
-import { COLORS, SHADOWS } from "../constants/design";
+import { SHADOWS, ThemeColors } from "../constants/design";
+import { useColors, useThemedStyles } from "../contexts/ThemeContext";
 
 interface PinPromptProps {
   visible: boolean;
@@ -12,6 +13,8 @@ interface PinPromptProps {
 }
 
 export default function PinPrompt({ visible, mode, memberName, error, onCancel, onSubmit }: PinPromptProps) {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const [pin, setPin] = useState("");
   const [pinConfirm, setPinConfirm] = useState("");
   const [mismatchError, setMismatchError] = useState<string | undefined>(undefined);
@@ -60,7 +63,7 @@ export default function PinPrompt({ visible, mode, memberName, error, onCancel, 
             secureTextEntry
             maxLength={4}
             placeholder="PIN"
-            placeholderTextColor={COLORS.textLight}
+            placeholderTextColor={c.textLight}
             autoFocus
           />
 
@@ -73,7 +76,7 @@ export default function PinPrompt({ visible, mode, memberName, error, onCancel, 
               secureTextEntry
               maxLength={4}
               placeholder="PIN bestätigen"
-              placeholderTextColor={COLORS.textLight}
+              placeholderTextColor={c.textLight}
             />
           )}
 
@@ -97,10 +100,10 @@ export default function PinPrompt({ visible, mode, memberName, error, onCancel, 
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(26,18,8,0.5)",
+    backgroundColor: c.overlay,
     alignItems: "center",
     justifyContent: "center",
     padding: 24,
@@ -108,26 +111,26 @@ const styles = StyleSheet.create({
   card: {
     width: "100%",
     maxWidth: 340,
-    backgroundColor: COLORS.card,
+    backgroundColor: c.card,
     borderRadius: 20,
     padding: 20,
     gap: 12,
     ...SHADOWS.card,
   },
-  title: { fontSize: 17, fontWeight: "800", color: COLORS.textDark },
-  subtitle: { fontSize: 13, color: COLORS.textMuted, lineHeight: 18 },
+  title: { fontSize: 17, fontWeight: "800", color: c.textDark },
+  subtitle: { fontSize: 13, color: c.textMuted, lineHeight: 18 },
   input: {
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: c.border,
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 14,
     fontSize: 20,
     letterSpacing: 6,
-    color: COLORS.textDark,
-    backgroundColor: COLORS.cardAlt,
+    color: c.textDark,
+    backgroundColor: c.cardAlt,
   },
-  error: { fontSize: 12, color: COLORS.danger, fontWeight: "600" },
+  error: { fontSize: 12, color: c.danger, fontWeight: "600" },
   actions: { flexDirection: "row", gap: 10, marginTop: 4 },
   cancelBtn: {
     flex: 1,
@@ -135,16 +138,16 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: c.border,
   },
-  cancelText: { fontSize: 14, fontWeight: "700", color: COLORS.textMuted },
+  cancelText: { fontSize: 14, fontWeight: "700", color: c.textMuted },
   submitBtn: {
     flex: 1,
     paddingVertical: 12,
     borderRadius: 12,
     alignItems: "center",
-    backgroundColor: COLORS.blue,
+    backgroundColor: c.blue,
   },
   submitBtnDisabled: { opacity: 0.5 },
-  submitText: { fontSize: 14, fontWeight: "700", color: "#FFFFFF" },
+  submitText: { fontSize: 14, fontWeight: "700", color: c.onAccent },
 });

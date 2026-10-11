@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from "react";
+import React, { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -32,7 +32,8 @@ import {
 } from "../utils/storage";
 import { terminBezeichnung } from "../utils/activityFeed";
 import { formatUhrzeit, formatWochentagDatum } from "../utils/date";
-import { COLORS, SHADOWS } from "../constants/design";
+import { SHADOWS, ThemeColors } from "../constants/design";
+import { useColors, useThemedStyles } from "../contexts/ThemeContext";
 import { HamburgerButton } from "../components/HamburgerButton";
 import { BackButton } from "../components/BackButton";
 import LoadingSpinner from "../components/LoadingSpinner";
@@ -67,11 +68,11 @@ function isEintragBeglichen(e: KassenEintrag): boolean {
   return !!e.beglichen;
 }
 
-const TYP_META: Record<KassenEintragTyp, { label: string; emoji: string; color: string; bg: string }> = {
-  einnahme:     { label: "Einnahme",    emoji: "➕", color: COLORS.success,  bg: "#EDF7F2" },
-  ausgabe:      { label: "Ausgabe",     emoji: "➖", color: COLORS.danger,   bg: "#FDF0EF" },
-  abendkosten:  { label: "Stammtischrechnung", emoji: "🍺", color: COLORS.gold,    bg: COLORS.goldBg },
-};
+const makeTypMeta = (c: ThemeColors): Record<KassenEintragTyp, { label: string; emoji: string; color: string; bg: string }> => ({
+  einnahme:     { label: "Einnahme",    emoji: "➕", color: c.success,  bg: c.successBg },
+  ausgabe:      { label: "Ausgabe",     emoji: "➖", color: c.danger,   bg: c.dangerBg },
+  abendkosten:  { label: "Stammtischrechnung", emoji: "🍺", color: c.gold,    bg: c.goldBg },
+});
 
 function formatDatumZeit(iso: string): string {
   const d = new Date(iso);
@@ -85,12 +86,14 @@ function kurzName(m: MemberProfile | undefined): string | undefined {
 // ─── Eintrag Detail ───────────────────────────────────────────────────────────
 
 function DetailZeile({ label, value, onPress }: { label: string; value: string; onPress?: () => void }) {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const content = (
     <>
       <Text style={styles.detailLabel}>{label}</Text>
       <View style={styles.detailValueRow}>
-        <Text style={[styles.detailValue, onPress && { color: COLORS.blue }]}>{value}</Text>
-        {onPress ? <Ionicons name="chevron-forward" size={16} color={COLORS.blue} /> : null}
+        <Text style={[styles.detailValue, onPress && { color: c.blue }]}>{value}</Text>
+        {onPress ? <Ionicons name="chevron-forward" size={16} color={c.blue} /> : null}
       </View>
     </>
   );
@@ -115,10 +118,12 @@ function EintragDetail({
   actorId?: string;
   onClose: () => void;
 }) {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   if (!eintrag) return null;
-  const meta = TYP_META[eintrag.typ];
+  const meta = makeTypMeta(c)[eintrag.typ];
   const isPositive = eintrag.typ === "einnahme";
-  const betragFarbe = eintrag.typ === "abendkosten" ? COLORS.gold : isPositive ? COLORS.success : COLORS.danger;
+  const betragFarbe = eintrag.typ === "abendkosten" ? c.gold : isPositive ? c.success : c.danger;
   const zahler = members.find((m) => m.id === eintrag.bezahltVon);
   const actor = actorId ? members.find((m) => m.id === actorId) : undefined;
   const teilnehmer = (eintrag.teilnehmerIds ?? []).map((id) => members.find((m) => m.id === id)).filter(Boolean) as MemberProfile[];
@@ -137,7 +142,7 @@ function EintragDetail({
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>{meta.emoji} {meta.label}</Text>
             <TouchableOpacity onPress={onClose} style={styles.modalCloseBtn}>
-              <Ionicons name="close" size={20} color={COLORS.textMuted} />
+              <Ionicons name="close" size={20} color={c.textMuted} />
             </TouchableOpacity>
           </View>
           <ScrollView showsVerticalScrollIndicator={false}>
@@ -200,7 +205,9 @@ function EintragRow({
   onDelete: () => void;
   onOpen: () => void;
 }) {
-  const meta = TYP_META[eintrag.typ];
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
+  const meta = makeTypMeta(c)[eintrag.typ];
   const isPositive = eintrag.typ === "einnahme";
   const headline = eintrag.beschreibung?.trim() || meta.label;
   const subParts = [
@@ -212,7 +219,7 @@ function EintragRow({
   function renderRight() {
     return (
       <TouchableOpacity style={styles.deleteAction} onPress={onDelete} activeOpacity={0.8}>
-        <Ionicons name="trash-outline" size={20} color="#FFFFFF" />
+        <Ionicons name="trash-outline" size={20} color={c.onAccent} />
       </TouchableOpacity>
     );
   }
@@ -227,7 +234,7 @@ function EintragRow({
           <Text style={styles.eintragHeadline}>{headline}</Text>
           <Text style={styles.eintragSub}>{subParts.join(" · ")}</Text>
         </View>
-        <Text style={[styles.eintragBetrag, { color: isPositive ? COLORS.success : COLORS.danger }]}>
+        <Text style={[styles.eintragBetrag, { color: isPositive ? c.success : c.danger }]}>
           {isPositive ? "+" : "−"}{formatEuro(eintrag.betrag)} €
         </Text>
       </TouchableOpacity>
@@ -240,6 +247,9 @@ function EintragRow({
 type FormTyp = KassenEintragTyp | null;
 
 export default function KasseScreen() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
+  const TYP_META = useMemo(() => makeTypMeta(c), [c]);
   const { activeMemberId } = useSession();
   const { eintragId } = useLocalSearchParams<{ eintragId?: string }>();
   const guard = useSingleFlight();
@@ -411,7 +421,7 @@ export default function KasseScreen() {
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.blue} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.blue} />}
         >
           <OfflineBanner />
 
@@ -426,22 +436,22 @@ export default function KasseScreen() {
           </View>
 
           {/* Saldo Card */}
-          <View style={[styles.saldoCard, { borderColor: saldoPositiv ? COLORS.success + "44" : COLORS.danger + "44" }]}>
+          <View style={[styles.saldoCard, { borderColor: saldoPositiv ? c.success + "44" : c.danger + "44" }]}>
             <Text style={styles.saldoLabel}>Kassenstand</Text>
-            <Text style={[styles.saldoValue, { color: saldoPositiv ? COLORS.success : COLORS.danger }]}>
+            <Text style={[styles.saldoValue, { color: saldoPositiv ? c.success : c.danger }]}>
               {saldoPositiv ? "+" : "−"}{formatEuro(Math.abs(saldo))} €
             </Text>
             {kassenEintraege.length > 0 && (
               <View style={styles.saldoStats}>
                 <View style={styles.saldoStatItem}>
-                  <Text style={[styles.saldoStatValue, { color: COLORS.success }]}>
+                  <Text style={[styles.saldoStatValue, { color: c.success }]}>
                     +{formatEuro(kassenEintraege.filter(e => e.typ === "einnahme").reduce((s, e) => s + e.betrag, 0))} €
                   </Text>
                   <Text style={styles.saldoStatLabel}>Einnahmen</Text>
                 </View>
                 <View style={styles.saldoStatDivider} />
                 <View style={styles.saldoStatItem}>
-                  <Text style={[styles.saldoStatValue, { color: COLORS.danger }]}>
+                  <Text style={[styles.saldoStatValue, { color: c.danger }]}>
                     −{formatEuro(kassenEintraege.filter(e => e.typ === "ausgabe").reduce((s, e) => s + e.betrag, 0))} €
                   </Text>
                   <Text style={styles.saldoStatLabel}>Ausgaben</Text>
@@ -453,28 +463,28 @@ export default function KasseScreen() {
           {/* Action Buttons */}
           <View style={styles.actionRow}>
             <TouchableOpacity
-              style={[styles.actionBtn, activeForm === "einnahme" && styles.actionBtnActive, { borderColor: COLORS.success }]}
+              style={[styles.actionBtn, activeForm === "einnahme" && styles.actionBtnActive, { borderColor: c.success }]}
               onPress={() => activeForm === "einnahme" ? closeForm() : openForm("einnahme")}
               activeOpacity={0.8}
             >
               <Text style={styles.actionBtnEmoji}>➕</Text>
-              <Text style={[styles.actionBtnText, { color: COLORS.success }]}>Einnahme</Text>
+              <Text style={[styles.actionBtnText, { color: c.success }]}>Einnahme</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.actionBtn, activeForm === "ausgabe" && styles.actionBtnActive, { borderColor: COLORS.danger }]}
+              style={[styles.actionBtn, activeForm === "ausgabe" && styles.actionBtnActive, { borderColor: c.danger }]}
               onPress={() => activeForm === "ausgabe" ? closeForm() : openForm("ausgabe")}
               activeOpacity={0.8}
             >
               <Text style={styles.actionBtnEmoji}>➖</Text>
-              <Text style={[styles.actionBtnText, { color: COLORS.danger }]}>Ausgabe</Text>
+              <Text style={[styles.actionBtnText, { color: c.danger }]}>Ausgabe</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.actionBtn, activeForm === "abendkosten" && styles.actionBtnActive, { borderColor: COLORS.gold }]}
+              style={[styles.actionBtn, activeForm === "abendkosten" && styles.actionBtnActive, { borderColor: c.gold }]}
               onPress={() => activeForm === "abendkosten" ? closeForm() : openForm("abendkosten")}
               activeOpacity={0.8}
             >
               <Text style={styles.actionBtnEmoji}>🍺</Text>
-              <Text style={[styles.actionBtnText, { color: COLORS.gold }]}>Rechnung</Text>
+              <Text style={[styles.actionBtnText, { color: c.gold }]}>Rechnung</Text>
             </TouchableOpacity>
           </View>
 
@@ -491,7 +501,7 @@ export default function KasseScreen() {
                   value={betrag}
                   onChangeText={setBetrag}
                   placeholder="0,00"
-                  placeholderTextColor={COLORS.textLight}
+                  placeholderTextColor={c.textLight}
                   keyboardType="decimal-pad"
                 />
               </View>
@@ -507,7 +517,7 @@ export default function KasseScreen() {
                       activeForm === "einnahme" ? "z. B. Strafen, Mitgliedsbeitrag …" :
                       "z. B. Dekoration, Snacks …"
                     }
-                    placeholderTextColor={COLORS.textLight}
+                    placeholderTextColor={c.textLight}
                   />
                 </View>
               )}
@@ -527,12 +537,12 @@ export default function KasseScreen() {
                           <Image source={{ uri: m.photoUri }} style={styles.chipAvatar} />
                         ) : (
                           <View style={[styles.chipAvatarFallback, { backgroundColor: bezahltVon === m.id ? "rgba(255,255,255,0.3)" : m.avatarColor + "33" }]}>
-                            <Text style={{ fontSize: 11, fontWeight: "700", color: bezahltVon === m.id ? "#FFF" : m.avatarColor }}>
+                            <Text style={{ fontSize: 11, fontWeight: "700", color: bezahltVon === m.id ? c.onAccent : m.avatarColor }}>
                               {getInitial(m.name)}
                             </Text>
                           </View>
                         )}
-                        <Text style={[styles.chipName, bezahltVon === m.id && { color: "#FFFFFF" }]}>
+                        <Text style={[styles.chipName, bezahltVon === m.id && { color: c.onAccent }]}>
                           {m.name.split(" ")[0]}
                         </Text>
                       </TouchableOpacity>
@@ -558,12 +568,12 @@ export default function KasseScreen() {
                             <Image source={{ uri: m.photoUri }} style={styles.chipAvatar} />
                           ) : (
                             <View style={[styles.chipAvatarFallback, { backgroundColor: selected ? "rgba(255,255,255,0.3)" : m.avatarColor + "33" }]}>
-                              <Text style={{ fontSize: 11, fontWeight: "700", color: selected ? "#FFF" : m.avatarColor }}>
+                              <Text style={{ fontSize: 11, fontWeight: "700", color: selected ? c.onAccent : m.avatarColor }}>
                                 {getInitial(m.name)}
                               </Text>
                             </View>
                           )}
-                          <Text style={[styles.chipName, selected && { color: "#FFFFFF" }]}>
+                          <Text style={[styles.chipName, selected && { color: c.onAccent }]}>
                             {m.name.split(" ")[0]}
                           </Text>
                         </TouchableOpacity>
@@ -587,7 +597,7 @@ export default function KasseScreen() {
                   onPress={() => guard(handleSubmit)}
                   activeOpacity={0.8}
                 >
-                  <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                  <Ionicons name="checkmark" size={16} color={c.onAccent} />
                   <Text style={styles.submitBtnText}>Eintragen</Text>
                 </TouchableOpacity>
               </View>
@@ -619,18 +629,18 @@ export default function KasseScreen() {
                     key={e.id}
                     renderRightActions={() => (
                       <TouchableOpacity style={styles.deleteAction} onPress={() => handleDelete(e.id)} activeOpacity={0.8}>
-                        <Ionicons name="trash-outline" size={20} color="#FFFFFF" />
+                        <Ionicons name="trash-outline" size={20} color={c.onAccent} />
                       </TouchableOpacity>
                     )}
                     overshootRight={false}
                   >
                     <View style={[
                       styles.abendkostenCard,
-                      { borderLeftColor: beglichen ? COLORS.success : meta.color },
-                      beglichen && { backgroundColor: "#F8FDF9" },
+                      { borderLeftColor: beglichen ? c.success : meta.color },
+                      beglichen && { backgroundColor: c.successBg },
                     ]}>
                       <TouchableOpacity style={styles.eintragRowInner} onPress={() => setDetailId(e.id)} activeOpacity={0.8}>
-                        <View style={[styles.eintragIcon, { backgroundColor: beglichen ? COLORS.success + "15" : meta.bg }]}>
+                        <View style={[styles.eintragIcon, { backgroundColor: beglichen ? c.success + "15" : meta.bg }]}>
                           <Text style={{ fontSize: 18 }}>{beglichen ? "✅" : meta.emoji}</Text>
                         </View>
                         <View style={styles.eintragMeta}>
@@ -643,7 +653,7 @@ export default function KasseScreen() {
                         </View>
                         <Text style={[
                           styles.eintragBetrag,
-                          { color: beglichen ? COLORS.textLight : COLORS.gold },
+                          { color: beglichen ? c.textLight : c.gold },
                           beglichen && { textDecorationLine: "line-through" },
                         ]}>
                           {formatEuro(e.betrag)} €
@@ -657,7 +667,7 @@ export default function KasseScreen() {
                             <Ionicons
                               name={e.beglichen ? "checkmark-circle" : "ellipse-outline"}
                               size={22}
-                              color={e.beglichen ? COLORS.success : COLORS.border}
+                              color={e.beglichen ? c.success : c.border}
                             />
                           </TouchableOpacity>
                         )}
@@ -678,13 +688,13 @@ export default function KasseScreen() {
                                 <Text style={[styles.schuldnerName, bezahlt && styles.schuldnerNameBeglichen]}>
                                   {m?.name ?? "Unbekannt"}
                                 </Text>
-                                <Text style={[styles.schuldnerBetrag, bezahlt && { color: COLORS.textLight }]}>
+                                <Text style={[styles.schuldnerBetrag, bezahlt && { color: c.textLight }]}>
                                   {formatEuro(anteil)} €
                                 </Text>
                                 <Ionicons
                                   name={bezahlt ? "checkmark-circle" : "ellipse-outline"}
                                   size={18}
-                                  color={bezahlt ? COLORS.success : COLORS.border}
+                                  color={bezahlt ? c.success : c.border}
                                 />
                               </TouchableOpacity>
                             );
@@ -741,153 +751,153 @@ export default function KasseScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: COLORS.background },
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   content: { padding: 20, paddingBottom: 60 },
 
   header: {
     flexDirection: "row", alignItems: "center", gap: 12,
-    backgroundColor: COLORS.cardAlt, borderRadius: 20,
+    backgroundColor: c.cardAlt, borderRadius: 20,
     padding: 16, marginBottom: 16, ...SHADOWS.card,
-    borderWidth: 1, borderColor: COLORS.border,
+    borderWidth: 1, borderColor: c.border,
   },
   headerTexts: { flex: 1 },
-  headerTitle: { fontSize: 18, fontWeight: "800", color: COLORS.textDark },
-  headerSub: { fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
+  headerTitle: { fontSize: 18, fontWeight: "800", color: c.textDark },
+  headerSub: { fontSize: 12, color: c.textMuted, marginTop: 2 },
 
   saldoCard: {
-    backgroundColor: COLORS.card, borderRadius: 20, padding: 20,
+    backgroundColor: c.card, borderRadius: 20, padding: 20,
     marginBottom: 16, borderWidth: 1.5, ...SHADOWS.card,
     alignItems: "center",
   },
-  saldoLabel: { fontSize: 13, fontWeight: "700", color: COLORS.textMuted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 },
+  saldoLabel: { fontSize: 13, fontWeight: "700", color: c.textMuted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 },
   saldoValue: { fontSize: 40, fontWeight: "900", letterSpacing: -1 },
   saldoStats: { flexDirection: "row", alignItems: "center", marginTop: 14, gap: 0 },
   saldoStatItem: { flex: 1, alignItems: "center", gap: 2 },
   saldoStatValue: { fontSize: 15, fontWeight: "800" },
-  saldoStatLabel: { fontSize: 11, color: COLORS.textMuted },
-  saldoStatDivider: { width: 1, height: 30, backgroundColor: COLORS.border },
+  saldoStatLabel: { fontSize: 11, color: c.textMuted },
+  saldoStatDivider: { width: 1, height: 30, backgroundColor: c.border },
 
   actionRow: { flexDirection: "row", gap: 8, marginBottom: 16 },
   actionBtn: {
     flex: 1, alignItems: "center", gap: 4,
     paddingVertical: 12, borderRadius: 14,
-    backgroundColor: COLORS.card, borderWidth: 1.5, ...SHADOWS.light,
+    backgroundColor: c.card, borderWidth: 1.5, ...SHADOWS.light,
   },
-  actionBtnActive: { backgroundColor: COLORS.cardAlt },
+  actionBtnActive: { backgroundColor: c.cardAlt },
   actionBtnEmoji: { fontSize: 20 },
   actionBtnText: { fontSize: 11, fontWeight: "700" },
 
   formCard: {
-    backgroundColor: COLORS.card, borderRadius: 18, padding: 16,
-    marginBottom: 16, borderWidth: 1, borderColor: COLORS.border, ...SHADOWS.card,
+    backgroundColor: c.card, borderRadius: 18, padding: 16,
+    marginBottom: 16, borderWidth: 1, borderColor: c.border, ...SHADOWS.card,
   },
-  formTitle: { fontSize: 16, fontWeight: "800", color: COLORS.textDark, marginBottom: 12 },
+  formTitle: { fontSize: 16, fontWeight: "800", color: c.textDark, marginBottom: 12 },
   terminHint: {
     flexDirection: "row", alignItems: "center", gap: 5,
-    backgroundColor: COLORS.blue + "11", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, marginBottom: 12,
+    backgroundColor: c.blue + "11", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, marginBottom: 12,
   },
-  terminHintText: { fontSize: 12, color: COLORS.blue, fontWeight: "600" },
+  terminHintText: { fontSize: 12, color: c.blue, fontWeight: "600" },
   formRow: { marginBottom: 12 },
-  formLabel: { fontSize: 12, fontWeight: "700", color: COLORS.textMid, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.3 },
+  formLabel: { fontSize: 12, fontWeight: "700", color: c.textMid, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.3 },
   formInput: {
-    backgroundColor: COLORS.background, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11,
-    fontSize: 15, color: COLORS.textDark, borderWidth: 1, borderColor: COLORS.border,
+    backgroundColor: c.background, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11,
+    fontSize: 15, color: c.textDark, borderWidth: 1, borderColor: c.border,
   },
 
   memberChipsScroll: { marginTop: 2 },
   memberChip: {
     flexDirection: "row", alignItems: "center", gap: 6,
     paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20,
-    backgroundColor: COLORS.background, borderWidth: 1.5, borderColor: COLORS.border, marginRight: 8,
+    backgroundColor: c.background, borderWidth: 1.5, borderColor: c.border, marginRight: 8,
   },
   chipAvatar: { width: 22, height: 22, borderRadius: 11 },
   chipAvatarFallback: { width: 22, height: 22, borderRadius: 11, alignItems: "center", justifyContent: "center" },
-  chipName: { fontSize: 13, fontWeight: "600", color: COLORS.textMid },
-  teilnehmerHint: { fontSize: 12, color: COLORS.textMuted, marginTop: 8 },
+  chipName: { fontSize: 13, fontWeight: "600", color: c.textMid },
+  teilnehmerHint: { fontSize: 12, color: c.textMuted, marginTop: 8 },
 
   formBtns: { flexDirection: "row", gap: 10, marginTop: 4 },
   cancelBtn: {
     flex: 1, alignItems: "center", justifyContent: "center",
     paddingVertical: 12, borderRadius: 12,
-    backgroundColor: COLORS.background, borderWidth: 1, borderColor: COLORS.border,
+    backgroundColor: c.background, borderWidth: 1, borderColor: c.border,
   },
-  cancelBtnText: { fontSize: 14, fontWeight: "600", color: COLORS.textMuted },
+  cancelBtnText: { fontSize: 14, fontWeight: "600", color: c.textMuted },
   submitBtn: {
     flex: 2, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
     paddingVertical: 12, borderRadius: 12,
   },
-  submitBtnText: { fontSize: 14, fontWeight: "700", color: "#FFFFFF" },
+  submitBtnText: { fontSize: 14, fontWeight: "700", color: c.onAccent },
 
   section: { marginBottom: 8 },
   sectionTitleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 },
-  sectionTitle: { fontSize: 13, fontWeight: "800", color: COLORS.textMid, letterSpacing: 0.2 },
-  sectionToggle: { fontSize: 12, fontWeight: "600", color: COLORS.blue },
+  sectionTitle: { fontSize: 13, fontWeight: "800", color: c.textMid, letterSpacing: 0.2 },
+  sectionToggle: { fontSize: 12, fontWeight: "600", color: c.blue },
 
   eintragRow: {
     flexDirection: "row", alignItems: "center", gap: 12,
-    backgroundColor: COLORS.card, borderRadius: 14, padding: 12, marginBottom: 8,
-    borderWidth: 1, borderColor: COLORS.border, borderLeftWidth: 3, ...SHADOWS.light,
+    backgroundColor: c.card, borderRadius: 14, padding: 12, marginBottom: 8,
+    borderWidth: 1, borderColor: c.border, borderLeftWidth: 3, ...SHADOWS.light,
   },
   eintragIcon: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   eintragMeta: { flex: 1 },
-  eintragTypLabel: { fontSize: 13, fontWeight: "700", color: COLORS.textDark },
-  eintragDesc: { fontSize: 12, color: COLORS.textMuted, marginTop: 1 },
-  eintragZahler: { fontSize: 12, color: COLORS.blue, marginTop: 1, fontWeight: "600" },
-  eintragDatum: { fontSize: 11, color: COLORS.textLight, marginTop: 2 },
-  eintragHeadline: { fontSize: 14, fontWeight: "700", color: COLORS.textDark, lineHeight: 19 },
-  eintragSub: { fontSize: 11, color: COLORS.textMuted, marginTop: 2 },
+  eintragTypLabel: { fontSize: 13, fontWeight: "700", color: c.textDark },
+  eintragDesc: { fontSize: 12, color: c.textMuted, marginTop: 1 },
+  eintragZahler: { fontSize: 12, color: c.blue, marginTop: 1, fontWeight: "600" },
+  eintragDatum: { fontSize: 11, color: c.textLight, marginTop: 2 },
+  eintragHeadline: { fontSize: 14, fontWeight: "700", color: c.textDark, lineHeight: 19 },
+  eintragSub: { fontSize: 11, color: c.textMuted, marginTop: 2 },
   eintragBetrag: { fontSize: 16, fontWeight: "800", minWidth: 80, textAlign: "right" },
 
   abendkostenCard: {
-    backgroundColor: COLORS.card, borderRadius: 14, padding: 12, marginBottom: 8,
-    borderWidth: 1, borderColor: COLORS.border, borderLeftWidth: 3, ...SHADOWS.light,
+    backgroundColor: c.card, borderRadius: 14, padding: 12, marginBottom: 8,
+    borderWidth: 1, borderColor: c.border, borderLeftWidth: 3, ...SHADOWS.light,
   },
   eintragRowInner: { flexDirection: "row", alignItems: "center", gap: 12 },
-  schuldnerList: { marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: COLORS.border, gap: 6 },
+  schuldnerList: { marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: c.border, gap: 6 },
   schuldnerRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  schuldnerName: { flex: 1, fontSize: 13, fontWeight: "600", color: COLORS.textDark },
-  schuldnerNameBeglichen: { textDecorationLine: "line-through", color: COLORS.textLight },
-  schuldnerBetrag: { fontSize: 13, fontWeight: "700", color: COLORS.gold },
+  schuldnerName: { flex: 1, fontSize: 13, fontWeight: "600", color: c.textDark },
+  schuldnerNameBeglichen: { textDecorationLine: "line-through", color: c.textLight },
+  schuldnerBetrag: { fontSize: 13, fontWeight: "700", color: c.gold },
 
   deleteAction: {
-    backgroundColor: COLORS.danger, borderRadius: 14, marginBottom: 8,
+    backgroundColor: c.danger, borderRadius: 14, marginBottom: 8,
     justifyContent: "center", alignItems: "center", width: 64,
   },
 
 
   emptyState: { alignItems: "center", paddingVertical: 40, gap: 8 },
   emptyEmoji: { fontSize: 40 },
-  emptyTitle: { fontSize: 17, fontWeight: "800", color: COLORS.textDark },
-  emptySub: { fontSize: 13, color: COLORS.textMuted, textAlign: "center" },
+  emptyTitle: { fontSize: 17, fontWeight: "800", color: c.textDark },
+  emptySub: { fontSize: 13, color: c.textMuted, textAlign: "center" },
 
   // ── Detail-Sheet ──────────────────────────────────────────────────────────
-  modalOverlay: { flex: 1, backgroundColor: "rgba(26,18,8,0.5)", justifyContent: "flex-end" },
+  modalOverlay: { flex: 1, backgroundColor: c.overlay, justifyContent: "flex-end" },
   modalSheet: {
-    backgroundColor: COLORS.background, borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    backgroundColor: c.background, borderTopLeftRadius: 24, borderTopRightRadius: 24,
     paddingHorizontal: 20, paddingTop: 16, paddingBottom: 32, maxHeight: "85%", ...SHADOWS.card,
   },
   modalHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 },
-  modalTitle: { fontSize: 17, fontWeight: "800", color: COLORS.textDark },
+  modalTitle: { fontSize: 17, fontWeight: "800", color: c.textDark },
   modalCloseBtn: {
-    width: 30, height: 30, borderRadius: 15, backgroundColor: COLORS.cardAlt,
+    width: 30, height: 30, borderRadius: 15, backgroundColor: c.cardAlt,
     alignItems: "center", justifyContent: "center",
   },
   detailBetrag: { fontSize: 32, fontWeight: "800", textAlign: "center", marginVertical: 8 },
   detailBeschreibung: {
-    fontSize: 15, color: COLORS.textDark, lineHeight: 21, textAlign: "center",
+    fontSize: 15, color: c.textDark, lineHeight: 21, textAlign: "center",
     marginBottom: 14, paddingHorizontal: 8,
   },
   detailCard: {
-    backgroundColor: COLORS.card, borderRadius: 16, borderWidth: 1, borderColor: COLORS.border,
+    backgroundColor: c.card, borderRadius: 16, borderWidth: 1, borderColor: c.border,
     paddingHorizontal: 14, overflow: "hidden", ...SHADOWS.light,
   },
   // marginBottom -1: die Trennlinie der letzten Zeile verschwindet unter dem Kartenrand.
-  detailZeile: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: COLORS.border, marginBottom: -1 },
+  detailZeile: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: c.border, marginBottom: -1 },
   detailLabel: {
-    fontSize: 11, fontWeight: "700", color: COLORS.textMuted,
+    fontSize: 11, fontWeight: "700", color: c.textMuted,
     textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 3,
   },
   detailValueRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  detailValue: { flex: 1, fontSize: 14, fontWeight: "600", color: COLORS.textDark, lineHeight: 20 },
+  detailValue: { flex: 1, fontSize: 14, fontWeight: "600", color: c.textDark, lineHeight: 20 },
 });

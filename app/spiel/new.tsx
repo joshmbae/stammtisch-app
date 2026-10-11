@@ -15,7 +15,8 @@ import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { showAlert } from "../../utils/alert";
 import { addSpiel, addEreignisTyp } from "../../utils/storage";
-import { COLORS } from "../../constants/design";
+import { ThemeColors } from "../../constants/design";
+import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 
 interface EreignisRow {
   key: string;
@@ -30,6 +31,8 @@ function neueZeile(): EreignisRow {
 }
 
 export default function NewSpielScreen() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
   const [name, setName] = useState("");
   const [emoji, setEmoji] = useState("");
   const [ereignisse, setEreignisse] = useState<EreignisRow[]>([neueZeile()]);
@@ -86,7 +89,7 @@ export default function NewSpielScreen() {
 
           <View style={styles.header}>
             <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-              <Ionicons name="chevron-back" size={20} color={COLORS.blue} />
+              <Ionicons name="chevron-back" size={20} color={c.blue} />
             </TouchableOpacity>
             <Text style={styles.title}>Neues Spiel</Text>
           </View>
@@ -98,7 +101,7 @@ export default function NewSpielScreen() {
               value={name}
               onChangeText={setName}
               placeholder="z.B. Doppelkopf"
-              placeholderTextColor={COLORS.textLight}
+              placeholderTextColor={c.textLight}
             />
           </View>
 
@@ -109,7 +112,7 @@ export default function NewSpielScreen() {
               value={emoji}
               onChangeText={setEmoji}
               placeholder="🎴"
-              placeholderTextColor={COLORS.textLight}
+              placeholderTextColor={c.textLight}
               maxLength={4}
             />
           </View>
@@ -121,7 +124,7 @@ export default function NewSpielScreen() {
                 <Text style={styles.ereignisNr}>{i + 1}.</Text>
                 {ereignisse.length > 1 && (
                   <TouchableOpacity onPress={() => removeRow(r.key)} style={{ marginLeft: "auto" }}>
-                    <Ionicons name="close-circle" size={20} color={COLORS.danger} />
+                    <Ionicons name="close-circle" size={20} color={c.danger} />
                   </TouchableOpacity>
                 )}
               </View>
@@ -131,7 +134,7 @@ export default function NewSpielScreen() {
                   value={r.emoji}
                   onChangeText={(t) => updateRow(r.key, { emoji: t })}
                   placeholder="🎯"
-                  placeholderTextColor={COLORS.textLight}
+                  placeholderTextColor={c.textLight}
                   maxLength={4}
                 />
                 <TextInput
@@ -139,7 +142,7 @@ export default function NewSpielScreen() {
                   value={r.label}
                   onChangeText={(t) => updateRow(r.key, { label: t })}
                   placeholder="z.B. Verloren"
-                  placeholderTextColor={COLORS.textLight}
+                  placeholderTextColor={c.textLight}
                 />
               </View>
               <View style={styles.strafRow}>
@@ -147,7 +150,7 @@ export default function NewSpielScreen() {
                 <Switch
                   value={r.strafAktiv}
                   onValueChange={(v) => updateRow(r.key, { strafAktiv: v })}
-                  trackColor={{ true: COLORS.blue }}
+                  trackColor={{ true: c.blue }}
                 />
               </View>
               {r.strafAktiv && (
@@ -156,7 +159,7 @@ export default function NewSpielScreen() {
                   value={r.strafBetrag}
                   onChangeText={(t) => updateRow(r.key, { strafBetrag: t })}
                   placeholder="Betrag in €"
-                  placeholderTextColor={COLORS.textLight}
+                  placeholderTextColor={c.textLight}
                   keyboardType="decimal-pad"
                 />
               )}
@@ -165,13 +168,13 @@ export default function NewSpielScreen() {
 
           {ereignisse.length < 4 && (
             <TouchableOpacity style={styles.addRowBtn} onPress={addRow}>
-              <Ionicons name="add" size={18} color={COLORS.blue} />
+              <Ionicons name="add" size={18} color={c.blue} />
               <Text style={styles.addRowBtnText}>Ereignistyp hinzufügen</Text>
             </TouchableOpacity>
           )}
 
           <TouchableOpacity style={[styles.saveBtn, saving && { opacity: 0.6 }]} onPress={save} disabled={saving}>
-            <Ionicons name="checkmark" size={20} color="#FFFFFF" />
+            <Ionicons name="checkmark" size={20} color={c.onAccent} />
             <Text style={styles.saveBtnText}>{saving ? "Wird gespeichert …" : "Spiel speichern"}</Text>
           </TouchableOpacity>
 
@@ -181,46 +184,46 @@ export default function NewSpielScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: COLORS.background },
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   content: { padding: 20, paddingBottom: 48 },
 
   header: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 20, paddingTop: 4 },
   backBtn: { padding: 4 },
-  title: { fontSize: 22, fontWeight: "800", color: COLORS.textDark },
+  title: { fontSize: 22, fontWeight: "800", color: c.textDark },
 
-  card: { backgroundColor: COLORS.card, borderRadius: 14, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: COLORS.border },
-  fieldLabel: { fontSize: 12, fontWeight: "700", color: COLORS.textMuted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 },
+  card: { backgroundColor: c.card, borderRadius: 14, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: c.border },
+  fieldLabel: { fontSize: 12, fontWeight: "700", color: c.textMuted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 },
 
   input: {
-    backgroundColor: COLORS.background, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border,
-    paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: COLORS.textDark,
+    backgroundColor: c.background, borderRadius: 10, borderWidth: 1, borderColor: c.border,
+    paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: c.textDark,
   },
 
-  sectionTitle: { fontSize: 15, fontWeight: "800", color: COLORS.textDark, marginTop: 12, marginBottom: 10 },
+  sectionTitle: { fontSize: 15, fontWeight: "800", color: c.textDark, marginTop: 12, marginBottom: 10 },
 
   ereignisCard: {
-    backgroundColor: COLORS.card, borderRadius: 14, padding: 14, marginBottom: 10,
-    borderWidth: 1, borderColor: COLORS.border, gap: 10,
+    backgroundColor: c.card, borderRadius: 14, padding: 14, marginBottom: 10,
+    borderWidth: 1, borderColor: c.border, gap: 10,
   },
   ereignisHeader: { flexDirection: "row", alignItems: "center" },
-  ereignisNr: { fontSize: 13, fontWeight: "700", color: COLORS.gold },
+  ereignisNr: { fontSize: 13, fontWeight: "700", color: c.gold },
   ereignisRow: { flexDirection: "row", gap: 8 },
   emojiInput: { width: 56, textAlign: "center" },
 
   strafRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  strafLabel: { fontSize: 13, fontWeight: "600", color: COLORS.textDark },
+  strafLabel: { fontSize: 13, fontWeight: "600", color: c.textDark },
 
   addRowBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
-    borderRadius: 12, borderWidth: 1.5, borderColor: COLORS.blue, borderStyle: "dashed",
+    borderRadius: 12, borderWidth: 1.5, borderColor: c.blue, borderStyle: "dashed",
     paddingVertical: 12, marginBottom: 10,
   },
-  addRowBtnText: { fontSize: 13, fontWeight: "700", color: COLORS.blue },
+  addRowBtnText: { fontSize: 13, fontWeight: "700", color: c.blue },
 
   saveBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-    backgroundColor: COLORS.blue, borderRadius: 16, paddingVertical: 16, marginTop: 8,
+    backgroundColor: c.blue, borderRadius: 16, paddingVertical: 16, marginTop: 8,
   },
-  saveBtnText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
+  saveBtnText: { color: c.onAccent, fontSize: 16, fontWeight: "700" },
 });

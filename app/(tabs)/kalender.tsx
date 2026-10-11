@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -25,7 +25,8 @@ import {
   logActivity,
 } from "../../utils/storage";
 import { useSession } from "../../contexts/SessionContext";
-import { COLORS, SHADOWS } from "../../constants/design";
+import { SHADOWS, ThemeColors } from "../../constants/design";
+import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { displayName } from "../../utils/format";
 import { HamburgerButton } from "../../components/HamburgerButton";
 import { BackButton } from "../../components/BackButton";
@@ -43,11 +44,13 @@ const MONTHS   = ["Januar","Februar","März","April","Mai","Juni","Juli","August
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CELL_SIZE = Math.floor((SCREEN_WIDTH - 40 - 28) / 7); // 20px content padding + 14px card padding each side
 
-const ART_CONFIG: Record<TerminArt, { emoji: string; color: string; label: string }> = {
-  stammtisch:  { emoji: "🍺", color: COLORS.blue,     label: "Stammtisch"   },
-  veranstaltung: { emoji: "🎉", color: "#7C3AED",     label: "Veranstaltung" },
-  geburtstag:  { emoji: "🎂", color: COLORS.gold,     label: "Geburtstag"   },
-};
+type ArtMeta = { emoji: string; color: string; label: string };
+
+const makeArtConfig = (c: ThemeColors): Record<TerminArt, ArtMeta> => ({
+  stammtisch:  { emoji: "🍺", color: c.blue,     label: "Stammtisch"   },
+  veranstaltung: { emoji: "🎉", color: c.purple,      label: "Veranstaltung" },
+  geburtstag:  { emoji: "🎂", color: c.gold,     label: "Geburtstag"   },
+});
 
 // ─── Kalender-Helpers ─────────────────────────────────────────────────────────
 
@@ -128,6 +131,9 @@ function KalenderGrid({
   selectedDay: string | null;
   onSelectDay: (iso: string) => void;
 }) {
+  const c = useColors();
+  const gridStyles = useThemedStyles(makeGridStyles);
+  const artConfig = useMemo(() => makeArtConfig(c), [c]);
   const grid = getMonthGrid(year, month);
   const today = todayIso();
 
@@ -181,7 +187,7 @@ function KalenderGrid({
                   {dotArten.map((art) => (
                     <View
                       key={art}
-                      style={[gridStyles.dot, { backgroundColor: ART_CONFIG[art].color }]}
+                      style={[gridStyles.dot, { backgroundColor: artConfig[art].color }]}
                     />
                   ))}
                 </View>
@@ -194,23 +200,23 @@ function KalenderGrid({
   );
 }
 
-const gridStyles = StyleSheet.create({
+const makeGridStyles = (c: ThemeColors) => StyleSheet.create({
   container: { paddingHorizontal: 0 },
   weekRow: { flexDirection: "row" },
   weekCell: { width: CELL_SIZE, alignItems: "center", paddingVertical: 6 },
-  weekLabel: { fontSize: 11, fontWeight: "700", color: COLORS.textMuted },
+  weekLabel: { fontSize: 11, fontWeight: "700", color: c.textMuted },
 
   cell: { width: CELL_SIZE, alignItems: "center", paddingVertical: 3 },
   dayCircle: {
     width: 32, height: 32, borderRadius: 16,
     alignItems: "center", justifyContent: "center",
   },
-  todayCircle: { backgroundColor: COLORS.blue + "18" },
-  selectedCircle: { backgroundColor: COLORS.blue },
-  dayText: { fontSize: 14, fontWeight: "500", color: COLORS.textDark },
-  dayTextSunday: { color: COLORS.danger },
-  dayTextToday: { color: COLORS.blue, fontWeight: "700" },
-  dayTextSelected: { color: "#FFFFFF", fontWeight: "800" },
+  todayCircle: { backgroundColor: c.blue + "18" },
+  selectedCircle: { backgroundColor: c.blue },
+  dayText: { fontSize: 14, fontWeight: "500", color: c.textDark },
+  dayTextSunday: { color: c.danger },
+  dayTextToday: { color: c.blue, fontWeight: "700" },
+  dayTextSelected: { color: c.onAccent, fontWeight: "800" },
   dotsRow: { flexDirection: "row", gap: 2, height: 6, alignItems: "center", marginTop: 1 },
   dot: { width: 5, height: 5, borderRadius: 3 },
 });
@@ -224,7 +230,10 @@ function EventCard({
   termin: StammtischTermin;
   onDelete: () => void;
 }) {
-  const cfg = ART_CONFIG[termin.art];
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
+  const artConfig = useMemo(() => makeArtConfig(c), [c]);
+  const cfg = artConfig[termin.art];
   const isStammtisch = termin.art === "stammtisch";
   const isGeburtstag = termin.art === "geburtstag";
   const isMemberBirthday = termin.id.startsWith("bd_");
@@ -245,7 +254,7 @@ function EventCard({
     <TouchableOpacity
       style={[
         styles.eventCard,
-        { borderColor: vergangen ? COLORS.border : cfg.color + "55" },
+        { borderColor: vergangen ? c.border : cfg.color + "55" },
       ]}
       onPress={handlePress}
       activeOpacity={isGeburtstag ? 1 : 0.88}
@@ -256,7 +265,7 @@ function EventCard({
         </View>
 
         <View style={styles.eventInfo}>
-          <Text style={[styles.eventTitel, vergangen && { color: COLORS.textMuted }]}>
+          <Text style={[styles.eventTitel, vergangen && { color: c.textMuted }]}>
             {termin.titel ?? (isStammtisch ? "Stammtisch" : cfg.label)}
           </Text>
           <Text style={[styles.eventDatum, { color: cfg.color }]}>
@@ -284,18 +293,18 @@ function EventCard({
 
         {!isMemberBirthday && (
           <TouchableOpacity onPress={onDelete} style={styles.deleteBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <Ionicons name="trash-outline" size={16} color={COLORS.danger} />
+            <Ionicons name="trash-outline" size={16} color={c.danger} />
           </TouchableOpacity>
         )}
         {isMemberBirthday && (
-          <Ionicons name="chevron-forward" size={16} color={COLORS.textLight} />
+          <Ionicons name="chevron-forward" size={16} color={c.textLight} />
         )}
       </View>
 
       {!isGeburtstag && !vergangen && (
         <View style={styles.detailsHint}>
           <Text style={styles.detailsHintText}>Details & Statistiken</Text>
-          <Ionicons name="chevron-forward" size={13} color={COLORS.textLight} />
+          <Ionicons name="chevron-forward" size={13} color={c.textLight} />
         </View>
       )}
     </TouchableOpacity>
@@ -316,6 +325,9 @@ function NeuerTerminForm({ initialDate, onSave, onCancel }: {
   onSave: () => void;
   onCancel: () => void;
 }) {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
+  const artConfig = useMemo(() => makeArtConfig(c), [c]);
   const [art, setArt] = useState<TerminArt>("stammtisch");
   const [titel, setTitel] = useState("");
   const [datum, setDatum] = useState(
@@ -410,24 +422,24 @@ function NeuerTerminForm({ initialDate, onSave, onCancel }: {
       <View style={styles.formHeader}>
         <Text style={styles.formTitle}>Neuer Eintrag</Text>
         <TouchableOpacity onPress={onCancel}>
-          <Ionicons name="close" size={22} color={COLORS.textMuted} />
+          <Ionicons name="close" size={22} color={c.textMuted} />
         </TouchableOpacity>
       </View>
 
       {/* Art-Auswahl */}
       <View style={styles.artRow}>
         {(["stammtisch", "veranstaltung", "geburtstag"] as TerminArt[]).map((a) => {
-          const c = ART_CONFIG[a];
+          const cfg = artConfig[a];
           const active = art === a;
           return (
             <TouchableOpacity
               key={a}
-              style={[styles.artChip, active && { backgroundColor: c.color, borderColor: c.color }]}
+              style={[styles.artChip, active && { backgroundColor: cfg.color, borderColor: cfg.color }]}
               onPress={() => setArt(a)}
             >
-              <Text style={styles.artEmoji}>{c.emoji}</Text>
-              <Text style={[styles.artChipText, active && { color: "#FFFFFF" }]}>
-                {c.label}
+              <Text style={styles.artEmoji}>{cfg.emoji}</Text>
+              <Text style={[styles.artChipText, active && { color: c.onAccent }]}>
+                {cfg.label}
               </Text>
             </TouchableOpacity>
           );
@@ -441,13 +453,13 @@ function NeuerTerminForm({ initialDate, onSave, onCancel }: {
           value={titel}
           onChangeText={setTitel}
           placeholder={isGeburtstag ? "Name der Person" : "Name der Veranstaltung"}
-          placeholderTextColor={COLORS.textLight}
+          placeholderTextColor={c.textLight}
         />
       )}
 
       {/* Datum Von */}
       <TouchableOpacity style={styles.dateBtn} onPress={() => setShowDate(true)}>
-        <Ionicons name="calendar-outline" size={16} color={COLORS.blue} />
+        <Ionicons name="calendar-outline" size={16} color={c.blue} />
         <Text style={styles.dateBtnText}>
           {isGeburtstag ? "Geburtstag: " : ""}
           {datum.toLocaleDateString("de-DE", { day: "2-digit", month: "long", year: "numeric" })}
@@ -465,15 +477,15 @@ function NeuerTerminForm({ initialDate, onSave, onCancel }: {
       {/* Datum Bis (nur für Veranstaltungen) */}
       {isVeranstaltung && (
         <TouchableOpacity style={styles.dateBtn} onPress={() => setShowDateBis(true)}>
-          <Ionicons name="calendar-outline" size={16} color={COLORS.textMuted} />
-          <Text style={[styles.dateBtnText, { color: datumBis ? COLORS.textDark : COLORS.textLight }]}>
+          <Ionicons name="calendar-outline" size={16} color={c.textMuted} />
+          <Text style={[styles.dateBtnText, { color: datumBis ? c.textDark : c.textLight }]}>
             {datumBis
               ? `Bis: ${datumBis.toLocaleDateString("de-DE", { day: "2-digit", month: "long", year: "numeric" })}`
               : "Bis: (optional, für mehrtägige Events)"}
           </Text>
           {datumBis && (
             <TouchableOpacity onPress={() => setDatumBis(null)}>
-              <Ionicons name="close-circle" size={16} color={COLORS.textMuted} />
+              <Ionicons name="close-circle" size={16} color={c.textMuted} />
             </TouchableOpacity>
           )}
         </TouchableOpacity>
@@ -492,14 +504,14 @@ function NeuerTerminForm({ initialDate, onSave, onCancel }: {
       {!isGeburtstag && (
         <View style={styles.zeitRow}>
           <TouchableOpacity style={[styles.dateBtn, { flex: 1 }]} onPress={() => setShowStartZeit(true)}>
-            <Ionicons name="time-outline" size={16} color={COLORS.blue} />
-            <Text style={[styles.dateBtnText, { color: startZeit ? COLORS.textDark : COLORS.textLight }]}>
+            <Ionicons name="time-outline" size={16} color={c.blue} />
+            <Text style={[styles.dateBtnText, { color: startZeit ? c.textDark : c.textLight }]}>
               {startZeit ? `Von: ${toTimeString(startZeit)}` : "Von (optional)"}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.dateBtn, { flex: 1 }]} onPress={() => setShowEndZeit(true)}>
-            <Ionicons name="time-outline" size={16} color={COLORS.blue} />
-            <Text style={[styles.dateBtnText, { color: endZeit ? COLORS.textDark : COLORS.textLight }]}>
+            <Ionicons name="time-outline" size={16} color={c.blue} />
+            <Text style={[styles.dateBtnText, { color: endZeit ? c.textDark : c.textLight }]}>
               {endZeit ? `Bis: ${toTimeString(endZeit)}` : "Bis (optional)"}
             </Text>
           </TouchableOpacity>
@@ -528,7 +540,7 @@ function NeuerTerminForm({ initialDate, onSave, onCancel }: {
       {!isGeburtstag && (
         <>
           <TouchableOpacity style={styles.wiederholToggle} onPress={() => setWiederholen((v) => !v)} activeOpacity={0.8}>
-            <Ionicons name={wiederholen ? "checkbox" : "square-outline"} size={20} color={wiederholen ? COLORS.blue : COLORS.textMuted} />
+            <Ionicons name={wiederholen ? "checkbox" : "square-outline"} size={20} color={wiederholen ? c.blue : c.textMuted} />
             <Text style={styles.wiederholToggleText}>Wiederholen (Serientermin)</Text>
           </TouchableOpacity>
 
@@ -540,10 +552,10 @@ function NeuerTerminForm({ initialDate, onSave, onCancel }: {
                   return (
                     <TouchableOpacity
                       key={opt.key}
-                      style={[styles.artChip, active && { backgroundColor: COLORS.blue, borderColor: COLORS.blue }]}
+                      style={[styles.artChip, active && { backgroundColor: c.blue, borderColor: c.blue }]}
                       onPress={() => setWiederholIntervall(opt.key)}
                     >
-                      <Text style={[styles.artChipText, active && { color: "#FFFFFF" }]}>{opt.label}</Text>
+                      <Text style={[styles.artChipText, active && { color: c.onAccent }]}>{opt.label}</Text>
                     </TouchableOpacity>
                   );
                 })}
@@ -556,7 +568,7 @@ function NeuerTerminForm({ initialDate, onSave, onCancel }: {
                   onChangeText={(t) => setWiederholAnzahl(t.replace(/\D/g, ""))}
                   keyboardType="number-pad"
                   placeholder="8"
-                  placeholderTextColor={COLORS.textLight}
+                  placeholderTextColor={c.textLight}
                   maxLength={2}
                 />
               </View>
@@ -572,7 +584,7 @@ function NeuerTerminForm({ initialDate, onSave, onCancel }: {
           value={ort}
           onChangeText={setOrt}
           placeholder="Ort (optional)"
-          placeholderTextColor={COLORS.textLight}
+          placeholderTextColor={c.textLight}
         />
       )}
 
@@ -582,19 +594,19 @@ function NeuerTerminForm({ initialDate, onSave, onCancel }: {
         value={notizen}
         onChangeText={setNotizen}
         placeholder="Notizen (optional)"
-        placeholderTextColor={COLORS.textLight}
+        placeholderTextColor={c.textLight}
         multiline
         textAlignVertical="top"
       />
 
       <TouchableOpacity
-        style={[styles.saveBtn, { backgroundColor: ART_CONFIG[art].color }, saving && { opacity: 0.6 }]}
+        style={[styles.saveBtn, { backgroundColor: artConfig[art].color }, saving && { opacity: 0.6 }]}
         onPress={speichern}
         disabled={saving}
         accessibilityRole="button"
         accessibilityLabel="Eintrag anlegen"
       >
-        <Ionicons name={saving ? "hourglass-outline" : "add"} size={18} color="#FFFFFF" />
+        <Ionicons name={saving ? "hourglass-outline" : "add"} size={18} color={c.onAccent} />
         <Text style={styles.saveBtnText}>{saving ? "Wird angelegt …" : "Eintrag anlegen"}</Text>
       </TouchableOpacity>
     </View>
@@ -604,6 +616,9 @@ function NeuerTerminForm({ initialDate, onSave, onCancel }: {
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function KalenderTab() {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
+  const artConfig = useMemo(() => makeArtConfig(c), [c]);
   const today = new Date();
   const [viewYear,  setViewYear]  = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
@@ -671,7 +686,7 @@ export default function KalenderTab() {
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.blue} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.blue} />}
       >
         <OfflineBanner />
 
@@ -684,10 +699,10 @@ export default function KalenderTab() {
             <Text style={styles.headerSub}>Termine & Geburtstage</Text>
           </View>
           <TouchableOpacity
-            style={[styles.addBtn, showForm && { backgroundColor: COLORS.textMuted }]}
+            style={[styles.addBtn, showForm && { backgroundColor: c.textMuted }]}
             onPress={() => setShowForm((v) => !v)}
           >
-            <Ionicons name={showForm ? "close" : "add"} size={22} color="#FFFFFF" />
+            <Ionicons name={showForm ? "close" : "add"} size={22} color={c.onAccent} />
           </TouchableOpacity>
         </View>
 
@@ -705,7 +720,7 @@ export default function KalenderTab() {
           {/* Monats-Navigation */}
           <View style={styles.monthNav}>
             <TouchableOpacity onPress={prevMonth} style={styles.monthNavBtn}>
-              <Ionicons name="chevron-back" size={20} color={COLORS.blue} />
+              <Ionicons name="chevron-back" size={20} color={c.blue} />
             </TouchableOpacity>
             <TouchableOpacity onPress={goToToday} activeOpacity={0.7}>
               <Text style={styles.monthLabel}>
@@ -714,13 +729,13 @@ export default function KalenderTab() {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={nextMonth} style={styles.monthNavBtn}>
-              <Ionicons name="chevron-forward" size={20} color={COLORS.blue} />
+              <Ionicons name="chevron-forward" size={20} color={c.blue} />
             </TouchableOpacity>
           </View>
 
           {/* Legende */}
           <View style={styles.legend}>
-            {(Object.entries(ART_CONFIG) as [TerminArt, typeof ART_CONFIG[TerminArt]][]).map(([art, cfg]) => (
+            {(Object.entries(artConfig) as [TerminArt, ArtMeta][]).map(([art, cfg]) => (
               <View key={art} style={styles.legendItem}>
                 <View style={[styles.legendDot, { backgroundColor: cfg.color }]} />
                 <Text style={styles.legendLabel}>{cfg.label}</Text>
@@ -797,82 +812,82 @@ export default function KalenderTab() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: COLORS.background },
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   content: { padding: 20, paddingBottom: 48 },
 
   header: {
     flexDirection: "row", alignItems: "center", gap: 12,
-    backgroundColor: COLORS.cardAlt, borderRadius: 20,
+    backgroundColor: c.cardAlt, borderRadius: 20,
     padding: 16, marginBottom: 16, ...SHADOWS.card,
-    borderWidth: 1, borderColor: COLORS.border,
+    borderWidth: 1, borderColor: c.border,
   },
   headerTexts: { flex: 1 },
-  headerTitle: { fontSize: 18, fontWeight: "800", color: COLORS.textDark },
-  headerSub: { fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
+  headerTitle: { fontSize: 18, fontWeight: "800", color: c.textDark },
+  headerSub: { fontSize: 12, color: c.textMuted, marginTop: 2 },
   addBtn: {
     width: 38, height: 38, borderRadius: 19,
-    backgroundColor: COLORS.blue, alignItems: "center", justifyContent: "center",
+    backgroundColor: c.blue, alignItems: "center", justifyContent: "center",
   },
 
   aktivBanner: {
     flexDirection: "row", alignItems: "center", gap: 12,
-    backgroundColor: COLORS.gold, borderRadius: 16, padding: 14, marginBottom: 14,
+    backgroundColor: c.gold, borderRadius: 16, padding: 14, marginBottom: 14,
     ...SHADOWS.card,
   },
-  aktivPulse: { width: 10, height: 10, borderRadius: 5, backgroundColor: "#FFFFFF" },
-  aktivBannerTitle: { fontSize: 15, fontWeight: "800", color: "#FFFFFF" },
+  aktivPulse: { width: 10, height: 10, borderRadius: 5, backgroundColor: c.onAccent },
+  aktivBannerTitle: { fontSize: 15, fontWeight: "800", color: c.onAccent },
   aktivBannerSub: { fontSize: 12, color: "rgba(255,255,255,0.85)", marginTop: 2 },
   aktivStopBtn: {
     backgroundColor: "rgba(255,255,255,0.25)", borderRadius: 10,
     paddingHorizontal: 12, paddingVertical: 6,
   },
-  aktivStopText: { color: "#FFFFFF", fontWeight: "700", fontSize: 13 },
+  aktivStopText: { color: c.onAccent, fontWeight: "700", fontSize: 13 },
 
   // ── Kalender-Karte ──
   calCard: {
-    backgroundColor: COLORS.card, borderRadius: 20, padding: 14, marginBottom: 16,
-    borderWidth: 1, borderColor: COLORS.border, ...SHADOWS.card,
+    backgroundColor: c.card, borderRadius: 20, padding: 14, marginBottom: 16,
+    borderWidth: 1, borderColor: c.border, ...SHADOWS.card,
   },
   monthNav: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10,
   },
   monthNavBtn: { padding: 6 },
-  monthLabel: { fontSize: 16, fontWeight: "800", color: COLORS.textDark },
-  todayHint: { fontSize: 13, fontWeight: "600", color: COLORS.blue },
+  monthLabel: { fontSize: 16, fontWeight: "800", color: c.textDark },
+  todayHint: { fontSize: 13, fontWeight: "600", color: c.blue },
 
   legend: { flexDirection: "row", gap: 14, marginBottom: 10, flexWrap: "wrap" },
   legendItem: { flexDirection: "row", alignItems: "center", gap: 5 },
   legendDot: { width: 8, height: 8, borderRadius: 4 },
-  legendLabel: { fontSize: 11, color: COLORS.textMuted, fontWeight: "600" },
+  legendLabel: { fontSize: 11, color: c.textMuted, fontWeight: "600" },
 
   // ── Tages-Sektion ──
   daySection: { marginBottom: 16 },
   daySectionTitle: {
-    fontSize: 15, fontWeight: "800", color: COLORS.textDark,
+    fontSize: 15, fontWeight: "800", color: c.textDark,
     marginBottom: 10, marginTop: 4,
   },
   dayEmpty: {
-    backgroundColor: COLORS.card, borderRadius: 14, padding: 16,
-    alignItems: "center", borderWidth: 1, borderColor: COLORS.border,
+    backgroundColor: c.card, borderRadius: 14, padding: 16,
+    alignItems: "center", borderWidth: 1, borderColor: c.border,
     borderStyle: "dashed",
   },
-  dayEmptyText: { fontSize: 14, color: COLORS.textMuted, marginBottom: 6 },
-  dayEmptyAdd: { fontSize: 14, color: COLORS.blue, fontWeight: "700" },
+  dayEmptyText: { fontSize: 14, color: c.textMuted, marginBottom: 6 },
+  dayEmptyAdd: { fontSize: 14, color: c.blue, fontWeight: "700" },
 
   sectionTitle: {
-    fontSize: 14, fontWeight: "800", color: COLORS.textMid,
+    fontSize: 14, fontWeight: "800", color: c.textMid,
     marginBottom: 10, marginTop: 4,
   },
 
   // ── Event-Karte ──
   eventCard: {
-    backgroundColor: COLORS.card, borderRadius: 16, padding: 14,
+    backgroundColor: c.card, borderRadius: 16, padding: 14,
     marginBottom: 10, borderWidth: 1.5, ...SHADOWS.light,
   },
   aktivBadge: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 10 },
-  aktivDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.gold },
-  aktivText: { fontSize: 12, fontWeight: "700", color: COLORS.gold },
+  aktivDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: c.gold },
+  aktivText: { fontSize: 12, fontWeight: "700", color: c.gold },
 
   eventTop: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
   eventIcon: {
@@ -881,72 +896,72 @@ const styles = StyleSheet.create({
   },
   eventEmoji: { fontSize: 20 },
   eventInfo: { flex: 1 },
-  eventTitel: { fontSize: 15, fontWeight: "800", color: COLORS.textDark, marginBottom: 2 },
+  eventTitel: { fontSize: 15, fontWeight: "800", color: c.textDark, marginBottom: 2 },
   eventDatum: { fontSize: 13, fontWeight: "600", marginBottom: 3 },
-  eventMeta: { fontSize: 12, color: COLORS.textMuted, marginBottom: 2 },
-  eventNotizen: { fontSize: 12, color: COLORS.textMuted, fontStyle: "italic", marginTop: 4 },
+  eventMeta: { fontSize: 12, color: c.textMuted, marginBottom: 2 },
+  eventNotizen: { fontSize: 12, color: c.textMuted, fontStyle: "italic", marginTop: 4 },
   deleteBtn: { padding: 4 },
 
   eventActions: { marginTop: 12 },
   startBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
-    backgroundColor: COLORS.blue, borderRadius: 12, paddingVertical: 10,
+    backgroundColor: c.blue, borderRadius: 12, paddingVertical: 10,
   },
-  startBtnText: { color: "#FFFFFF", fontWeight: "700", fontSize: 14 },
+  startBtnText: { color: c.onAccent, fontWeight: "700", fontSize: 14 },
   stopBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
-    backgroundColor: COLORS.danger, borderRadius: 12, paddingVertical: 10,
+    backgroundColor: c.danger, borderRadius: 12, paddingVertical: 10,
   },
-  stopBtnText: { color: "#FFFFFF", fontWeight: "700", fontSize: 14 },
+  stopBtnText: { color: c.onAccent, fontWeight: "700", fontSize: 14 },
   detailsHint: {
     flexDirection: "row", alignItems: "center", justifyContent: "flex-end",
     gap: 4, marginTop: 8, paddingTop: 8,
-    borderTopWidth: 1, borderTopColor: COLORS.border,
+    borderTopWidth: 1, borderTopColor: c.border,
   },
-  detailsHintText: { fontSize: 12, color: COLORS.textLight, fontWeight: "500" },
+  detailsHintText: { fontSize: 12, color: c.textLight, fontWeight: "500" },
 
   // ── Formular ──
   formCard: {
-    backgroundColor: COLORS.card, borderRadius: 16, padding: 16,
-    marginBottom: 16, borderWidth: 1, borderColor: COLORS.border,
+    backgroundColor: c.card, borderRadius: 16, padding: 16,
+    marginBottom: 16, borderWidth: 1, borderColor: c.border,
   },
   formHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 },
-  formTitle: { fontSize: 15, fontWeight: "800", color: COLORS.textDark },
+  formTitle: { fontSize: 15, fontWeight: "800", color: c.textDark },
   artRow: { flexDirection: "row", gap: 6, marginBottom: 12 },
   artChip: {
     flex: 1, flexDirection: "column", alignItems: "center", justifyContent: "center",
     gap: 4, paddingVertical: 10, borderRadius: 12,
-    backgroundColor: COLORS.background, borderWidth: 1.5, borderColor: COLORS.border,
+    backgroundColor: c.background, borderWidth: 1.5, borderColor: c.border,
   },
   artEmoji: { fontSize: 18 },
-  artChipText: { fontSize: 11, fontWeight: "700", color: COLORS.textDark },
+  artChipText: { fontSize: 11, fontWeight: "700", color: c.textDark },
   input: {
-    backgroundColor: COLORS.background, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border,
-    paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: COLORS.textDark, marginBottom: 10,
+    backgroundColor: c.background, borderRadius: 10, borderWidth: 1, borderColor: c.border,
+    paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: c.textDark, marginBottom: 10,
   },
   dateBtn: {
     flexDirection: "row", alignItems: "center", gap: 8,
-    backgroundColor: COLORS.background, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border,
+    backgroundColor: c.background, borderRadius: 10, borderWidth: 1, borderColor: c.border,
     paddingHorizontal: 12, paddingVertical: 10, marginBottom: 10,
   },
-  dateBtnText: { flex: 1, fontSize: 14, color: COLORS.textDark, fontWeight: "600" },
+  dateBtnText: { flex: 1, fontSize: 14, color: c.textDark, fontWeight: "600" },
   zeitRow: { flexDirection: "row", gap: 10 },
   wiederholToggle: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 },
-  wiederholToggleText: { fontSize: 14, fontWeight: "600", color: COLORS.textDark },
+  wiederholToggleText: { fontSize: 14, fontWeight: "600", color: c.textDark },
   wiederholOptionen: { marginBottom: 4 },
   wiederholAnzahlRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10, gap: 10 },
-  wiederholAnzahlLabel: { fontSize: 13, color: COLORS.textMuted, flex: 1 },
+  wiederholAnzahlLabel: { fontSize: 13, color: c.textMuted, flex: 1 },
   wiederholAnzahlInput: {
-    backgroundColor: COLORS.background, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border,
-    paddingHorizontal: 12, paddingVertical: 8, fontSize: 14, color: COLORS.textDark, width: 56, textAlign: "center",
+    backgroundColor: c.background, borderRadius: 10, borderWidth: 1, borderColor: c.border,
+    paddingHorizontal: 12, paddingVertical: 8, fontSize: 14, color: c.textDark, width: 56, textAlign: "center",
   },
   saveBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
     borderRadius: 12, paddingVertical: 12, marginTop: 4,
   },
-  saveBtnText: { color: "#FFFFFF", fontWeight: "700", fontSize: 14 },
+  saveBtnText: { color: c.onAccent, fontWeight: "700", fontSize: 14 },
 
   empty: { alignItems: "center", paddingTop: 48, gap: 12 },
   emptyIcon: { fontSize: 48 },
-  emptyText: { fontSize: 15, color: COLORS.textMuted, textAlign: "center", lineHeight: 22 },
+  emptyText: { fontSize: 15, color: c.textMuted, textAlign: "center", lineHeight: 22 },
 });
