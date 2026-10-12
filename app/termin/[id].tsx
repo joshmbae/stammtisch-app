@@ -17,7 +17,7 @@ import { PhotoBand } from "../../components/termin/PhotoBand";
 import { PhaseStepper } from "../../components/termin/PhaseStepper";
 import { StartLeiste, VorherView } from "../../components/termin/VorherView";
 import { DanachView } from "../../components/termin/DanachView";
-import { LiveAlt } from "../../components/termin/LiveAlt";
+import { BeendenLeiste, LiveView } from "../../components/termin/live/LiveView";
 import { TerminEditSheet } from "../../components/termin/TerminEditSheet";
 
 const uhr = (d: Date) => d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
@@ -68,8 +68,11 @@ export default function TerminScreen() {
   const heute = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const tageBis = Math.round((tag.getTime() - heute.getTime()) / 86_400_000);
   const ort = termin.ort || abend.verordnung.treffpunkt;
-  const untertitel = phase === "live"
+  // Im grünen Live-Band steht der Timer daneben, dort reicht Datum und Ort.
+  const untertitel = phase === "live" && zeige !== "live"
     ? [`läuft seit ${uhr(start ?? now)}`, ort].filter(Boolean).join(" · ")
+    : phase === "live"
+      ? [formatWochentagDatum(tag, true), ort].filter(Boolean).join(" · ")
     : phase === "danach"
       ? [formatWochentagDatum(tag, true), ort, `${termin.anwesenheit?.length ?? 0} da`].filter(Boolean).join(" · ")
       : [formatWochentagDatum(tag, true), tageBis === 0 ? "heute" : tageBis === 1 ? "morgen" : `in ${tageBis} Tagen`].join(" · ");
@@ -93,18 +96,24 @@ export default function TerminScreen() {
             onRemove={abend.bildEntfernen}
             onBack={zurueck}
             onEdit={() => setBearbeiten(true)}
+            live={phase === "live" && zeige === "live" ? { start: start ?? now, now } : undefined}
           />
           <OfflineBanner />
           <PhaseStepper phase={phase} ansicht={zeige} onChange={setAnsicht} />
           <View style={styles.inhalt}>
             {zeige === "vorher" ? <VorherView abend={abend} now={now} start={start} /> : null}
-            {zeige === "live" ? <LiveAlt abend={abend} /> : null}
+            {zeige === "live" ? <LiveView abend={abend} start={start} now={now} /> : null}
             {zeige === "danach" ? <DanachView abend={abend} start={start} /> : null}
           </View>
         </ScrollView>
         {zeige === "vorher" && phase === "vorher" ? (
           <View style={{ paddingBottom: Math.max(insets.bottom, 12), backgroundColor: c.background }}>
             <StartLeiste abend={abend} now={now} start={start} />
+          </View>
+        ) : null}
+        {zeige === "live" && phase === "live" ? (
+          <View style={{ paddingBottom: Math.max(insets.bottom, 12), backgroundColor: c.background }}>
+            <BeendenLeiste abend={abend} />
           </View>
         ) : null}
       </KeyboardAvoidingView>

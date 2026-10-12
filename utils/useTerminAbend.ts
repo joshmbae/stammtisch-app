@@ -194,6 +194,21 @@ export function useTerminAbend(id: string) {
     setTermin((prev) => (prev ? { ...prev, anwesenheit: updated } : prev));
   }
 
+  /** Live: jemand ist da bzw. doch nicht (für jedes Mitglied, nicht nur sich selbst). */
+  async function anwesenheitSetzen(memberId: string, da: boolean) {
+    if (!termin) return;
+    setTermin((prev) => prev ? {
+      ...prev,
+      anwesenheit: da ? [...(prev.anwesenheit ?? []).filter((x) => x !== memberId), memberId] : (prev.anwesenheit ?? []).filter((x) => x !== memberId),
+      absagen: (prev.absagen ?? []).filter((x) => x !== memberId),
+    } : prev);
+    try {
+      await setRsvpStatus(termin.id, memberId, da ? "ja" : null);
+    } finally {
+      await frischerTermin();
+    }
+  }
+
   async function alleAnwesend() {
     if (!termin) return;
     const alle = (termin.anwesenheit ?? []).length === members.length;
@@ -211,6 +226,12 @@ export function useTerminAbend(id: string) {
       terminId: termin.id,
     });
     setVerspätungMap((prev) => dedupeInsert(prev, log, memberId));
+  }
+
+  /** Zu spät gekommen: Verspätung festhalten und, falls es eine Kategorie dafür gibt, die Strafe dazu. */
+  async function verspätungMitStrafe(memberId: string, minuten: number, kategorie?: StrafKategorieDef) {
+    await verspätungEintragen(memberId, minuten);
+    if (kategorie) await strafeEintragen(memberId, kategorie, kategorie.betrag, `${minuten} Min.`);
   }
 
   async function verspätungLöschen(memberId: string, logId: string) {
@@ -415,7 +436,7 @@ export function useTerminAbend(id: string) {
     activeMemberId,
     termin, members, verordnung, protokoll, agendaText, strafKategorien,
     verspätungMap, strafMap, spielLogMap, aktivesSpiel, ereignisTypen, uploadingBild, rechnung,
-    rsvp, anwesenheitUmschalten, alleAnwesend, verspätungEintragen, verspätungLöschen,
+    rsvp, anwesenheitUmschalten, anwesenheitSetzen, alleAnwesend, verspätungEintragen, verspätungMitStrafe, verspätungLöschen,
     spielEreignisEintragen, spielEreignisLöschen,
     strafeEintragen, strafeBeglichenUmschalten, strafeLöschen,
     bildHochladen, bildEntfernen, speichern, löschen, agendaSpeichern, abendStarten, abendBeenden,
