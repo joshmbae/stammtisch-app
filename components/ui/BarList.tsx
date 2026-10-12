@@ -12,6 +12,8 @@ export interface BarRow {
   display: string;
   leading?: React.ReactNode;
   trailing?: React.ReactNode;
+  /** Ganz rechts hinter dem Wert, z. B. Status oder ein Knopf. */
+  after?: React.ReactNode;
 }
 
 /** Waagerechte Balken pro Person; die Breite wächst beim Erscheinen. */
@@ -21,7 +23,7 @@ export function BarList({ rows, color, max }: { rows: BarRow[]; color: string; m
   return (
     <View>
       {rows.map((r, i) => (
-        <View key={r.id} style={[styles.row, i > 0 && styles.rowLine]} accessible accessibilityLabel={`${r.label}: ${r.display}`}>
+        <View key={r.id} style={[styles.row, i > 0 && styles.rowLine]} accessible={!r.after} accessibilityLabel={`${r.label}: ${r.display}`}>
           {r.leading}
           <View style={styles.nameCol}>
             <View style={styles.nameRow}>
@@ -32,6 +34,7 @@ export function BarList({ rows, color, max }: { rows: BarRow[]; color: string; m
           </View>
           <Balken anteil={r.value / top} color={color} delay={i * 70} />
           <Text style={styles.value}>{r.display}</Text>
+          {r.after}
         </View>
       ))}
     </View>

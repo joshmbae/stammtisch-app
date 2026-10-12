@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { ScrollView, Share, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, ScrollView, Share, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeIn } from "react-native-reanimated";
@@ -12,9 +12,10 @@ import { hauptEreignis } from "../../utils/spiel";
 import { formatWochentagDatum } from "../../utils/date";
 import { displayName, formatEuro } from "../../utils/format";
 import { useFuehrende } from "../../utils/useFuehrende";
-import { Avatar, BarList, BarRow, Button, Card, Emoji, IconSquircle, Krone, PressableScale, Ring, Ton, tonFarben } from "../ui";
+import { useSession } from "../../contexts/SessionContext";
+import { showAlert } from "../../utils/alert";
+import { Avatar, BarList, BarRow, Button, Card, Emoji, IconSquircle, Krone, PressableScale, Ring, Ton, haptik, tonFarben } from "../ui";
 import { SYMBOL } from "../../constants/symbole";
-import { MeineStrafenKarte } from "./MeineStrafenKarte";
 
 const euro = (n: number) => `${formatEuro(n).replace(",00", "")} €`;
 
@@ -34,6 +35,8 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const fuehrende = useFuehrende();
+  const { activeMemberId } = useSession();
+  const [zahltGerade, setZahltGerade] = useState(false);
   const t = abend.termin!;
   const strafLogs = useMemo(() => Object.values(abend.strafMap).flat(), [abend.strafMap]);
   const spielLogs = useMemo(() => Object.values(abend.spielLogMap).flat(), [abend.spielLogMap]);
@@ -57,6 +60,26 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
     });
   }
 
+  function zahlen(offen: typeof strafLogs, betrag: number) {
+    showAlert(`${euro(betrag)} begleichen?`, `${offen.length} ${offen.length === 1 ? "Strafe von heute wird" : "Strafen von heute werden"} als bezahlt markiert und in die Kasse gebucht.`, [
+      { text: "Abbrechen", style: "cancel" },
+      {
+        text: "Begleichen",
+        onPress: async () => {
+          setZahltGerade(true);
+          try {
+            await abend.meineStrafenBegleichen(offen);
+            haptik("erfolg");
+          } catch {
+            showAlert("Fehler", "Nicht alles konnte gespeichert werden. Bitte in der Kasse prüfen.");
+          } finally {
+            setZahltGerade(false);
+          }
+        },
+      },
+    ]);
+  }
+
   const kategorien: Kategorie[] = [];
   // Strafen abgeschaltet (Einstellungen) → keine Kachel, außer es gibt trotzdem welche.
   if (abend.verordnung.tabStrafenAktiv !== false || strafLogs.length > 0) {
@@ -67,10 +90,39 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
       const label = abend.strafKategorien.find((k) => k.id === l.kategorie)?.label ?? "Strafe";
       gruende.set(l.memberId, [...(gruende.get(l.memberId) ?? []), label]);
     }
+    // Pro Person: bezahlt (✓) oder offen; bei dir selbst mit offenen Strafen ein „Zahlen"-Knopf.
+    const offenVon = (id: string) => strafLogs.filter((l) => l.memberId === id && !l.beglichen);
+    const status = (id: string): React.ReactNode => {
+      const offen = offenVon(id);
+      if (offen.length === 0) {
+        return <Ionicons name="checkmark-circle" size={20} color={c.greenText} accessibilityLabel="bezahlt" />;
+      }
+      if (id !== activeMemberId) {
+        return <Text style={[styles.statusOffen, { color: c.coralText }]}>offen</Text>;
+      }
+      const betrag = offen.reduce((s, l) => s + l.betrag, 0);
+      return (
+        <PressableScale
+          onPress={() => zahlen(offen, betrag)}
+          disabled={zahltGerade}
+          scaleTo={0.94}
+          hitSlop={6}
+          style={[styles.zahlen, { backgroundColor: c.coral }]}
+          accessibilityRole="button"
+          accessibilityLabel={`Deine Strafen von heute begleichen, ${euro(betrag)}`}
+        >
+          {zahltGerade ? <ActivityIndicator size="small" color={c.onCoral} /> : <Text style={[styles.zahlenText, { color: c.onCoral }]}>Zahlen</Text>}
+        </PressableScale>
+      );
+    };
+    const offenSumme = strafLogs.filter((l) => !l.beglichen).reduce((s, l) => s + l.betrag, 0);
     kategorien.push({
       key: "strafen", label: "Strafen", wert: euro(stats.strafenSumme), ton: "blue", titel: "Strafen pro Kopf",
-      summe: strafLogs.length === 0 ? "keine" : `${strafLogs.length} ${strafLogs.length === 1 ? "Strafe" : "Strafen"} · ${euro(stats.strafenSumme)}`,
-      zeilen: zeilen(proKopf, euro, (id) => [...new Set(gruende.get(id))].join(", ")),
+      summe: strafLogs.length === 0 ? "keine"
+        : offenSumme === 0 ? `${euro(stats.strafenSumme)} · alles bezahlt`
+        : offenSumme === stats.strafenSumme ? `${euro(offenSumme)} offen`
+        : `${euro(stats.strafenSumme)} · ${euro(offenSumme)} offen`,
+      zeilen: zeilen(proKopf, euro, (id) => [...new Set(gruende.get(id))].join(", ")).map((r) => ({ ...r, after: status(r.id) })),
     });
   }
   const toene: Ton[] = ["mustard", "coral", "green", "blue"];
@@ -190,8 +242,6 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
         </>
       ) : null}
 
-      <MeineStrafenKarte abend={abend} />
-
       {stats.strafenOffen > 0 ? (
         <PressableScale onPress={() => router.push("/kasse?tab=strafen")} style={[styles.hinweis, { backgroundColor: c.coralSoft }]} accessibilityLabel={`${euro(stats.strafenOffen)} noch offen, in der Kasse abhaken`}>
           <View style={{ flex: 1 }}>
@@ -281,6 +331,9 @@ const makeStyles = (c: ThemeColors) =>
     meta: { ...TYPE.caption, fontSize: 13, color: c.textMuted },
     leer: { ...TYPE.body, fontSize: 14, color: c.textMuted, paddingVertical: 6 },
 
+    statusOffen: { fontFamily: FONT.w600, fontSize: 12, minWidth: 36, textAlign: "right" },
+    zahlen: { height: 28, minWidth: 60, paddingHorizontal: 10, borderRadius: RADIUS.pill, alignItems: "center", justifyContent: "center" },
+    zahlenText: { fontFamily: FONT.w600, fontSize: 13 },
     hinweis: { minHeight: 60, borderRadius: RADIUS.tile, paddingHorizontal: 16, paddingVertical: 12, flexDirection: "row", alignItems: "center", gap: 10 },
     hinweisTitel: { fontFamily: FONT.w700, fontSize: 16 },
     hinweisSub: { ...TYPE.caption, fontSize: 13, opacity: 0.9 },
