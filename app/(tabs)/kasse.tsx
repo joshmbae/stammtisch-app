@@ -250,7 +250,7 @@ export default function KasseScreen() {
   const styles = useThemedStyles(makeStyles);
   const TYP_META = useMemo(() => makeTypMeta(c), [c]);
   const { activeMemberId } = useSession();
-  const { eintragId } = useLocalSearchParams<{ eintragId?: string }>();
+  const { eintragId, neu, terminId: terminIdParam } = useLocalSearchParams<{ eintragId?: string; neu?: string; terminId?: string }>();
   const guard = useSingleFlight();
   const [eintraege, setEintraege] = useState<KassenEintrag[]>([]);
   const [members, setMembers] = useState<MemberProfile[]>([]);
@@ -265,6 +265,7 @@ export default function KasseScreen() {
   const [beschreibung, setBeschreibung] = useState("");
   const [bezahltVon, setBezahltVon] = useState<string | null>(null);
   const [teilnehmerIds, setTeilnehmerIds] = useState<string[]>([]);
+  const [formTerminId, setFormTerminId] = useState<string | null>(null);
 
   async function load() {
     const [k, ms, activity, termine] = await Promise.all([loadKasse(), loadMembers(), loadActivityFeed(300), loadTermine()]);
@@ -290,6 +291,17 @@ export default function KasseScreen() {
     if (!loading && eintragId && eintraege.some((e) => e.id === eintragId)) setDetailId(eintragId);
   }, [loading, eintragId]);
 
+  // Aus dem Termin: /kasse?neu=abendkosten&terminId=… öffnet die Rechnung mit
+  // Bezug zum Abend; wer da war, ist schon vorausgewählt.
+  useEffect(() => {
+    if (loading || neu !== "abendkosten") return;
+    const t = terminIdParam ? termineById.get(terminIdParam) : undefined;
+    openForm("abendkosten");
+    setFormTerminId(t?.id ?? null);
+    if (t) setTeilnehmerIds(t.anwesenheit ?? []);
+    router.setParams({ neu: undefined, terminId: undefined });
+  }, [loading, neu, terminIdParam]);
+
   const detailEintrag = detailId ? eintraege.find((e) => e.id === detailId) ?? null : null;
 
   const kassenEintraege = eintraege.filter((e) => e.typ !== "abendkosten");
@@ -304,6 +316,7 @@ export default function KasseScreen() {
     setBeschreibung("");
     setBezahltVon(null);
     setTeilnehmerIds([]);
+    setFormTerminId(null);
     setActiveForm(typ);
   }
 
@@ -338,7 +351,7 @@ export default function KasseScreen() {
       betrag: parsed,
       beschreibung: beschreibung.trim() || undefined,
       bezahltVon: activeForm === "abendkosten" ? bezahltVon ?? undefined : undefined,
-      terminId: undefined,
+      terminId: formTerminId ?? undefined,
       datum: new Date().toISOString(),
       teilnehmerIds: activeForm === "abendkosten" ? finalTeilnehmer : undefined,
       beglichenIds: activeForm === "abendkosten" ? [] : undefined,
@@ -350,6 +363,7 @@ export default function KasseScreen() {
       actionType:
         eintrag.typ === "abendkosten" ? "abendkosten_created" :
         eintrag.typ === "einnahme" ? "kasse_einnahme_created" : "kasse_ausgabe_created",
+      terminId: eintrag.terminId,
       refId: eintrag.id,
       meta: {
         betrag: eintrag.betrag,

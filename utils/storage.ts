@@ -806,22 +806,24 @@ export async function addTermine(
 }
 
 function terminPatchToRow(partial: Partial<StammtischTermin>): Record<string, unknown> {
+  // `in` statt `!== undefined`: ein explizit auf undefined gesetztes Feld
+  // (z. B. Bild entfernen, Ort geleert) wird als null gespeichert.
   const patch: Record<string, unknown> = {};
-  if (partial.art !== undefined) patch.art = partial.art;
-  if (partial.titel !== undefined) patch.titel = partial.titel ?? null;
-  if (partial.datum !== undefined) patch.datum = partial.datum;
-  if (partial.datumBis !== undefined) patch.datum_bis = partial.datumBis ?? null;
-  if (partial.startZeit !== undefined) patch.start_zeit = partial.startZeit ?? null;
-  if (partial.endZeit !== undefined) patch.end_zeit = partial.endZeit ?? null;
-  if (partial.ort !== undefined) patch.ort = partial.ort ?? null;
-  if (partial.notizen !== undefined) patch.notizen = partial.notizen ?? null;
-  if (partial.aktiv !== undefined) patch.aktiv = partial.aktiv;
-  if (partial.startedAt !== undefined) patch.started_at = partial.startedAt ?? null;
-  if (partial.endedAt !== undefined) patch.ended_at = partial.endedAt ?? null;
-  if (partial.anwesenheit !== undefined) patch.anwesenheit = partial.anwesenheit;
-  if (partial.absagen !== undefined) patch.absagen = partial.absagen;
-  if (partial.absageGruende !== undefined) patch.absage_gruende = partial.absageGruende;
-  if (partial.bildUrl !== undefined) patch.bild_url = partial.bildUrl ?? null;
+  if ("art" in partial) patch.art = partial.art;
+  if ("titel" in partial) patch.titel = partial.titel ?? null;
+  if ("datum" in partial) patch.datum = partial.datum;
+  if ("datumBis" in partial) patch.datum_bis = partial.datumBis ?? null;
+  if ("startZeit" in partial) patch.start_zeit = partial.startZeit ?? null;
+  if ("endZeit" in partial) patch.end_zeit = partial.endZeit ?? null;
+  if ("ort" in partial) patch.ort = partial.ort ?? null;
+  if ("notizen" in partial) patch.notizen = partial.notizen ?? null;
+  if ("aktiv" in partial) patch.aktiv = partial.aktiv;
+  if ("startedAt" in partial) patch.started_at = partial.startedAt ?? null;
+  if ("endedAt" in partial) patch.ended_at = partial.endedAt ?? null;
+  if ("anwesenheit" in partial) patch.anwesenheit = partial.anwesenheit;
+  if ("absagen" in partial) patch.absagen = partial.absagen;
+  if ("absageGruende" in partial) patch.absage_gruende = partial.absageGruende;
+  if ("bildUrl" in partial) patch.bild_url = partial.bildUrl ?? null;
   return patch;
 }
 

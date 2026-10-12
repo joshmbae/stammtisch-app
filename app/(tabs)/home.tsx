@@ -114,8 +114,8 @@ export default function HomeScreen() {
     const rangl = computeRanglisten(daten, jahr);
     const fuehrende = fuehrendeTitel(daten, jahr);
 
-    // Aktives Spiel (sonst das erste mit Ereignissen), Hauptereignis zuerst.
-    const spiel = daten.spiele.find((s) => s.spiel.id === verordnung?.aktivesSpielId) ?? daten.spiele.find((s) => s.ereignisTypen.length > 0);
+    // Nur das in den Einstellungen gewählte Spiel; „kein Spiel" ist eine bewusste Wahl.
+    const spiel = daten.spiele.find((s) => s.spiel.id === verordnung?.aktivesSpielId);
     const haupt = spiel ? hauptEreignis(spiel.ereignisTypen) : null;
     const spielTypen: SpielEreignisTyp[] = spiel && haupt
       ? [haupt, ...[...spiel.ereignisTypen].filter((t) => t.id !== haupt.id).sort((a, b) => a.reihenfolge - b.reihenfolge)]

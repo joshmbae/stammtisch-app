@@ -20,10 +20,8 @@ import {
   loadAllStrafLogs,
   loadStrafKategorien,
   addStrafLog,
-  updateStrafLog,
   deleteStrafLog,
   logActivity,
-  addKassenEintrag,
 } from "../utils/storage";
 import { SHADOWS, ThemeColors, FONT } from "../constants/design";
 import { useColors, useThemedStyles } from "../contexts/ThemeContext";
@@ -31,6 +29,7 @@ import { BackButton } from "../components/BackButton";
 import LoadingSpinner from "../components/LoadingSpinner";
 import ErrorState from "../components/ErrorState";
 import OfflineBanner from "../components/OfflineBanner";
+import { setStrafeBeglichen } from "../utils/strafenActions";
 import { useScreenLoad } from "../utils/useScreenLoad";
 import { useSession } from "../contexts/SessionContext";
 import { formatEuro, getInitial } from "../utils/format";
@@ -88,27 +87,12 @@ export default function StrafenScreen() {
 
   async function handleToggleBeglichen(log: StrafLog) {
     const next = !log.beglichen;
-    await updateStrafLog(log.memberId, log.id, { beglichen: next });
+    await setStrafeBeglichen(log, next, {
+      memberName: membersById.get(log.memberId)?.name,
+      kategorieLabel: katMeta(log.kategorie, strafKategorien)?.label,
+      actorMemberId: activeMemberId,
+    });
     setLogs((prev) => prev.map((l) => l.id === log.id ? { ...l, beglichen: next } : l));
-    if (next) {
-      const member = membersById.get(log.memberId);
-      const kat = katMeta(log.kategorie, strafKategorien);
-      await addKassenEintrag({
-        typ: "einnahme",
-        betrag: log.betrag,
-        beschreibung: `Strafe beglichen: ${member?.name ?? "Unbekannt"} – ${kat?.label ?? log.kategorie}`,
-        terminId: log.terminId,
-        datum: new Date().toISOString(),
-      });
-      await logActivity({
-        actorMemberId: activeMemberId ?? undefined,
-        subjectMemberId: log.memberId,
-        actionType: "straf_log_beglichen",
-        terminId: log.terminId,
-        refId: log.id,
-        meta: { betrag: log.betrag, kategorie: log.kategorie },
-      });
-    }
   }
 
   function toggleAddForm() {

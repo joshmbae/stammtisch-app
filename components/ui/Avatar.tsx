@@ -28,6 +28,7 @@ export function initial(name: string) {
  * Profilbild oder Initiale auf der Mitgliedsfarbe. Ab 28 px trägt es das
  * Führungs-Badge: ein Emoji der Wertung auf ihrer Tönung, bei mehreren
  * Führungen zusätzlich „+N" — nach rechts außen, damit die Initiale frei bleibt.
+ * Unter 36 px nur das Badge, sonst ragt „+N" in den Namen daneben.
  */
 export function Avatar({ name, color, photoUri, size = 40, fuehrt, absent, ringColor, highlight }: Props) {
   const styles = useThemedStyles(makeStyles);
@@ -74,7 +75,7 @@ export function Avatar({ name, color, photoUri, size = 40, fuehrt, absent, ringC
           >
             <Text style={{ fontSize: Math.round(badgeSize * 0.56) }} maxFontSizeMultiplier={1}>{badge[0].emoji}</Text>
           </View>
-          {badge.length > 1 ? (
+          {badge.length > 1 && size >= 36 ? (
             <View style={[styles.mehr, { height: badgeSize * 0.8, borderRadius: badgeSize, borderColor: ring }]}>
               <Text style={styles.mehrText} maxFontSizeMultiplier={1}>{`+${badge.length - 1}`}</Text>
             </View>
