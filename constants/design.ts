@@ -7,8 +7,6 @@ import type { TextStyle } from "react-native";
 // Regeln:
 // - Komponenten nutzen nur Rollen aus der Palette, keine Hex-Werte.
 // - Text auf Farbflächen kommt aus dem passenden `on…`-Token, nie „weiß“ per Annahme.
-// - Die alten Schlüssel (background, blue, gold, …) bleiben erhalten, damit noch
-//   nicht umgebaute Screens automatisch die neuen Farben bekommen.
 
 export const LIGHT_COLORS = {
   // Flächen
@@ -19,44 +17,27 @@ export const LIGHT_COLORS = {
 
   // Markenfarben (alte Rollen, auf Kombi umgestellt)
   blue:          "#2D4F9E",      // Primär: Links, aktive Elemente, Flächen mit onAccent
-  blueDark:      "#1F3770",
-  blueLight:     "#5B80C4",
   blueBg:        "#E2E7F3",
   gold:          "#8A6A14",      // als Text auf Weiß lesbar (5,1:1); Fläche: mustard
   goldLight:     "#E2B347",
-  goldBg:        "#F3E3B5",
 
   // Text
   textDark:      "#1C1B19",      // Tinte
   textMid:       "#4F4A40",
   textMuted:     "#6E685D",
   textLight:     "#8A8478",      // nur Platzhalter/Deko, nie für Fließtext
-  onAccent:      "#FFFFFF",      // Text/Icons auf blue, danger, success, purple
+  onAccent:      "#FFFFFF",      // Text/Icons auf blue und success
   onAvatar:      "#FFFFFF",      // Initialen auf Avatarfarben
 
   // Borders & Divider
   border:        "#E6E0D4",
   borderDark:    "#D9D2C4",
 
-  // Bier-Farben (für Bier-Typen)
-  bierHelles:    "#F5C842",
-  bierWeißbier:  "#E8D5A0",
-  bierDunkles:   "#8B4513",
-  bierRadler:    "#A8D870",
-  bierMaß:       "#D4A017",
-  bierSonstiges: "#9B8B6E",
-
   // Status
-  danger:        "#A94B36",      // Fläche mit onAccent und Text auf Weiß
   dangerBg:      "#F6DCD3",
   dangerText:    "#963F2C",      // Text auf dangerBg
   success:       "#2F7A4D",
-  successBg:     "#E1EDE5",
-  successText:   "#24553F",      // Text auf successBg
-  warning:       "#A35A0B",
-
-  // Termin-Art "Veranstaltung"
-  purple:        "#6E4A8E",
+  successText:   "#24553F",      // Text auf greenSoft
 
   // Overlays (Modals, Sheets)
   overlay:       "rgba(28,27,25,0.5)",
@@ -91,15 +72,9 @@ export const LIGHT_COLORS = {
   onCoral:       "#FFFFFF",
   coralSoft:     "#F6DCD3",
   coralText:     "#963F2C",
-  coralEdge:     "transparent",
   greenSoft:     "#E1EDE5",
   greenText:     "#24553F",
   glowOpacity:   0,              // Hell: kein Leuchten
-
-  // Diagramme (Ranglisten-Verlauf)
-  chartSeries:   ["#2D4F9E", "#C9614A", "#2F7A4D"],
-  chartMuted:    "#D9D2C4",
-  chartGrid:     "#ECE6DB",
 };
 
 export type ThemeColors = typeof LIGHT_COLORS;
@@ -116,12 +91,9 @@ export const DARK_COLORS: ThemeColors = {
   hairline:      "rgba(255,255,255,0.08)",
 
   blue:          "#4D7CFF",      // Elektroblau: Text auf Karte 4,9:1, Fläche mit dunklem Text
-  blueDark:      "#0F1424",
-  blueLight:     "#7C9DFF",
   blueBg:        "#121A33",
   gold:          "#FFC93C",
   goldLight:     "#FFC93C",
-  goldBg:        "#2A2108",
 
   textDark:      "#F4F6FB",
   textMid:       "#B5BBCB",
@@ -133,22 +105,12 @@ export const DARK_COLORS: ThemeColors = {
   border:        "#232733",
   borderDark:    "#2E3340",
 
-  bierHelles:    "#F5C842",
-  bierWeißbier:  "#E8D5A0",
-  bierDunkles:   "#B0652B",
-  bierRadler:    "#A8D870",
-  bierMaß:       "#D4A017",
-  bierSonstiges: "#9B8B6E",
 
-  danger:        "#FF6A4D",
   dangerBg:      "#2E1510",
   dangerText:    "#FF8A70",
   success:       "#3DDC97",
-  successBg:     "#0E2A1E",
   successText:   "#3DDC97",
-  warning:       "#FFA94D",
 
-  purple:        "#B59CFF",
 
   overlay:       "rgba(0,0,0,0.7)",
 
@@ -179,24 +141,13 @@ export const DARK_COLORS: ThemeColors = {
   onCoral:       "#0A0B0F",
   coralSoft:     "#2E1510",
   coralText:     "#FF8A70",
-  coralEdge:     "rgba(255,106,77,0.55)",
   greenSoft:     "#0E2A1E",
   greenText:     "#3DDC97",
   glowOpacity:   0.6,
 
-  chartSeries:   ["#4D7CFF", "#FF6A4D", "#3DDC97"],
-  chartMuted:    "#2E3340",
-  chartGrid:     "#1B1E27",
 };
 
 export const SHADOWS = {
-  card: {
-    shadowColor: "#1C1B19",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 2,
-  },
   light: {
     shadowColor: "#1C1B19",
     shadowOffset: { width: 0, height: 1 },

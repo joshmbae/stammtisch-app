@@ -1,9 +1,8 @@
 // Gemeinsame Bausteine des Kombi-Designs. Screens importieren von hier.
 export { PressableScale, haptik } from "./PressableScale";
 export type { HapticArt } from "./PressableScale";
-export { Card, CardGap } from "./Card";
+export { Card } from "./Card";
 export { SectionLabel } from "./SectionLabel";
-export { StatNumber } from "./StatNumber";
 export { Avatar, AvatarStack, initial } from "./Avatar";
 export { Chip, StatusPill } from "./Chip";
 export { IconSquircle } from "./IconSquircle";

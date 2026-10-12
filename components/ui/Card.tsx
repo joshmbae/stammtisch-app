@@ -65,11 +65,6 @@ function teileLayout(style: ViewStyle) {
   return { aussen, innen };
 }
 
-/** Für Inhalte, die keine eigene Karte brauchen, aber den Kartenabstand. */
-export function CardGap() {
-  return <View style={{ height: 12 }} />;
-}
-
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     card: {
