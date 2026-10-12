@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { MemberProfile, Spiel, StammtischVerordnung, StrafKategorieDef } from "../../types";
-import { loadMembers, loadSpiele, loadStrafKategorien, loadVerordnung } from "../../utils/storage";
+import { MemberProfile, StammtischVerordnung } from "../../types";
+import { loadMembers, loadVerordnung } from "../../utils/storage";
 import { formatDauer, formatGruendungMonat, gruendungsDauer, displayName } from "../../utils/format";
 import { useScreenLoad } from "../../utils/useScreenLoad";
 import { useFuehrende } from "../../utils/useFuehrende";
@@ -32,8 +32,8 @@ import { SYMBOL } from "../../constants/symbole";
 
 
 /**
- * „Die Runde": wer dazugehört, was uns ausmacht und alles, was früher im
- * Menü stand (Satzung, Protokolle, Strafenkatalog, Spiele, Einstellungen).
+ * „Die Runde": wer dazugehört, was uns ausmacht, Satzung, Protokolle und der
+ * Weg in die Einstellungen (dort liegen auch Strafenkatalog und Spiele).
  */
 export default function RundeScreen() {
   const { colors: c, preference, setPreference } = useTheme();
@@ -42,15 +42,11 @@ export default function RundeScreen() {
   const fuehrende = useFuehrende();
   const [members, setMembers] = useState<MemberProfile[]>([]);
   const [verordnung, setVerordnung] = useState<StammtischVerordnung | null>(null);
-  const [kategorien, setKategorien] = useState<StrafKategorieDef[]>([]);
-  const [spiele, setSpiele] = useState<Spiel[]>([]);
 
   const { loading, refreshing, error, onRefresh, retry } = useScreenLoad(async () => {
-    const [ms, v, kats, sp] = await Promise.all([loadMembers(), loadVerordnung(), loadStrafKategorien(), loadSpiele()]);
+    const [ms, v] = await Promise.all([loadMembers(), loadVerordnung()]);
     setMembers([...ms].sort((a, b) => displayName(a).localeCompare(displayName(b), "de")));
     setVerordnung(v);
-    setKategorien(kats);
-    setSpiele(sp);
   }, []);
 
   if (loading) return <LoadingSpinner />;
@@ -61,15 +57,13 @@ export default function RundeScreen() {
   const wannWo = [verordnung?.treffpunkt, [verordnung?.stammtischTag, verordnung?.stammtischzeit].filter(Boolean).join(" ")]
     .filter(Boolean)
     .join(" · ");
-  const aktivesSpiel = spiele.find((s) => s.id === verordnung?.aktivesSpielId);
   const regeln = verordnung?.regeln?.filter((r) => r.trim()).length ?? 0;
 
   const mehr: { label: string; info: string; emoji: string; ton: Ton; route: string }[] = [
     { label: "Satzung", info: regeln ? `${regeln} ${regeln === 1 ? "Regel" : "Regeln"}` : "noch leer", emoji: SYMBOL.satzung, ton: "blue", route: "/satzung" },
     { label: "Protokolle", info: "pro Termin", emoji: SYMBOL.protokoll, ton: "green", route: "/protokolle" },
-    { label: "Strafenkatalog", info: `${kategorien.length} ${kategorien.length === 1 ? "Kategorie" : "Kategorien"}`, emoji: SYMBOL.strafenkatalog, ton: "coral", route: "/strafen-kategorien" },
-    { label: "Spiele", info: aktivesSpiel ? `aktiv: ${aktivesSpiel.name}` : `${spiele.length} angelegt`, emoji: SYMBOL.spiele, ton: "mustard", route: "/spiele" },
-    { label: "Einstellungen", info: "Grunddaten & Verwaltung", emoji: SYMBOL.einstellungen, ton: "neutral", route: "/einstellungen" },
+    // Strafenkatalog und Spiele gibt es nur in den Einstellungen (Strafen & Spiele).
+    { label: "Einstellungen", info: "Grunddaten, Strafenkatalog, Spiele", emoji: SYMBOL.einstellungen, ton: "neutral", route: "/einstellungen" },
   ];
 
   return (
