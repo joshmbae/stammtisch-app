@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { router, useLocalSearchParams } from "expo-router";
 import { KassenEintrag, StrafLog } from "../../types";
 import { useKasse } from "../../utils/useKasse";
-import { useStammtisch } from "../../contexts/StammtischContext";
+import { displayName } from "../../utils/format";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import ErrorState from "../../components/ErrorState";
 import OfflineBanner from "../../components/OfflineBanner";
@@ -25,7 +25,6 @@ type Tab = "uebersicht" | "strafen" | "rechnungen";
 export default function KasseScreen() {
   const params = useLocalSearchParams<{ tab?: string; memberId?: string; eintragId?: string; neu?: string; terminId?: string }>();
   const kasse = useKasse();
-  const { stammtischName } = useStammtisch();
   const [tab, setTab] = useState<Tab>("uebersicht");
   const [filter, setFilter] = useState<string | null>(null);
   const [eintrag, setEintrag] = useState<KassenEintrag | null>(null);
@@ -48,9 +47,12 @@ export default function KasseScreen() {
     router.setParams({ tab: undefined, memberId: undefined, eintragId: undefined, neu: undefined, terminId: undefined });
   }, [kasse.loading, params.tab, params.memberId, params.eintragId, params.neu]);
 
-  const ich = kasse.members.find((m) => m.id === kasse.activeMemberId);
-  const kassenwart = ich?.rollen?.some((r) => /kasse/i.test(r));
-  const untertitel = [stammtischName, kassenwart ? "du bist Kassenwart" : null].filter(Boolean).join(" · ");
+  // Unter dem Titel: wer die Kasse führt (statt des Anmeldenamens des Stammtischs).
+  const kassenwarte = kasse.members.filter((m) => m.rollen?.some((r) => /kasse/i.test(r)));
+  const ichBinKassenwart = kassenwarte.some((m) => m.id === kasse.activeMemberId);
+  const untertitel = ichBinKassenwart
+    ? "Du bist Kassenwart"
+    : kassenwarte.length > 0 ? `Kassenwart: ${kassenwarte.map(displayName).join(", ")}` : "";
   const offeneStrafen = kasse.strafen.filter((l) => !l.beglichen).length;
 
   return (

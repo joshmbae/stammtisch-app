@@ -15,7 +15,7 @@ const euro = (n: number) => `${formatEuro(n).replace(",00", "")} €`;
 const kurzDatum = (iso: string) => { const [, m, d] = iso.slice(0, 10).split("-"); return `${parseInt(d, 10)}.${parseInt(m, 10)}.`; };
 
 /** Kopf: Bild, Name, Rollen und die festen Angaben zur Person. */
-export function ProfilHero({ member, stammtischName }: { member: MemberProfile; stammtischName?: string | null }) {
+export function ProfilHero({ member }: { member: MemberProfile }) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const hell = c.heroStyle === "fill";
@@ -35,7 +35,7 @@ export function ProfilHero({ member, stammtischName }: { member: MemberProfile; 
         </View>
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={[styles.heroName, { color: c.onHeroBlue }]} numberOfLines={2} maxFontSizeMultiplier={MAX_FONT_SCALE} accessibilityRole="header">{member.name}</Text>
-          <Text style={[styles.heroRolle, { color: c.heroBlueSub }]} numberOfLines={2}>{[member.rollen.join(", "), stammtischName].filter(Boolean).join(" · ")}</Text>
+          <Text style={[styles.heroRolle, { color: c.heroBlueSub }]} numberOfLines={2}>{member.rollen.join(", ")}</Text>
         </View>
       </View>
       <View style={[styles.heroTrenner, { backgroundColor: hell ? "rgba(255,255,255,0.18)" : c.hairline }]} />

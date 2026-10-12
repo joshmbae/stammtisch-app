@@ -6,7 +6,6 @@ import { StrafKategorieDef } from "../../types";
 import { FONT, RADIUS, ThemeColors } from "../../constants/design";
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { useSession } from "../../contexts/SessionContext";
-import { useStammtisch } from "../../contexts/StammtischContext";
 import { loadStrafKategorien } from "../../utils/storage";
 import { loadStatsDaten } from "../../utils/statsDaten";
 import { useScreenLoad } from "../../utils/useScreenLoad";
@@ -43,7 +42,6 @@ export default function ProfilScreen() {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const { activeMemberId } = useSession();
-  const { stammtischName } = useStammtisch();
   const [daten, setDaten] = useState<StatsDaten | null>(null);
   const [kategorien, setKategorien] = useState<StrafKategorieDef[]>([]);
   const [pinOffen, setPinOffen] = useState(false);
@@ -168,7 +166,7 @@ export default function ProfilScreen() {
         <Text style={styles.leer}>Dieses Mitglied gibt es nicht mehr.</Text>
       ) : (
         <>
-          <ProfilHero member={member} stammtischName={stammtischName} />
+          <ProfilHero member={member} />
           <FuehrtGerade fuehrungen={auswertung.fuehrungen} />
           <TitelKarte titel={auswertung.titel} />
           <BilanzKarte jahr={jahr} kacheln={auswertung.kacheln} />
