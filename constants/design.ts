@@ -44,6 +44,7 @@ export const LIGHT_COLORS = {
 
   // Navigation (Bottom-Leiste)
   tabBar:        "#1C1B19",
+  tabBarGlass:   "rgba(28,27,25,0.78)", // Leiste über Unschärfe: leicht durchsichtig
   tabActive:     "#E2B347",
   tabInactive:   "#F2EEE6",
   navBorder:     "transparent",
@@ -115,6 +116,7 @@ export const DARK_COLORS: ThemeColors = {
   overlay:       "rgba(0,0,0,0.7)",
 
   tabBar:        "#14161D",
+  tabBarGlass:   "rgba(20,22,29,0.72)",
   tabActive:     "#FFC93C",
   tabInactive:   "#B5BBCB",
   navBorder:     "rgba(255,255,255,0.10)",

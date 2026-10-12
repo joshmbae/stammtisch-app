@@ -11,7 +11,6 @@ import {
   StammtischVerordnung,
   StrafKategorieDef,
   StrafLog,
-  VerspätungLog,
 } from "../../types";
 import {
   loadActivityFeed,
@@ -43,7 +42,7 @@ import StammtischLogo from "../../components/StammtischLogo";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import ErrorState from "../../components/ErrorState";
 import OfflineBanner from "../../components/OfflineBanner";
-import { Button, Card, HeaderIconButton, IconSquircle, Screen } from "../../components/ui";
+import { Avatar, Button, Card, HeaderIconButton, IconSquircle, PressableScale, Screen } from "../../components/ui";
 import { HeroCard, RsvpStatus } from "../../components/home/HeroCard";
 import { BilanzRow, BilanzWerte } from "../../components/home/BilanzRow";
 import { KasseTile } from "../../components/home/KasseTile";
@@ -177,6 +176,11 @@ export default function HomeScreen() {
           <Text style={styles.gruss} numberOfLines={1}>{begruessung(activeMember?.spitzname ?? activeMember?.name)}</Text>
         </View>
         <HeaderIconButton icon="notifications-outline" label={ungelesen ? "Chronik, neue Einträge" : "Chronik"} dot={ungelesen} onPress={() => router.push("/feed")} />
+        {activeMember ? (
+          <PressableScale onPress={() => router.push(`/member/${activeMember.id}`)} hitSlop={6} accessibilityLabel="Mein Profil">
+            <Avatar name={activeMember.name} color={activeMember.avatarColor} photoUri={activeMember.photoUri} size={44} />
+          </PressableScale>
+        ) : null}
       </View>
 
       {members.length === 0 ? (
@@ -236,7 +240,6 @@ function bilanzFuer(
 ): BilanzWerte {
   const termineImJahr: StammtischTermin[] = daten.termine.filter((t) => t.datum.startsWith(jahr));
   const q = anwesenheitsQuote(termineImJahr, me.id, me.mitgliedSeit);
-  const vLogs: VerspätungLog[] = daten.verspätungLogs.filter((l) => l.memberId === me.id && l.datum.startsWith(jahr));
   const sLogs: StrafLog[] = daten.strafLogs.filter((l) => l.memberId === me.id && !l.beglichen);
   const spLogs: SpielLog[] = haupt ? daten.spielLogs.filter((l) => l.memberId === me.id && l.ereignisTypId === haupt.id && l.loggedAt.startsWith(jahr)) : [];
   const hauptListe = haupt ? rangl.find((l) => l.key === `spiel_${haupt.id}`) : undefined;
@@ -246,7 +249,6 @@ function bilanzFuer(
     dabei: q.count,
     abende: q.total,
     haupt: haupt ? { label: haupt.label, emoji: haupt.emoji, anzahl: spLogs.length, fuehrt: !!hauptListe && siegerIds(hauptListe).includes(me.id) } : null,
-    verspaetungMin: vLogs.reduce((s, l) => s + l.minutenVerspätet, 0),
     offen: sLogs.reduce((s, l) => s + l.betrag, 0),
   };
 }
