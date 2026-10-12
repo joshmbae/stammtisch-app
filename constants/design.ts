@@ -210,6 +210,8 @@ export const MOTION = {
   base: 280,
   slow: 600,
   stagger: 40,
+  /** Takt für wechselnde Anzeigen auf Home (Bilanz-Platzierung, Ranglisten). */
+  wechsel: 5000,
 } as const;
 
 // ─── Avatar-Farben für Mitglieder ─────────────────────────────────────────────

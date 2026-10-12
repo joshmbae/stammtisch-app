@@ -2,13 +2,11 @@ import React, { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useIsFocused } from "@react-navigation/native";
 import Animated, { Easing, FadeIn, useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withTiming } from "react-native-reanimated";
-import { FONT, MAX_FONT_SCALE, TYPE, ThemeColors, glow } from "../../constants/design";
+import { FONT, MAX_FONT_SCALE, MOTION, TYPE, ThemeColors, glow } from "../../constants/design";
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { FuehrenderTitel, Rangliste, RangEintrag } from "../../utils/stats";
 import { displayName } from "../../utils/format";
 import { Avatar, Card, IconSquircle, Krone, PressableScale, tonFuerRangliste } from "../ui";
-
-const WECHSEL_MS = 4000;
 const SAEULE_MAX = 112;
 const SAEULE_MIN = 40;
 /** Platz über der höchsten Säule für Krone, Avatar und Name. */
@@ -35,7 +33,7 @@ export function RanglisteRotator({ listen, jahr, fuehrende, onAlle }: {
 
   useEffect(() => {
     if (!fokus || reduce || angehalten || listen.length < 2) return;
-    const id = setInterval(() => setIndex((i) => (i + 1) % listen.length), WECHSEL_MS);
+    const id = setInterval(() => setIndex((i) => (i + 1) % listen.length), MOTION.wechsel);
     return () => clearInterval(id);
   }, [fokus, reduce, angehalten, listen.length]);
 

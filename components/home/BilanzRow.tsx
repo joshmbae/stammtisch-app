@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useIsFocused } from "@react-navigation/native";
 import Animated, { FadeIn, useReducedMotion } from "react-native-reanimated";
-import { FONT, MAX_FONT_SCALE, TYPE, ThemeColors } from "../../constants/design";
+import { FONT, MAX_FONT_SCALE, MOTION, TYPE, ThemeColors } from "../../constants/design";
 import { SYMBOL } from "../../constants/symbole";
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { Card, IconSquircle, Krone, Ring, SectionLabel, tonFuerRangliste } from "../ui";
@@ -24,8 +24,6 @@ export interface BilanzWerte {
   /** Eigene Plätze in den Ranglisten des Jahres, beste zuerst. */
   platzierungen: Platzierung[];
 }
-
-const WECHSEL_MS = 5000;
 const RING_GROESSE = 46;
 const SYMBOL_GROESSE = 28;
 
@@ -44,7 +42,7 @@ export function BilanzRow({ werte, onPress }: { werte: BilanzWerte; onPress: () 
 
   useEffect(() => {
     if (!fokus || reduce || anzahl < 2) return;
-    const id = setInterval(() => setIndex((i) => (i + 1) % anzahl), WECHSEL_MS);
+    const id = setInterval(() => setIndex((i) => (i + 1) % anzahl), MOTION.wechsel);
     return () => clearInterval(id);
   }, [fokus, reduce, anzahl]);
 
