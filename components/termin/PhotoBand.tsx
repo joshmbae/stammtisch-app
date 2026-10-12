@@ -25,6 +25,8 @@ interface Props {
 }
 
 const FOTO_HOEHE = 200;
+/** Ohne Foto deutlich flacher: nur Knöpfe oben, Titel unten. */
+const MOTIV_HOEHE = 124;
 
 /**
  * Kopf des Termins: mit Foto füllt es das Band (Tippen = groß ansehen), ohne
@@ -161,7 +163,7 @@ export function PhotoBand({ titel, untertitel, bildUrl, uploading, onUpload, onR
     : { bg: c.mustardSoft, kante: c.mustardEdge, text: c.textDark, sub: c.mustardText, ring: dunkel ? "rgba(255,201,60,0.08)" : "rgba(122,94,28,0.08)" };
   const hellerText = blau || dunkel;
   return (
-    <View style={[styles.motiv, { height: FOTO_HOEHE + insets.top, backgroundColor: flaeche.bg, borderBottomColor: flaeche.kante }]}>
+    <View style={[styles.motiv, { height: MOTIV_HOEHE + insets.top, backgroundColor: flaeche.bg, borderBottomColor: flaeche.kante }]}>
       <StatusBar style={hellerText ? "light" : "dark"} />
       <View style={[styles.motivRing, { borderColor: flaeche.ring }]} pointerEvents="none" />
       <Text style={styles.motivEmoji} maxFontSizeMultiplier={1} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">{motiv.emoji}</Text>
@@ -178,7 +180,7 @@ export function PhotoBand({ titel, untertitel, bildUrl, uploading, onUpload, onR
           </PressableScale>
         </View>
       </View>
-      <View style={[styles.titelAufFoto, { right: 116 }]}>
+      <View style={[styles.titelAufFoto, { right: 100 }]}>
         <Text style={[styles.titel, { color: flaeche.text }]} numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE} accessibilityRole="header">{titel}</Text>
         <Text style={[styles.unter, { color: flaeche.sub }]} numberOfLines={1}>{untertitel}</Text>
       </View>
@@ -212,9 +214,9 @@ const makeStyles = (c: ThemeColors) =>
     titel: { ...TYPE.title, fontSize: 26, color: c.textDark },
     unter: { fontFamily: FONT.w600, fontSize: 13, color: c.textMuted, marginTop: 2 },
     motiv: { overflow: "hidden", borderBottomWidth: 1 },
-    motivRing: { position: "absolute", width: 320, height: 320, borderRadius: 160, borderWidth: 48, right: -110, top: -90 },
-    // Großes Emoji als Bildersatz, angeschnitten am rechten Rand.
-    motivEmoji: { position: "absolute", right: -6, bottom: -14, fontSize: 132, lineHeight: 160, transform: [{ rotate: "-12deg" }] },
+    motivRing: { position: "absolute", width: 220, height: 220, borderRadius: 110, borderWidth: 34, right: -80, top: -80 },
+    // Emoji als Bildersatz unten rechts, unter den Knöpfen.
+    motivEmoji: { position: "absolute", right: 20, bottom: -6, fontSize: 64, lineHeight: 78, transform: [{ rotate: "-12deg" }] },
     rundGlasMotiv: { backgroundColor: "rgba(255,255,255,0.16)", borderColor: "rgba(255,255,255,0.18)" },
     vollbild: { flex: 1, backgroundColor: "rgba(12,11,10,0.94)", paddingHorizontal: 16, gap: 16 },
     vollKopf: { flexDirection: "row", alignItems: "center", gap: 12 },
