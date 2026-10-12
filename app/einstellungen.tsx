@@ -12,7 +12,7 @@ import { hashStammtischPassword } from "../utils/pin";
 import { displayName, formatGruendungMonat } from "../utils/format";
 import { useScreenLoad } from "../utils/useScreenLoad";
 import { FONT, TYPE, ThemeColors } from "../constants/design";
-import { ThemePreference, useTheme, useThemedStyles } from "../contexts/ThemeContext";
+import { ERSCHEINUNGSBILD_OPTIONEN, useTheme, useThemedStyles } from "../contexts/ThemeContext";
 import { useStammtisch } from "../contexts/StammtischContext";
 import { useSession } from "../contexts/SessionContext";
 import LoadingSpinner from "../components/LoadingSpinner";
@@ -33,11 +33,6 @@ import {
 import { SYMBOL } from "../constants/symbole";
 import { normalisiereZahlungsLink, zahlungsAnbieter } from "../utils/zahlungslink";
 
-const ERSCHEINUNGSBILD: { key: ThemePreference; label: string }[] = [
-  { key: "system", label: "System" },
-  { key: "light", label: "Hell" },
-  { key: "dark", label: "Dunkel" },
-];
 
 type Offen = "name" | "treffpunkt" | "tag" | "zahlung" | "gruendung" | "logo" | "satzung" | "rollen" | "spiel" | "loeschen" | null;
 
@@ -294,8 +289,8 @@ export default function EinstellungenScreen() {
       <FormSection title="Dieses Gerät">
         <ListGroup>
           <View style={styles.erscheinung}>
-            <ListRow title="Erscheinungsbild" value={ERSCHEINUNGSBILD.find((e) => e.key === preference)?.label} emoji={SYMBOL.erscheinungsbild} />
-            <SegmentedTabs variant="blue" items={ERSCHEINUNGSBILD} value={preference} onChange={setPreference} />
+            <ListRow title="Erscheinungsbild" value={ERSCHEINUNGSBILD_OPTIONEN.find((e) => e.key === preference)?.label} emoji={SYMBOL.erscheinungsbild} />
+            <SegmentedTabs variant="blue" items={ERSCHEINUNGSBILD_OPTIONEN} value={preference} onChange={setPreference} />
           </View>
           <ListRow
             title="Profil wechseln"

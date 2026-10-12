@@ -8,7 +8,6 @@ import { FONT, MAX_FONT_SCALE, RADIUS, TYPE, ThemeColors } from "../../constants
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { TerminAbend } from "../../utils/useTerminAbend";
 import { abendStats, ereignisGesamt } from "../../utils/abendStats";
-import { hauptEreignis } from "../../utils/spiel";
 import { formatWochentagDatum } from "../../utils/date";
 import { displayName, formatEuro } from "../../utils/format";
 import { useFuehrende } from "../../utils/useFuehrende";
@@ -42,7 +41,6 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
   const strafLogs = useMemo(() => Object.values(abend.strafMap).flat(), [abend.strafMap]);
   const spielLogs = useMemo(() => Object.values(abend.spielLogMap).flat(), [abend.spielLogMap]);
   const stats = abendStats(t, abend.members, strafLogs, spielLogs);
-  const haupt = hauptEreignis(abend.ereignisTypen);
   const byId = new Map(abend.members.map((m) => [m.id, m]));
 
   const avatar = (m: MemberProfile) => (
@@ -136,7 +134,8 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
     });
   });
 
-  const [gewaehlt, setGewaehlt] = useState<string>(haupt?.id ?? "strafen");
+  // Nach dem Abend zählt zuerst, wer was zahlen muss – deshalb startet die Ansicht bei den Strafen.
+  const [gewaehlt, setGewaehlt] = useState<string>("strafen");
   const kat = kategorien.find((k) => k.key === gewaehlt) ?? kategorien[0] as Kategorie | undefined;
   const volleFarbe = (ton: Ton) => ({
     blue: { bg: c.blue, fg: c.onAccent }, mustard: { bg: c.mustard, fg: c.onMustard },

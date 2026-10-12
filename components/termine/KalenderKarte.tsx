@@ -44,7 +44,7 @@ export function KalenderKarte({ termine, gewaehlt, onWaehlen }: {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const heute = toLocalIsoDate(new Date());
-  const [monat, setMonat] = useState(false);
+  const [monat, setMonat] = useState(true);
   const [bezug, setBezug] = useState(() => new Date());
 
   const tage: (Date | null)[] = useMemo(() => {

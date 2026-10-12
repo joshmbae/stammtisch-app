@@ -8,7 +8,7 @@ import { formatDauer, formatGruendungMonat, gruendungsDauer, displayName } from 
 import { useScreenLoad } from "../../utils/useScreenLoad";
 import { useFuehrende } from "../../utils/useFuehrende";
 import { TYPE, FONT, ThemeColors } from "../../constants/design";
-import { ThemePreference, useTheme, useThemedStyles } from "../../contexts/ThemeContext";
+import { ERSCHEINUNGSBILD_OPTIONEN, useTheme, useThemedStyles } from "../../contexts/ThemeContext";
 import { useStammtisch } from "../../contexts/StammtischContext";
 import StammtischLogo from "../../components/StammtischLogo";
 import LoadingSpinner from "../../components/LoadingSpinner";
@@ -30,11 +30,6 @@ import {
 import { SYMBOL } from "../../constants/symbole";
 
 
-const ERSCHEINUNGSBILD: { key: ThemePreference; label: string }[] = [
-  { key: "system", label: "System" },
-  { key: "light", label: "Hell" },
-  { key: "dark", label: "Dunkel" },
-];
 
 /**
  * „Die Runde": wer dazugehört, was uns ausmacht und alles, was früher im
@@ -148,7 +143,7 @@ export default function RundeScreen() {
       <Card enterIndex={3}>
         <SectionLabel>Erscheinungsbild</SectionLabel>
         <View style={{ marginTop: 10 }}>
-          <SegmentedTabs variant="light" items={ERSCHEINUNGSBILD} value={preference} onChange={setPreference} />
+          <SegmentedTabs variant="light" items={ERSCHEINUNGSBILD_OPTIONEN} value={preference} onChange={setPreference} />
         </View>
       </Card>
 

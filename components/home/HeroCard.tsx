@@ -25,21 +25,57 @@ interface Props {
   meinStatus: RsvpStatus;
   onRsvp: (s: RsvpStatus) => void;
   rsvpBusy?: boolean;
+  /** Umschalten zwischen nächstem und letztem Stammtisch (nicht während ein Abend läuft). */
+  umschalter?: { wert: HeroWahl; onChange: (w: HeroWahl) => void };
 }
+
+export type HeroWahl = "naechster" | "letzter";
 
 /**
  * Die große Karte oben auf Home, in drei Zuständen, die sich von selbst
- * ablösen: vor dem Abend (Countdown, zusagen), während des Abends (nur
- * Anzeige, Tippen öffnet den Termin) und am Tag danach (kurzes Fazit).
+ * ablösen: vor dem Abend (Countdown, zusagen), während des Abends (Tippen
+ * öffnet den Termin, die Kacheln direkt Strafen bzw. Spiel) und danach
+ * (kurzes Fazit). Die ganze Fläche öffnet den Termin; oben rechts lässt sich
+ * zwischen nächstem und letztem Stammtisch umschalten.
  */
 export function HeroCard(props: Props) {
   switch (props.hero.phase) {
     case "vorher": return <Vorher {...props} />;
     case "live": return <Live {...props} />;
     case "danach": return <Danach {...props} />;
-    default: return <Leer />;
+    default: return <Leer umschalter={props.umschalter} />;
   }
 }
+
+/** Kleiner Umschalter „Nächster · Letzter“ auf der Hero-Fläche. */
+function HeroUmschalter({ wert, onChange, hell }: { wert: HeroWahl; onChange: (w: HeroWahl) => void; hell: boolean }) {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
+  const optionen: { key: HeroWahl; label: string }[] = [{ key: "naechster", label: "Nächster" }, { key: "letzter", label: "Letzter" }];
+  return (
+    <View style={[styles.umschalter, { backgroundColor: hell ? "rgba(255,255,255,0.14)" : "rgba(28,27,25,0.08)" }]} accessibilityRole="tablist">
+      {optionen.map((o) => {
+        const aktiv = o.key === wert;
+        return (
+          <PressableScale
+            key={o.key}
+            onPress={() => onChange(o.key)}
+            haptic="leicht"
+            hitSlop={6}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: aktiv }}
+            accessibilityLabel={`${o.label} Stammtisch`}
+            style={[styles.umschalterOption, aktiv && { backgroundColor: c.card }]}
+          >
+            <Text style={[styles.umschalterText, { color: aktiv ? c.textDark : hell ? "rgba(255,255,255,0.85)" : c.textMid }]}>{o.label}</Text>
+          </PressableScale>
+        );
+      })}
+    </View>
+  );
+}
+
+const oeffne = (id: string, bereich?: "strafen" | "spiel") => router.push(bereich ? `/termin/${id}?bereich=${bereich}` : `/termin/${id}`);
 
 function useHeroFlaeche(art: "blau" | "live" | "senf"): ViewStyle {
   const c = useColors();
@@ -53,7 +89,7 @@ function useHeroFlaeche(art: "blau" | "live" | "senf"): ViewStyle {
 
 const zeitText = (d: Date) => d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
 
-function Vorher({ hero, now, members, stammtischzeit, meinStatus, onRsvp, rsvpBusy }: Props) {
+function Vorher({ hero, now, members, stammtischzeit, meinStatus, onRsvp, rsvpBusy, umschalter }: Props) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const flaeche = useHeroFlaeche("blau");
@@ -66,13 +102,16 @@ function Vorher({ hero, now, members, stammtischzeit, meinStatus, onRsvp, rsvpBu
   const abgesagt = meinStatus === "nein";
 
   return (
-    <View style={[styles.hero, flaeche]} accessibilityLabel="Nächster Stammtisch">
+    <PressableScale onPress={() => oeffne(t.id)} scaleTo={0.99} style={[styles.hero, flaeche]} accessibilityLabel={`Nächster Stammtisch, ${formatWochentagDatum(new Date(`${t.datum}T00:00:00`))}, öffnen`}>
       <View style={styles.row}>
-        <Text style={[styles.label, { color: c.heroBlueSub }]}>Nächster Stammtisch</Text>
-        <PressableScale onPress={() => router.push(`/termin/${t.id}`)} style={[styles.chip, { backgroundColor: halbTransparent }]} accessibilityLabel="Termin öffnen" hitSlop={8}>
-          <Text style={[styles.chipText, { color: c.onHeroBlue }]}>{`${formatWochentagDatum(new Date(`${t.datum}T00:00:00`))} · ${zeitText(start)}`}</Text>
-          <Ionicons name="chevron-forward" size={14} color={c.onHeroBlue} />
-        </PressableScale>
+        <View style={{ flex: 1, minWidth: 0, gap: 6 }}>
+          <Text style={[styles.label, { color: c.heroBlueSub }]}>Nächster Stammtisch</Text>
+          <View style={styles.datumZeile}>
+            <Text style={[styles.chipText, { color: c.onHeroBlue }]} numberOfLines={1}>{`${formatWochentagDatum(new Date(`${t.datum}T00:00:00`))} · ${zeitText(start)}`}</Text>
+            <Ionicons name="chevron-forward" size={14} color={c.onHeroBlue} />
+          </View>
+        </View>
+        {umschalter ? <HeroUmschalter {...umschalter} hell /> : null}
       </View>
       <FlipCountdown ziel={start} now={now} tileColor={c.heroBlueInner} digitColor={c.heroBlueSub} labelColor={c.onHeroBlue} />
       <View style={[styles.row, { gap: 12 }]}>
@@ -109,7 +148,7 @@ function Vorher({ hero, now, members, stammtischzeit, meinStatus, onRsvp, rsvpBu
           accessibilityLabel={abgesagt ? "Abgesagt. Tippen zum Zurücknehmen" : "Absagen"}
         />
       </View>
-    </View>
+    </PressableScale>
   );
 }
 
@@ -125,7 +164,7 @@ function Live({ hero, now, members, stats, stammtischzeit, spielTypen }: Props) 
   const akzent = c.heroStyle === "outline" ? c.liveAccent : c.heroBlueSub;
 
   return (
-    <PressableScale onPress={() => router.push(`/termin/${t.id}`)} scaleTo={0.98} style={[styles.hero, flaeche]} accessibilityLabel="Stammtisch läuft gerade, öffnen">
+    <PressableScale onPress={() => oeffne(t.id)} scaleTo={0.98} style={[styles.hero, flaeche]} accessibilityLabel="Stammtisch läuft gerade, öffnen">
       <View style={styles.row}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
           <PulseDot color={c.liveAccent} />
@@ -146,38 +185,48 @@ function Live({ hero, now, members, stats, stammtischzeit, spielTypen }: Props) 
         <Text style={[styles.bodyStrong, { color: c.onLive }]}>{`${amTisch.length} am Tisch`}</Text>
       </View>
       <View style={styles.row}>
-        <View style={styles.liveChip}>
+        {/* Direkt in den passenden Bereich des Live-Termins: ein Tipp bis zum Eintragen. */}
+        <PressableScale onPress={() => oeffne(t.id, "strafen")} scaleTo={0.96} style={styles.liveChip} accessibilityLabel="Strafe eintragen">
           <Text style={[styles.liveZahl, { color: c.onLive }]} maxFontSizeMultiplier={MAX_FONT_SCALE}>{`${formatEuro(stats?.strafenSumme ?? 0).replace(",00", "")} €`}</Text>
-          <Text style={[styles.small, { color: c.liveSub }]}>Strafen</Text>
-        </View>
+          <Text style={[styles.small, { color: c.liveSub, flex: 1 }]}>Strafen</Text>
+          <Ionicons name="add" size={18} color={c.onLive} />
+        </PressableScale>
         {haupt ? (
-          <View style={styles.liveChip}>
+          <PressableScale onPress={() => oeffne(t.id, "spiel")} scaleTo={0.96} style={styles.liveChip} accessibilityLabel={`${haupt.label} eintragen`}>
             <Text style={[styles.liveZahl, { color: c.onLive }]} maxFontSizeMultiplier={MAX_FONT_SCALE}>{stats ? ereignisGesamt(stats, haupt.id) : 0}</Text>
-            <Text style={[styles.small, { color: c.liveSub }]} numberOfLines={1}>{haupt.label}</Text>
-          </View>
+            <Text style={[styles.small, { color: c.liveSub, flex: 1 }]} numberOfLines={1}>{haupt.label}</Text>
+            <Ionicons name="add" size={18} color={c.onLive} />
+          </PressableScale>
         ) : null}
       </View>
     </PressableScale>
   );
 }
 
-function Danach({ hero, now, members, stats, spielTypen }: Props) {
+function Danach({ hero, now, members, stats, spielTypen, umschalter }: Props) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const flaeche = useHeroFlaeche("senf");
   if (hero.phase !== "danach" || !stats) return null;
   const t = hero.termin;
   const ende = terminEnde(t);
-  const gestern = ende.toDateString() !== now.toDateString();
   const tag = new Date(`${t.datum}T00:00:00`);
+  const vortag = new Date(now);
+  vortag.setDate(vortag.getDate() - 1);
+  // „Heute“/„Gestern“ davor; ältere Abende nur mit Datum (der Umschalter sagt schon „Letzter“).
+  const wann = ende.toDateString() === now.toDateString() ? "Heute · " : ende.toDateString() === vortag.toDateString() ? "Gestern · " : "";
+  const dunkel = c.heroStyle === "outline";
   const zeilen = spielTypen
     .slice(0, 2)
     .map((typ) => ({ typ, wer: meisteBei(stats, typ.id, members) }))
     .filter((z) => z.wer);
 
   return (
-    <View style={[styles.hero, flaeche]} accessibilityLabel="Rückblick auf den letzten Abend">
-      <Text style={[styles.label, { color: c.mustardText }]}>{`${gestern ? "Gestern" : "Heute"} · ${formatWochentagDatum(tag)}`}</Text>
+    <PressableScale onPress={() => oeffne(t.id)} scaleTo={0.99} style={[styles.hero, flaeche]} accessibilityLabel={`Rückblick auf den Stammtisch am ${formatWochentagDatum(tag)}, öffnen`}>
+      <View style={styles.row}>
+        <Text style={[styles.label, { color: c.mustardText, flex: 1 }]} numberOfLines={1}>{`${wann}${formatWochentagDatum(tag)}`}</Text>
+        {umschalter ? <HeroUmschalter {...umschalter} hell={dunkel} /> : null}
+      </View>
       <View style={[styles.row, { justifyContent: "flex-start", gap: 10 }]}>
         <Text style={[styles.gross, { color: c.textDark }]} maxFontSizeMultiplier={MAX_FONT_SCALE}>{`${Math.round(stats.quote * 100)} %`}</Text>
         <View>
@@ -207,24 +256,27 @@ function Danach({ hero, now, members, stats, spielTypen }: Props) {
         )}
       </View>
       <View style={styles.row}>
-        <Button label="Rückblick" icon="play" variant="dark" onPress={() => router.push(`/termin/${t.id}`)} style={{ flex: 1 }} />
+        <Button label="Rückblick" icon="play" variant="dark" onPress={() => oeffne(t.id)} style={{ flex: 1 }} />
         {stats.strafenOffen > 0 ? (
           <Button label={`${formatEuro(stats.strafenOffen).replace(",00", "")} € offen`} variant="secondary" onPress={() => router.push("/kasse?tab=strafen")} style={{ flex: 1 }} />
         ) : (
-          <Button label="Alles bezahlt" icon="checkmark" variant="secondary" onPress={() => router.push(`/termin/${t.id}`)} style={{ flex: 1 }} />
+          <Button label="Alles bezahlt" variant="secondary" onPress={() => oeffne(t.id)} style={{ flex: 1 }} />
         )}
       </View>
-    </View>
+    </PressableScale>
   );
 }
 
-function Leer() {
+function Leer({ umschalter }: { umschalter?: Props["umschalter"] }) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const flaeche = useHeroFlaeche("blau");
   return (
     <View style={[styles.hero, flaeche, { minHeight: 0 }]}>
-      <Text style={[styles.label, { color: c.heroBlueSub }]}>Nächster Stammtisch</Text>
+      <View style={styles.row}>
+        <Text style={[styles.label, { color: c.heroBlueSub, flex: 1 }]}>Nächster Stammtisch</Text>
+        {umschalter ? <HeroUmschalter {...umschalter} hell /> : null}
+      </View>
       <Text style={[styles.titel, { color: c.onHeroBlue }]}>Noch nichts geplant.</Text>
       <Button label="Termin anlegen" icon="add" onPress={() => router.push("/kalender")} />
     </View>
@@ -236,7 +288,10 @@ const makeStyles = (c: ThemeColors) =>
     hero: { borderRadius: RADIUS.hero, padding: 18, gap: 14, minHeight: 248, justifyContent: "space-between" },
     row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
     label: { ...TYPE.label },
-    chip: { minHeight: 32, borderRadius: 999, paddingHorizontal: 10, flexDirection: "row", alignItems: "center", gap: 4 },
+    datumZeile: { flexDirection: "row", alignItems: "center", gap: 4 },
+    umschalter: { flexDirection: "row", borderRadius: 999, padding: 3 },
+    umschalterOption: { minHeight: 30, paddingHorizontal: 11, borderRadius: 999, justifyContent: "center" },
+    umschalterText: { fontFamily: FONT.w700, fontSize: 12 },
     chipText: { fontFamily: FONT.w600, fontSize: 13 },
     small: { ...TYPE.caption, fontSize: 13 },
     bodyStrong: { ...TYPE.bodyStrong },
@@ -244,7 +299,7 @@ const makeStyles = (c: ThemeColors) =>
     track: { height: 6, borderRadius: 999, backgroundColor: "rgba(255,255,255,0.2)", overflow: "hidden" },
     fill: { height: "100%", borderRadius: 999 },
     round: { width: 36, height: 36, borderRadius: 18, backgroundColor: "rgba(255,255,255,0.14)", alignItems: "center", justifyContent: "center" },
-    liveChip: { flex: 1, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 9, backgroundColor: "rgba(255,255,255,0.1)", flexDirection: "row", alignItems: "baseline", gap: 6 },
+    liveChip: { flex: 1, minHeight: 48, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 9, backgroundColor: "rgba(255,255,255,0.12)", flexDirection: "row", alignItems: "center", gap: 6 },
     liveZahl: { ...TYPE.num, fontSize: 20 },
     gross: { ...TYPE.num, fontSize: 36, lineHeight: 40, letterSpacing: -1 },
     dots: { flex: 1, flexDirection: "row", flexWrap: "wrap", justifyContent: "flex-end", gap: 4 },

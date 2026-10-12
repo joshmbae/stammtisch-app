@@ -8,6 +8,7 @@ import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { useTerminAbend } from "../../utils/useTerminAbend";
 import { useNow } from "../../utils/useNow";
 import { TerminPhase, terminPhase, terminStart } from "../../utils/terminPhase";
+import { SYMBOL } from "../../constants/symbole";
 import { formatWochentagDatum } from "../../utils/date";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import ErrorState from "../../components/ErrorState";
@@ -17,7 +18,7 @@ import { PhotoBand } from "../../components/termin/PhotoBand";
 import { PhaseStepper } from "../../components/termin/PhaseStepper";
 import { StartLeiste, VorherView } from "../../components/termin/VorherView";
 import { DanachView } from "../../components/termin/DanachView";
-import { BeendenLeiste, LiveView } from "../../components/termin/live/LiveView";
+import { BeendenLeiste, LiveView, LiveBereich } from "../../components/termin/live/LiveView";
 import { TerminEditSheet } from "../../components/termin/TerminEditSheet";
 
 const uhr = (d: Date) => d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
@@ -37,7 +38,8 @@ export default function TerminScreen() {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, bereich } = useLocalSearchParams<{ id: string; bereich?: string }>();
+  const startBereich: LiveBereich | undefined = bereich === "anwesend" || bereich === "strafen" || bereich === "spiel" ? bereich : undefined;
   const abend = useTerminAbend(id);
   const now = useNow(1000);
   const [ansicht, setAnsicht] = useState<TerminPhase | null>(null);
@@ -97,12 +99,16 @@ export default function TerminScreen() {
             onBack={zurueck}
             onEdit={() => setBearbeiten(true)}
             live={phase === "live" && zeige === "live" ? { start: start ?? now, now } : undefined}
+            motiv={{
+              flaeche: zeige === "danach" ? "senf" : "blau",
+              emoji: termin.art === "veranstaltung" ? SYMBOL.veranstaltung : termin.art === "geburtstag" ? SYMBOL.geburtstag : SYMBOL.stammtisch,
+            }}
           />
           <OfflineBanner />
           <PhaseStepper phase={phase} ansicht={zeige} onChange={setAnsicht} />
           <View style={styles.inhalt}>
             {zeige === "vorher" ? <VorherView abend={abend} now={now} start={start} /> : null}
-            {zeige === "live" ? <LiveView abend={abend} start={start} now={now} /> : null}
+            {zeige === "live" ? <LiveView abend={abend} start={start} now={now} startBereich={startBereich} /> : null}
             {zeige === "danach" ? <DanachView abend={abend} start={start} /> : null}
           </View>
         </ScrollView>

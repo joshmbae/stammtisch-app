@@ -20,16 +20,19 @@ interface Props {
   onEdit: () => void;
   /** Während der Abend läuft: grünes Band mit Timer statt Foto. */
   live?: { start: Date; now: Date };
+  /** Ohne Foto: Standardmotiv – Fläche je Phase, Emoji je Termin-Art. */
+  motiv: { flaeche: "blau" | "senf"; emoji: string };
 }
 
 const FOTO_HOEHE = 200;
 
 /**
  * Kopf des Termins: mit Foto füllt es das Band (Tippen = groß ansehen), ohne
- * Foto ein ruhiges Band mit „Foto hinzufügen". Titel und Datum stehen immer
- * hier, damit der Rahmen in allen Phasen gleich bleibt.
+ * Foto ein Standardmotiv in der Farbe der Phase (wie die Karte auf Home) mit
+ * großem Emoji der Termin-Art. Titel und Datum stehen immer hier, damit der
+ * Rahmen in allen Phasen gleich bleibt.
  */
-export function PhotoBand({ titel, untertitel, bildUrl, uploading, onUpload, onRemove, onBack, onEdit, live }: Props) {
+export function PhotoBand({ titel, untertitel, bildUrl, uploading, onUpload, onRemove, onBack, onEdit, live, motiv }: Props) {
   const c = useColors();
   const { scheme } = useTheme();
   const styles = useThemedStyles(makeStyles);
@@ -150,19 +153,34 @@ export function PhotoBand({ titel, untertitel, bildUrl, uploading, onUpload, onR
     );
   }
 
+  // Ohne Foto: Standardmotiv. Im Glow-Look dunkle Fläche mit Akzentkante, wie die Hero-Karten.
+  const dunkel = c.heroStyle === "outline";
+  const blau = motiv.flaeche === "blau";
+  const flaeche = blau
+    ? { bg: c.heroBlue, kante: c.heroBlueEdge, text: c.onHeroBlue, sub: c.heroBlueSub, ring: dunkel ? "rgba(77,124,255,0.10)" : "rgba(255,255,255,0.08)" }
+    : { bg: c.mustardSoft, kante: c.mustardEdge, text: c.textDark, sub: c.mustardText, ring: dunkel ? "rgba(255,201,60,0.08)" : "rgba(122,94,28,0.08)" };
+  const hellerText = blau || dunkel;
   return (
-    <View style={[styles.ohneFoto, { paddingTop: insets.top + 8 }]}>
-      <StatusBar style={scheme === "dark" ? "light" : "dark"} />
-      {knoepfe}
-      <View style={styles.hinzuZeile}>
-        <PressableScale onPress={waehlen} style={styles.hinzu} disabled={uploading} accessibilityLabel="Foto zum Termin hinzufügen">
-          {uploading ? <ActivityIndicator size="small" color={c.blue} /> : <Ionicons name="camera-outline" size={17} color={c.blue} />}
-          <Text style={styles.hinzuText}>{uploading ? "Lädt hoch …" : "Foto hinzufügen"}</Text>
+    <View style={[styles.motiv, { height: FOTO_HOEHE + insets.top, backgroundColor: flaeche.bg, borderBottomColor: flaeche.kante }]}>
+      <StatusBar style={hellerText ? "light" : "dark"} />
+      <View style={[styles.motivRing, { borderColor: flaeche.ring }]} pointerEvents="none" />
+      <Text style={styles.motivEmoji} maxFontSizeMultiplier={1} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">{motiv.emoji}</Text>
+      <View style={[styles.knopfZeile, { top: insets.top + 8 }]} pointerEvents="box-none">
+        <PressableScale onPress={onBack} style={[styles.rund, styles.rundGlasMotiv]} accessibilityLabel="Zurück" hitSlop={6}>
+          <Ionicons name="chevron-back" size={20} color={flaeche.text} />
         </PressableScale>
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          <PressableScale onPress={waehlen} style={[styles.rund, styles.rundGlasMotiv]} disabled={uploading} accessibilityLabel="Foto zum Termin hinzufügen" hitSlop={6}>
+            {uploading ? <ActivityIndicator size="small" color={flaeche.text} /> : <Ionicons name="camera-outline" size={19} color={flaeche.text} />}
+          </PressableScale>
+          <PressableScale onPress={onEdit} style={[styles.rund, styles.rundGlasMotiv]} accessibilityLabel="Termin bearbeiten" hitSlop={6}>
+            <Ionicons name="pencil" size={18} color={flaeche.text} />
+          </PressableScale>
+        </View>
       </View>
-      <View style={styles.titelOhneFoto}>
-        <Text style={styles.titel} numberOfLines={2} maxFontSizeMultiplier={MAX_FONT_SCALE} accessibilityRole="header">{titel}</Text>
-        <Text style={styles.unter} numberOfLines={1}>{untertitel}</Text>
+      <View style={[styles.titelAufFoto, { right: 116 }]}>
+        <Text style={[styles.titel, { color: flaeche.text }]} numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE} accessibilityRole="header">{titel}</Text>
+        <Text style={[styles.unter, { color: flaeche.sub }]} numberOfLines={1}>{untertitel}</Text>
       </View>
     </View>
   );
@@ -193,14 +211,11 @@ const makeStyles = (c: ThemeColors) =>
     titelAufFoto: { position: "absolute", left: 20, right: 20, bottom: 14 },
     titel: { ...TYPE.title, fontSize: 26, color: c.textDark },
     unter: { fontFamily: FONT.w600, fontSize: 13, color: c.textMuted, marginTop: 2 },
-    ohneFoto: { backgroundColor: c.cardAlt, paddingBottom: 16 },
-    hinzuZeile: { height: 44, alignItems: "center", justifyContent: "center", marginTop: 52 },
-    hinzu: {
-      height: 44, paddingHorizontal: 18, borderRadius: RADIUS.pill, flexDirection: "row", alignItems: "center", gap: 8,
-      backgroundColor: c.card, borderWidth: StyleSheet.hairlineWidth, borderColor: c.hairline,
-    },
-    hinzuText: { fontFamily: FONT.w600, fontSize: 14, color: c.blue },
-    titelOhneFoto: { paddingHorizontal: 20, marginTop: 18 },
+    motiv: { overflow: "hidden", borderBottomWidth: 1 },
+    motivRing: { position: "absolute", width: 320, height: 320, borderRadius: 160, borderWidth: 48, right: -110, top: -90 },
+    // Großes Emoji als Bildersatz, angeschnitten am rechten Rand.
+    motivEmoji: { position: "absolute", right: -6, bottom: -14, fontSize: 132, lineHeight: 160, transform: [{ rotate: "-12deg" }] },
+    rundGlasMotiv: { backgroundColor: "rgba(255,255,255,0.16)", borderColor: "rgba(255,255,255,0.18)" },
     vollbild: { flex: 1, backgroundColor: "rgba(12,11,10,0.94)", paddingHorizontal: 16, gap: 16 },
     vollKopf: { flexDirection: "row", alignItems: "center", gap: 12 },
     vollTitel: { fontFamily: FONT.w700, fontSize: 17, color: "#FFFFFF" },

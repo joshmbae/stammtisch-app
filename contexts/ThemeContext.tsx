@@ -4,11 +4,21 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { DARK_COLORS, LIGHT_COLORS, ThemeColors } from "../constants/design";
 
 /**
- * Hell/Dunkel pro Gerät (nicht pro Stammtisch): "system" folgt der
- * iOS-Einstellung, "light"/"dark" überschreiben sie. Die Wahl liegt in
- * AsyncStorage, damit sie den App-Neustart überlebt.
+ * Hell/Glow pro Gerät (nicht pro Stammtisch). Standard ist Hell; "dark" ist
+ * der leuchtende Glow-Look, "system" folgt der iOS-Einstellung. Die Wahl
+ * liegt in AsyncStorage, damit sie den App-Neustart überlebt.
  */
 export type ThemePreference = "system" | "light" | "dark";
+
+/** Ohne gespeicherte Wahl startet die App hell. */
+export const STANDARD_ERSCHEINUNGSBILD: ThemePreference = "light";
+
+/** Auswahl in Runde und Einstellungen – eine Liste, damit beide gleich heißen. */
+export const ERSCHEINUNGSBILD_OPTIONEN: { key: ThemePreference; label: string }[] = [
+  { key: "light", label: "Hell" },
+  { key: "dark", label: "Glow" },
+  { key: "system", label: "System" },
+];
 export type ColorScheme = "light" | "dark";
 
 const STORAGE_KEY = "st_theme_preference";
@@ -23,7 +33,7 @@ interface ThemeContextValue {
 const ThemeContext = createContext<ThemeContextValue>({
   colors: LIGHT_COLORS,
   scheme: "light",
-  preference: "system",
+  preference: STANDARD_ERSCHEINUNGSBILD,
   setPreference: () => {},
 });
 
@@ -40,7 +50,7 @@ function applyNativeScheme(p: ThemePreference) {
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const systemScheme = useColorScheme();
-  const [preference, setPreferenceState] = useState<ThemePreference>("system");
+  const [preference, setPreferenceState] = useState<ThemePreference>(STANDARD_ERSCHEINUNGSBILD);
   // Erst rendern, wenn die gespeicherte Wahl bekannt ist — sonst blitzt beim
   // Kaltstart kurz das falsche Farbschema auf.
   const [loaded, setLoaded] = useState(false);
@@ -48,10 +58,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY)
       .then((v) => {
-        if (v === "light" || v === "dark" || v === "system") {
-          setPreferenceState(v);
-          applyNativeScheme(v);
-        }
+        const gewaehlt: ThemePreference = v === "light" || v === "dark" || v === "system" ? v : STANDARD_ERSCHEINUNGSBILD;
+        setPreferenceState(gewaehlt);
+        applyNativeScheme(gewaehlt);
       })
       .catch(() => {})
       .finally(() => setLoaded(true));

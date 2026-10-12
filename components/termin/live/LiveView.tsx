@@ -11,12 +11,24 @@ import { AnwesendListe } from "./AnwesendListe";
 import { StrafenErfassen, euroKurz } from "./StrafenErfassen";
 import { SpielZaehler } from "./SpielZaehler";
 
-type Bereich = "anwesend" | "strafen" | "spiel";
+export type LiveBereich = "anwesend" | "strafen" | "spiel";
+type Bereich = LiveBereich;
 
-/** Während des Abends: wer da ist, Strafen, Spiel – jeder Bereich mit eigenem Verlauf darunter. */
-export function LiveView({ abend, start, now }: { abend: TerminAbend; start: Date | null; now: Date }) {
+/** Zuletzt genutzter Bereich je Termin: wer zurückkommt, landet wieder dort (z. B. direkt beim Spiel). */
+const zuletzt = new Map<string, Bereich>();
+
+/**
+ * Während des Abends: wer da ist, Strafen, Spiel – jeder Bereich mit eigenem
+ * Verlauf darunter. startBereich kommt aus dem Link (z. B. Home → „Schocken“).
+ */
+export function LiveView({ abend, start, now, startBereich }: { abend: TerminAbend; start: Date | null; now: Date; startBereich?: Bereich }) {
   const t = abend.termin!;
-  const [bereich, setBereich] = useState<Bereich>("anwesend");
+  const [bereich, setBereichState] = useState<Bereich>(() => {
+    const b = startBereich ?? zuletzt.get(t.id) ?? "anwesend";
+    zuletzt.set(t.id, b);
+    return b;
+  });
+  const setBereich = (b: Bereich) => { zuletzt.set(t.id, b); setBereichState(b); };
   const [strafeFuer, setStrafeFuer] = useState<string | null>(null);
   const { mitglieder } = abendStats(t, abend.members, [], []);
   const da = mitglieder.filter((m) => t.anwesenheit?.includes(m.id));
