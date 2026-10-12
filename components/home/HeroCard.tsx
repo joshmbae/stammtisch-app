@@ -5,7 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { MemberProfile, SpielEreignisTyp } from "../../types";
 import { FONT, MAX_FONT_SCALE, RADIUS, TYPE, ThemeColors, glow } from "../../constants/design";
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
-import { AbendStats, ereignisGesamt, meisteBei } from "../../utils/abendStats";
+import { AbendStats, meisteBei } from "../../utils/abendStats";
 import { HomeHero, terminEnde, terminStart } from "../../utils/terminPhase";
 import { formatWochentagDatum } from "../../utils/date";
 import { displayName, formatEuro } from "../../utils/format";
@@ -22,6 +22,8 @@ interface Props {
   stammtischzeit?: string;
   /** Ereignistypen des aktiven Spiels, Hauptereignis zuerst. */
   spielTypen: SpielEreignisTyp[];
+  /** Name des aktiven Spiels (z. B. „Schocken“) für die Live-Kachel; null = kein Spiel gewählt. */
+  spielName: string | null;
   meinStatus: RsvpStatus;
   onRsvp: (s: RsvpStatus) => void;
   rsvpBusy?: boolean;
@@ -152,7 +154,7 @@ function Vorher({ hero, now, members, stammtischzeit, meinStatus, onRsvp, rsvpBu
   );
 }
 
-function Live({ hero, now, members, stats, stammtischzeit, spielTypen }: Props) {
+function Live({ hero, now, members, stammtischzeit, spielName }: Props) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const flaeche = useHeroFlaeche("live");
@@ -160,7 +162,6 @@ function Live({ hero, now, members, stats, stammtischzeit, spielTypen }: Props) 
   const t = hero.termin;
   const start = terminStart(t, stammtischzeit) ?? now;
   const amTisch = members.filter((m) => t.anwesenheit?.includes(m.id));
-  const haupt = spielTypen[0];
   const akzent = c.heroStyle === "outline" ? c.liveAccent : c.heroBlueSub;
 
   return (
@@ -187,15 +188,13 @@ function Live({ hero, now, members, stats, stammtischzeit, spielTypen }: Props) 
       <View style={styles.row}>
         {/* Direkt in den passenden Bereich des Live-Termins: ein Tipp bis zum Eintragen. */}
         <PressableScale onPress={() => oeffne(t.id, "strafen")} scaleTo={0.96} style={styles.liveChip} accessibilityLabel="Strafe eintragen">
-          <Text style={[styles.liveZahl, { color: c.onLive }]} maxFontSizeMultiplier={MAX_FONT_SCALE}>{`${formatEuro(stats?.strafenSumme ?? 0).replace(",00", "")} €`}</Text>
-          <Text style={[styles.small, { color: c.liveSub, flex: 1 }]}>Strafen</Text>
-          <Ionicons name="add" size={18} color={c.onLive} />
+          <Text style={[styles.liveChipText, { color: c.onLive }]} numberOfLines={1}>Strafen</Text>
+          <Ionicons name="add" size={20} color={c.onLive} />
         </PressableScale>
-        {haupt ? (
-          <PressableScale onPress={() => oeffne(t.id, "spiel")} scaleTo={0.96} style={styles.liveChip} accessibilityLabel={`${haupt.label} eintragen`}>
-            <Text style={[styles.liveZahl, { color: c.onLive }]} maxFontSizeMultiplier={MAX_FONT_SCALE}>{stats ? ereignisGesamt(stats, haupt.id) : 0}</Text>
-            <Text style={[styles.small, { color: c.liveSub, flex: 1 }]} numberOfLines={1}>{haupt.label}</Text>
-            <Ionicons name="add" size={18} color={c.onLive} />
+        {spielName ? (
+          <PressableScale onPress={() => oeffne(t.id, "spiel")} scaleTo={0.96} style={styles.liveChip} accessibilityLabel={`${spielName} eintragen`}>
+            <Text style={[styles.liveChipText, { color: c.onLive }]} numberOfLines={1}>{spielName}</Text>
+            <Ionicons name="add" size={20} color={c.onLive} />
           </PressableScale>
         ) : null}
       </View>
@@ -300,7 +299,7 @@ const makeStyles = (c: ThemeColors) =>
     fill: { height: "100%", borderRadius: 999 },
     round: { width: 36, height: 36, borderRadius: 18, backgroundColor: "rgba(255,255,255,0.14)", alignItems: "center", justifyContent: "center" },
     liveChip: { flex: 1, minHeight: 48, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 9, backgroundColor: "rgba(255,255,255,0.12)", flexDirection: "row", alignItems: "center", gap: 6 },
-    liveZahl: { ...TYPE.num, fontSize: 20 },
+    liveChipText: { flex: 1, fontFamily: FONT.w800, fontSize: 16 },
     gross: { ...TYPE.num, fontSize: 36, lineHeight: 40, letterSpacing: -1 },
     dots: { flex: 1, flexDirection: "row", flexWrap: "wrap", justifyContent: "flex-end", gap: 4 },
     dot: { width: 10, height: 10, borderRadius: 5 },

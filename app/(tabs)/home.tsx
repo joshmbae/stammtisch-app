@@ -142,13 +142,13 @@ export default function HomeScreen() {
       rangl.find((l) => l.key === "strafen"),
     ].filter((l): l is NonNullable<typeof l> => !!l && l.eintraege.some((e) => e.wert > 0));
 
-    return { members, rangl, fuehrende, spielTypen, listen };
+    return { members, rangl, fuehrende, spielTypen, spielName: spiel?.spiel.name ?? null, listen };
   }, [daten, verordnung?.aktivesSpielId, jahr]);
 
   if (loading) return <LoadingSpinner />;
   if (error || !daten || !abgeleitet) return <ErrorState message={error ?? "Keine Daten."} onRetry={retry} />;
 
-  const { members, rangl, fuehrende, spielTypen, listen } = abgeleitet;
+  const { members, rangl, fuehrende, spielTypen, spielName, listen } = abgeleitet;
   const membersById = new Map(members.map((m) => [m.id, m]));
   const { hero, umschaltbar } = homeHeroMitWahl(daten.termine, now, verordnung?.stammtischzeit, heroWahl);
   const heroStats = hero.phase === "leer" ? null : abendStats(hero.termin, members, daten.strafLogs, daten.spielLogs);
@@ -217,6 +217,7 @@ export default function HomeScreen() {
             stats={heroStats}
             stammtischzeit={verordnung?.stammtischzeit}
             spielTypen={spielTypen}
+            spielName={spielName}
             meinStatus={meinStatus}
             onRsvp={handleRsvp}
             rsvpBusy={rsvpBusy}
