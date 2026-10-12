@@ -14,10 +14,14 @@ export const euroKurz = (n: number) => `${formatEuro(n).replace(",00", "")} €`
  * Strafe in zwei Griffen: wer, wofür, eintragen. Bei Kategorien ohne festen
  * Betrag (Sonstiges) kommt ein Betragsfeld dazu. Darunter die Strafen des Abends.
  */
-export function StrafenErfassen({ abend, mitglieder }: { abend: TerminAbend; mitglieder: MemberProfile[] }) {
+export function StrafenErfassen({ abend, mitglieder, vorauswahl }: {
+  abend: TerminAbend; mitglieder: MemberProfile[];
+  /** Person schon ausgewählt, z. B. nach einer eingetragenen Verspätung. */
+  vorauswahl?: string | null;
+}) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
-  const [wer, setWer] = useState<string | null>(null);
+  const [wer, setWer] = useState<string | null>(vorauswahl ?? null);
   const [wofuer, setWofuer] = useState<StrafKategorieDef | null>(null);
   const [betrag, setBetrag] = useState("");
   const [notiz, setNotiz] = useState("");

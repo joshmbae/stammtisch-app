@@ -228,12 +228,6 @@ export function useTerminAbend(id: string) {
     setVerspätungMap((prev) => dedupeInsert(prev, log, memberId));
   }
 
-  /** Zu spät gekommen: Verspätung festhalten und, falls es eine Kategorie dafür gibt, die Strafe dazu. */
-  async function verspätungMitStrafe(memberId: string, minuten: number, kategorie?: StrafKategorieDef, grund?: string) {
-    await verspätungEintragen(memberId, minuten, grund);
-    if (kategorie) await strafeEintragen(memberId, kategorie, kategorie.betrag, grund ? `${minuten} Min. · ${grund}` : `${minuten} Min.`);
-  }
-
   async function verspätungLöschen(memberId: string, logId: string) {
     await deleteVerspätungLog(memberId, logId);
     setVerspätungMap((prev) => removeByIdEverywhere(prev, logId));
@@ -436,7 +430,7 @@ export function useTerminAbend(id: string) {
     activeMemberId,
     termin, members, verordnung, protokoll, agendaText, strafKategorien,
     verspätungMap, strafMap, spielLogMap, aktivesSpiel, ereignisTypen, uploadingBild, rechnung,
-    rsvp, anwesenheitUmschalten, anwesenheitSetzen, alleAnwesend, verspätungEintragen, verspätungMitStrafe, verspätungLöschen,
+    rsvp, anwesenheitUmschalten, anwesenheitSetzen, alleAnwesend, verspätungEintragen, verspätungLöschen,
     spielEreignisEintragen, spielEreignisLöschen,
     strafeEintragen, strafeBeglichenUmschalten, strafeLöschen,
     bildHochladen, bildEntfernen, speichern, löschen, agendaSpeichern, abendStarten, abendBeenden,

@@ -43,8 +43,8 @@ export function Verlauf({ abend }: { abend: TerminAbend }) {
   }
 
   for (const v of Object.values(abend.verspätungMap).flat()) {
-    // Die Strafe, die beim „zu spät?"-Knopf mit angelegt wurde – Notiz „N Min." bzw. „N Min. · Grund".
-    // Nicht an die Minuten gebunden, damit sie nach einer Korrektur dazugehört.
+    // Ältere Einträge: Früher legte „zu spät?" die Strafe gleich mit an (Notiz „N Min.").
+    // Neue Verspätungen kommen ohne Strafe; die steht dann als eigener Eintrag im Verlauf.
     const strafe = strafen.find((s) => !verbraucht.has(s.id) && s.memberId === v.memberId && /^\d+ Min\./.test(s.notiz ?? ""));
     if (strafe) verbraucht.add(strafe.id);
     eintraege.push({

@@ -2,11 +2,11 @@ import React, { useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeIn, FadeOut, ZoomIn } from "react-native-reanimated";
-import { MemberProfile, StrafKategorieDef } from "../../../types";
+import { MemberProfile } from "../../../types";
 import { FONT, RADIUS, ThemeColors, glow } from "../../../constants/design";
 import { useColors, useThemedStyles } from "../../../contexts/ThemeContext";
 import { TerminAbend } from "../../../utils/useTerminAbend";
-import { displayName, formatEuro } from "../../../utils/format";
+import { displayName } from "../../../utils/format";
 import { useFuehrende } from "../../../utils/useFuehrende";
 import { Avatar, Emoji, PressableScale, haptik } from "../../ui";
 import { SYMBOL } from "../../../constants/symbole";
@@ -17,43 +17,29 @@ const SPAET_AB_MIN = 10;
 const SPAET_VORSCHLAG_MIN = 15;
 const SPAET_MAX_MIN = 999;
 
-/** Ab wie vielen Minuten eine Verspätungs-Kategorie greift, gelesen aus dem Namen („15–30 Min.", „>30 Min.", „ab 30"). */
-function spaetSchwelle(label: string): number {
-  const bereich = label.match(/(\d+)\s*[–-]\s*\d+/);
-  if (bereich) return Number(bereich[1]);
-  const ueber = label.match(/>\s*(\d+)/);
-  if (ueber) return Number(ueber[1]) + 1;
-  const ab = label.match(/ab\s*(\d+)/i);
-  return ab ? Number(ab[1]) : 0;
-}
-
-/**
- * Die Strafe für so viele Minuten Verspätung: die Kategorie mit der höchsten
- * Schwelle, die erreicht ist. Entschuldigte Verspätung wird hier nicht vergeben.
- * Unter jeder Schwelle → keine Strafe.
- */
-export function spaetKategorie(kats: StrafKategorieDef[], minuten: number): StrafKategorieDef | undefined {
-  return kats
-    .filter((k) => !k.spielEreignisTypId && /spät|spaet|verspät/i.test(k.label) && !/entschuld/i.test(k.label))
-    .filter((k) => minuten >= spaetSchwelle(k.label))
-    .sort((a, b) => spaetSchwelle(b.label) - spaetSchwelle(a.label))[0];
-}
-
-/** Offene Verspätungs-Abfrage. `bestehend`: schon eingetragen, die Minuten werden nur korrigiert. */
+/** Offene Verspätungs-Abfrage. `bestehend`: schon eingetragen, Minuten und Grund werden nur korrigiert. */
 type SpaetAbfrage = { memberId: string; minuten: number; grund: string; bestehend: boolean };
 
 /**
  * Wer sitzt am Tisch? Antippen trägt ein bzw. aus. Wer mehr als 10 Minuten
- * nach Beginn eingetragen wird, bekommt die Frage „zu spät?" mit der Strafe;
- * lange drücken trägt die Verspätung von Hand ein oder korrigiert sie.
+ * nach Beginn eingetragen wird, bekommt die Frage „zu spät?"; lange drücken
+ * trägt die Verspätung von Hand ein oder korrigiert sie. Erfasst werden nur
+ * Minuten und Grund – ob das eine Strafe kostet, regelt jeder Stammtisch
+ * selbst, daher danach nur der Sprung zu den Strafen (`onStrafe`).
  * Wer abgesagt hat, steht nicht im Raster, sondern klein darunter.
  */
-export function AnwesendGrid({ abend, mitglieder, start, now }: { abend: TerminAbend; mitglieder: MemberProfile[]; start: Date | null; now: Date }) {
+export function AnwesendGrid({ abend, mitglieder, start, now, onStrafe }: {
+  abend: TerminAbend; mitglieder: MemberProfile[]; start: Date | null; now: Date;
+  /** Zu den Strafen springen, Person vorausgewählt. Fehlt, wenn der Strafen-Tab aus ist. */
+  onStrafe?: (memberId: string) => void;
+}) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const fuehrende = useFuehrende();
   const t = abend.termin!;
   const [spaet, setSpaet] = useState<SpaetAbfrage | null>(null);
+  /** Gerade gespeicherte Verspätung – bietet den Weg zur Strafe an. */
+  const [gespeichert, setGespeichert] = useState<{ memberId: string; minuten: number } | null>(null);
   const minutenRef = useRef<TextInput>(null);
   const dunkel = c.heroStyle === "outline";
 
@@ -78,19 +64,19 @@ export function AnwesendGrid({ abend, mitglieder, start, now }: { abend: TerminA
     await abend.anwesenheitSetzen(m.id, !da);
     if (!da && start) {
       const minuten = minutenSeitBeginn();
-      if (minuten > SPAET_AB_MIN && spaetMinuten(m.id) === null && !hatSpaetStrafe(m.id)) setSpaet({ memberId: m.id, minuten, grund: "", bestehend: false });
+      if (minuten > SPAET_AB_MIN && spaetMinuten(m.id) === null) setSpaet({ memberId: m.id, minuten, grund: "", bestehend: false });
     }
   }
 
   function langDruecken(m: MemberProfile) {
     if (!istDa(m)) return;
     haptik("mittel");
+    setGespeichert(null);
     const bisher = spaetMinuten(m.id);
     const seitBeginn = minutenSeitBeginn();
     const vorschlag = bisher ?? (seitBeginn > 0 ? seitBeginn : SPAET_VORSCHLAG_MIN);
     const grund = (abend.verspätungMap[m.id] ?? []).find((l) => l.grund)?.grund ?? "";
-    // Steht die Strafe schon im Verlauf, nur Minuten und Grund festhalten – keine zweite Strafe.
-    setSpaet({ memberId: m.id, minuten: vorschlag, grund, bestehend: bisher !== null || hatSpaetStrafe(m.id) });
+    setSpaet({ memberId: m.id, minuten: vorschlag, grund, bestehend: bisher !== null });
   }
 
   function minutenAendern(delta: number) {
@@ -110,17 +96,14 @@ export function AnwesendGrid({ abend, mitglieder, start, now }: { abend: TerminA
     setSpaet(null);
     haptik("mittel");
     if (s.bestehend) {
-      // Nur Minuten und Grund korrigieren – die Strafe steht schon im Verlauf.
       for (const log of abend.verspätungMap[s.memberId] ?? []) await abend.verspätungLöschen(s.memberId, log.id);
-      await abend.verspätungEintragen(s.memberId, s.minuten, grund);
-    } else {
-      await abend.verspätungMitStrafe(s.memberId, s.minuten, spaetKategorie(abend.strafKategorien, s.minuten), grund);
     }
+    await abend.verspätungEintragen(s.memberId, s.minuten, grund);
+    if (!s.bestehend && onStrafe) setGespeichert({ memberId: s.memberId, minuten: s.minuten });
   }
 
   const spaetMember = spaet ? mitglieder.find((m) => m.id === spaet.memberId) : undefined;
-  const kat = spaet && !spaet.bestehend ? spaetKategorie(abend.strafKategorien, spaet.minuten) : undefined;
-  const spaetKnopf = spaet?.bestehend ? "Speichern" : kat ? `Eintragen · ${formatEuro(kat.betrag).replace(",00", "")} €` : "Eintragen";
+  const gespeichertMember = gespeichert ? mitglieder.find((m) => m.id === gespeichert.memberId) : undefined;
 
   return (
     <View style={{ gap: 12 }}>
@@ -165,14 +148,9 @@ export function AnwesendGrid({ abend, mitglieder, start, now }: { abend: TerminA
         <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)} style={[styles.spaet, { backgroundColor: c.coralSoft }]} accessibilityLiveRegion="polite">
           <View style={styles.spaetKopf}>
             <View style={styles.spaetIcon}><Emoji size={18}>{SYMBOL.zuSpaet}</Emoji></View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.spaetTitel} numberOfLines={1}>
-                {spaet.bestehend ? `${displayName(spaetMember)}: Verspätung ändern` : `${displayName(spaetMember)} zu spät?`}
-              </Text>
-              <Text style={[styles.spaetSub, { color: c.coralText }]} numberOfLines={1}>
-                {spaet.bestehend ? "Strafe bleibt wie eingetragen" : kat ? kat.label : "Ohne Strafe"}
-              </Text>
-            </View>
+            <Text style={[styles.spaetTitel, { flex: 1 }]} numberOfLines={1}>
+              {spaet.bestehend ? `${displayName(spaetMember)}: Verspätung ändern` : `${displayName(spaetMember)} zu spät?`}
+            </Text>
             <PressableScale onPress={() => setSpaet(null)} style={styles.spaetNein} hitSlop={6} accessibilityLabel={spaet.bestehend ? "Abbrechen" : "Nicht zu spät"}>
               <Ionicons name="close" size={16} color={c.textDark} />
             </PressableScale>
@@ -205,11 +183,9 @@ export function AnwesendGrid({ abend, mitglieder, start, now }: { abend: TerminA
               onPress={spaetSpeichern}
               disabled={spaet.minuten < 1}
               style={[styles.spaetJa, { backgroundColor: spaet.minuten < 1 ? c.cardAlt : c.coral }]}
-              accessibilityLabel={spaet.bestehend
-                ? `Verspätung auf ${spaet.minuten} Minuten ändern`
-                : `${displayName(spaetMember)} ${spaet.minuten} Minuten zu spät eintragen${kat ? `, ${formatEuro(kat.betrag)} Euro Strafe` : ""}`}
+              accessibilityLabel={`${displayName(spaetMember)}: ${spaet.minuten} Minuten zu spät speichern`}
             >
-              <Text style={[styles.spaetJaText, { color: c.onCoral }]} numberOfLines={1}>{spaetKnopf}</Text>
+              <Text style={[styles.spaetJaText, { color: c.onCoral }]} numberOfLines={1}>Speichern</Text>
             </PressableScale>
           </View>
           <TextInput
@@ -222,6 +198,24 @@ export function AnwesendGrid({ abend, mitglieder, start, now }: { abend: TerminA
             returnKeyType="done"
             accessibilityLabel="Grund für die Verspätung"
           />
+        </Animated.View>
+      ) : null}
+
+      {gespeichert && gespeichertMember && onStrafe && !spaet ? (
+        <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)} style={styles.gespeichert} accessibilityLiveRegion="polite">
+          <Text style={styles.gespeichertText} numberOfLines={1}>{`${displayName(gespeichertMember)}: +${gespeichert.minuten} Min. gespeichert`}</Text>
+          <PressableScale
+            onPress={() => { setGespeichert(null); onStrafe(gespeichert.memberId); }}
+            style={styles.gespeichertKnopf}
+            hitSlop={4}
+            accessibilityLabel={`Strafe für ${displayName(gespeichertMember)} eintragen`}
+          >
+            <Text style={[styles.gespeichertKnopfText, { color: c.coralText }]}>Strafe eintragen</Text>
+            <Ionicons name="chevron-forward" size={14} color={c.coralText} />
+          </PressableScale>
+          <PressableScale onPress={() => setGespeichert(null)} hitSlop={8} accessibilityLabel="Hinweis schließen">
+            <Ionicons name="close" size={16} color={c.textMuted} />
+          </PressableScale>
         </Animated.View>
       ) : null}
 
@@ -270,7 +264,6 @@ const makeStyles = (c: ThemeColors) =>
     spaetKopf: { flexDirection: "row", alignItems: "center", gap: 10 },
     spaetIcon: { width: 32, height: 32, borderRadius: 10, backgroundColor: c.card, alignItems: "center", justifyContent: "center" },
     spaetTitel: { fontFamily: FONT.w600, fontSize: 15, color: c.textDark },
-    spaetSub: { fontFamily: FONT.w500, fontSize: 12 },
     spaetNein: { width: 32, height: 32, borderRadius: 16, backgroundColor: c.card, alignItems: "center", justifyContent: "center" },
     spaetFuss: { flexDirection: "row", alignItems: "center", gap: 10 },
     stepper: { flexDirection: "row", alignItems: "center", gap: 6 },
@@ -288,6 +281,13 @@ const makeStyles = (c: ThemeColors) =>
     spaetJa: { flex: 1, height: 40, paddingHorizontal: 12, borderRadius: RADIUS.pill, alignItems: "center", justifyContent: "center" },
     spaetJaText: { fontFamily: FONT.w600, fontSize: 14 },
 
+    gespeichert: {
+      flexDirection: "row", alignItems: "center", gap: 10, minHeight: 44, paddingLeft: 14, paddingRight: 12,
+      borderRadius: RADIUS.md, backgroundColor: c.card, borderWidth: StyleSheet.hairlineWidth, borderColor: c.hairline,
+    },
+    gespeichertText: { flex: 1, fontFamily: FONT.w500, fontSize: 14, color: c.textDark },
+    gespeichertKnopf: { flexDirection: "row", alignItems: "center", gap: 2, height: 32 },
+    gespeichertKnopfText: { fontFamily: FONT.w600, fontSize: 14 },
     abgesagtBox: { gap: 6, paddingHorizontal: 4 },
     abgesagtTitel: { fontFamily: FONT.w600, fontSize: 12, color: c.textMuted, letterSpacing: 0.4, textTransform: "uppercase" },
     abgesagtReihe: { flexDirection: "row", flexWrap: "wrap", gap: 6 },

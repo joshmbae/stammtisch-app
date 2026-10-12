@@ -18,6 +18,7 @@ type Bereich = "anwesend" | "strafen" | "spiel";
 export function LiveView({ abend, start, now }: { abend: TerminAbend; start: Date | null; now: Date }) {
   const t = abend.termin!;
   const [bereich, setBereich] = useState<Bereich>("anwesend");
+  const [strafeFuer, setStrafeFuer] = useState<string | null>(null);
   const { mitglieder } = abendStats(t, abend.members, [], []);
   const da = mitglieder.filter((m) => t.anwesenheit?.includes(m.id));
   // Für Strafen alle (auch „unentschuldigt fehlen"), wer da ist zuerst.
@@ -32,12 +33,17 @@ export function LiveView({ abend, start, now }: { abend: TerminAbend; start: Dat
   if (abend.verordnung.tabStrafenAktiv !== false) items.push({ key: "strafen", label: "Strafen", sub: euroKurz(strafenSumme) });
   if (abend.aktivesSpiel) items.push({ key: "spiel", label: abend.aktivesSpiel.name, sub: haupt ? `${hauptAnzahl}× ${haupt.label}` : undefined });
   const aktiv = items.some((i) => i.key === bereich) ? bereich : "anwesend";
+  const strafenAn = items.some((i) => i.key === "strafen");
+  const wechseln = (b: Bereich) => { setStrafeFuer(null); setBereich(b); };
 
   return (
     <>
-      <SegmentedTabs variant="live" items={items} value={aktiv} onChange={setBereich} />
-      {aktiv === "anwesend" ? <AnwesendGrid abend={abend} mitglieder={mitglieder} start={start} now={now} /> : null}
-      {aktiv === "strafen" ? <StrafenErfassen abend={abend} mitglieder={fuerStrafen} /> : null}
+      <SegmentedTabs variant="live" items={items} value={aktiv} onChange={wechseln} />
+      {aktiv === "anwesend" ? <AnwesendGrid
+          abend={abend} mitglieder={mitglieder} start={start} now={now}
+          onStrafe={strafenAn ? (id) => { setStrafeFuer(id); setBereich("strafen"); } : undefined}
+        /> : null}
+      {aktiv === "strafen" ? <StrafenErfassen abend={abend} mitglieder={fuerStrafen} vorauswahl={strafeFuer} /> : null}
       {aktiv === "spiel" ? <SpielZaehler abend={abend} mitglieder={da} /> : null}
       <Verlauf abend={abend} />
     </>
