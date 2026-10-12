@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { LayoutChangeEvent, StyleSheet, Text, View } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
-import { FONT, MOTION, ThemeColors } from "../../constants/design";
+import { FONT, MOTION, SHADOWS, ThemeColors } from "../../constants/design";
 import { useThemedStyles } from "../../contexts/ThemeContext";
 import { PressableScale } from "./PressableScale";
 
@@ -71,16 +71,21 @@ export function SegmentedTabs<K extends string>({ items, value, onChange, varian
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
-    bar: { flexDirection: "row", borderRadius: 14, padding: INNEN, minHeight: 40, backgroundColor: c.cardAlt },
+    // Leiste mit eigener, etwas dunklerer Fläche und feiner Kante, damit auch
+    // die nicht gewählten Optionen als antippbar erkennbar sind.
+    bar: {
+      flexDirection: "row", borderRadius: 14, padding: INNEN, minHeight: 40, backgroundColor: c.segmentBg,
+      borderWidth: StyleSheet.hairlineWidth, borderColor: c.borderDark,
+    },
     thumb: { position: "absolute", top: INNEN, bottom: INNEN, left: INNEN, borderRadius: 11 },
-    thumbLight: { backgroundColor: c.card },
+    thumbLight: { backgroundColor: c.card, ...(c.heroStyle === "fill" ? SHADOWS.light : null) },
     thumbBlue: { backgroundColor: c.blue },
     // Im Dunkeln ist c.live eine dunkle Fläche – dort leuchtet der Daumen in Mint.
     thumbLive: { backgroundColor: c.heroStyle === "outline" ? c.liveAccent : c.live },
     item: { flex: 1, alignItems: "center", justifyContent: "center", minHeight: 34, paddingHorizontal: 4 },
     label: { fontFamily: FONT.w600, fontSize: 14 },
     sub: { fontFamily: FONT.w500, fontSize: 11, opacity: 0.8, fontVariant: ["tabular-nums"] },
-    onBar: { color: c.textMuted },
+    onBar: { color: c.textMid },
     onThumbLight: { color: c.textDark },
     onThumbBlue: { color: c.onAccent },
     onThumbLive: { color: c.heroStyle === "outline" ? c.onAccent : c.onLive },

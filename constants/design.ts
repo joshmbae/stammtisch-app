@@ -13,6 +13,7 @@ export const LIGHT_COLORS = {
   background:    "#F2EEE6",      // Creme
   card:          "#FFFFFF",
   cardAlt:       "#EFEAE0",      // getönte Fläche (Chips, Felder, Säulen)
+  segmentBg:     "#E4DDCF",      // Leiste der Umschalter: hebt sich sichtbar von Creme ab
   hairline:      "rgba(28,27,25,0.07)", // feine Kante um Karten
 
   // Markenfarben (alte Rollen, auf Kombi umgestellt)
@@ -88,6 +89,7 @@ export const DARK_COLORS: ThemeColors = {
   background:    "#0A0B0F",
   card:          "#14161D",
   cardAlt:       "#1B1E27",
+  segmentBg:     "#1B1E27",
   hairline:      "rgba(255,255,255,0.08)",
 
   blue:          "#4D7CFF",      // Elektroblau: Text auf Karte 4,9:1, Fläche mit dunklem Text
