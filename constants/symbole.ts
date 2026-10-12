@@ -33,12 +33,11 @@ export const SYMBOL = {
 
   // Kasse & Strafen
   kasse: "💰",
-  geld: "💶",
   einnahme: "💶",
   ausgabe: "💸",
   rechnung: "🧾",
-  strafenkatalog: "💸",
-  strafe: "⚠️",
+  strafenkatalog: "💰",
+  strafe: "💰",
   zuSpaet: "⏰",
   sonstiges: "📌",
   liveErfassen: "✍️",

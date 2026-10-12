@@ -71,7 +71,7 @@ export function BilanzRow({ werte, onPress }: { werte: BilanzWerte; onPress: () 
         <View style={styles.trenner} />
 
         <View style={styles.spalte}>
-          <IconSquircle emoji={SYMBOL.geld} ton={werte.offen > 0 ? "coral" : "green"} size={SYMBOL_GROESSE} />
+          <IconSquircle emoji={SYMBOL.strafe} ton={werte.offen > 0 ? "coral" : "green"} size={SYMBOL_GROESSE} />
           <Text style={[styles.wert, { color: werte.offen > 0 ? c.coralText : c.success }]} numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE}>{offenText}</Text>
           <Text style={styles.label} numberOfLines={1}>offen</Text>
         </View>

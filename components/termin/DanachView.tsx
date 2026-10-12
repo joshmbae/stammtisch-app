@@ -124,7 +124,7 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
           </View>
         ) : (
           <View style={[styles.kachelIcon, { backgroundColor: sel ? "rgba(255,255,255,0.22)" : tint.bg }]}>
-            <Emoji size={17}>{SYMBOL.geld}</Emoji>
+            <Emoji size={17}>{SYMBOL.strafe}</Emoji>
           </View>
         )}
         <Text style={[styles.kachelWert, { color: sel ? voll.fg : c.textDark }]} maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1}>{k.wert}</Text>

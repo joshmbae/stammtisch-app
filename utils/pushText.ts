@@ -94,7 +94,7 @@ const VARIANTEN: Partial<Record<ActivityLogEntry["actionType"], Variante[]>> = {
   straf_log_beglichen: [
     (v) => ({ title: `✅ ${v.wer} hat bezahlt`, body: `${v.kat} (${v.betrag}) ist beglichen. Sauber!` }),
     (v) => ({ title: `✅ Sauber, ${v.wer}!`, body: `${v.betrag} für „${v.kat}“ sind in der Kasse.` }),
-    (v) => ({ title: `💶 ${v.wer} ist die Strafe los`, body: `${v.kat} – ${v.betrag} bezahlt. Passt!` }),
+    (v) => ({ title: `💰 ${v.wer} ist die Strafe los`, body: `${v.kat} – ${v.betrag} bezahlt. Passt!` }),
   ],
   straf_log_deleted: [
     (v) => ({ title: `🍀 Glück gehabt, ${v.wer}!`, body: `Die Strafe „${v.kat}“ (${v.betrag}) ist wieder gestrichen.${vonSatz(v)}` }),
