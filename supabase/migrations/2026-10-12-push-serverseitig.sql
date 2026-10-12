@@ -29,7 +29,7 @@ create or replace function dev.rpc_register_push_token(p_member_id text, p_token
 returns void
 language plpgsql
 security definer
-set search_path = dev, public
+set search_path = ''
 as $$
 begin
   if p_token is null or not (p_token like 'ExponentPushToken[%]' or p_token like 'ExpoPushToken[%]') then
@@ -65,7 +65,7 @@ create or replace function dev.rpc_send_push(
 returns integer
 language plpgsql
 security definer
-set search_path = dev, public
+set search_path = ''
 as $$
 declare
   v_messages jsonb;
@@ -109,5 +109,9 @@ $$;
 
 revoke execute on function dev.rpc_register_push_token(text, text, text) from public;
 revoke execute on function dev.rpc_send_push(text[], text, text, text, jsonb) from public;
+-- Supabase vergibt EXECUTE in public zusätzlich direkt an anon; revoke from
+-- public greift dafür nicht.
+revoke execute on function dev.rpc_register_push_token(text, text, text) from anon;
+revoke execute on function dev.rpc_send_push(text[], text, text, text, jsonb) from anon;
 grant execute on function dev.rpc_register_push_token(text, text, text) to authenticated;
 grant execute on function dev.rpc_send_push(text[], text, text, text, jsonb) to authenticated;
