@@ -7,7 +7,7 @@ import { ActivityLogEntry, MemberProfile, StrafKategorieDef } from "../types";
 import { loadActivityFeed, loadActivityFeedBefore, loadMembers, loadStrafKategorien } from "../utils/storage";
 import { activityRoute, renderActivity } from "../utils/activityFeed";
 import { formatTagUeberschrift, formatUhrzeit, tagesSchluessel } from "../utils/date";
-import { SHADOWS, ThemeColors } from "../constants/design";
+import { SHADOWS, ThemeColors, FONT } from "../constants/design";
 import { useColors, useThemedStyles } from "../contexts/ThemeContext";
 import { HamburgerButton } from "../components/HamburgerButton";
 import { BackButton } from "../components/BackButton";
@@ -43,7 +43,7 @@ function FeedRow({
     <Image source={{ uri: subject.photoUri }} style={styles.avatar} />
   ) : (
     <View style={[styles.avatar, { backgroundColor: subject?.avatarColor ?? c.border, alignItems: "center", justifyContent: "center" }]}>
-      <Text style={{ fontSize: 16 }}>{rendered.emoji}</Text>
+      <Text style={{ fontFamily: FONT.w400, fontSize: 16 }}>{rendered.emoji}</Text>
     </View>
   );
 
@@ -201,8 +201,8 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderWidth: 1, borderColor: c.border,
   },
   headerTexts: { flex: 1 },
-  headerTitle: { fontSize: 18, fontWeight: "800", color: c.textDark },
-  headerSub: { fontSize: 12, color: c.textMuted, marginTop: 2 },
+  headerTitle: { fontSize: 18, fontFamily: FONT.w800, color: c.textDark },
+  headerSub: { fontFamily: FONT.w400, fontSize: 12, color: c.textMuted, marginTop: 2 },
 
   card: {
     backgroundColor: c.card, borderRadius: 18,
@@ -215,23 +215,23 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   avatar: { width: 36, height: 36, borderRadius: 18, marginTop: 1 },
   rowBody: { flex: 1 },
-  rowText: { fontSize: 14, fontWeight: "600", color: c.textDark, lineHeight: 19 },
-  rowDetail: { fontSize: 13, color: c.textMuted, fontStyle: "italic", marginTop: 3, lineHeight: 18 },
-  rowMeta: { fontSize: 11, color: c.textLight, marginTop: 3 },
+  rowText: { fontSize: 14, fontFamily: FONT.w600, color: c.textDark, lineHeight: 19 },
+  rowDetail: { fontFamily: FONT.w400i, fontSize: 13, color: c.textMuted, marginTop: 3, lineHeight: 18 },
+  rowMeta: { fontFamily: FONT.w400, fontSize: 11, color: c.textLight, marginTop: 3 },
 
   dayGroup: { marginBottom: 14 },
   dayLabel: {
-    fontSize: 12, fontWeight: "800", color: c.textMuted,
+    fontSize: 12, fontFamily: FONT.w800, color: c.textMuted,
     textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6, marginLeft: 4,
   },
   moreBtn: {
     alignItems: "center", justifyContent: "center", paddingVertical: 14, marginTop: 4,
     borderRadius: 14, borderWidth: 1, borderColor: c.border, backgroundColor: c.card,
   },
-  moreBtnText: { fontSize: 14, fontWeight: "700", color: c.blue },
+  moreBtnText: { fontSize: 14, fontFamily: FONT.w700, color: c.blue },
 
   emptyState: { alignItems: "center", paddingVertical: 60, gap: 8 },
-  emptyEmoji: { fontSize: 40 },
-  emptyTitle: { fontSize: 17, fontWeight: "800", color: c.textDark },
-  emptySub: { fontSize: 13, color: c.textMuted, textAlign: "center", paddingHorizontal: 30 },
+  emptyEmoji: { fontFamily: FONT.w400, fontSize: 40 },
+  emptyTitle: { fontSize: 17, fontFamily: FONT.w800, color: c.textDark },
+  emptySub: { fontFamily: FONT.w400, fontSize: 13, color: c.textMuted, textAlign: "center", paddingHorizontal: 30 },
 });

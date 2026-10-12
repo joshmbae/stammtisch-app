@@ -1,7 +1,7 @@
 import React from "react";
 import { Platform, TouchableOpacity, Text, StyleSheet } from "react-native";
 import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker";
-import { ThemeColors } from "../constants/design";
+import { ThemeColors, FONT } from "../constants/design";
 import { useTheme, useThemedStyles } from "../contexts/ThemeContext";
 
 type Props = {
@@ -66,6 +66,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   doneBtnText: {
     color: c.blue,
     fontSize: 16,
-    fontWeight: "600",
+    fontFamily: FONT.w600,
   },
 });

@@ -21,7 +21,7 @@ import {
   deleteStrafKategorie,
   instantiateStrafKategorieVorlage,
 } from "../utils/storage";
-import { SHADOWS, ThemeColors } from "../constants/design";
+import { SHADOWS, ThemeColors, FONT } from "../constants/design";
 import { useColors, useThemedStyles } from "../contexts/ThemeContext";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { useSingleFlight } from "../utils/useSingleFlight";
@@ -296,49 +296,48 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderWidth: 1, borderColor: c.border,
   },
   headerTexts: { flex: 1 },
-  headerTitle: { fontSize: 18, fontWeight: "800", color: c.textDark },
-  headerSub: { fontSize: 12, color: c.textMuted, marginTop: 2 },
+  headerTitle: { fontSize: 18, fontFamily: FONT.w800, color: c.textDark },
+  headerSub: { fontFamily: FONT.w400, fontSize: 12, color: c.textMuted, marginTop: 2 },
 
-  sectionTitle: { fontSize: 15, fontWeight: "800", color: c.textDark, marginTop: 12, marginBottom: 8 },
+  sectionTitle: { fontSize: 15, fontFamily: FONT.w800, color: c.textDark, marginTop: 12, marginBottom: 8 },
 
   infoBox: {
     flexDirection: "row", gap: 8, backgroundColor: c.blue + "0F",
     borderRadius: 12, padding: 12, marginBottom: 12,
   },
-  infoBoxText: { flex: 1, fontSize: 12, color: c.textMuted, lineHeight: 17 },
+  infoBoxText: { fontFamily: FONT.w400, flex: 1, fontSize: 12, color: c.textMuted, lineHeight: 17 },
 
   card: {
     backgroundColor: c.card, borderRadius: 16, padding: 14, marginBottom: 10,
     borderWidth: 1, borderColor: c.border, ...SHADOWS.light,
   },
   katRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-  katEmoji: { fontSize: 22, width: 30, textAlign: "center" },
-  katLabel: { fontSize: 14, fontWeight: "700", color: c.textDark },
+  katEmoji: { fontFamily: FONT.w400, fontSize: 22, width: 30, textAlign: "center" },
+  katLabel: { fontSize: 14, fontFamily: FONT.w700, color: c.textDark },
   systemBadge: {
-    fontSize: 10, fontWeight: "700", color: c.textLight,
+    fontSize: 10, fontFamily: FONT.w700, color: c.textLight,
     backgroundColor: c.border, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2,
   },
-  katBeschreibung: { fontSize: 12, color: c.textMuted, marginTop: 2 },
-  katBetrag: { fontSize: 14, fontWeight: "800", color: c.danger },
+  katBeschreibung: { fontFamily: FONT.w400, fontSize: 12, color: c.textMuted, marginTop: 2 },
+  katBetrag: { fontSize: 14, fontFamily: FONT.w800, color: c.danger },
 
-  input: {
-    borderWidth: 1, borderColor: c.border, borderRadius: 10,
+  input: { fontFamily: FONT.w400, borderWidth: 1, borderColor: c.border, borderRadius: 10,
     paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: c.textDark,
     marginBottom: 8, backgroundColor: c.background,
   },
   editRow: { flexDirection: "row", gap: 8, marginBottom: 8 },
   editActions: { flexDirection: "row", justifyContent: "flex-end", gap: 10, marginTop: 4 },
   editCancelBtn: { paddingVertical: 8, paddingHorizontal: 12 },
-  editCancelText: { color: c.textMuted, fontWeight: "600", fontSize: 13 },
+  editCancelText: { color: c.textMuted, fontFamily: FONT.w600, fontSize: 13 },
   editSaveBtn: { backgroundColor: c.blue, borderRadius: 10, paddingVertical: 8, paddingHorizontal: 16 },
-  editSaveText: { color: c.onAccent, fontWeight: "700", fontSize: 13 },
+  editSaveText: { color: c.onAccent, fontFamily: FONT.w700, fontSize: 13 },
 
-  addCardTitle: { fontSize: 14, fontWeight: "800", color: c.textDark, marginBottom: 10 },
+  addCardTitle: { fontSize: 14, fontFamily: FONT.w800, color: c.textDark, marginBottom: 10 },
   addBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
     backgroundColor: c.blue, borderRadius: 16, paddingVertical: 16, marginTop: 4, marginBottom: 8,
   },
-  addBtnText: { color: c.onAccent, fontSize: 15, fontWeight: "700" },
+  addBtnText: { color: c.onAccent, fontSize: 15, fontFamily: FONT.w700 },
 
   vorlageRow: {
     flexDirection: "row", alignItems: "center", gap: 12,

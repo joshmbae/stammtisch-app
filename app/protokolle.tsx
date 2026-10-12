@@ -12,7 +12,7 @@ import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Protokoll, StammtischTermin } from "../types";
 import { loadProtokolle, loadTermine } from "../utils/storage";
-import { SHADOWS, ThemeColors } from "../constants/design";
+import { SHADOWS, ThemeColors, FONT } from "../constants/design";
 import { useColors, useThemedStyles } from "../contexts/ThemeContext";
 import { HamburgerButton } from "../components/HamburgerButton";
 import { BackButton } from "../components/BackButton";
@@ -153,12 +153,12 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderWidth: 1, borderColor: c.border,
   },
   headerTexts: { flex: 1 },
-  headerTitle: { fontSize: 18, fontWeight: "800", color: c.textDark },
-  headerSub: { fontSize: 12, color: c.textMuted, marginTop: 2 },
+  headerTitle: { fontSize: 18, fontFamily: FONT.w800, color: c.textDark },
+  headerSub: { fontFamily: FONT.w400, fontSize: 12, color: c.textMuted, marginTop: 2 },
 
   empty: { alignItems: "center", paddingTop: 60, gap: 12 },
-  emptyIcon: { fontSize: 48 },
-  emptyText: { fontSize: 15, color: c.textMuted, textAlign: "center", lineHeight: 22 },
+  emptyIcon: { fontFamily: FONT.w400, fontSize: 48 },
+  emptyText: { fontFamily: FONT.w400, fontSize: 15, color: c.textMuted, textAlign: "center", lineHeight: 22 },
 
   card: {
     backgroundColor: c.card, borderRadius: 18, padding: 14, marginBottom: 12,
@@ -166,11 +166,11 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   cardHeader: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 10 },
   typIcon: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
-  typEmoji: { fontSize: 20 },
+  typEmoji: { fontFamily: FONT.w400, fontSize: 20 },
   cardMeta: { flex: 1 },
-  cardTitel: { fontSize: 15, fontWeight: "800", color: c.textDark },
-  cardDatum: { fontSize: 12, color: c.blue, fontWeight: "600", marginTop: 2 },
+  cardTitel: { fontSize: 15, fontFamily: FONT.w800, color: c.textDark },
+  cardDatum: { fontSize: 12, color: c.blue, fontFamily: FONT.w600, marginTop: 2 },
   cardRight: { alignItems: "flex-end", gap: 4 },
-  cardDate: { fontSize: 12, color: c.textLight },
-  cardExcerpt: { fontSize: 13, color: c.textMuted, lineHeight: 19 },
+  cardDate: { fontFamily: FONT.w400, fontSize: 12, color: c.textLight },
+  cardExcerpt: { fontFamily: FONT.w400, fontSize: 13, color: c.textMuted, lineHeight: 19 },
 });

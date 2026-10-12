@@ -15,7 +15,7 @@ import { router } from "expo-router";
 import { createStammtisch, findStammtischByName } from "../utils/storage";
 import { hashStammtischPassword } from "../utils/pin";
 import { useStammtisch } from "../contexts/StammtischContext";
-import { SHADOWS, ThemeColors } from "../constants/design";
+import { SHADOWS, ThemeColors, FONT } from "../constants/design";
 import { useColors, useThemedStyles } from "../contexts/ThemeContext";
 import StammtischLogo from "../components/StammtischLogo";
 
@@ -187,8 +187,8 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   content: { padding: 24, paddingBottom: 40, alignItems: "center" },
 
   header: { alignItems: "center", marginBottom: 28, marginTop: 8, gap: 10 },
-  title: { fontSize: 28, fontWeight: "800", color: c.textDark, marginTop: 8 },
-  subtitle: { fontSize: 15, color: c.textMuted, textAlign: "center" },
+  title: { fontSize: 28, fontFamily: FONT.w800, color: c.textDark, marginTop: 8 },
+  subtitle: { fontFamily: FONT.w400, fontSize: 15, color: c.textMuted, textAlign: "center" },
 
   toggleRow: {
     flexDirection: "row",
@@ -202,7 +202,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   toggleBtn: { flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: "center" },
   toggleBtnActive: { backgroundColor: c.blue },
-  toggleText: { fontSize: 13, fontWeight: "700", color: c.textMuted },
+  toggleText: { fontSize: 13, fontFamily: FONT.w700, color: c.textMuted },
   toggleTextActive: { color: c.onAccent },
 
   card: {
@@ -215,13 +215,12 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderColor: c.border,
     ...SHADOWS.card,
   },
-  fieldLabel: { fontSize: 12, fontWeight: "700", color: c.textMuted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 },
-  input: {
-    backgroundColor: c.background, borderRadius: 10, borderWidth: 1, borderColor: c.border,
+  fieldLabel: { fontSize: 12, fontFamily: FONT.w700, color: c.textMuted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 },
+  input: { fontFamily: FONT.w400, backgroundColor: c.background, borderRadius: 10, borderWidth: 1, borderColor: c.border,
     paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: c.textDark,
   },
 
-  error: { color: c.danger, fontSize: 13, textAlign: "center", marginTop: 4, marginBottom: 8 },
+  error: { fontFamily: FONT.w400, color: c.danger, fontSize: 13, textAlign: "center", marginTop: 4, marginBottom: 8 },
 
   submitBtn: {
     width: "100%",
@@ -233,5 +232,5 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     marginTop: 8,
   },
   submitBtnDisabled: { opacity: 0.7 },
-  submitBtnText: { color: c.onAccent, fontSize: 16, fontWeight: "700" },
+  submitBtnText: { color: c.onAccent, fontSize: 16, fontFamily: FONT.w700 },
 });

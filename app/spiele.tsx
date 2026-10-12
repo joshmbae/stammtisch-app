@@ -5,7 +5,7 @@ import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Spiel, StammtischVerordnung } from "../types";
 import { loadSpiele, loadVerordnung } from "../utils/storage";
-import { SHADOWS, ThemeColors } from "../constants/design";
+import { SHADOWS, ThemeColors, FONT } from "../constants/design";
 import { useColors, useThemedStyles } from "../contexts/ThemeContext";
 import { HamburgerButton } from "../components/HamburgerButton";
 import { BackButton } from "../components/BackButton";
@@ -97,26 +97,26 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderWidth: 1, borderColor: c.border,
   },
   headerTexts: { flex: 1 },
-  headerTitle: { fontSize: 18, fontWeight: "800", color: c.textDark },
-  headerSub: { fontSize: 12, color: c.textMuted, marginTop: 2 },
+  headerTitle: { fontSize: 18, fontFamily: FONT.w800, color: c.textDark },
+  headerSub: { fontFamily: FONT.w400, fontSize: 12, color: c.textMuted, marginTop: 2 },
 
   spielCard: {
     flexDirection: "row", alignItems: "center", gap: 12,
     backgroundColor: c.card, borderRadius: 14, padding: 14, marginBottom: 10,
     borderWidth: 1, borderColor: c.border, ...SHADOWS.light,
   },
-  spielEmoji: { fontSize: 26 },
-  spielName: { fontSize: 15, fontWeight: "700", color: c.textDark },
-  spielAktivBadge: { fontSize: 11, fontWeight: "700", color: c.success, marginTop: 2 },
+  spielEmoji: { fontFamily: FONT.w400, fontSize: 26 },
+  spielName: { fontSize: 15, fontFamily: FONT.w700, color: c.textDark },
+  spielAktivBadge: { fontSize: 11, fontFamily: FONT.w700, color: c.success, marginTop: 2 },
 
   addBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
     backgroundColor: c.blue, borderRadius: 16, paddingVertical: 16, marginTop: 8,
   },
-  addBtnText: { color: c.onAccent, fontSize: 16, fontWeight: "700" },
+  addBtnText: { color: c.onAccent, fontSize: 16, fontFamily: FONT.w700 },
 
   emptyState: { alignItems: "center", paddingVertical: 40, gap: 8 },
-  emptyEmoji: { fontSize: 40 },
-  emptyTitle: { fontSize: 17, fontWeight: "800", color: c.textDark },
-  emptySub: { fontSize: 13, color: c.textMuted, textAlign: "center", paddingHorizontal: 20 },
+  emptyEmoji: { fontFamily: FONT.w400, fontSize: 40 },
+  emptyTitle: { fontSize: 17, fontFamily: FONT.w800, color: c.textDark },
+  emptySub: { fontFamily: FONT.w400, fontSize: 13, color: c.textMuted, textAlign: "center", paddingHorizontal: 20 },
 });

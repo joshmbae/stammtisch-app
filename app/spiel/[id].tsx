@@ -26,7 +26,7 @@ import {
   loadVerordnung,
   saveVerordnung,
 } from "../../utils/storage";
-import { ThemeColors } from "../../constants/design";
+import { ThemeColors, FONT } from "../../constants/design";
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import LoadingSpinner from "../../components/LoadingSpinner";
 
@@ -298,46 +298,45 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
 
   header: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 20, paddingTop: 4 },
   backBtn: { padding: 4 },
-  title: { fontSize: 22, fontWeight: "800", color: c.textDark },
+  title: { fontSize: 22, fontFamily: FONT.w800, color: c.textDark },
 
   card: { backgroundColor: c.card, borderRadius: 14, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: c.border },
-  fieldLabel: { fontSize: 12, fontWeight: "700", color: c.textMuted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 },
+  fieldLabel: { fontSize: 12, fontFamily: FONT.w700, color: c.textMuted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 },
 
-  input: {
-    backgroundColor: c.background, borderRadius: 10, borderWidth: 1, borderColor: c.border,
+  input: { fontFamily: FONT.w400, backgroundColor: c.background, borderRadius: 10, borderWidth: 1, borderColor: c.border,
     paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: c.textDark,
   },
 
-  sectionTitle: { fontSize: 15, fontWeight: "800", color: c.textDark, marginTop: 12, marginBottom: 10 },
+  sectionTitle: { fontSize: 15, fontFamily: FONT.w800, color: c.textDark, marginTop: 12, marginBottom: 10 },
 
   ereignisCard: {
     backgroundColor: c.card, borderRadius: 14, padding: 14, marginBottom: 10,
     borderWidth: 1, borderColor: c.border, gap: 10,
   },
   ereignisHeader: { flexDirection: "row", alignItems: "center" },
-  ereignisNr: { fontSize: 13, fontWeight: "700", color: c.gold },
+  ereignisNr: { fontSize: 13, fontFamily: FONT.w700, color: c.gold },
   ereignisRow: { flexDirection: "row", gap: 8 },
   emojiInput: { width: 56, textAlign: "center" },
 
   strafRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  strafLabel: { fontSize: 13, fontWeight: "600", color: c.textDark },
+  strafLabel: { fontSize: 13, fontFamily: FONT.w600, color: c.textDark },
 
   addRowBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
     borderRadius: 12, borderWidth: 1.5, borderColor: c.blue, borderStyle: "dashed",
     paddingVertical: 12, marginBottom: 10,
   },
-  addRowBtnText: { fontSize: 13, fontWeight: "700", color: c.blue },
+  addRowBtnText: { fontSize: 13, fontFamily: FONT.w700, color: c.blue },
 
   saveBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
     backgroundColor: c.blue, borderRadius: 16, paddingVertical: 16, marginTop: 8,
   },
-  saveBtnText: { color: c.onAccent, fontSize: 16, fontWeight: "700" },
+  saveBtnText: { color: c.onAccent, fontSize: 16, fontFamily: FONT.w700 },
 
   deleteBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
     paddingVertical: 14, marginTop: 12,
   },
-  deleteBtnText: { color: c.danger, fontSize: 14, fontWeight: "700" },
+  deleteBtnText: { color: c.danger, fontSize: 14, fontFamily: FONT.w700 },
 });

@@ -25,7 +25,7 @@ import {
   logActivity,
   addKassenEintrag,
 } from "../utils/storage";
-import { SHADOWS, ThemeColors } from "../constants/design";
+import { SHADOWS, ThemeColors, FONT } from "../constants/design";
 import { useColors, useThemedStyles } from "../contexts/ThemeContext";
 import { HamburgerButton } from "../components/HamburgerButton";
 import { BackButton } from "../components/BackButton";
@@ -202,12 +202,12 @@ export default function StrafenScreen() {
                         <Image source={{ uri: m.photoUri }} style={styles.chipAvatar} />
                       ) : (
                         <View style={[styles.chipAvatarFallback, { backgroundColor: isSelected ? "rgba(255,255,255,0.3)" : m.avatarColor + "33" }]}>
-                          <Text style={{ fontSize: 11, fontWeight: "700", color: isSelected ? c.onAccent : m.avatarColor }}>
+                          <Text style={{ fontSize: 11, fontFamily: FONT.w700, color: isSelected ? c.onAvatar : m.avatarColor }}>
                             {getInitial(m.name)}
                           </Text>
                         </View>
                       )}
-                      <Text style={[styles.chipName, isSelected && { color: c.onAccent }]}>
+                      <Text style={[styles.chipName, isSelected && { color: c.onAvatar }]}>
                         {m.spitzname ?? m.name.split(" ")[0]}
                       </Text>
                     </TouchableOpacity>
@@ -278,12 +278,12 @@ export default function StrafenScreen() {
                     <Image source={{ uri: m.photoUri }} style={styles.chipAvatar} />
                   ) : (
                     <View style={[styles.chipAvatarFallback, { backgroundColor: filterMemberId === m.id ? "rgba(255,255,255,0.3)" : m.avatarColor + "33" }]}>
-                      <Text style={{ fontSize: 11, fontWeight: "700", color: filterMemberId === m.id ? c.onAccent : m.avatarColor }}>
+                      <Text style={{ fontSize: 11, fontFamily: FONT.w700, color: filterMemberId === m.id ? c.onAvatar : m.avatarColor }}>
                         {getInitial(m.name)}
                       </Text>
                     </View>
                   )}
-                  <Text style={[styles.chipName, filterMemberId === m.id && { color: c.onAccent }]}>
+                  <Text style={[styles.chipName, filterMemberId === m.id && { color: c.onAvatar }]}>
                     {m.name.split(" ")[0]}
                   </Text>
                 </TouchableOpacity>
@@ -323,7 +323,7 @@ export default function StrafenScreen() {
                       log.beglichen && { backgroundColor: c.successBg },
                     ]}>
                       <View style={[styles.eintragIcon, { backgroundColor: log.beglichen ? c.success + "15" : c.danger + "12" }]}>
-                        <Text style={{ fontSize: 18 }}>{log.beglichen ? "✅" : kat?.emoji ?? "💰"}</Text>
+                        <Text style={{ fontFamily: FONT.w400, fontSize: 18 }}>{log.beglichen ? "✅" : kat?.emoji ?? "💰"}</Text>
                       </View>
                       <View style={styles.eintragMeta}>
                         <Text style={styles.eintragTypLabel}>{member?.name ?? "Unbekannt"}</Text>
@@ -386,34 +386,33 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderWidth: 1, borderColor: c.border,
   },
   headerTexts: { flex: 1 },
-  headerTitle: { fontSize: 18, fontWeight: "800", color: c.textDark },
-  headerSub: { fontSize: 12, color: c.textMuted, marginTop: 2 },
+  headerTitle: { fontSize: 18, fontFamily: FONT.w800, color: c.textDark },
+  headerSub: { fontFamily: FONT.w400, fontSize: 12, color: c.textMuted, marginTop: 2 },
 
   addCard: {
     backgroundColor: c.card, borderRadius: 18, padding: 16,
     marginBottom: 14, borderWidth: 1.5, borderColor: c.blue + "33", gap: 10, ...SHADOWS.card,
   },
-  addCardTitle: { fontSize: 14, fontWeight: "800", color: c.textDark },
+  addCardTitle: { fontSize: 14, fontFamily: FONT.w800, color: c.textDark },
 
   strafFormRow: { flexDirection: "row", gap: 10 },
-  strafFormLabel: { fontSize: 11, fontWeight: "700", color: c.textMuted, textTransform: "uppercase", letterSpacing: 0.3, marginBottom: 5 },
-  strafFormInput: {
-    backgroundColor: c.background, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9,
+  strafFormLabel: { fontSize: 11, fontFamily: FONT.w700, color: c.textMuted, textTransform: "uppercase", letterSpacing: 0.3, marginBottom: 5 },
+  strafFormInput: { fontFamily: FONT.w400, backgroundColor: c.background, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9,
     fontSize: 14, color: c.textDark, borderWidth: 1, borderColor: c.border,
   },
   strafSubmitBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7,
     backgroundColor: c.danger, borderRadius: 12, paddingVertical: 12,
   },
-  strafSubmitText: { color: c.onAccent, fontWeight: "700", fontSize: 14 },
+  strafSubmitText: { color: c.onAccent, fontFamily: FONT.w700, fontSize: 14 },
 
   saldoCard: {
     backgroundColor: c.card, borderRadius: 20, padding: 18,
     marginBottom: 14, borderWidth: 1.5, ...SHADOWS.card,
     alignItems: "center",
   },
-  saldoLabel: { fontSize: 13, fontWeight: "700", color: c.textMuted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 },
-  saldoValue: { fontSize: 34, fontWeight: "900", letterSpacing: -1 },
+  saldoLabel: { fontSize: 13, fontFamily: FONT.w700, color: c.textMuted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 },
+  saldoValue: { fontSize: 34, fontFamily: FONT.w900, letterSpacing: -1 },
 
   filterScroll: { marginBottom: 16 },
   filterGridTwoRows: {
@@ -427,12 +426,12 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   memberChipActive: { backgroundColor: c.blue, borderColor: c.blue },
   chipAvatar: { width: 22, height: 22, borderRadius: 11 },
   chipAvatarFallback: { width: 22, height: 22, borderRadius: 11, alignItems: "center", justifyContent: "center" },
-  chipName: { fontSize: 13, fontWeight: "600", color: c.textMid },
+  chipName: { fontSize: 13, fontFamily: FONT.w600, color: c.textMid },
 
   section: { marginBottom: 8 },
   sectionTitleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 },
-  sectionTitle: { fontSize: 13, fontWeight: "800", color: c.textMid, letterSpacing: 0.2 },
-  sectionToggle: { fontSize: 12, fontWeight: "600", color: c.blue },
+  sectionTitle: { fontSize: 13, fontFamily: FONT.w800, color: c.textMid, letterSpacing: 0.2 },
+  sectionToggle: { fontSize: 12, fontFamily: FONT.w600, color: c.blue },
 
   eintragRow: {
     flexDirection: "row", alignItems: "center", gap: 12,
@@ -441,11 +440,11 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   eintragIcon: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   eintragMeta: { flex: 1 },
-  eintragTypLabel: { fontSize: 13, fontWeight: "700", color: c.textDark },
-  eintragDesc: { fontSize: 12, color: c.textMuted, marginTop: 1 },
-  eintragNotiz: { fontSize: 12, color: c.textLight, fontStyle: "italic", marginTop: 1 },
-  eintragDatum: { fontSize: 11, color: c.textLight, marginTop: 2 },
-  eintragBetrag: { fontSize: 16, fontWeight: "800", minWidth: 70, textAlign: "right" },
+  eintragTypLabel: { fontSize: 13, fontFamily: FONT.w700, color: c.textDark },
+  eintragDesc: { fontFamily: FONT.w400, fontSize: 12, color: c.textMuted, marginTop: 1 },
+  eintragNotiz: { fontFamily: FONT.w400i, fontSize: 12, color: c.textLight, marginTop: 1 },
+  eintragDatum: { fontFamily: FONT.w400, fontSize: 11, color: c.textLight, marginTop: 2 },
+  eintragBetrag: { fontSize: 16, fontFamily: FONT.w800, minWidth: 70, textAlign: "right" },
 
   deleteAction: {
     backgroundColor: c.danger, borderRadius: 14, marginBottom: 8,
@@ -453,7 +452,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
 
   emptyState: { alignItems: "center", paddingVertical: 40, gap: 8 },
-  emptyEmoji: { fontSize: 40 },
-  emptyTitle: { fontSize: 17, fontWeight: "800", color: c.textDark },
-  emptySub: { fontSize: 13, color: c.textMuted, textAlign: "center", paddingHorizontal: 20 },
+  emptyEmoji: { fontFamily: FONT.w400, fontSize: 40 },
+  emptyTitle: { fontSize: 17, fontFamily: FONT.w800, color: c.textDark },
+  emptySub: { fontFamily: FONT.w400, fontSize: 13, color: c.textMuted, textAlign: "center", paddingHorizontal: 20 },
 });

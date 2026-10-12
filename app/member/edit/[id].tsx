@@ -18,7 +18,7 @@ import * as ImagePicker from "expo-image-picker";
 import { showAlert } from "../../../utils/alert";
 import { MemberProfile } from "../../../types";
 import { loadMembers, saveMembers, uploadAvatar, loadVerordnung } from "../../../utils/storage";
-import { AVATAR_COLORS, ThemeColors } from "../../../constants/design";
+import { AVATAR_COLORS, ThemeColors, FONT } from "../../../constants/design";
 import { useColors, useThemedStyles } from "../../../contexts/ThemeContext";
 import { getInitial } from "../../../utils/format";
 import LoadingSpinner from "../../../components/LoadingSpinner";
@@ -166,7 +166,7 @@ export default function EditMemberScreen() {
                   style={[styles.colorDot, { backgroundColor: farbe }, avatarColor === farbe && styles.colorDotSelected]}
                   onPress={() => setAvatarColor(farbe)}
                 >
-                  {avatarColor === farbe && <Ionicons name="checkmark" size={14} color={c.onAccent} />}
+                  {avatarColor === farbe && <Ionicons name="checkmark" size={14} color={c.onAvatar} />}
                 </TouchableOpacity>
               ))}
             </View>
@@ -232,7 +232,7 @@ export default function EditMemberScreen() {
         <View style={styles.card}>
           <Text style={styles.fieldLabel}>Geburtstag</Text>
           <TouchableOpacity style={styles.dateBtn} onPress={() => setShowBirthdayPicker(true)}>
-            <Text style={{ fontSize: 16 }}>🎂</Text>
+            <Text style={{ fontFamily: FONT.w400, fontSize: 16 }}>🎂</Text>
             <Text style={[styles.dateBtnText, !geburtsdatum && { color: c.textLight }]}>
               {geburtsdatum
                 ? geburtsdatum.toLocaleDateString("de-DE", { day: "2-digit", month: "long", year: "numeric" })
@@ -331,13 +331,13 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   content: { padding: 20, paddingBottom: 48 },
   header: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 20, paddingTop: 4 },
   backBtn: { padding: 4 },
-  title: { fontSize: 22, fontWeight: "800", color: c.textDark },
+  title: { fontSize: 22, fontFamily: FONT.w800, color: c.textDark },
   card: { backgroundColor: c.card, borderRadius: 14, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: c.border },
-  fieldLabel: { fontSize: 12, fontWeight: "700", color: c.textMuted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 },
-  input: { backgroundColor: c.background, borderRadius: 10, borderWidth: 1, borderColor: c.border, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: c.textDark },
+  fieldLabel: { fontSize: 12, fontFamily: FONT.w700, color: c.textMuted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 },
+  input: { fontFamily: FONT.w400, backgroundColor: c.background, borderRadius: 10, borderWidth: 1, borderColor: c.border, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: c.textDark },
   avatarRow: { flexDirection: "row", alignItems: "center", gap: 16 },
   avatarPreview: { width: 72, height: 72, borderRadius: 36, alignItems: "center", justifyContent: "center" },
-  avatarPreviewText: { fontSize: 28, fontWeight: "700", color: c.onAccent },
+  avatarPreviewText: { fontSize: 28, fontFamily: FONT.w700, color: c.onAvatar },
   avatarCameraBtn: {
     position: "absolute", bottom: 0, right: 0,
     width: 24, height: 24, borderRadius: 12,
@@ -348,17 +348,17 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   colorDot: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center" },
   colorDotSelected: { borderWidth: 3, borderColor: c.card },
   removePhoto: { marginTop: 8 },
-  removePhotoText: { fontSize: 12, color: c.danger, fontWeight: "600" },
+  removePhotoText: { fontSize: 12, color: c.danger, fontFamily: FONT.w600 },
   rollenGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   rolleChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: c.background, borderWidth: 1.5, borderColor: c.border },
-  rolleChipText: { fontSize: 13, fontWeight: "600", color: c.textDark },
+  rolleChipText: { fontSize: 13, fontFamily: FONT.w600, color: c.textDark },
   dateBtn: { flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: c.background, borderRadius: 10, borderWidth: 1, borderColor: c.border, paddingHorizontal: 12, paddingVertical: 10 },
-  dateBtnText: { fontSize: 14, color: c.textDark, fontWeight: "600" },
-  pinHint: { fontSize: 12, color: c.textMuted, lineHeight: 17, marginBottom: 10 },
+  dateBtnText: { fontSize: 14, color: c.textDark, fontFamily: FONT.w600 },
+  pinHint: { fontFamily: FONT.w400, fontSize: 12, color: c.textMuted, lineHeight: 17, marginBottom: 10 },
   pinRow: { flexDirection: "row", gap: 8 },
   pinInput: { flex: 1, textAlign: "center", letterSpacing: 4 },
   pinRemoveBtn: { marginTop: 10 },
-  pinRemoveText: { fontSize: 12, color: c.danger, fontWeight: "600" },
+  pinRemoveText: { fontSize: 12, color: c.danger, fontFamily: FONT.w600 },
   saveBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: c.blue, borderRadius: 16, paddingVertical: 16, marginTop: 8 },
-  saveBtnText: { color: c.onAccent, fontSize: 16, fontWeight: "700" },
+  saveBtnText: { color: c.onAccent, fontSize: 16, fontFamily: FONT.w700 },
 });

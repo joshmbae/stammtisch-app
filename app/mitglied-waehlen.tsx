@@ -13,7 +13,7 @@ import { MemberProfile, StammtischVerordnung } from "../types";
 import { loadMembers, loadVerordnung } from "../utils/storage";
 import { useSession } from "../contexts/SessionContext";
 import { useStammtisch } from "../contexts/StammtischContext";
-import { SHADOWS, ThemeColors } from "../constants/design";
+import { SHADOWS, ThemeColors, FONT } from "../constants/design";
 import { useThemedStyles } from "../contexts/ThemeContext";
 import StammtischLogo from "../components/StammtischLogo";
 import LoadingSpinner from "../components/LoadingSpinner";
@@ -164,8 +164,8 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   content: { padding: 24, paddingBottom: 40, alignItems: "center" },
 
   header: { alignItems: "center", marginBottom: 32, marginTop: 8, gap: 10 },
-  title: { fontSize: 28, fontWeight: "800", color: c.textDark, marginTop: 8 },
-  subtitle: { fontSize: 15, color: c.textMuted },
+  title: { fontSize: 28, fontFamily: FONT.w800, color: c.textDark, marginTop: 8 },
+  subtitle: { fontFamily: FONT.w400, fontSize: 15, color: c.textMuted },
 
   grid: {
     flexDirection: "row",
@@ -194,25 +194,25 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     marginBottom: 4,
   },
   avatarImg: { width: 60, height: 60, borderRadius: 30 },
-  avatarLetter: { fontSize: 24, fontWeight: "700", color: c.onAccent },
-  cardName: { fontSize: 15, fontWeight: "700", color: c.textDark, textAlign: "center" },
+  avatarLetter: { fontSize: 24, fontFamily: FONT.w700, color: c.onAvatar },
+  cardName: { fontSize: 15, fontFamily: FONT.w700, color: c.textDark, textAlign: "center" },
   rolleBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 10,
     marginTop: 2,
   },
-  rolleText: { fontSize: 11, fontWeight: "700" },
+  rolleText: { fontSize: 11, fontFamily: FONT.w700 },
 
   empty: { alignItems: "center", gap: 12, paddingVertical: 40 },
-  emptyIcon: { fontSize: 52 },
-  emptyText: { fontSize: 15, color: c.textMuted, textAlign: "center", lineHeight: 22 },
+  emptyIcon: { fontFamily: FONT.w400, fontSize: 52 },
+  emptyText: { fontFamily: FONT.w400, fontSize: 15, color: c.textMuted, textAlign: "center", lineHeight: 22 },
   emptyBtn: {
     backgroundColor: c.blue, borderRadius: 14,
     paddingVertical: 12, paddingHorizontal: 24,
   },
-  emptyBtnText: { color: c.onAccent, fontWeight: "700", fontSize: 15 },
+  emptyBtnText: { color: c.onAccent, fontFamily: FONT.w700, fontSize: 15 },
 
   gastBtn: { marginTop: 24 },
-  gastText: { fontSize: 14, color: c.textMuted, textDecorationLine: "underline" },
+  gastText: { fontFamily: FONT.w400, fontSize: 14, color: c.textMuted, textDecorationLine: "underline" },
 });

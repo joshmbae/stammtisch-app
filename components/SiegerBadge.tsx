@@ -1,5 +1,6 @@
 import { Text, StyleSheet } from "react-native";
 import { FuehrenderTitel } from "../utils/stats";
+import { FONT } from "../constants/design";
 
 /**
  * Zeigt am oberen Rand des Profilbilds das Icon der Wertung, die diese Person
@@ -27,7 +28,7 @@ export default function SiegerBadge({ titel, size = 16 }: { titel: FuehrenderTit
   const emoji = titel[0].emoji;
   return (
     <Text
-      style={[styles.badge, { fontSize: size + (GROESSEN_AUSGLEICH[emoji] ?? 0) }]}
+      style={[styles.badge, { fontFamily: FONT.w400, fontSize: size + (GROESSEN_AUSGLEICH[emoji] ?? 0) }]}
       accessibilityRole="image"
       accessibilityLabel={`Führt aktuell: ${titel.map((t) => t.titel).join(", ")}`}
     >

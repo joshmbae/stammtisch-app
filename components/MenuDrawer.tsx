@@ -15,7 +15,7 @@ import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { useMenu } from "../contexts/MenuContext";
 import { useSession } from "../contexts/SessionContext";
 import { useStammtisch } from "../contexts/StammtischContext";
-import { ThemeColors } from "../constants/design";
+import { ThemeColors, FONT } from "../constants/design";
 import { ThemePreference, useTheme, useThemedStyles } from "../contexts/ThemeContext";
 import { getInitial, displayName } from "../utils/format";
 
@@ -252,17 +252,17 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     width: 40, height: 40, borderRadius: 20,
     alignItems: "center", justifyContent: "center", flexShrink: 0,
   },
-  memberAvatarLetter: { fontSize: 17, fontWeight: "700", color: c.onAccent },
+  memberAvatarLetter: { fontSize: 17, fontFamily: FONT.w700, color: c.onAvatar },
   drawerTitle: {
     fontSize: 17,
-    fontWeight: "800",
+    fontFamily: FONT.w800,
     color: c.onAccent,
     letterSpacing: -0.3,
   },
   drawerSub: {
     fontSize: 11,
     color: c.gold,
-    fontWeight: "600",
+    fontFamily: FONT.w600,
     marginTop: 1,
   },
   closeBtn: {
@@ -315,12 +315,12 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   navLabel: {
     flex: 1,
     fontSize: 15,
-    fontWeight: "600",
+    fontFamily: FONT.w600,
     color: "rgba(255,255,255,0.65)",
   },
   navLabelActive: {
     color: c.onAccent,
-    fontWeight: "700",
+    fontFamily: FONT.w700,
   },
   activeIndicator: {
     width: 6,
@@ -340,7 +340,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   themeLabel: {
     fontSize: 11,
-    fontWeight: "700",
+    fontFamily: FONT.w700,
     color: "rgba(255,255,255,0.45)",
     textTransform: "uppercase",
     letterSpacing: 0.6,
@@ -366,12 +366,12 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   themeSegmentText: {
     fontSize: 12,
-    fontWeight: "600",
+    fontFamily: FONT.w600,
     color: "rgba(255,255,255,0.65)",
   },
   themeSegmentTextActive: {
     color: c.blueDark,
-    fontWeight: "700",
+    fontFamily: FONT.w700,
   },
   profilWechseln: {
     flexDirection: "row", alignItems: "center", justifyContent: "center",
@@ -380,6 +380,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   profilWechselnText: {
     fontSize: 13,
     color: "rgba(255,255,255,0.45)",
-    fontWeight: "600",
+    fontFamily: FONT.w600,
   },
 });

@@ -21,7 +21,7 @@ import { showAlert } from "../../utils/alert";
 import { StammtischVerordnung, Spiel, SPIEL_VORLAGEN, StrafKategorieDef } from "../../types";
 import { loadVerordnung, saveVerordnung, uploadStammtischLogo, loadSpiele, loadStrafKategorien, instantiateSpielVorlage, deleteStammtisch } from "../../utils/storage";
 import { hashStammtischPassword } from "../../utils/pin";
-import { SHADOWS, ThemeColors } from "../../constants/design";
+import { SHADOWS, ThemeColors, FONT } from "../../constants/design";
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { HamburgerButton } from "../../components/HamburgerButton";
 import { BackButton } from "../../components/BackButton";
@@ -632,29 +632,29 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderWidth: 1, borderColor: c.border,
   },
   headerTexts: { flex: 1 },
-  headerTitle: { fontSize: 18, fontWeight: "800", color: c.textDark },
-  headerSub: { fontSize: 12, color: c.textMuted, marginTop: 2 },
+  headerTitle: { fontSize: 18, fontFamily: FONT.w800, color: c.textDark },
+  headerSub: { fontFamily: FONT.w400, fontSize: 12, color: c.textMuted, marginTop: 2 },
 
   sectionTitle: {
-    fontSize: 15, fontWeight: "800", color: c.textDark,
+    fontSize: 15, fontFamily: FONT.w800, color: c.textDark,
     marginBottom: 10, marginTop: 8, letterSpacing: -0.2,
   },
-  optionalHint: { fontSize: 12, fontWeight: "600", color: c.textLight },
+  optionalHint: { fontSize: 12, fontFamily: FONT.w600, color: c.textLight },
 
   groupHeader: {
     borderTopWidth: 2, borderTopColor: c.gold + "40",
     paddingTop: 16, marginBottom: 4,
   },
   groupHeaderSpaced: { marginTop: 20 },
-  groupTitle: { fontSize: 19, fontWeight: "800", color: c.textDark, letterSpacing: -0.3 },
-  groupSubtitle: { fontSize: 13, color: c.textMuted, marginTop: 3, marginBottom: 4 },
+  groupTitle: { fontSize: 19, fontFamily: FONT.w800, color: c.textDark, letterSpacing: -0.3 },
+  groupSubtitle: { fontFamily: FONT.w400, fontSize: 13, color: c.textMuted, marginTop: 3, marginBottom: 4 },
 
   fieldLabelRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
   pflichtBadge: {
-    fontSize: 10, fontWeight: "800", color: c.blue, backgroundColor: c.blue + "18",
+    fontSize: 10, fontFamily: FONT.w800, color: c.blue, backgroundColor: c.blue + "18",
     borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2, textTransform: "uppercase", letterSpacing: 0.3,
   },
-  strafKatPreisText: { fontSize: 12, fontWeight: "700", color: c.danger },
+  strafKatPreisText: { fontSize: 12, fontFamily: FONT.w700, color: c.danger },
 
   card: {
     backgroundColor: c.card, borderRadius: 14, padding: 14, marginBottom: 10,
@@ -666,14 +666,13 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     flexDirection: "row", gap: 8, alignItems: "flex-start",
     backgroundColor: c.blue + "12", borderRadius: 12, padding: 12, marginBottom: 10,
   },
-  infoBoxText: { flex: 1, fontSize: 12.5, color: c.textMid, lineHeight: 18 },
+  infoBoxText: { fontFamily: FONT.w400, flex: 1, fontSize: 12.5, color: c.textMid, lineHeight: 18 },
 
-  fieldLabel: { fontSize: 12, fontWeight: "700", color: c.textMuted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 },
+  fieldLabel: { fontSize: 12, fontFamily: FONT.w700, color: c.textMuted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 },
   switchRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-  switchHint: { fontSize: 12, color: c.textLight, marginTop: -4 },
+  switchHint: { fontFamily: FONT.w400, fontSize: 12, color: c.textLight, marginTop: -4 },
 
-  input: {
-    backgroundColor: c.background, borderRadius: 10, borderWidth: 1, borderColor: c.border,
+  input: { fontFamily: FONT.w400, backgroundColor: c.background, borderRadius: 10, borderWidth: 1, borderColor: c.border,
     paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: c.textDark,
   },
   dateBtn: {
@@ -681,7 +680,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     backgroundColor: c.background, borderRadius: 10, borderWidth: 1, borderColor: c.border,
     paddingHorizontal: 12, paddingVertical: 10,
   },
-  dateBtnText: { fontSize: 14, color: c.textDark, fontWeight: "600" },
+  dateBtnText: { fontSize: 14, color: c.textDark, fontFamily: FONT.w600 },
 
   logoRow: { flexDirection: "row", alignItems: "center", gap: 14 },
   logoPreview: {
@@ -694,16 +693,16 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     backgroundColor: c.background, borderRadius: 10, borderWidth: 1, borderColor: c.border,
     paddingHorizontal: 14, paddingVertical: 8, alignSelf: "flex-start", minWidth: 120, alignItems: "center",
   },
-  logoBtnText: { fontSize: 13, fontWeight: "700", color: c.blue },
-  logoRemoveText: { fontSize: 12, color: c.danger, fontWeight: "600" },
+  logoBtnText: { fontSize: 13, fontFamily: FONT.w700, color: c.blue },
+  logoRemoveText: { fontSize: 12, color: c.danger, fontFamily: FONT.w600 },
 
   regelRow: {
     flexDirection: "row", alignItems: "flex-start", gap: 8,
     backgroundColor: c.card, borderRadius: 12, padding: 12, marginBottom: 8,
     borderWidth: 1, borderColor: c.border,
   },
-  regelNr: { fontSize: 14, fontWeight: "700", color: c.gold, minWidth: 20 },
-  regelText: { flex: 1, fontSize: 14, color: c.textDark, lineHeight: 20 },
+  regelNr: { fontSize: 14, fontFamily: FONT.w700, color: c.gold, minWidth: 20 },
+  regelText: { fontFamily: FONT.w400, flex: 1, fontSize: 14, color: c.textDark, lineHeight: 20 },
   regelDelete: { padding: 2 },
 
   regelInputRow: { flexDirection: "row", gap: 8, alignItems: "flex-end" },
@@ -718,31 +717,31 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     backgroundColor: c.card, borderRadius: 16, paddingVertical: 6, paddingHorizontal: 10,
     borderWidth: 1, borderColor: c.border,
   },
-  rolleTagText: { fontSize: 13, fontWeight: "600", color: c.textDark },
+  rolleTagText: { fontSize: 13, fontFamily: FONT.w600, color: c.textDark },
 
   spielRow: {
     flexDirection: "row", alignItems: "center", gap: 10,
     paddingVertical: 10, paddingHorizontal: 4, borderRadius: 10,
   },
   spielRowActive: { backgroundColor: c.blue + "10" },
-  spielRowEmoji: { fontSize: 20, width: 26, textAlign: "center" },
-  spielRowLabel: { flex: 1, fontSize: 14, fontWeight: "600", color: c.textDark },
-  spielRowHint: { fontSize: 12, fontWeight: "700", color: c.blue },
+  spielRowEmoji: { fontFamily: FONT.w400, fontSize: 20, width: 26, textAlign: "center" },
+  spielRowLabel: { flex: 1, fontSize: 14, fontFamily: FONT.w600, color: c.textDark },
+  spielRowHint: { fontSize: 12, fontFamily: FONT.w700, color: c.blue },
   spielManageLink: { marginTop: 6, paddingVertical: 6 },
-  spielManageLinkText: { fontSize: 13, fontWeight: "700", color: c.blue },
+  spielManageLinkText: { fontSize: 13, fontFamily: FONT.w700, color: c.blue },
 
   saveBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
     backgroundColor: c.blue, borderRadius: 16, paddingVertical: 16, marginTop: 8,
   },
   saveBtnDisabled: { opacity: 0.4 },
-  saveBtnText: { color: c.onAccent, fontSize: 16, fontWeight: "700" },
+  saveBtnText: { color: c.onAccent, fontSize: 16, fontFamily: FONT.w700 },
 
   devCard: {
     backgroundColor: c.card, borderRadius: 16, padding: 16, marginBottom: 12,
     borderWidth: 1.5, borderColor: c.danger + "44", gap: 10,
   },
-  devHint: { fontSize: 13, color: c.textMuted, lineHeight: 19 },
+  devHint: { fontFamily: FONT.w400, fontSize: 13, color: c.textMuted, lineHeight: 19 },
   devBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
     borderRadius: 14, paddingVertical: 13,
@@ -750,5 +749,5 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   devBtnPrimary: { backgroundColor: c.blue },
   devBtnDanger:  { backgroundColor: c.danger },
   devBtnDisabled: { opacity: 0.5 },
-  devBtnText: { color: c.onAccent, fontSize: 15, fontWeight: "700" },
+  devBtnText: { color: c.onAccent, fontSize: 15, fontFamily: FONT.w700 },
 });

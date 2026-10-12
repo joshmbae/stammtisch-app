@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { ThemeColors } from "../constants/design";
+import { ThemeColors, FONT } from "../constants/design";
 import { useColors, useThemedStyles } from "../contexts/ThemeContext";
 import { useOffline } from "../utils/cache";
 
@@ -28,5 +28,5 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderWidth: 1, borderColor: c.border,
     paddingVertical: 8, paddingHorizontal: 12, marginBottom: 12,
   },
-  text: { flex: 1, fontSize: 12, fontWeight: "600", color: c.textMid },
+  text: { flex: 1, fontSize: 12, fontFamily: FONT.w600, color: c.textMid },
 });

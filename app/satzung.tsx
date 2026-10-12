@@ -15,7 +15,7 @@ import { BackButton } from "../components/BackButton";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { StammtischVerordnung } from "../types";
 import { loadVerordnung } from "../utils/storage";
-import { SHADOWS, ThemeColors } from "../constants/design";
+import { SHADOWS, ThemeColors, FONT } from "../constants/design";
 import { useColors, useThemedStyles } from "../contexts/ThemeContext";
 import { gruendungsDauer, formatDauer, formatGruendungMonat } from "../utils/format";
 
@@ -161,21 +161,22 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderWidth: 1, borderColor: c.border,
   },
   headerTexts: { flex: 1 },
-  headerTitle: { fontSize: 18, fontWeight: "800", color: c.textDark },
-  headerSub: { fontSize: 12, color: c.textMuted, marginTop: 2 },
+  headerTitle: { fontSize: 18, fontFamily: FONT.w800, color: c.textDark },
+  headerSub: { fontFamily: FONT.w400, fontSize: 12, color: c.textMuted, marginTop: 2 },
 
   // ── Banner ────────────────────────────────────────────────────────────────
   banner: {
-    backgroundColor: c.blueDark, borderRadius: 24, padding: 28,
+    backgroundColor: c.heroBlue, borderRadius: 24, padding: 28,
+    borderWidth: 1, borderColor: c.heroBlueEdge,
     alignItems: "center", marginBottom: 16, ...SHADOWS.card,
   },
-  bannerEmoji: { fontSize: 40, marginBottom: 10 },
+  bannerEmoji: { fontFamily: FONT.w400, fontSize: 40, marginBottom: 10 },
   bannerTitle: {
-    fontSize: 30, fontWeight: "900", color: c.onAccent,
+    fontSize: 30, fontFamily: FONT.w900, color: c.onHeroBlue,
     letterSpacing: -0.5, textAlign: "center", marginBottom: 4,
   },
   bannerSub: {
-    fontSize: 13, fontWeight: "600",
+    fontSize: 13, fontFamily: FONT.w600,
     color: "rgba(255,255,255,0.55)", textTransform: "uppercase", letterSpacing: 1.2,
   },
   bannerBadge: {
@@ -183,7 +184,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     backgroundColor: c.gold + "33", borderRadius: 20,
     borderWidth: 1, borderColor: c.gold + "55",
   },
-  bannerBadgeText: { fontSize: 12, fontWeight: "700", color: c.gold },
+  bannerBadgeText: { fontSize: 12, fontFamily: FONT.w700, color: c.gold },
 
   // ── Eckdaten ──────────────────────────────────────────────────────────────
   eckdatenCard: {
@@ -199,9 +200,9 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     width: 40, height: 40, borderRadius: 20,
     backgroundColor: c.background, alignItems: "center", justifyContent: "center",
   },
-  eckdatenEmoji: { fontSize: 20 },
-  eckdatenLabel: { fontSize: 11, fontWeight: "700", color: c.textMuted, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 2 },
-  eckdatenValue: { fontSize: 15, fontWeight: "600", color: c.textDark },
+  eckdatenEmoji: { fontFamily: FONT.w400, fontSize: 20 },
+  eckdatenLabel: { fontSize: 11, fontFamily: FONT.w700, color: c.textMuted, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 2 },
+  eckdatenValue: { fontSize: 15, fontFamily: FONT.w600, color: c.textDark },
 
   // ── Section Divider ───────────────────────────────────────────────────────
   sectionHeader: {
@@ -209,7 +210,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     marginBottom: 14, marginTop: 4,
   },
   sectionLine: { flex: 1, height: 1, backgroundColor: c.border },
-  sectionLabel: { fontSize: 11, fontWeight: "800", color: c.textMuted, textTransform: "uppercase", letterSpacing: 0.8 },
+  sectionLabel: { fontSize: 11, fontFamily: FONT.w800, color: c.textMuted, textTransform: "uppercase", letterSpacing: 0.8 },
 
   // ── Regeln ────────────────────────────────────────────────────────────────
   regelCard: {
@@ -219,18 +220,18 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   regelNrWrap: {
     width: 32, height: 32, borderRadius: 16,
-    backgroundColor: c.blueDark, alignItems: "center", justifyContent: "center",
+    backgroundColor: c.heroBlue, alignItems: "center", justifyContent: "center",
     flexShrink: 0, marginTop: 1,
   },
-  regelNr: { fontSize: 14, fontWeight: "900", color: c.gold },
-  regelText: { flex: 1, fontSize: 15, color: c.textDark, lineHeight: 22, fontWeight: "500" },
+  regelNr: { fontSize: 14, fontFamily: FONT.w900, color: c.heroBlueSub },
+  regelText: { flex: 1, fontSize: 15, color: c.textDark, lineHeight: 22, fontFamily: FONT.w500 },
 
   // ── Sonstiges ─────────────────────────────────────────────────────────────
   sonstigesCard: {
     backgroundColor: c.card, borderRadius: 16, padding: 16,
     borderWidth: 1, borderColor: c.border, ...SHADOWS.light,
   },
-  sonstigesText: { fontSize: 14, color: c.textMid, lineHeight: 22 },
+  sonstigesText: { fontFamily: FONT.w400, fontSize: 14, color: c.textMid, lineHeight: 22 },
 
   // ── Empty ─────────────────────────────────────────────────────────────────
   emptyCard: {
@@ -238,11 +239,11 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     alignItems: "center", borderWidth: 1, borderColor: c.border,
     borderStyle: "dashed", gap: 16,
   },
-  emptyText: { fontSize: 14, color: c.textMuted, textAlign: "center", lineHeight: 21 },
+  emptyText: { fontFamily: FONT.w400, fontSize: 14, color: c.textMuted, textAlign: "center", lineHeight: 21 },
   emptyBtn: {
     flexDirection: "row", alignItems: "center", gap: 6,
     paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12,
     backgroundColor: c.blue + "12", borderWidth: 1, borderColor: c.blue + "33",
   },
-  emptyBtnText: { fontSize: 14, fontWeight: "700", color: c.blue },
+  emptyBtnText: { fontSize: 14, fontFamily: FONT.w700, color: c.blue },
 });

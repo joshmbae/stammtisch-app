@@ -24,7 +24,7 @@ import {
   loadAllSpielLogs,
   loadAllStrafLogs,
 } from "../utils/storage";
-import { SHADOWS, ThemeColors } from "../constants/design";
+import { SHADOWS, ThemeColors, FONT } from "../constants/design";
 import { useColors, useThemedStyles } from "../contexts/ThemeContext";
 import { HamburgerButton } from "../components/HamburgerButton";
 import { BackButton } from "../components/BackButton";
@@ -211,21 +211,21 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderWidth: 1, borderColor: c.border,
   },
   headerTexts: { flex: 1 },
-  headerTitle: { fontSize: 18, fontWeight: "800", color: c.textDark },
-  headerSub: { fontSize: 12, color: c.textMuted, marginTop: 2 },
+  headerTitle: { fontSize: 18, fontFamily: FONT.w800, color: c.textDark },
+  headerSub: { fontFamily: FONT.w400, fontSize: 12, color: c.textMuted, marginTop: 2 },
   addBtn: {
     width: 38, height: 38, borderRadius: 19,
     backgroundColor: c.blue, alignItems: "center", justifyContent: "center",
   },
 
   empty: { alignItems: "center", paddingTop: 48, gap: 12 },
-  emptyIcon: { fontSize: 48 },
-  emptyText: { fontSize: 15, color: c.textMuted, textAlign: "center", lineHeight: 22 },
+  emptyIcon: { fontFamily: FONT.w400, fontSize: 48 },
+  emptyText: { fontFamily: FONT.w400, fontSize: 15, color: c.textMuted, textAlign: "center", lineHeight: 22 },
   emptyAddBtn: {
     backgroundColor: c.blue, borderRadius: 12,
     paddingVertical: 12, paddingHorizontal: 24, marginTop: 8,
   },
-  emptyAddBtnText: { color: c.onAccent, fontWeight: "700", fontSize: 14 },
+  emptyAddBtnText: { color: c.onAccent, fontFamily: FONT.w700, fontSize: 14 },
 
   memberCard: {
     flexDirection: "row", alignItems: "center",
@@ -235,16 +235,16 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   memberCardInner: { flex: 1, flexDirection: "row", alignItems: "center", gap: 12, padding: 14 },
   avatar: { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center", overflow: "hidden" },
   avatarImg: { width: 48, height: 48, borderRadius: 24 },
-  avatarLetter: { fontSize: 20, fontWeight: "700", color: c.onAccent },
+  avatarLetter: { fontSize: 20, fontFamily: FONT.w700, color: c.onAvatar },
   memberInfo: { flex: 1 },
   avatarWrap: { width: 48, height: 48 },
-  memberName: { fontSize: 15, fontWeight: "700", color: c.textDark },
-  memberSub: { fontSize: 12, color: c.textMuted, marginTop: 2 },
+  memberName: { fontSize: 15, fontFamily: FONT.w700, color: c.textDark },
+  memberSub: { fontFamily: FONT.w400, fontSize: 12, color: c.textMuted, marginTop: 2 },
   deleteBtn: { padding: 16 },
 
   addLink: {
     flexDirection: "row", alignItems: "center", gap: 6,
     paddingVertical: 8, paddingHorizontal: 4, marginTop: 4, alignSelf: "flex-start",
   },
-  addLinkText: { fontSize: 14, fontWeight: "600", color: c.blue },
+  addLinkText: { fontSize: 14, fontFamily: FONT.w600, color: c.blue },
 });

@@ -30,7 +30,7 @@ import {
   loadAllSpielLogs,
   loadAllStrafLogs,
 } from "../utils/storage";
-import { SHADOWS, ThemeColors } from "../constants/design";
+import { SHADOWS, ThemeColors, FONT } from "../constants/design";
 import { useColors, useThemedStyles } from "../contexts/ThemeContext";
 import { useSession } from "../contexts/SessionContext";
 import RangVerlaufChart, { VerlaufSerie } from "../components/RangVerlaufChart";
@@ -77,7 +77,7 @@ function RangRow({ eintrag, titel }: { eintrag: RangEintrag; titel: FuehrenderTi
           <Image source={{ uri: member.photoUri }} style={styles.rangAvatar} />
         ) : (
           <View style={[styles.rangAvatar, { backgroundColor: member.avatarColor, alignItems: "center", justifyContent: "center" }]}>
-            <Text style={{ fontSize: 13, fontWeight: "700", color: c.onAccent }}>{getInitial(member.name)}</Text>
+            <Text style={{ fontSize: 13, fontFamily: FONT.w700, color: c.onAvatar }}>{getInitial(member.name)}</Text>
           </View>
         )}
         <SiegerBadge titel={titel} size={13} />
@@ -312,8 +312,8 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderWidth: 1, borderColor: c.border,
   },
   headerTexts: { flex: 1 },
-  headerTitle: { fontSize: 18, fontWeight: "800", color: c.textDark },
-  headerSub: { fontSize: 12, color: c.textMuted, marginTop: 2 },
+  headerTitle: { fontSize: 18, fontFamily: FONT.w800, color: c.textDark },
+  headerSub: { fontFamily: FONT.w400, fontSize: 12, color: c.textMuted, marginTop: 2 },
 
   jahrRow: { gap: 8, paddingRight: 4, paddingBottom: 14 },
   jahrChip: {
@@ -321,43 +321,43 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     backgroundColor: c.card, borderWidth: 1, borderColor: c.border,
   },
   jahrChipAktiv: { backgroundColor: c.blue, borderColor: c.blue },
-  jahrChipText: { fontSize: 13, fontWeight: "700", color: c.textMuted },
+  jahrChipText: { fontSize: 13, fontFamily: FONT.w700, color: c.textMuted },
   jahrChipTextAktiv: { color: c.onAccent },
 
   empty: { alignItems: "center", paddingTop: 56, gap: 12 },
-  emptyIcon: { fontSize: 48 },
-  emptyText: { fontSize: 15, color: c.textMuted, textAlign: "center" },
+  emptyIcon: { fontFamily: FONT.w400, fontSize: 48 },
+  emptyText: { fontFamily: FONT.w400, fontSize: 15, color: c.textMuted, textAlign: "center" },
 
   rangCard: {
     backgroundColor: c.card, borderRadius: 20, padding: 16, marginBottom: 14,
     borderWidth: 1, borderColor: c.border, ...SHADOWS.card,
   },
   rangCardHead: { flexDirection: "row", alignItems: "flex-start", gap: 10, marginBottom: 14 },
-  rangCardTitle: { fontSize: 15, fontWeight: "800", color: c.textDark, letterSpacing: -0.2 },
-  rangCardSub: { fontSize: 12, color: c.textMuted, marginTop: 2 },
+  rangCardTitle: { fontSize: 15, fontFamily: FONT.w800, color: c.textDark, letterSpacing: -0.2 },
+  rangCardSub: { fontFamily: FONT.w400, fontSize: 12, color: c.textMuted, marginTop: 2 },
   ansichtToggle: {
     flexDirection: "row", backgroundColor: c.cardAlt, borderRadius: 999, padding: 2,
     borderWidth: 1, borderColor: c.border,
   },
   ansichtBtn: { paddingVertical: 5, paddingHorizontal: 10, borderRadius: 999 },
   ansichtBtnAktiv: { backgroundColor: c.blue },
-  ansichtText: { fontSize: 12, fontWeight: "700", color: c.textMuted },
+  ansichtText: { fontSize: 12, fontFamily: FONT.w700, color: c.textMuted },
   ansichtTextAktiv: { color: c.onAccent },
-  verlaufLeer: { fontSize: 13, color: c.textMuted, lineHeight: 19, paddingVertical: 8 },
+  verlaufLeer: { fontFamily: FONT.w400, fontSize: 13, color: c.textMuted, lineHeight: 19, paddingVertical: 8 },
 
   rangRow: {
     flexDirection: "row", alignItems: "center", gap: 10,
     paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: c.border,
   },
-  rangMedal: { fontSize: 18, width: 28, textAlign: "center" },
+  rangMedal: { fontFamily: FONT.w400, fontSize: 18, width: 28, textAlign: "center" },
   rangAvatarWrap: { width: 36, height: 36 },
   rangAvatar: { width: 36, height: 36, borderRadius: 18 },
   rangInfo: { flex: 1 },
-  rangName: { fontSize: 14, fontWeight: "700", color: c.textDark },
-  rangSub: { fontSize: 11, color: c.textMuted, marginTop: 1 },
+  rangName: { fontSize: 14, fontFamily: FONT.w700, color: c.textDark },
+  rangSub: { fontFamily: FONT.w400, fontSize: 11, color: c.textMuted, marginTop: 1 },
   rangValueWrap: { alignItems: "flex-end" },
-  rangValue: { fontSize: 16, fontWeight: "800", color: c.blue },
-  rangValueLabel: { fontSize: 10, color: c.textMuted },
+  rangValue: { fontSize: 16, fontFamily: FONT.w800, color: c.blue },
+  rangValueLabel: { fontFamily: FONT.w400, fontSize: 10, color: c.textMuted },
 
-  footer: { textAlign: "center", fontSize: 11, color: c.textLight, marginTop: 8 },
+  footer: { fontFamily: FONT.w400, textAlign: "center", fontSize: 11, color: c.textLight, marginTop: 8 },
 });

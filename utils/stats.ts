@@ -265,6 +265,8 @@ export function jahresTitelFuer(daten: StatsDaten, memberId: string): Jahrestite
 
 /** Eine Wertung, die jemand gerade anführt — Emoji für das Badge, Titel für die Vorlesehilfe. */
 export interface FuehrenderTitel {
+  /** Ranglisten-Key, bestimmt die feste Farbe des Badges. */
+  key: string;
   emoji: string;
   titel: string;
 }
@@ -278,7 +280,7 @@ export function fuehrendeTitel(daten: StatsDaten, jahr: JahrFilter): Map<string,
   const map = new Map<string, FuehrenderTitel[]>();
   for (const liste of computeRanglisten(daten, jahr)) {
     for (const id of siegerIds(liste)) {
-      map.set(id, [...(map.get(id) ?? []), { emoji: liste.emoji, titel: liste.kurz }]);
+      map.set(id, [...(map.get(id) ?? []), { key: liste.key, emoji: liste.emoji, titel: liste.kurz }]);
     }
   }
   return map;

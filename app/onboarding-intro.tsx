@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
-import { SHADOWS, ThemeColors } from "../constants/design";
+import { SHADOWS, ThemeColors, FONT } from "../constants/design";
 import { useThemedStyles } from "../contexts/ThemeContext";
 import { useSession } from "../contexts/SessionContext";
 import { markAppIntroSeen } from "../utils/onboarding";
@@ -106,12 +106,12 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: c.background },
 
   header: { flexDirection: "row", justifyContent: "flex-end", paddingHorizontal: 20, paddingTop: 8 },
-  skipText: { fontSize: 14, color: c.textMuted, fontWeight: "600" },
+  skipText: { fontSize: 14, color: c.textMuted, fontFamily: FONT.w600 },
 
   content: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 32, gap: 14 },
-  icon: { fontSize: 64 },
-  title: { fontSize: 24, fontWeight: "800", color: c.textDark, textAlign: "center" },
-  text: { fontSize: 15, color: c.textMuted, textAlign: "center", lineHeight: 22 },
+  icon: { fontFamily: FONT.w400, fontSize: 64 },
+  title: { fontSize: 24, fontFamily: FONT.w800, color: c.textDark, textAlign: "center" },
+  text: { fontFamily: FONT.w400, fontSize: 15, color: c.textMuted, textAlign: "center", lineHeight: 22 },
 
   dots: { flexDirection: "row", justifyContent: "center", gap: 8, marginBottom: 24 },
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: c.border },
@@ -126,7 +126,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderWidth: 1,
     borderColor: c.border,
   },
-  backBtnText: { fontSize: 15, fontWeight: "700", color: c.textMuted },
+  backBtnText: { fontSize: 15, fontFamily: FONT.w700, color: c.textMuted },
   nextBtn: {
     flex: 2,
     backgroundColor: c.blue,
@@ -135,5 +135,5 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     alignItems: "center",
     ...SHADOWS.card,
   },
-  nextBtnText: { color: c.onAccent, fontSize: 15, fontWeight: "700" },
+  nextBtnText: { color: c.onAccent, fontSize: 15, fontFamily: FONT.w700 },
 });

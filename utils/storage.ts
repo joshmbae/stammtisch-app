@@ -17,6 +17,7 @@ import {
   SpielEreignisTyp,
   SpielLog,
 } from "../types";
+import { kombiAvatarFarbe } from "../constants/design";
 
 function nextId(): string {
   return Date.now().toString() + Math.random().toString(36).slice(2, 8);
@@ -153,7 +154,7 @@ function rowToMember(row: any): MemberProfile {
     rollen: row.rollen ?? (row.rolle ? [row.rolle] : ["Mitglied"]),
     lieblingsgetraenk: row.lieblingsgetraenk ?? undefined,
     beruf: row.beruf ?? undefined,
-    avatarColor: row.avatar_color,
+    avatarColor: kombiAvatarFarbe(row.avatar_color),
     photoUri: row.photo_url ?? undefined,
     notizen: row.notizen ?? undefined,
     createdAt: row.created_at,

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Modal, View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
-import { SHADOWS, ThemeColors } from "../constants/design";
+import { SHADOWS, ThemeColors, FONT } from "../constants/design";
 import { useColors, useThemedStyles } from "../contexts/ThemeContext";
 
 interface PinPromptProps {
@@ -117,10 +117,9 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     gap: 12,
     ...SHADOWS.card,
   },
-  title: { fontSize: 17, fontWeight: "800", color: c.textDark },
-  subtitle: { fontSize: 13, color: c.textMuted, lineHeight: 18 },
-  input: {
-    borderWidth: 1,
+  title: { fontSize: 17, fontFamily: FONT.w800, color: c.textDark },
+  subtitle: { fontFamily: FONT.w400, fontSize: 13, color: c.textMuted, lineHeight: 18 },
+  input: { fontFamily: FONT.w400, borderWidth: 1,
     borderColor: c.border,
     borderRadius: 12,
     paddingVertical: 12,
@@ -130,7 +129,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     color: c.textDark,
     backgroundColor: c.cardAlt,
   },
-  error: { fontSize: 12, color: c.danger, fontWeight: "600" },
+  error: { fontSize: 12, color: c.danger, fontFamily: FONT.w600 },
   actions: { flexDirection: "row", gap: 10, marginTop: 4 },
   cancelBtn: {
     flex: 1,
@@ -140,7 +139,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderWidth: 1,
     borderColor: c.border,
   },
-  cancelText: { fontSize: 14, fontWeight: "700", color: c.textMuted },
+  cancelText: { fontSize: 14, fontFamily: FONT.w700, color: c.textMuted },
   submitBtn: {
     flex: 1,
     paddingVertical: 12,
@@ -149,5 +148,5 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     backgroundColor: c.blue,
   },
   submitBtnDisabled: { opacity: 0.5 },
-  submitText: { fontSize: 14, fontWeight: "700", color: c.onAccent },
+  submitText: { fontSize: 14, fontFamily: FONT.w700, color: c.onAccent },
 });

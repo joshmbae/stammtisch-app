@@ -25,7 +25,7 @@ import {
   logActivity,
 } from "../../utils/storage";
 import { useSession } from "../../contexts/SessionContext";
-import { SHADOWS, ThemeColors } from "../../constants/design";
+import { SHADOWS, ThemeColors, FONT } from "../../constants/design";
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { displayName } from "../../utils/format";
 import { HamburgerButton } from "../../components/HamburgerButton";
@@ -204,7 +204,7 @@ const makeGridStyles = (c: ThemeColors) => StyleSheet.create({
   container: { paddingHorizontal: 0 },
   weekRow: { flexDirection: "row" },
   weekCell: { width: CELL_SIZE, alignItems: "center", paddingVertical: 6 },
-  weekLabel: { fontSize: 11, fontWeight: "700", color: c.textMuted },
+  weekLabel: { fontSize: 11, fontFamily: FONT.w700, color: c.textMuted },
 
   cell: { width: CELL_SIZE, alignItems: "center", paddingVertical: 3 },
   dayCircle: {
@@ -213,10 +213,10 @@ const makeGridStyles = (c: ThemeColors) => StyleSheet.create({
   },
   todayCircle: { backgroundColor: c.blue + "18" },
   selectedCircle: { backgroundColor: c.blue },
-  dayText: { fontSize: 14, fontWeight: "500", color: c.textDark },
+  dayText: { fontSize: 14, fontFamily: FONT.w500, color: c.textDark },
   dayTextSunday: { color: c.danger },
-  dayTextToday: { color: c.blue, fontWeight: "700" },
-  dayTextSelected: { color: c.onAccent, fontWeight: "800" },
+  dayTextToday: { color: c.blue, fontFamily: FONT.w700 },
+  dayTextSelected: { color: c.onAccent, fontFamily: FONT.w800 },
   dotsRow: { flexDirection: "row", gap: 2, height: 6, alignItems: "center", marginTop: 1 },
   dot: { width: 5, height: 5, borderRadius: 3 },
 });
@@ -823,8 +823,8 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderWidth: 1, borderColor: c.border,
   },
   headerTexts: { flex: 1 },
-  headerTitle: { fontSize: 18, fontWeight: "800", color: c.textDark },
-  headerSub: { fontSize: 12, color: c.textMuted, marginTop: 2 },
+  headerTitle: { fontSize: 18, fontFamily: FONT.w800, color: c.textDark },
+  headerSub: { fontFamily: FONT.w400, fontSize: 12, color: c.textMuted, marginTop: 2 },
   addBtn: {
     width: 38, height: 38, borderRadius: 19,
     backgroundColor: c.blue, alignItems: "center", justifyContent: "center",
@@ -836,13 +836,13 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     ...SHADOWS.card,
   },
   aktivPulse: { width: 10, height: 10, borderRadius: 5, backgroundColor: c.onAccent },
-  aktivBannerTitle: { fontSize: 15, fontWeight: "800", color: c.onAccent },
-  aktivBannerSub: { fontSize: 12, color: "rgba(255,255,255,0.85)", marginTop: 2 },
+  aktivBannerTitle: { fontSize: 15, fontFamily: FONT.w800, color: c.onAccent },
+  aktivBannerSub: { fontFamily: FONT.w400, fontSize: 12, color: "rgba(255,255,255,0.85)", marginTop: 2 },
   aktivStopBtn: {
     backgroundColor: "rgba(255,255,255,0.25)", borderRadius: 10,
     paddingHorizontal: 12, paddingVertical: 6,
   },
-  aktivStopText: { color: c.onAccent, fontWeight: "700", fontSize: 13 },
+  aktivStopText: { color: c.onAccent, fontFamily: FONT.w700, fontSize: 13 },
 
   // ── Kalender-Karte ──
   calCard: {
@@ -853,18 +853,18 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10,
   },
   monthNavBtn: { padding: 6 },
-  monthLabel: { fontSize: 16, fontWeight: "800", color: c.textDark },
-  todayHint: { fontSize: 13, fontWeight: "600", color: c.blue },
+  monthLabel: { fontSize: 16, fontFamily: FONT.w800, color: c.textDark },
+  todayHint: { fontSize: 13, fontFamily: FONT.w600, color: c.blue },
 
   legend: { flexDirection: "row", gap: 14, marginBottom: 10, flexWrap: "wrap" },
   legendItem: { flexDirection: "row", alignItems: "center", gap: 5 },
   legendDot: { width: 8, height: 8, borderRadius: 4 },
-  legendLabel: { fontSize: 11, color: c.textMuted, fontWeight: "600" },
+  legendLabel: { fontSize: 11, color: c.textMuted, fontFamily: FONT.w600 },
 
   // ── Tages-Sektion ──
   daySection: { marginBottom: 16 },
   daySectionTitle: {
-    fontSize: 15, fontWeight: "800", color: c.textDark,
+    fontSize: 15, fontFamily: FONT.w800, color: c.textDark,
     marginBottom: 10, marginTop: 4,
   },
   dayEmpty: {
@@ -872,11 +872,11 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     alignItems: "center", borderWidth: 1, borderColor: c.border,
     borderStyle: "dashed",
   },
-  dayEmptyText: { fontSize: 14, color: c.textMuted, marginBottom: 6 },
-  dayEmptyAdd: { fontSize: 14, color: c.blue, fontWeight: "700" },
+  dayEmptyText: { fontFamily: FONT.w400, fontSize: 14, color: c.textMuted, marginBottom: 6 },
+  dayEmptyAdd: { fontSize: 14, color: c.blue, fontFamily: FONT.w700 },
 
   sectionTitle: {
-    fontSize: 14, fontWeight: "800", color: c.textMid,
+    fontSize: 14, fontFamily: FONT.w800, color: c.textMid,
     marginBottom: 10, marginTop: 4,
   },
 
@@ -887,19 +887,19 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   aktivBadge: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 10 },
   aktivDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: c.gold },
-  aktivText: { fontSize: 12, fontWeight: "700", color: c.gold },
+  aktivText: { fontSize: 12, fontFamily: FONT.w700, color: c.gold },
 
   eventTop: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
   eventIcon: {
     width: 40, height: 40, borderRadius: 20,
     alignItems: "center", justifyContent: "center", flexShrink: 0,
   },
-  eventEmoji: { fontSize: 20 },
+  eventEmoji: { fontFamily: FONT.w400, fontSize: 20 },
   eventInfo: { flex: 1 },
-  eventTitel: { fontSize: 15, fontWeight: "800", color: c.textDark, marginBottom: 2 },
-  eventDatum: { fontSize: 13, fontWeight: "600", marginBottom: 3 },
-  eventMeta: { fontSize: 12, color: c.textMuted, marginBottom: 2 },
-  eventNotizen: { fontSize: 12, color: c.textMuted, fontStyle: "italic", marginTop: 4 },
+  eventTitel: { fontSize: 15, fontFamily: FONT.w800, color: c.textDark, marginBottom: 2 },
+  eventDatum: { fontSize: 13, fontFamily: FONT.w600, marginBottom: 3 },
+  eventMeta: { fontFamily: FONT.w400, fontSize: 12, color: c.textMuted, marginBottom: 2 },
+  eventNotizen: { fontFamily: FONT.w400i, fontSize: 12, color: c.textMuted, marginTop: 4 },
   deleteBtn: { padding: 4 },
 
   eventActions: { marginTop: 12 },
@@ -907,18 +907,18 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
     backgroundColor: c.blue, borderRadius: 12, paddingVertical: 10,
   },
-  startBtnText: { color: c.onAccent, fontWeight: "700", fontSize: 14 },
+  startBtnText: { color: c.onAccent, fontFamily: FONT.w700, fontSize: 14 },
   stopBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
     backgroundColor: c.danger, borderRadius: 12, paddingVertical: 10,
   },
-  stopBtnText: { color: c.onAccent, fontWeight: "700", fontSize: 14 },
+  stopBtnText: { color: c.onAccent, fontFamily: FONT.w700, fontSize: 14 },
   detailsHint: {
     flexDirection: "row", alignItems: "center", justifyContent: "flex-end",
     gap: 4, marginTop: 8, paddingTop: 8,
     borderTopWidth: 1, borderTopColor: c.border,
   },
-  detailsHintText: { fontSize: 12, color: c.textLight, fontWeight: "500" },
+  detailsHintText: { fontSize: 12, color: c.textLight, fontFamily: FONT.w500 },
 
   // ── Formular ──
   formCard: {
@@ -926,17 +926,16 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     marginBottom: 16, borderWidth: 1, borderColor: c.border,
   },
   formHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 },
-  formTitle: { fontSize: 15, fontWeight: "800", color: c.textDark },
+  formTitle: { fontSize: 15, fontFamily: FONT.w800, color: c.textDark },
   artRow: { flexDirection: "row", gap: 6, marginBottom: 12 },
   artChip: {
     flex: 1, flexDirection: "column", alignItems: "center", justifyContent: "center",
     gap: 4, paddingVertical: 10, borderRadius: 12,
     backgroundColor: c.background, borderWidth: 1.5, borderColor: c.border,
   },
-  artEmoji: { fontSize: 18 },
-  artChipText: { fontSize: 11, fontWeight: "700", color: c.textDark },
-  input: {
-    backgroundColor: c.background, borderRadius: 10, borderWidth: 1, borderColor: c.border,
+  artEmoji: { fontFamily: FONT.w400, fontSize: 18 },
+  artChipText: { fontSize: 11, fontFamily: FONT.w700, color: c.textDark },
+  input: { fontFamily: FONT.w400, backgroundColor: c.background, borderRadius: 10, borderWidth: 1, borderColor: c.border,
     paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: c.textDark, marginBottom: 10,
   },
   dateBtn: {
@@ -944,24 +943,23 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     backgroundColor: c.background, borderRadius: 10, borderWidth: 1, borderColor: c.border,
     paddingHorizontal: 12, paddingVertical: 10, marginBottom: 10,
   },
-  dateBtnText: { flex: 1, fontSize: 14, color: c.textDark, fontWeight: "600" },
+  dateBtnText: { flex: 1, fontSize: 14, color: c.textDark, fontFamily: FONT.w600 },
   zeitRow: { flexDirection: "row", gap: 10 },
   wiederholToggle: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 },
-  wiederholToggleText: { fontSize: 14, fontWeight: "600", color: c.textDark },
+  wiederholToggleText: { fontSize: 14, fontFamily: FONT.w600, color: c.textDark },
   wiederholOptionen: { marginBottom: 4 },
   wiederholAnzahlRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10, gap: 10 },
-  wiederholAnzahlLabel: { fontSize: 13, color: c.textMuted, flex: 1 },
-  wiederholAnzahlInput: {
-    backgroundColor: c.background, borderRadius: 10, borderWidth: 1, borderColor: c.border,
+  wiederholAnzahlLabel: { fontFamily: FONT.w400, fontSize: 13, color: c.textMuted, flex: 1 },
+  wiederholAnzahlInput: { fontFamily: FONT.w400, backgroundColor: c.background, borderRadius: 10, borderWidth: 1, borderColor: c.border,
     paddingHorizontal: 12, paddingVertical: 8, fontSize: 14, color: c.textDark, width: 56, textAlign: "center",
   },
   saveBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
     borderRadius: 12, paddingVertical: 12, marginTop: 4,
   },
-  saveBtnText: { color: c.onAccent, fontWeight: "700", fontSize: 14 },
+  saveBtnText: { color: c.onAccent, fontFamily: FONT.w700, fontSize: 14 },
 
   empty: { alignItems: "center", paddingTop: 48, gap: 12 },
-  emptyIcon: { fontSize: 48 },
-  emptyText: { fontSize: 15, color: c.textMuted, textAlign: "center", lineHeight: 22 },
+  emptyIcon: { fontFamily: FONT.w400, fontSize: 48 },
+  emptyText: { fontFamily: FONT.w400, fontSize: 15, color: c.textMuted, textAlign: "center", lineHeight: 22 },
 });

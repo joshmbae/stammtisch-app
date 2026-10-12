@@ -32,7 +32,7 @@ import {
   loadVerordnung,
   loadTermine,
 } from "../../utils/storage";
-import { SHADOWS, ThemeColors } from "../../constants/design";
+import { SHADOWS, ThemeColors, FONT } from "../../constants/design";
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { formatEuro, getInitial, displayName, anwesenheitsQuote } from "../../utils/format";
 import PinPrompt from "../../components/PinPrompt";
@@ -376,11 +376,11 @@ export default function MemberDetailScreen() {
                   : `${formatEuro(strafGesamt)} Euro Strafen gesamt, alles beglichen`}
               >
                 <Text style={styles.statEmoji}>💰</Text>
-                <Text style={[styles.statValue, { fontSize: 15 }]}>
+                <Text style={[styles.statValue, { fontFamily: FONT.w400, fontSize: 15 }]}>
                   {formatEuro(strafGesamt)} €
                 </Text>
                 <Text style={styles.statLabel}>Strafen gesamt</Text>
-                <Text style={[styles.statLabel, { fontWeight: "700", color: strafOffen > 0 ? c.danger : c.success }]}>
+                <Text style={[styles.statLabel, { fontFamily: FONT.w700, color: strafOffen > 0 ? c.danger : c.success }]}>
                   {strafOffen > 0 ? `offen: ${formatEuro(strafOffen)} €` : "✓ alles beglichen"}
                 </Text>
               </TouchableOpacity>
@@ -453,8 +453,8 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
 
   header: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 16, paddingTop: 4 },
   backBtn: { padding: 4 },
-  backText: { fontSize: 32, color: c.blue, lineHeight: 36 },
-  headerTitle: { fontSize: 20, fontWeight: "800", color: c.textDark, flex: 1 },
+  backText: { fontFamily: FONT.w400, fontSize: 32, color: c.blue, lineHeight: 36 },
+  headerTitle: { fontSize: 20, fontFamily: FONT.w800, color: c.textDark, flex: 1 },
   editBtn: {
     width: 36, height: 36, borderRadius: 18, backgroundColor: c.card,
     alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: c.border,
@@ -467,32 +467,32 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   heroAvatar: { width: 64, height: 64, borderRadius: 32 },
   heroAvatarPlaceholder: { width: 64, height: 64, borderRadius: 32, alignItems: "center", justifyContent: "center" },
-  heroAvatarLetter: { fontSize: 26, fontWeight: "700", color: c.onAccent },
+  heroAvatarLetter: { fontSize: 26, fontFamily: FONT.w700, color: c.onAvatar },
   heroInfo: { flex: 1, gap: 4 },
   heroAvatarWrap: { width: 64, height: 64 },
   titelJahrRow: { flexDirection: "row", alignItems: "flex-start", gap: 10, paddingVertical: 6 },
-  titelJahr: { fontSize: 13, fontWeight: "800", color: c.textMuted, width: 44, paddingTop: 3 },
+  titelJahr: { fontSize: 13, fontFamily: FONT.w800, color: c.textMuted, width: 44, paddingTop: 3 },
   titelChips: { flex: 1, flexDirection: "row", flexWrap: "wrap", gap: 6 },
   titelChip: {
     backgroundColor: c.goldBg, borderRadius: 10,
     borderWidth: 1, borderColor: c.gold + "44",
     paddingHorizontal: 9, paddingVertical: 4,
   },
-  titelChipText: { fontSize: 12, fontWeight: "700", color: c.textMid },
-  titelHinweis: { fontSize: 11, color: c.textLight, marginTop: 8 },
-  heroName: { fontSize: 18, fontWeight: "800", color: c.textDark },
+  titelChipText: { fontSize: 12, fontFamily: FONT.w700, color: c.textMid },
+  titelHinweis: { fontFamily: FONT.w400, fontSize: 11, color: c.textLight, marginTop: 8 },
+  heroName: { fontSize: 18, fontFamily: FONT.w800, color: c.textDark },
   rolleBadge: { alignSelf: "flex-start", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10, borderWidth: 1 },
-  rolleBadgeText: { fontSize: 12, fontWeight: "700" },
+  rolleBadgeText: { fontSize: 12, fontFamily: FONT.w700 },
 
   card: {
     backgroundColor: c.card, borderRadius: 16, padding: 16, marginBottom: 12,
     borderWidth: 1, borderColor: c.border,
   },
-  sectionTitle: { fontSize: 14, fontWeight: "800", color: c.textDark, marginBottom: 12, letterSpacing: -0.1 },
+  sectionTitle: { fontSize: 14, fontFamily: FONT.w800, color: c.textDark, marginBottom: 12, letterSpacing: -0.1 },
 
   infoRow: { flexDirection: "row", alignItems: "flex-start", gap: 8, marginBottom: 8 },
-  infoEmoji: { fontSize: 16, lineHeight: 20 },
-  infoText: { fontSize: 14, color: c.textMid, flex: 1, lineHeight: 20 },
+  infoEmoji: { fontFamily: FONT.w400, fontSize: 16, lineHeight: 20 },
+  infoText: { fontFamily: FONT.w400, fontSize: 14, color: c.textMid, flex: 1, lineHeight: 20 },
 
   statsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   statBox: {
@@ -507,9 +507,9 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     backgroundColor: c.successBg,
     borderWidth: 1, borderColor: c.success + "33",
   },
-  statEmoji: { fontSize: 22 },
-  statValue: { fontSize: 20, fontWeight: "800", color: c.textDark },
-  statLabel: { fontSize: 11, color: c.textMuted, textAlign: "center" },
+  statEmoji: { fontFamily: FONT.w400, fontSize: 22 },
+  statValue: { fontSize: 20, fontFamily: FONT.w800, color: c.textDark },
+  statLabel: { fontFamily: FONT.w400, fontSize: 11, color: c.textMuted, textAlign: "center" },
 
   // Termin history
   historyRow: {
@@ -518,22 +518,22 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   historyDot: { width: 8, height: 8, borderRadius: 4 },
   historyInfo: { minWidth: 90 },
-  historyTitel: { fontSize: 13, fontWeight: "700", color: c.textDark },
-  historyDatum: { fontSize: 11, color: c.textMuted, marginTop: 1 },
+  historyTitel: { fontSize: 13, fontFamily: FONT.w700, color: c.textDark },
+  historyDatum: { fontFamily: FONT.w400, fontSize: 11, color: c.textMuted, marginTop: 1 },
   historyChips: { flex: 1, flexDirection: "row", flexWrap: "wrap", gap: 4, justifyContent: "flex-end" },
   historyChip: {
     backgroundColor: c.dangerBg, borderRadius: 8, paddingHorizontal: 7, paddingVertical: 3,
   },
-  historyChipText: { fontSize: 11, fontWeight: "700", color: c.danger },
+  historyChipText: { fontSize: 11, fontFamily: FONT.w700, color: c.danger },
   historyChipDabei: {
     backgroundColor: c.success + "16", borderRadius: 8,
     paddingHorizontal: 7, paddingVertical: 3,
   },
-  historyChipDabeiText: { fontSize: 11, fontWeight: "700", color: c.success },
-  historyAbwesend: { fontSize: 12, color: c.textLight, fontStyle: "italic" },
+  historyChipDabeiText: { fontSize: 11, fontFamily: FONT.w700, color: c.success },
+  historyAbwesend: { fontFamily: FONT.w400i, fontSize: 12, color: c.textLight },
   showMoreBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5,
     paddingTop: 12, marginTop: 4,
   },
-  showMoreText: { fontSize: 13, fontWeight: "600", color: c.blue },
+  showMoreText: { fontSize: 13, fontFamily: FONT.w600, color: c.blue },
 });

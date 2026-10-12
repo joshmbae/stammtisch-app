@@ -42,7 +42,7 @@ import { useSession } from "../../contexts/SessionContext";
 import { useStammtisch } from "../../contexts/StammtischContext";
 import { supabase } from "../../utils/supabase";
 import { subscribeToActivityFeed } from "../../utils/realtime";
-import { SHADOWS, ThemeColors } from "../../constants/design";
+import { SHADOWS, ThemeColors, FONT } from "../../constants/design";
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { HamburgerButton } from "../../components/HamburgerButton";
 import StammtischLogo from "../../components/StammtischLogo";
@@ -137,7 +137,7 @@ function MemberBubble({ member, isActive, titel }: { member: MemberProfile; isAc
         </View>
         <SiegerBadge titel={titel} size={16} />
       </View>
-      <Text style={[styles.bubbleName, isActive && { color: c.blue, fontWeight: "700" }]} numberOfLines={1}>
+      <Text style={[styles.bubbleName, isActive && { color: c.blue, fontFamily: FONT.w700 }]} numberOfLines={1}>
         {firstName}
       </Text>
     </TouchableOpacity>
@@ -164,7 +164,7 @@ function RangRow({ rank, member, value, valueLabel, sub, titel }: {
           <Image source={{ uri: member.photoUri }} style={styles.rangAvatar} />
         ) : (
           <View style={[styles.rangAvatar, { backgroundColor: member.avatarColor, alignItems: "center", justifyContent: "center" }]}>
-            <Text style={{ fontSize: 13, fontWeight: "700", color: c.onAccent }}>{getInitial(member.name)}</Text>
+            <Text style={{ fontSize: 13, fontFamily: FONT.w700, color: c.onAvatar }}>{getInitial(member.name)}</Text>
           </View>
         )}
         <SiegerBadge titel={titel} size={13} />
@@ -355,7 +355,7 @@ export default function HomeScreen() {
             </TouchableOpacity>
           ) : (
             <View style={styles.myAvatarPlaceholder}>
-              <Text style={{ fontSize: 22 }}>🍺</Text>
+              <Text style={{ fontFamily: FONT.w400, fontSize: 22 }}>🍺</Text>
             </View>
           )}
         </View>
@@ -456,7 +456,7 @@ export default function HomeScreen() {
         {/* ── Kassenstand + Nächster Geburtstag ── */}
         <View style={styles.quickRow}>
           <TouchableOpacity style={styles.quickCard} onPress={() => router.push("/kasse")} activeOpacity={0.85}>
-            <Text style={[styles.quickValue, { fontSize: 24, color: saldoPositiv ? c.success : c.danger }]}>
+            <Text style={[styles.quickValue, { fontFamily: FONT.w400, fontSize: 24, color: saldoPositiv ? c.success : c.danger }]}>
               {saldoPositiv ? "+" : "−"}{Math.round(Math.abs(saldo)).toLocaleString("de-DE")} €
             </Text>
             <Text style={styles.quickLabel}>💰 Kassenstand</Text>
@@ -475,7 +475,7 @@ export default function HomeScreen() {
                     <Text style={styles.quickBirthdayLetter}>{getInitial(nextBirthday.member.name)}</Text>
                   )}
                   <View style={styles.quickBirthdayBadge}>
-                    <Text style={{ fontSize: 12 }}>🎂</Text>
+                    <Text style={{ fontFamily: FONT.w400, fontSize: 12 }}>🎂</Text>
                   </View>
                 </View>
                 <Text style={[styles.quickLabel, { textAlign: "center" }]}>
@@ -484,7 +484,7 @@ export default function HomeScreen() {
               </>
             ) : (
               <>
-                <Text style={[styles.quickValue, { fontSize: 22 }]}>🎂</Text>
+                <Text style={[styles.quickValue, { fontFamily: FONT.w400, fontSize: 22 }]}>🎂</Text>
                 <Text style={styles.quickLabel}>Geburtstage</Text>
               </>
             )}
@@ -505,7 +505,7 @@ export default function HomeScreen() {
             return (
               <TouchableOpacity style={styles.activityRow} onPress={() => router.push(route as any)} activeOpacity={0.88}>
                 <View style={styles.activityIcon}>
-                  <Text style={{ fontSize: 22 }}>{rendered?.emoji ?? "📋"}</Text>
+                  <Text style={{ fontFamily: FONT.w400, fontSize: 22 }}>{rendered?.emoji ?? "📋"}</Text>
                 </View>
                 <View style={styles.activityTexts}>
                   <Text style={styles.activityTitle}>{rendered?.text ?? "Noch keine Aktivität"}</Text>
@@ -658,18 +658,18 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   headerCenter: { flex: 1 },
   headerStammtisch: {
-    fontSize: 20, fontWeight: "900", color: c.textDark,
+    fontSize: 20, fontFamily: FONT.w900, color: c.textDark,
     letterSpacing: -0.5, lineHeight: 24,
   },
   headerGreeting: {
-    fontSize: 12, color: c.textMuted, fontWeight: "500", marginTop: 2,
+    fontSize: 12, color: c.textMuted, fontFamily: FONT.w500, marginTop: 2,
   },
   myAvatarBtn: {
     width: 44, height: 44, borderRadius: 22,
     alignItems: "center", justifyContent: "center", flexShrink: 0,
   },
   myAvatarImg: { width: 44, height: 44, borderRadius: 22 },
-  myAvatarLetter: { fontSize: 18, fontWeight: "700", color: c.onAccent },
+  myAvatarLetter: { fontSize: 18, fontFamily: FONT.w700, color: c.onAvatar },
   myAvatarPlaceholder: {
     width: 44, height: 44, borderRadius: 22,
     alignItems: "center", justifyContent: "center",
@@ -684,15 +684,15 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     backgroundColor: c.blueDark, borderRadius: 20, padding: 16, ...SHADOWS.card,
   },
   countdownLabel: {
-    fontSize: 10, fontWeight: "700", color: "rgba(255,255,255,0.5)",
+    fontSize: 10, fontFamily: FONT.w700, color: "rgba(255,255,255,0.5)",
     textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 4,
   },
-  countdownTitle: { fontSize: 15, fontWeight: "800", color: "#FFFFFF", marginBottom: 2 },
-  countdownDate: { fontSize: 12, color: "rgba(255,255,255,0.6)" },
+  countdownTitle: { fontSize: 15, fontFamily: FONT.w800, color: "#FFFFFF", marginBottom: 2 },
+  countdownDate: { fontFamily: FONT.w400, fontSize: 12, color: "rgba(255,255,255,0.6)" },
   countdownNumRow: { flexDirection: "row", alignItems: "baseline", gap: 4, marginTop: 10 },
-  countdownNum: { fontSize: 40, fontWeight: "900", color: c.gold, lineHeight: 44 },
-  countdownUnit: { fontSize: 14, fontWeight: "700", color: "rgba(255,255,255,0.7)" },
-  countdownRsvp: { fontSize: 11, fontWeight: "600", color: "rgba(255,255,255,0.6)", marginTop: 8 },
+  countdownNum: { fontSize: 40, fontFamily: FONT.w900, color: c.gold, lineHeight: 44 },
+  countdownUnit: { fontSize: 14, fontFamily: FONT.w700, color: "rgba(255,255,255,0.7)" },
+  countdownRsvp: { fontSize: 11, fontFamily: FONT.w600, color: "rgba(255,255,255,0.6)", marginTop: 8 },
 
   letzterCard: {
     flex: 1,
@@ -701,24 +701,24 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderWidth: 1, borderColor: "rgba(255,255,255,0.08)",
   },
   letzterLabel: {
-    fontSize: 10, fontWeight: "700", color: "rgba(255,255,255,0.45)",
+    fontSize: 10, fontFamily: FONT.w700, color: "rgba(255,255,255,0.45)",
     textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 6,
   },
-  letzterEmoji: { fontSize: 24 },
-  letzterDate: { fontSize: 11, fontWeight: "600", color: "rgba(255,255,255,0.65)", marginTop: 4, textAlign: "center" },
+  letzterEmoji: { fontFamily: FONT.w400, fontSize: 24 },
+  letzterDate: { fontSize: 11, fontFamily: FONT.w600, color: "rgba(255,255,255,0.65)", marginTop: 4, textAlign: "center" },
 
   // ── Meine Bilanz ──────────────────────────────────────────────────────────
   myStatsCard: {
     backgroundColor: c.card, borderRadius: 18, padding: 14, marginBottom: 12,
     borderWidth: 1.5, ...SHADOWS.light,
   },
-  myStatsTitle: { fontSize: 14, fontWeight: "800", color: c.textDark, marginBottom: 12, letterSpacing: -0.2 },
+  myStatsTitle: { fontSize: 14, fontFamily: FONT.w800, color: c.textDark, marginBottom: 12, letterSpacing: -0.2 },
   myStatsRow: { flexDirection: "row", alignItems: "center" },
   myStatBox: { flex: 1, alignItems: "center", gap: 3 },
   myStatDivider: { width: 1, height: 36, backgroundColor: c.border },
-  myStatEmoji: { fontSize: 18 },
-  myStatValue: { fontSize: 14, fontWeight: "800", color: c.textDark },
-  myStatLabel: { fontSize: 10, color: c.textMuted, fontWeight: "600" },
+  myStatEmoji: { fontFamily: FONT.w400, fontSize: 18 },
+  myStatValue: { fontSize: 14, fontFamily: FONT.w800, color: c.textDark },
+  myStatLabel: { fontSize: 10, color: c.textMuted, fontFamily: FONT.w600 },
 
   // ── Quick: Kasse + Geburtstag ─────────────────────────────────────────────
   quickRow: { flexDirection: "row", gap: 10, marginBottom: 12 },
@@ -728,14 +728,14 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     alignItems: "center", justifyContent: "center", gap: 6,
     borderWidth: 1, borderColor: c.border, ...SHADOWS.light,
   },
-  quickValue: { fontSize: 20, fontWeight: "900", color: c.textDark },
-  quickLabel: { fontSize: 12, color: c.textMuted, fontWeight: "600" },
+  quickValue: { fontSize: 20, fontFamily: FONT.w900, color: c.textDark },
+  quickLabel: { fontSize: 12, color: c.textMuted, fontFamily: FONT.w600 },
   quickBirthdayAvatar: {
     width: 48, height: 48, borderRadius: 24,
     alignItems: "center", justifyContent: "center",
   },
   quickBirthdayImg: { width: 48, height: 48, borderRadius: 24 },
-  quickBirthdayLetter: { fontSize: 18, fontWeight: "700", color: c.onAccent },
+  quickBirthdayLetter: { fontSize: 18, fontFamily: FONT.w700, color: c.onAvatar },
   quickBirthdayBadge: {
     position: "absolute", bottom: -4, right: -4,
     width: 22, height: 22, borderRadius: 11,
@@ -750,17 +750,17 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderWidth: 1, borderColor: c.border, ...SHADOWS.light,
   },
   activityCardHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
-  activityHeader: { fontSize: 14, fontWeight: "800", color: c.textDark, letterSpacing: -0.2 },
-  activityLink: { fontSize: 13, fontWeight: "700", color: c.blue },
+  activityHeader: { fontSize: 14, fontFamily: FONT.w800, color: c.textDark, letterSpacing: -0.2 },
+  activityLink: { fontSize: 13, fontFamily: FONT.w700, color: c.blue },
   activityRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   activityIcon: {
     width: 42, height: 42, borderRadius: 21,
     backgroundColor: c.background, alignItems: "center", justifyContent: "center",
   },
   activityTexts: { flex: 1 },
-  activityTitle: { fontSize: 14, fontWeight: "700", color: c.textDark, lineHeight: 19 },
-  activityDetail: { fontSize: 13, color: c.textMuted, fontStyle: "italic", marginTop: 3, lineHeight: 18 },
-  activitySub: { fontSize: 12, color: c.textMuted, marginTop: 3 },
+  activityTitle: { fontSize: 14, fontFamily: FONT.w700, color: c.textDark, lineHeight: 19 },
+  activityDetail: { fontFamily: FONT.w400i, fontSize: 13, color: c.textMuted, marginTop: 3, lineHeight: 18 },
+  activitySub: { fontFamily: FONT.w400, fontSize: 12, color: c.textMuted, marginTop: 3 },
 
   // ── Die Runde ─────────────────────────────────────────────────────────────
   mitgliederCard: {
@@ -768,8 +768,8 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderWidth: 1, borderColor: c.border, ...SHADOWS.light,
   },
   mitgliederHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
-  mitgliederTitle: { fontSize: 14, fontWeight: "800", color: c.textDark, letterSpacing: -0.2 },
-  mitgliederLink: { fontSize: 13, color: c.blue, fontWeight: "700" },
+  mitgliederTitle: { fontSize: 14, fontFamily: FONT.w800, color: c.textDark, letterSpacing: -0.2 },
+  mitgliederLink: { fontSize: 13, color: c.blue, fontFamily: FONT.w700 },
   // paddingTop: das Badge ragt über den Avatar hinaus und wurde sonst
   // am oberen Rand der horizontalen Liste abgeschnitten.
   bubbleRow: { gap: 12, paddingHorizontal: 2, paddingTop: 8 },
@@ -777,14 +777,14 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   bubble: { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center" },
   bubbleActive: { borderWidth: 2.5, borderColor: c.blue },
   bubbleImg: { width: 48, height: 48, borderRadius: 24 },
-  bubbleLetter: { fontSize: 18, fontWeight: "700", color: c.onAccent },
+  bubbleLetter: { fontSize: 18, fontFamily: FONT.w700, color: c.onAvatar },
   bubbleActiveDot: {
     position: "absolute", bottom: 0, right: 0,
     width: 12, height: 12, borderRadius: 6,
     backgroundColor: c.blue, borderWidth: 2, borderColor: c.card,
   },
   bubbleAvatarWrap: { width: 48, height: 48 },
-  bubbleName: { fontSize: 11, color: c.textMuted, textAlign: "center", fontWeight: "500" },
+  bubbleName: { fontSize: 11, color: c.textMuted, textAlign: "center", fontFamily: FONT.w500 },
   bubbleAdd: {
     width: 48, height: 48, borderRadius: 24,
     backgroundColor: c.background, alignItems: "center", justifyContent: "center",
@@ -796,16 +796,16 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     backgroundColor: c.card, borderRadius: 20, padding: 16, marginBottom: 12,
     borderWidth: 1, borderColor: c.border, ...SHADOWS.light,
   },
-  faktenTitle: { fontSize: 14, fontWeight: "800", color: c.textDark, marginBottom: 12, letterSpacing: -0.2 },
-  faktEmoji: { fontSize: 20 },
-  faktLabel: { fontSize: 10, color: c.textMuted, fontWeight: "600", textAlign: "center" },
+  faktenTitle: { fontSize: 14, fontFamily: FONT.w800, color: c.textDark, marginBottom: 12, letterSpacing: -0.2 },
+  faktEmoji: { fontFamily: FONT.w400, fontSize: 20 },
+  faktLabel: { fontSize: 10, color: c.textMuted, fontFamily: FONT.w600, textAlign: "center" },
 
   treffpunktRow: {
     flexDirection: "row", alignItems: "center", gap: 10,
     backgroundColor: c.background, borderRadius: 16,
     paddingVertical: 12, paddingHorizontal: 14, marginTop: 10,
   },
-  treffpunktValue: { fontSize: 14, fontWeight: "800", color: c.textDark, marginTop: 1 },
+  treffpunktValue: { fontSize: 14, fontFamily: FONT.w800, color: c.textDark, marginTop: 1 },
 
   // ── Schock-Aus Rangliste ──────────────────────────────────────────────────
   rangCard: {
@@ -813,42 +813,42 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderWidth: 1, borderColor: c.border, ...SHADOWS.card,
   },
   rangCardHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
-  rangCardSub: { fontSize: 11, color: c.textMuted, marginTop: -6, marginBottom: 8 },
-  rangCardTitle: { fontSize: 14, fontWeight: "800", color: c.textDark, letterSpacing: -0.2 },
-  rangCardLink: { fontSize: 13, fontWeight: "700", color: c.blue },
+  rangCardSub: { fontFamily: FONT.w400, fontSize: 11, color: c.textMuted, marginTop: -6, marginBottom: 8 },
+  rangCardTitle: { fontSize: 14, fontFamily: FONT.w800, color: c.textDark, letterSpacing: -0.2 },
+  rangCardLink: { fontSize: 13, fontFamily: FONT.w700, color: c.blue },
   rangLinkCard: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
     backgroundColor: c.card, borderRadius: 16, padding: 16, marginBottom: 14,
     borderWidth: 1, borderColor: c.border,
   },
-  rangLinkText: { fontSize: 14, fontWeight: "700", color: c.textDark },
+  rangLinkText: { fontSize: 14, fontFamily: FONT.w700, color: c.textDark },
   rangRow: {
     flexDirection: "row", alignItems: "center", gap: 10,
     paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: c.border,
   },
-  rangMedal: { fontSize: 18, width: 28, textAlign: "center" },
+  rangMedal: { fontFamily: FONT.w400, fontSize: 18, width: 28, textAlign: "center" },
   rangAvatarWrap: { width: 36, height: 36 },
   rangAvatar: { width: 36, height: 36, borderRadius: 18 },
   rangInfo: { flex: 1 },
-  rangName: { fontSize: 14, fontWeight: "700", color: c.textDark },
-  rangSub: { fontSize: 11, color: c.textMuted, marginTop: 1 },
+  rangName: { fontSize: 14, fontFamily: FONT.w700, color: c.textDark },
+  rangSub: { fontFamily: FONT.w400, fontSize: 11, color: c.textMuted, marginTop: 1 },
   rangValueWrap: { alignItems: "flex-end" },
-  rangValue: { fontSize: 16, fontWeight: "800", color: c.blue },
-  rangValueLabel: { fontSize: 10, color: c.textMuted },
+  rangValue: { fontSize: 16, fontFamily: FONT.w800, color: c.blue },
+  rangValueLabel: { fontFamily: FONT.w400, fontSize: 10, color: c.textMuted },
 
   // ── Onboarding ────────────────────────────────────────────────────────────
   onboardingCard: {
     backgroundColor: c.cardAlt, borderRadius: 20, padding: 20, marginBottom: 16,
     borderWidth: 1, borderColor: c.border,
   },
-  onboardingTitle: { fontSize: 17, fontWeight: "800", color: c.textDark, marginBottom: 8 },
-  onboardingText: { fontSize: 14, color: c.textMuted, lineHeight: 21, marginBottom: 18 },
+  onboardingTitle: { fontSize: 17, fontFamily: FONT.w800, color: c.textDark, marginBottom: 8 },
+  onboardingText: { fontFamily: FONT.w400, fontSize: 14, color: c.textMuted, lineHeight: 21, marginBottom: 18 },
   onboardingBtns: { flexDirection: "row", gap: 10 },
   onboardingBtn: {
     flex: 1, borderRadius: 14, paddingVertical: 14,
     alignItems: "center", justifyContent: "center", gap: 6,
     backgroundColor: c.card, borderWidth: 1.5, borderColor: c.blue + "55", ...SHADOWS.light,
   },
-  onboardingBtnEmoji: { fontSize: 24 },
-  onboardingBtnText: { fontSize: 13, fontWeight: "700", color: c.textDark },
+  onboardingBtnEmoji: { fontFamily: FONT.w400, fontSize: 24 },
+  onboardingBtnText: { fontSize: 13, fontFamily: FONT.w700, color: c.textDark },
 });

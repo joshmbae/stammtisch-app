@@ -32,7 +32,7 @@ import {
 } from "../utils/storage";
 import { terminBezeichnung } from "../utils/activityFeed";
 import { formatUhrzeit, formatWochentagDatum } from "../utils/date";
-import { SHADOWS, ThemeColors } from "../constants/design";
+import { SHADOWS, ThemeColors, FONT } from "../constants/design";
 import { useColors, useThemedStyles } from "../contexts/ThemeContext";
 import { HamburgerButton } from "../components/HamburgerButton";
 import { BackButton } from "../components/BackButton";
@@ -228,7 +228,7 @@ function EintragRow({
     <Swipeable renderRightActions={renderRight} overshootRight={false}>
       <TouchableOpacity style={[styles.eintragRow, { borderLeftColor: meta.color }]} onPress={onOpen} activeOpacity={0.8}>
         <View style={[styles.eintragIcon, { backgroundColor: meta.bg }]}>
-          <Text style={{ fontSize: 18 }}>{meta.emoji}</Text>
+          <Text style={{ fontFamily: FONT.w400, fontSize: 18 }}>{meta.emoji}</Text>
         </View>
         <View style={styles.eintragMeta}>
           <Text style={styles.eintragHeadline}>{headline}</Text>
@@ -537,12 +537,12 @@ export default function KasseScreen() {
                           <Image source={{ uri: m.photoUri }} style={styles.chipAvatar} />
                         ) : (
                           <View style={[styles.chipAvatarFallback, { backgroundColor: bezahltVon === m.id ? "rgba(255,255,255,0.3)" : m.avatarColor + "33" }]}>
-                            <Text style={{ fontSize: 11, fontWeight: "700", color: bezahltVon === m.id ? c.onAccent : m.avatarColor }}>
+                            <Text style={{ fontSize: 11, fontFamily: FONT.w700, color: bezahltVon === m.id ? c.onAvatar : m.avatarColor }}>
                               {getInitial(m.name)}
                             </Text>
                           </View>
                         )}
-                        <Text style={[styles.chipName, bezahltVon === m.id && { color: c.onAccent }]}>
+                        <Text style={[styles.chipName, bezahltVon === m.id && { color: c.onAvatar }]}>
                           {m.name.split(" ")[0]}
                         </Text>
                       </TouchableOpacity>
@@ -568,12 +568,12 @@ export default function KasseScreen() {
                             <Image source={{ uri: m.photoUri }} style={styles.chipAvatar} />
                           ) : (
                             <View style={[styles.chipAvatarFallback, { backgroundColor: selected ? "rgba(255,255,255,0.3)" : m.avatarColor + "33" }]}>
-                              <Text style={{ fontSize: 11, fontWeight: "700", color: selected ? c.onAccent : m.avatarColor }}>
+                              <Text style={{ fontSize: 11, fontFamily: FONT.w700, color: selected ? c.onAvatar : m.avatarColor }}>
                                 {getInitial(m.name)}
                               </Text>
                             </View>
                           )}
-                          <Text style={[styles.chipName, selected && { color: c.onAccent }]}>
+                          <Text style={[styles.chipName, selected && { color: c.onAvatar }]}>
                             {m.name.split(" ")[0]}
                           </Text>
                         </TouchableOpacity>
@@ -641,7 +641,7 @@ export default function KasseScreen() {
                     ]}>
                       <TouchableOpacity style={styles.eintragRowInner} onPress={() => setDetailId(e.id)} activeOpacity={0.8}>
                         <View style={[styles.eintragIcon, { backgroundColor: beglichen ? c.success + "15" : meta.bg }]}>
-                          <Text style={{ fontSize: 18 }}>{beglichen ? "✅" : meta.emoji}</Text>
+                          <Text style={{ fontFamily: FONT.w400, fontSize: 18 }}>{beglichen ? "✅" : meta.emoji}</Text>
                         </View>
                         <View style={styles.eintragMeta}>
                           <Text style={styles.eintragTypLabel}>{meta.label}</Text>
@@ -762,20 +762,20 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderWidth: 1, borderColor: c.border,
   },
   headerTexts: { flex: 1 },
-  headerTitle: { fontSize: 18, fontWeight: "800", color: c.textDark },
-  headerSub: { fontSize: 12, color: c.textMuted, marginTop: 2 },
+  headerTitle: { fontSize: 18, fontFamily: FONT.w800, color: c.textDark },
+  headerSub: { fontFamily: FONT.w400, fontSize: 12, color: c.textMuted, marginTop: 2 },
 
   saldoCard: {
     backgroundColor: c.card, borderRadius: 20, padding: 20,
     marginBottom: 16, borderWidth: 1.5, ...SHADOWS.card,
     alignItems: "center",
   },
-  saldoLabel: { fontSize: 13, fontWeight: "700", color: c.textMuted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 },
-  saldoValue: { fontSize: 40, fontWeight: "900", letterSpacing: -1 },
+  saldoLabel: { fontSize: 13, fontFamily: FONT.w700, color: c.textMuted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 },
+  saldoValue: { fontSize: 40, fontFamily: FONT.w900, letterSpacing: -1 },
   saldoStats: { flexDirection: "row", alignItems: "center", marginTop: 14, gap: 0 },
   saldoStatItem: { flex: 1, alignItems: "center", gap: 2 },
-  saldoStatValue: { fontSize: 15, fontWeight: "800" },
-  saldoStatLabel: { fontSize: 11, color: c.textMuted },
+  saldoStatValue: { fontSize: 15, fontFamily: FONT.w800 },
+  saldoStatLabel: { fontFamily: FONT.w400, fontSize: 11, color: c.textMuted },
   saldoStatDivider: { width: 1, height: 30, backgroundColor: c.border },
 
   actionRow: { flexDirection: "row", gap: 8, marginBottom: 16 },
@@ -785,23 +785,22 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     backgroundColor: c.card, borderWidth: 1.5, ...SHADOWS.light,
   },
   actionBtnActive: { backgroundColor: c.cardAlt },
-  actionBtnEmoji: { fontSize: 20 },
-  actionBtnText: { fontSize: 11, fontWeight: "700" },
+  actionBtnEmoji: { fontFamily: FONT.w400, fontSize: 20 },
+  actionBtnText: { fontSize: 11, fontFamily: FONT.w700 },
 
   formCard: {
     backgroundColor: c.card, borderRadius: 18, padding: 16,
     marginBottom: 16, borderWidth: 1, borderColor: c.border, ...SHADOWS.card,
   },
-  formTitle: { fontSize: 16, fontWeight: "800", color: c.textDark, marginBottom: 12 },
+  formTitle: { fontSize: 16, fontFamily: FONT.w800, color: c.textDark, marginBottom: 12 },
   terminHint: {
     flexDirection: "row", alignItems: "center", gap: 5,
     backgroundColor: c.blue + "11", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, marginBottom: 12,
   },
-  terminHintText: { fontSize: 12, color: c.blue, fontWeight: "600" },
+  terminHintText: { fontSize: 12, color: c.blue, fontFamily: FONT.w600 },
   formRow: { marginBottom: 12 },
-  formLabel: { fontSize: 12, fontWeight: "700", color: c.textMid, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.3 },
-  formInput: {
-    backgroundColor: c.background, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11,
+  formLabel: { fontSize: 12, fontFamily: FONT.w700, color: c.textMid, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.3 },
+  formInput: { fontFamily: FONT.w400, backgroundColor: c.background, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11,
     fontSize: 15, color: c.textDark, borderWidth: 1, borderColor: c.border,
   },
 
@@ -813,8 +812,8 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   chipAvatar: { width: 22, height: 22, borderRadius: 11 },
   chipAvatarFallback: { width: 22, height: 22, borderRadius: 11, alignItems: "center", justifyContent: "center" },
-  chipName: { fontSize: 13, fontWeight: "600", color: c.textMid },
-  teilnehmerHint: { fontSize: 12, color: c.textMuted, marginTop: 8 },
+  chipName: { fontSize: 13, fontFamily: FONT.w600, color: c.textMid },
+  teilnehmerHint: { fontFamily: FONT.w400, fontSize: 12, color: c.textMuted, marginTop: 8 },
 
   formBtns: { flexDirection: "row", gap: 10, marginTop: 4 },
   cancelBtn: {
@@ -822,17 +821,17 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     paddingVertical: 12, borderRadius: 12,
     backgroundColor: c.background, borderWidth: 1, borderColor: c.border,
   },
-  cancelBtnText: { fontSize: 14, fontWeight: "600", color: c.textMuted },
+  cancelBtnText: { fontSize: 14, fontFamily: FONT.w600, color: c.textMuted },
   submitBtn: {
     flex: 2, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
     paddingVertical: 12, borderRadius: 12,
   },
-  submitBtnText: { fontSize: 14, fontWeight: "700", color: c.onAccent },
+  submitBtnText: { fontSize: 14, fontFamily: FONT.w700, color: c.onAccent },
 
   section: { marginBottom: 8 },
   sectionTitleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 },
-  sectionTitle: { fontSize: 13, fontWeight: "800", color: c.textMid, letterSpacing: 0.2 },
-  sectionToggle: { fontSize: 12, fontWeight: "600", color: c.blue },
+  sectionTitle: { fontSize: 13, fontFamily: FONT.w800, color: c.textMid, letterSpacing: 0.2 },
+  sectionToggle: { fontSize: 12, fontFamily: FONT.w600, color: c.blue },
 
   eintragRow: {
     flexDirection: "row", alignItems: "center", gap: 12,
@@ -841,13 +840,13 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   eintragIcon: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   eintragMeta: { flex: 1 },
-  eintragTypLabel: { fontSize: 13, fontWeight: "700", color: c.textDark },
-  eintragDesc: { fontSize: 12, color: c.textMuted, marginTop: 1 },
-  eintragZahler: { fontSize: 12, color: c.blue, marginTop: 1, fontWeight: "600" },
-  eintragDatum: { fontSize: 11, color: c.textLight, marginTop: 2 },
-  eintragHeadline: { fontSize: 14, fontWeight: "700", color: c.textDark, lineHeight: 19 },
-  eintragSub: { fontSize: 11, color: c.textMuted, marginTop: 2 },
-  eintragBetrag: { fontSize: 16, fontWeight: "800", minWidth: 80, textAlign: "right" },
+  eintragTypLabel: { fontSize: 13, fontFamily: FONT.w700, color: c.textDark },
+  eintragDesc: { fontFamily: FONT.w400, fontSize: 12, color: c.textMuted, marginTop: 1 },
+  eintragZahler: { fontSize: 12, color: c.blue, marginTop: 1, fontFamily: FONT.w600 },
+  eintragDatum: { fontFamily: FONT.w400, fontSize: 11, color: c.textLight, marginTop: 2 },
+  eintragHeadline: { fontSize: 14, fontFamily: FONT.w700, color: c.textDark, lineHeight: 19 },
+  eintragSub: { fontFamily: FONT.w400, fontSize: 11, color: c.textMuted, marginTop: 2 },
+  eintragBetrag: { fontSize: 16, fontFamily: FONT.w800, minWidth: 80, textAlign: "right" },
 
   abendkostenCard: {
     backgroundColor: c.card, borderRadius: 14, padding: 12, marginBottom: 8,
@@ -856,9 +855,9 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   eintragRowInner: { flexDirection: "row", alignItems: "center", gap: 12 },
   schuldnerList: { marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: c.border, gap: 6 },
   schuldnerRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  schuldnerName: { flex: 1, fontSize: 13, fontWeight: "600", color: c.textDark },
+  schuldnerName: { flex: 1, fontSize: 13, fontFamily: FONT.w600, color: c.textDark },
   schuldnerNameBeglichen: { textDecorationLine: "line-through", color: c.textLight },
-  schuldnerBetrag: { fontSize: 13, fontWeight: "700", color: c.gold },
+  schuldnerBetrag: { fontSize: 13, fontFamily: FONT.w700, color: c.gold },
 
   deleteAction: {
     backgroundColor: c.danger, borderRadius: 14, marginBottom: 8,
@@ -867,9 +866,9 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
 
 
   emptyState: { alignItems: "center", paddingVertical: 40, gap: 8 },
-  emptyEmoji: { fontSize: 40 },
-  emptyTitle: { fontSize: 17, fontWeight: "800", color: c.textDark },
-  emptySub: { fontSize: 13, color: c.textMuted, textAlign: "center" },
+  emptyEmoji: { fontFamily: FONT.w400, fontSize: 40 },
+  emptyTitle: { fontSize: 17, fontFamily: FONT.w800, color: c.textDark },
+  emptySub: { fontFamily: FONT.w400, fontSize: 13, color: c.textMuted, textAlign: "center" },
 
   // ── Detail-Sheet ──────────────────────────────────────────────────────────
   modalOverlay: { flex: 1, backgroundColor: c.overlay, justifyContent: "flex-end" },
@@ -878,14 +877,13 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     paddingHorizontal: 20, paddingTop: 16, paddingBottom: 32, maxHeight: "85%", ...SHADOWS.card,
   },
   modalHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 },
-  modalTitle: { fontSize: 17, fontWeight: "800", color: c.textDark },
+  modalTitle: { fontSize: 17, fontFamily: FONT.w800, color: c.textDark },
   modalCloseBtn: {
     width: 30, height: 30, borderRadius: 15, backgroundColor: c.cardAlt,
     alignItems: "center", justifyContent: "center",
   },
-  detailBetrag: { fontSize: 32, fontWeight: "800", textAlign: "center", marginVertical: 8 },
-  detailBeschreibung: {
-    fontSize: 15, color: c.textDark, lineHeight: 21, textAlign: "center",
+  detailBetrag: { fontSize: 32, fontFamily: FONT.w800, textAlign: "center", marginVertical: 8 },
+  detailBeschreibung: { fontFamily: FONT.w400, fontSize: 15, color: c.textDark, lineHeight: 21, textAlign: "center",
     marginBottom: 14, paddingHorizontal: 8,
   },
   detailCard: {
@@ -895,9 +893,9 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   // marginBottom -1: die Trennlinie der letzten Zeile verschwindet unter dem Kartenrand.
   detailZeile: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: c.border, marginBottom: -1 },
   detailLabel: {
-    fontSize: 11, fontWeight: "700", color: c.textMuted,
+    fontSize: 11, fontFamily: FONT.w700, color: c.textMuted,
     textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 3,
   },
   detailValueRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  detailValue: { flex: 1, fontSize: 14, fontWeight: "600", color: c.textDark, lineHeight: 20 },
+  detailValue: { flex: 1, fontSize: 14, fontFamily: FONT.w600, color: c.textDark, lineHeight: 20 },
 });

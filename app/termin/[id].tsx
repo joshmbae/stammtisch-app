@@ -64,7 +64,7 @@ import {
 } from "../../utils/storage";
 import { supabase } from "../../utils/supabase";
 import { subscribeToTerminChanges, dedupeInsert, patchById, removeByIdEverywhere } from "../../utils/realtime";
-import { SHADOWS, ThemeColors } from "../../constants/design";
+import { SHADOWS, ThemeColors, FONT } from "../../constants/design";
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { useSession } from "../../contexts/SessionContext";
 import { getInitial, displayName } from "../../utils/format";
@@ -898,7 +898,7 @@ export default function TerminDetailScreen() {
         <View style={styles.notFound}>
           <Text style={styles.notFoundText}>Termin nicht gefunden.</Text>
           <TouchableOpacity onPress={() => router.back()}>
-            <Text style={{ color: c.blue, marginTop: 12, fontWeight: "600" }}>Zurück</Text>
+            <Text style={{ color: c.blue, marginTop: 12, fontFamily: FONT.w600 }}>Zurück</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -967,7 +967,7 @@ export default function TerminDetailScreen() {
               <TouchableOpacity onPress={pickTerminBild} activeOpacity={0.85} style={styles.terminBildWrap} disabled={uploadingBild}>
                 <Image source={{ uri: termin.bildUrl }} style={styles.terminBild} resizeMode="cover" />
                 <TouchableOpacity onPress={removeTerminBild} style={styles.terminBildRemoveBtn}>
-                  <Ionicons name="close" size={14} color={c.onAccent} />
+                  <Ionicons name="close" size={14} color="#FFFFFF" />
                 </TouchableOpacity>
                 {uploadingBild && (
                   <View style={styles.terminBildUploadingOverlay}>
@@ -988,7 +988,7 @@ export default function TerminDetailScreen() {
                 {isStammtisch && verordnung.logoUrl ? (
                   <Image source={{ uri: verordnung.logoUrl }} style={styles.typLogo} resizeMode="contain" />
                 ) : (
-                  <Text style={{ fontSize: 28 }}>{isStammtisch ? "🍺" : "🎉"}</Text>
+                  <Text style={{ fontFamily: FONT.w400, fontSize: 28 }}>{isStammtisch ? "🍺" : "🎉"}</Text>
                 )}
               </View>
               <View style={{ flex: 1 }}>
@@ -1138,7 +1138,7 @@ export default function TerminDetailScreen() {
                   style={[styles.tabBtn, isActive && styles.tabBtnActive]}
                   onPress={() => setActiveTab(tab.key)}
                 >
-                  <Text style={{ fontSize: 15 }}>{tab.emoji}</Text>
+                  <Text style={{ fontFamily: FONT.w400, fontSize: 15 }}>{tab.emoji}</Text>
                   <Text style={[styles.tabBtnText, isActive && styles.tabBtnTextActive]} numberOfLines={1}>
                     {tab.label}
                   </Text>
@@ -1170,7 +1170,7 @@ export default function TerminDetailScreen() {
                   <>
                     <View style={styles.anwesenheitStatDivider} />
                     <View style={styles.anwesenheitStatBarItem}>
-                      <Text style={[styles.anwesenheitStatBarNum, { color: c.danger, fontSize: 14 }]}>{totalVerspätung}</Text>
+                      <Text style={[styles.anwesenheitStatBarNum, { fontFamily: FONT.w400, color: c.danger, fontSize: 14 }]}>{totalVerspätung}</Text>
                       <Text style={styles.anwesenheitStatBarLabel}>Min. spät</Text>
                     </View>
                   </>
@@ -1288,10 +1288,10 @@ export default function TerminDetailScreen() {
                                 <Image source={{ uri: m.photoUri }} style={styles.chipAvatar} />
                               ) : (
                                 <View style={[styles.chipAvatar, { backgroundColor: isSelected ? "rgba(255,255,255,0.35)" : m.avatarColor, alignItems: "center", justifyContent: "center" }]}>
-                                  <Text style={{ fontSize: 11, fontWeight: "700", color: c.onAccent }}>{getInitial(m.name)}</Text>
+                                  <Text style={{ fontSize: 11, fontFamily: FONT.w700, color: c.onAvatar }}>{getInitial(m.name)}</Text>
                                 </View>
                               )}
-                              <Text style={[styles.chipText, isSelected && { color: c.onAccent }]}>{m.spitzname ?? m.name.split(" ")[0]}</Text>
+                              <Text style={[styles.chipText, isSelected && { color: c.onAvatar }]}>{m.spitzname ?? m.name.split(" ")[0]}</Text>
                             </TouchableOpacity>
                           );
                         })}
@@ -1403,7 +1403,7 @@ export default function TerminDetailScreen() {
                             backgroundColor: isSelected ? "rgba(255,255,255,0.35)" : m.avatarColor,
                             alignItems: "center", justifyContent: "center",
                           }]}>
-                            <Text style={{ fontSize: 11, fontWeight: "700", color: c.onAccent }}>
+                            <Text style={{ fontSize: 11, fontFamily: FONT.w700, color: c.onAvatar }}>
                               {getInitial(m.name)}
                             </Text>
                           </View>
@@ -1548,7 +1548,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   content: { padding: 20, paddingBottom: 60 },
 
   backBtn: { flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 16 },
-  backText: { fontSize: 15, color: c.blue, fontWeight: "600" },
+  backText: { fontSize: 15, color: c.blue, fontFamily: FONT.w600 },
 
   headerCard: {
     backgroundColor: c.card, borderRadius: 20, padding: 16, marginBottom: 20,
@@ -1566,21 +1566,20 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(26,18,8,0.4)",
     alignItems: "center", justifyContent: "center",
   },
-  terminBildUploadingText: { color: c.onAccent, fontWeight: "700", fontSize: 13 },
+  terminBildUploadingText: { color: "#FFFFFF", fontFamily: FONT.w700, fontSize: 13 },
   terminBildAddRow: {
     flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12,
     paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12,
     borderWidth: 1.5, borderColor: c.border, borderStyle: "dashed",
   },
-  terminBildAddText: { fontSize: 13, fontWeight: "600", color: c.textMuted },
+  terminBildAddText: { fontSize: 13, fontFamily: FONT.w600, color: c.textMuted },
   headerTop: { flexDirection: "row", alignItems: "flex-start", gap: 14 },
   typIcon: { width: 52, height: 52, borderRadius: 26, alignItems: "center", justifyContent: "center", overflow: "hidden" },
   typLogo: { width: 36, height: 36 },
-  terminTitel: { fontSize: 18, fontWeight: "800", color: c.textDark, marginBottom: 3 },
-  terminDatum: { fontSize: 13, color: c.blue, fontWeight: "600", marginBottom: 4 },
-  terminMeta: { fontSize: 12, color: c.textMuted, marginTop: 2 },
-  terminNotizen: {
-    fontSize: 13, color: c.textMuted, fontStyle: "italic",
+  terminTitel: { fontSize: 18, fontFamily: FONT.w800, color: c.textDark, marginBottom: 3 },
+  terminDatum: { fontSize: 13, color: c.blue, fontFamily: FONT.w600, marginBottom: 4 },
+  terminMeta: { fontFamily: FONT.w400, fontSize: 12, color: c.textMuted, marginTop: 2 },
+  terminNotizen: { fontFamily: FONT.w400i, fontSize: 13, color: c.textMuted,
     marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: c.border,
   },
   tabBar: {
@@ -1592,23 +1591,23 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     flex: 1, paddingVertical: 8, borderRadius: 10, alignItems: "center", gap: 2,
   },
   tabBtnActive: { backgroundColor: c.blue },
-  tabBtnText: { fontSize: 10, fontWeight: "600", color: c.textMuted },
-  tabBtnTextActive: { color: c.onAccent, fontWeight: "700" },
+  tabBtnText: { fontSize: 10, fontFamily: FONT.w600, color: c.textMuted },
+  tabBtnTextActive: { color: c.onAccent, fontFamily: FONT.w700 },
 
   sectionHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 },
   sectionHeaderRight: { flexDirection: "row", alignItems: "center", gap: 8 },
-  sectionTitle: { fontSize: 14, fontWeight: "800", color: c.textDark, letterSpacing: -0.2 },
+  sectionTitle: { fontSize: 14, fontFamily: FONT.w800, color: c.textDark, letterSpacing: -0.2 },
   sectionBadge: {
-    fontSize: 12, fontWeight: "700", color: c.blue,
+    fontSize: 12, fontFamily: FONT.w700, color: c.blue,
     backgroundColor: c.blue + "12", paddingHorizontal: 10, paddingVertical: 3, borderRadius: 10,
   },
   alleBtn: {
     paddingHorizontal: 10, paddingVertical: 3, borderRadius: 10,
     backgroundColor: c.success + "15", borderWidth: 1, borderColor: c.success + "44",
   },
-  alleBtnText: { fontSize: 12, fontWeight: "700", color: c.success },
+  alleBtnText: { fontSize: 12, fontFamily: FONT.w700, color: c.success },
   subSectionLabel: {
-    fontSize: 11, fontWeight: "800", color: c.textMuted, textTransform: "uppercase",
+    fontSize: 11, fontFamily: FONT.w800, color: c.textMuted, textTransform: "uppercase",
     letterSpacing: 0.5, marginTop: 12, marginBottom: 8,
   },
 
@@ -1622,7 +1621,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   memberRowSelfJa: { borderColor: c.success + "66", backgroundColor: c.successBg },
   memberRowSelfNein: { borderColor: c.danger + "44", backgroundColor: c.dangerBg },
   memberRowSelfLabel: {
-    fontSize: 10, fontWeight: "800", color: c.textLight,
+    fontSize: 10, fontFamily: FONT.w800, color: c.textLight,
     textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 8,
   },
   selfRsvpRow: { flexDirection: "row", gap: 8, marginTop: 12 },
@@ -1633,7 +1632,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   selfRsvpBtnJa: { backgroundColor: c.success, borderColor: c.success },
   selfRsvpBtnNein: { backgroundColor: c.danger, borderColor: c.danger },
-  selfRsvpBtnText: { fontSize: 14, fontWeight: "700", color: c.textDark },
+  selfRsvpBtnText: { fontSize: 14, fontFamily: FONT.w700, color: c.textDark },
 
   // ── Compact rows (other members) ─────────────────────────────────────────
   memberRowCompact: {
@@ -1646,10 +1645,10 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   memberRowCompactInner: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 9, paddingRight: 10 },
   memberRowCompactBar: { width: 3, alignSelf: "stretch" },
   memberAvatarSmall: { width: 32, height: 32, borderRadius: 16 },
-  memberAvatarLetterSmall: { fontSize: 13, fontWeight: "700", color: c.onAccent },
+  memberAvatarLetterSmall: { fontSize: 13, fontFamily: FONT.w700, color: c.onAvatar },
   memberInfoCompact: { flex: 1 },
-  memberNameCompact: { fontSize: 13, fontWeight: "600", color: c.textDark },
-  memberVerspätungSmall: { fontSize: 11, color: c.danger, marginTop: 1, fontWeight: "600" },
+  memberNameCompact: { fontSize: 13, fontFamily: FONT.w600, color: c.textDark },
+  memberVerspätungSmall: { fontSize: 11, color: c.danger, marginTop: 1, fontFamily: FONT.w600 },
 
   // RSVP pill for compact rows
   rsvpPill: {
@@ -1658,15 +1657,15 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   rsvpPillJa: { backgroundColor: c.success + "12", borderColor: c.success + "44" },
   rsvpPillNein: { backgroundColor: c.danger + "10", borderColor: c.danger + "33" },
-  rsvpPillText: { fontSize: 11, fontWeight: "700" },
+  rsvpPillText: { fontSize: 11, fontFamily: FONT.w700 },
 
   // ── Shared member row parts ───────────────────────────────────────────────
   memberRowHeader: { flexDirection: "row", alignItems: "center", gap: 12 },
   memberAvatar: { width: 44, height: 44, borderRadius: 22 },
-  memberAvatarLetter: { fontSize: 18, fontWeight: "700", color: c.onAccent },
+  memberAvatarLetter: { fontSize: 18, fontFamily: FONT.w700, color: c.onAvatar },
   memberInfo: { flex: 1 },
-  memberName: { fontSize: 15, fontWeight: "700", color: c.textDark },
-  memberVerspätung: { fontSize: 12, color: c.danger, marginTop: 2, fontWeight: "600" },
+  memberName: { fontSize: 15, fontFamily: FONT.w700, color: c.textDark },
+  memberVerspätung: { fontSize: 12, color: c.danger, marginTop: 2, fontFamily: FONT.w600 },
   memberActions: { flexDirection: "row", alignItems: "center", gap: 8 },
   verspätungBtn: {
     width: 34, height: 34, borderRadius: 17, backgroundColor: c.dangerBg,
@@ -1682,28 +1681,27 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   minutenInput: {
     width: 70, backgroundColor: c.background, borderRadius: 10,
     borderWidth: 1, borderColor: c.border, paddingHorizontal: 12, paddingVertical: 8,
-    fontSize: 16, fontWeight: "700", color: c.textDark, textAlign: "center",
+    fontSize: 16, fontFamily: FONT.w700, color: c.textDark, textAlign: "center",
   },
-  minutenLabel: { fontSize: 14, color: c.textMuted },
-  grundInput: {
-    backgroundColor: c.background, borderRadius: 10, borderWidth: 1,
+  minutenLabel: { fontFamily: FONT.w400, fontSize: 14, color: c.textMuted },
+  grundInput: { fontFamily: FONT.w400, backgroundColor: c.background, borderRadius: 10, borderWidth: 1,
     borderColor: c.border, paddingHorizontal: 12, paddingVertical: 8,
     fontSize: 14, color: c.textDark, marginBottom: 8,
   },
   eintragenBtn: { backgroundColor: c.danger, borderRadius: 10, paddingVertical: 10, alignItems: "center" },
-  eintragenBtnText: { color: c.onAccent, fontWeight: "700", fontSize: 14 },
+  eintragenBtnText: { color: c.onAccent, fontFamily: FONT.w700, fontSize: 14 },
   verspätungLogs: { marginTop: 10, gap: 4 },
   verspätungLogRow: {
     flexDirection: "row", alignItems: "center", gap: 8,
     backgroundColor: c.dangerBg, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7,
   },
-  verspätungLogMin: { fontSize: 13, fontWeight: "700", color: c.danger, minWidth: 52 },
-  verspätungLogGrund: { flex: 1, fontSize: 12, color: c.textMuted, fontStyle: "italic" },
+  verspätungLogMin: { fontSize: 13, fontFamily: FONT.w700, color: c.danger, minWidth: 52 },
+  verspätungLogGrund: { fontFamily: FONT.w400i, flex: 1, fontSize: 12, color: c.textMuted },
 
   absageGrundBox: { marginTop: 4 },
   absageGrundRow: { flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 2 },
-  absageGrundText: { flex: 1, fontSize: 12, color: c.textMuted, fontStyle: "italic" },
-  absageGrundTextSmall: { fontSize: 11, color: c.textMuted, fontStyle: "italic", marginTop: 1 },
+  absageGrundText: { fontFamily: FONT.w400i, flex: 1, fontSize: 12, color: c.textMuted },
+  absageGrundTextSmall: { fontFamily: FONT.w400i, fontSize: 11, color: c.textMuted, marginTop: 1 },
 
   chip: {
     flexDirection: "row", alignItems: "center", gap: 7,
@@ -1711,7 +1709,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     backgroundColor: c.card, borderWidth: 1.5, borderColor: c.border,
   },
   chipAvatar: { width: 22, height: 22, borderRadius: 11 },
-  chipText: { fontSize: 13, fontWeight: "600", color: c.textDark },
+  chipText: { fontSize: 13, fontFamily: FONT.w600, color: c.textDark },
 
   spielCounterRow: { flexDirection: "row", gap: 10, marginBottom: 10, flexWrap: "wrap" },
   spielCounterBtn: {
@@ -1724,24 +1722,24 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     backgroundColor: c.card, alignItems: "center", justifyContent: "center",
     borderWidth: 1.5, borderColor: c.background, ...SHADOWS.light,
   },
-  spielCounterPlusText: { fontSize: 11, fontWeight: "800", color: c.textDark },
-  spielActionLabel: { fontSize: 13, fontWeight: "700" },
-  schockActionEmoji: { fontSize: 26 },
+  spielCounterPlusText: { fontSize: 11, fontFamily: FONT.w800, color: c.textDark },
+  spielActionLabel: { fontSize: 13, fontFamily: FONT.w700 },
+  schockActionEmoji: { fontFamily: FONT.w400, fontSize: 26 },
   spielCounterBadge: {
     minWidth: 30, height: 30, borderRadius: 15, paddingHorizontal: 6,
     backgroundColor: c.card, alignItems: "center", justifyContent: "center",
   },
-  spielCounterBadgeText: { fontSize: 15, fontWeight: "800" },
+  spielCounterBadgeText: { fontSize: 15, fontFamily: FONT.w800 },
 
   schockFeedRow: {
     flexDirection: "row", alignItems: "center", gap: 10,
     backgroundColor: c.card, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 6,
     borderWidth: 1, borderColor: c.border, borderLeftWidth: 3,
   },
-  schockFeedEmoji: { fontSize: 18 },
-  schockFeedText: { fontSize: 11, color: c.textMuted, marginTop: 1 },
-  schockFeedMember: { fontSize: 13, fontWeight: "700", color: c.textDark },
-  schockFeedTime: { fontSize: 11, color: c.textLight },
+  schockFeedEmoji: { fontFamily: FONT.w400, fontSize: 18 },
+  schockFeedText: { fontFamily: FONT.w400, fontSize: 11, color: c.textMuted, marginTop: 1 },
+  schockFeedMember: { fontSize: 13, fontFamily: FONT.w700, color: c.textDark },
+  schockFeedTime: { fontFamily: FONT.w400, fontSize: 11, color: c.textLight },
 
   deleteSwipeSmall: {
     backgroundColor: c.danger, borderRadius: 12, width: 52,
@@ -1753,54 +1751,53 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderWidth: 1, borderColor: c.border, ...SHADOWS.light,
   },
   protokollHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 },
-  protokollTitel: { flex: 1, fontSize: 15, fontWeight: "700", color: c.textDark },
-  protokollExcerpt: { fontSize: 13, color: c.textMuted, lineHeight: 19 },
+  protokollTitel: { flex: 1, fontSize: 15, fontFamily: FONT.w700, color: c.textDark },
+  protokollExcerpt: { fontFamily: FONT.w400, fontSize: 13, color: c.textMuted, lineHeight: 19 },
   protokollOeffnenRow: {
     flexDirection: "row", alignItems: "center", gap: 4,
     marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: c.border,
     alignSelf: "flex-start",
   },
-  protokollOeffnenText: { fontSize: 13, fontWeight: "700", color: c.blue },
+  protokollOeffnenText: { fontSize: 13, fontFamily: FONT.w700, color: c.blue },
   protokollLeer: { flexDirection: "row", alignItems: "center", gap: 12 },
   protokollLeerIcon: {
     width: 48, height: 48, borderRadius: 24,
     backgroundColor: c.background, alignItems: "center", justifyContent: "center",
   },
-  protokollLeerTitle: { fontSize: 14, fontWeight: "700", color: c.textMid },
-  protokollLeerSub: { fontSize: 12, color: c.textLight, marginTop: 2 },
+  protokollLeerTitle: { fontSize: 14, fontFamily: FONT.w700, color: c.textMid },
+  protokollLeerSub: { fontFamily: FONT.w400, fontSize: 12, color: c.textLight, marginTop: 2 },
 
   notFound: { flex: 1, alignItems: "center", justifyContent: "center" },
-  notFoundText: { fontSize: 16, color: c.textMuted },
+  notFoundText: { fontFamily: FONT.w400, fontSize: 16, color: c.textMuted },
 
   // Strafen
   strafGrid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", marginBottom: 10 },
-  strafKeineKategorien: { fontSize: 13, color: c.textMuted, fontStyle: "italic", marginBottom: 10 },
+  strafKeineKategorien: { fontFamily: FONT.w400i, fontSize: 13, color: c.textMuted, marginBottom: 10 },
   strafKatBtn: {
     width: "48%", alignItems: "center", paddingVertical: 12, paddingHorizontal: 8,
     borderRadius: 14, backgroundColor: c.card, marginBottom: 8,
     borderWidth: 1.5, borderColor: c.border, gap: 3, ...SHADOWS.light,
   },
   strafKatBtnActive: { backgroundColor: c.danger, borderColor: c.danger },
-  strafKatEmoji: { fontSize: 20 },
-  strafKatLabel: { fontSize: 11, fontWeight: "700", color: c.textDark, textAlign: "center" },
-  strafKatBetrag: { fontSize: 12, fontWeight: "800", color: c.danger },
+  strafKatEmoji: { fontFamily: FONT.w400, fontSize: 20 },
+  strafKatLabel: { fontSize: 11, fontFamily: FONT.w700, color: c.textDark, textAlign: "center" },
+  strafKatBetrag: { fontSize: 12, fontFamily: FONT.w800, color: c.danger },
   strafForm: {
     backgroundColor: c.card, borderRadius: 16, padding: 16, marginBottom: 12,
     borderWidth: 1, borderColor: c.danger + "44", ...SHADOWS.light,
   },
-  strafFormTitle: { fontSize: 14, fontWeight: "800", color: c.textDark, marginBottom: 4 },
-  strafFormHint: { fontSize: 12, color: c.textMuted, fontStyle: "italic", marginBottom: 12 },
+  strafFormTitle: { fontSize: 14, fontFamily: FONT.w800, color: c.textDark, marginBottom: 4 },
+  strafFormHint: { fontFamily: FONT.w400i, fontSize: 12, color: c.textMuted, marginBottom: 12 },
   strafFormRow: { flexDirection: "row", gap: 10, marginBottom: 12 },
-  strafFormLabel: { fontSize: 11, fontWeight: "700", color: c.textMuted, textTransform: "uppercase", letterSpacing: 0.3, marginBottom: 5 },
-  strafFormInput: {
-    backgroundColor: c.background, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9,
+  strafFormLabel: { fontSize: 11, fontFamily: FONT.w700, color: c.textMuted, textTransform: "uppercase", letterSpacing: 0.3, marginBottom: 5 },
+  strafFormInput: { fontFamily: FONT.w400, backgroundColor: c.background, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9,
     fontSize: 14, color: c.textDark, borderWidth: 1, borderColor: c.border,
   },
   strafSubmitBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7,
     backgroundColor: c.danger, borderRadius: 12, paddingVertical: 11,
   },
-  strafSubmitText: { color: c.onAccent, fontWeight: "700", fontSize: 14 },
+  strafSubmitText: { color: c.onAccent, fontFamily: FONT.w700, fontSize: 14 },
 
   addStrafRow: {
     flexDirection: "row", alignItems: "center", gap: 12,
@@ -1811,7 +1808,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     width: 36, height: 36, borderRadius: 18, backgroundColor: c.danger + "12",
     alignItems: "center", justifyContent: "center",
   },
-  addStrafRowText: { fontSize: 14, fontWeight: "700", color: c.danger },
+  addStrafRowText: { fontSize: 14, fontFamily: FONT.w700, color: c.danger },
   chipsWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 },
   chipsScrollFixed: { marginBottom: 12 },
   chipsGridTwoRows: {
@@ -1825,7 +1822,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   modalHeader: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14,
   },
-  modalTitle: { fontSize: 17, fontWeight: "800", color: c.textDark },
+  modalTitle: { fontSize: 17, fontFamily: FONT.w800, color: c.textDark },
   modalCloseBtn: {
     width: 30, height: 30, borderRadius: 15, backgroundColor: c.cardAlt,
     alignItems: "center", justifyContent: "center",
@@ -1836,11 +1833,11 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderWidth: 1, borderColor: c.border, borderLeftWidth: 3, borderLeftColor: c.danger,
   },
   strafFeedRowBeglichen: { borderLeftColor: c.success, backgroundColor: c.successBg },
-  strafFeedEmoji: { fontSize: 18 },
-  strafFeedLabel: { fontSize: 11, color: c.textMuted, marginTop: 1 },
-  strafFeedMember: { fontSize: 13, fontWeight: "700", color: c.textDark },
+  strafFeedEmoji: { fontFamily: FONT.w400, fontSize: 18 },
+  strafFeedLabel: { fontFamily: FONT.w400, fontSize: 11, color: c.textMuted, marginTop: 1 },
+  strafFeedMember: { fontSize: 13, fontFamily: FONT.w700, color: c.textDark },
   strafFeedRight: { alignItems: "flex-end", gap: 4 },
-  strafFeedBetrag: { fontSize: 15, fontWeight: "800", color: c.danger },
+  strafFeedBetrag: { fontSize: 15, fontFamily: FONT.w800, color: c.danger },
   strafBegleichenBtn: { padding: 2 },
 
   // Edit form
@@ -1854,10 +1851,9 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     backgroundColor: c.card, borderRadius: 18, padding: 16, marginBottom: 14,
     borderWidth: 1, borderColor: c.blue + "33", ...SHADOWS.light,
   },
-  editFormTitle: { fontSize: 15, fontWeight: "800", color: c.textDark, marginBottom: 14 },
-  editLabel: { fontSize: 11, fontWeight: "700", color: c.textMuted, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 5 },
-  editInput: {
-    backgroundColor: c.background, borderRadius: 10, borderWidth: 1, borderColor: c.border,
+  editFormTitle: { fontSize: 15, fontFamily: FONT.w800, color: c.textDark, marginBottom: 14 },
+  editLabel: { fontSize: 11, fontFamily: FONT.w700, color: c.textMuted, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 5 },
+  editInput: { fontFamily: FONT.w400, backgroundColor: c.background, borderRadius: 10, borderWidth: 1, borderColor: c.border,
     paddingHorizontal: 12, paddingVertical: 9, fontSize: 14, color: c.textDark, marginBottom: 12,
   },
   editDateBtn: {
@@ -1865,13 +1861,13 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     backgroundColor: c.background, borderRadius: 10, borderWidth: 1, borderColor: c.border,
     paddingHorizontal: 12, paddingVertical: 10, marginBottom: 12,
   },
-  editDateBtnText: { fontSize: 14, fontWeight: "600", color: c.textDark },
+  editDateBtnText: { fontSize: 14, fontFamily: FONT.w600, color: c.textDark },
   editRow: { flexDirection: "row", gap: 10 },
   editSaveBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7,
     backgroundColor: c.blue, borderRadius: 12, paddingVertical: 12, marginTop: 4,
   },
-  editSaveBtnText: { color: c.onAccent, fontWeight: "700", fontSize: 14 },
+  editSaveBtnText: { color: c.onAccent, fontFamily: FONT.w700, fontSize: 14 },
 
 
   // Stats bar (Anwesenheit tab)
@@ -1881,12 +1877,11 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderWidth: 1, borderColor: c.border, ...SHADOWS.light,
   },
   anwesenheitStatBarItem: { flex: 1, alignItems: "center", gap: 2 },
-  anwesenheitStatBarNum: { fontSize: 18, fontWeight: "800", color: c.textDark },
-  anwesenheitStatBarLabel: { fontSize: 10, color: c.textMuted, fontWeight: "600" },
+  anwesenheitStatBarNum: { fontSize: 18, fontFamily: FONT.w800, color: c.textDark },
+  anwesenheitStatBarLabel: { fontSize: 10, color: c.textMuted, fontFamily: FONT.w600 },
 
   // Agenda input (Protokoll tab)
-  agendaInput: {
-    backgroundColor: c.background, borderRadius: 10,
+  agendaInput: { fontFamily: FONT.w400, backgroundColor: c.background, borderRadius: 10,
     borderWidth: 1, borderColor: c.border,
     paddingHorizontal: 12, paddingVertical: 10,
     fontSize: 14, color: c.textDark, lineHeight: 21,

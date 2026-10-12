@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
-import { SHADOWS, ThemeColors } from "../constants/design";
+import { SHADOWS, ThemeColors, FONT } from "../constants/design";
 import { useThemedStyles } from "../contexts/ThemeContext";
 import StammtischLogo from "../components/StammtischLogo";
 
@@ -46,8 +46,8 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   content: { padding: 24, paddingBottom: 40, alignItems: "center", flexGrow: 1, justifyContent: "center" },
 
   header: { alignItems: "center", marginBottom: 32, gap: 10 },
-  title: { fontSize: 26, fontWeight: "800", color: c.textDark, marginTop: 8 },
-  subtitle: { fontSize: 15, color: c.textMuted, textAlign: "center", lineHeight: 21 },
+  title: { fontSize: 26, fontFamily: FONT.w800, color: c.textDark, marginTop: 8 },
+  subtitle: { fontFamily: FONT.w400, fontSize: 15, color: c.textMuted, textAlign: "center", lineHeight: 21 },
 
   primaryBtn: {
     width: "100%",
@@ -58,8 +58,8 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     justifyContent: "center",
     ...SHADOWS.card,
   },
-  primaryBtnText: { color: c.onAccent, fontSize: 16, fontWeight: "700" },
+  primaryBtnText: { color: c.onAccent, fontSize: 16, fontFamily: FONT.w700 },
 
   secondaryBtn: { marginTop: 16, paddingVertical: 8 },
-  secondaryBtnText: { fontSize: 14, color: c.textMuted, textDecorationLine: "underline" },
+  secondaryBtnText: { fontFamily: FONT.w400, fontSize: 14, color: c.textMuted, textDecorationLine: "underline" },
 });

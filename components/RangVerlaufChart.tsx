@@ -2,7 +2,7 @@ import React, { useMemo, useRef, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Pressable, Platform, useWindowDimensions } from "react-native";
 import Svg, { Circle, Line, Path, Text as SvgText } from "react-native-svg";
 import { MemberProfile } from "../types";
-import { ThemeColors } from "../constants/design";
+import { ThemeColors, FONT as KFONT } from "../constants/design";
 import { useColors, useThemedStyles } from "../contexts/ThemeContext";
 import { VerlaufPunkt } from "../utils/stats";
 import { displayName } from "../utils/format";
@@ -272,8 +272,8 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   standBox: {
     backgroundColor: c.cardAlt, borderRadius: 12, paddingVertical: 8, paddingHorizontal: 12, marginBottom: 10,
   },
-  standTitel: { fontSize: 11, fontWeight: "700", color: c.textMuted, textTransform: "uppercase", letterSpacing: 0.4 },
-  standText: { fontSize: 13, fontWeight: "700", color: c.textDark, marginTop: 2 },
+  standTitel: { fontSize: 11, fontFamily: KFONT.w700, color: c.textMuted, textTransform: "uppercase", letterSpacing: 0.4 },
+  standText: { fontSize: 13, fontFamily: KFONT.w700, color: c.textDark, marginTop: 2 },
   plotZeile: { flexDirection: "row" },
   tippflaeche: { position: "absolute", top: 0, bottom: 0 },
   legende: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 10 },
@@ -283,7 +283,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderWidth: 1.5, borderColor: c.border, backgroundColor: c.card,
   },
   chipDot: { width: 8, height: 8, borderRadius: 4 },
-  chipText: { fontSize: 12, fontWeight: "600", color: c.textMuted },
-  chipTextAktiv: { color: c.textDark, fontWeight: "700" },
-  hinweis: { fontSize: 11, color: c.textLight, marginTop: 8 },
+  chipText: { fontSize: 12, fontFamily: KFONT.w600, color: c.textMuted },
+  chipTextAktiv: { color: c.textDark, fontFamily: KFONT.w700 },
+  hinweis: { fontFamily: KFONT.w400, fontSize: 11, color: c.textLight, marginTop: 8 },
 });

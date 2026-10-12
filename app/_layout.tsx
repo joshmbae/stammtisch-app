@@ -1,4 +1,14 @@
 import { useEffect } from "react";
+import {
+  useFonts,
+  Figtree_400Regular,
+  Figtree_400Regular_Italic,
+  Figtree_500Medium,
+  Figtree_600SemiBold,
+  Figtree_700Bold,
+  Figtree_800ExtraBold,
+  Figtree_900Black,
+} from "@expo-google-fonts/figtree";
 import { Stack, router } from "expo-router";
 import * as Notifications from "expo-notifications";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -30,6 +40,20 @@ export default function RootLayout() {
     });
     return () => sub.remove();
   }, []);
+
+  // Ohne geladene Schrift nichts zeigen: sonst springt der Text beim Start
+  // vom Systemfont auf Figtree. Schlägt das Laden fehl, geht es mit dem
+  // Systemfont weiter statt mit einem leeren Bildschirm.
+  const [fontsLoaded, fontError] = useFonts({
+    Figtree_400Regular,
+    Figtree_400Regular_Italic,
+    Figtree_500Medium,
+    Figtree_600SemiBold,
+    Figtree_700Bold,
+    Figtree_800ExtraBold,
+    Figtree_900Black,
+  });
+  if (!fontsLoaded && !fontError) return null;
 
   return (
     <SafeAreaProvider>

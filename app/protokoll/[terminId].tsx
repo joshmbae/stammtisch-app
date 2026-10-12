@@ -23,7 +23,7 @@ import {
   logActivity,
 } from "../../utils/storage";
 import { useSession } from "../../contexts/SessionContext";
-import { SHADOWS, ThemeColors } from "../../constants/design";
+import { SHADOWS, ThemeColors, FONT } from "../../constants/design";
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import LoadingSpinner from "../../components/LoadingSpinner";
 
@@ -265,7 +265,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     backgroundColor: c.card,
   },
   backBtn: { flexDirection: "row", alignItems: "center", gap: 4 },
-  backText: { fontSize: 15, color: c.blue, fontWeight: "600" },
+  backText: { fontSize: 15, color: c.blue, fontFamily: FONT.w600 },
   topActions: { flexDirection: "row", alignItems: "center", gap: 10 },
   topBtn: { padding: 4 },
   saveBtn: {
@@ -274,7 +274,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     paddingHorizontal: 14, paddingVertical: 8,
   },
   saveBtnDim: { opacity: 0.45 },
-  saveBtnText: { color: c.onAccent, fontWeight: "700", fontSize: 14 },
+  saveBtnText: { color: c.onAccent, fontFamily: FONT.w700, fontSize: 14 },
 
   content: { padding: 20, paddingBottom: 60 },
 
@@ -285,27 +285,26 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderWidth: 1, borderColor: c.gold + "55",
     alignSelf: "flex-start",
   },
-  terminBadgeEmoji: { fontSize: 16 },
-  terminBadgeText: { fontSize: 13, fontWeight: "700", color: c.gold },
+  terminBadgeEmoji: { fontFamily: FONT.w400, fontSize: 16 },
+  terminBadgeText: { fontSize: 13, fontFamily: FONT.w700, color: c.gold },
 
   statusRow: {
     flexDirection: "row", alignItems: "center", gap: 5,
     marginBottom: 14,
   },
-  statusText: { fontSize: 12, color: c.success, fontWeight: "500" },
-  dirtyDot: { fontSize: 12, color: c.warning },
+  statusText: { fontSize: 12, color: c.success, fontFamily: FONT.w500 },
+  dirtyDot: { fontFamily: FONT.w400, fontSize: 12, color: c.warning },
 
   titelInput: {
     fontSize: 22,
-    fontWeight: "800",
+    fontFamily: FONT.w800,
     color: c.textDark,
     marginBottom: 14,
     paddingVertical: 4,
     borderBottomWidth: 1,
     borderBottomColor: c.border,
   },
-  inhaltInput: {
-    fontSize: 15,
+  inhaltInput: { fontFamily: FONT.w400, fontSize: 15,
     color: c.textDark,
     lineHeight: 24,
     minHeight: 340,
@@ -320,12 +319,11 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
 
   readTitel: {
     fontSize: 22,
-    fontWeight: "800",
+    fontFamily: FONT.w800,
     color: c.textDark,
     marginBottom: 14,
   },
-  readInhalt: {
-    fontSize: 15,
+  readInhalt: { fontFamily: FONT.w400, fontSize: 15,
     color: c.textDark,
     lineHeight: 24,
     backgroundColor: c.card,
