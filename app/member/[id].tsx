@@ -12,28 +12,16 @@ import { useScreenLoad } from "../../utils/useScreenLoad";
 import { verifyPin } from "../../utils/pin";
 import { anwesenheitsQuote, formatEuro } from "../../utils/format";
 import { toLocalIsoDate } from "../../utils/date";
-import {
-  ALLZEIT,
-  Rangliste,
-  StatsDaten,
-  aktuellesJahr,
-  computeRangVerlauf,
-  computeRanglisten,
-  jahresTitelFuer,
-  siegerIds,
-  verfuegbareJahre,
-  vornSeit,
-  wertKurz,
-} from "../../utils/stats";
+import { StatsDaten, aktuellesJahr, computeRanglisten, jahresTitelFuer, wertKurz } from "../../utils/stats";
 import PinPrompt from "../../components/PinPrompt";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import ErrorState from "../../components/ErrorState";
 import OfflineBanner from "../../components/OfflineBanner";
 import { PressableScale, Screen, ScreenHeader } from "../../components/ui";
-import { AbendZeile, AbendeKarte, BilanzKachel, BilanzKarte, Fuehrung, FuehrtGerade, ProfilHero, StrafenKarte, TitelKarte } from "../../components/profil/ProfilKarten";
+import { AbendZeile, AbendeKarte, BilanzKachel, BilanzKarte, ProfilHero, StrafenKarte, TitelKarte } from "../../components/profil/ProfilKarten";
 
 /**
- * Profil einer Person: wer sie ist, was sie gerade anführt, ihre Titel, die
+ * Profil einer Person: wer sie ist, ihre Titel aus früheren Jahren, die
  * Bilanz der Saison, Strafen und die letzten Abende. Bearbeiten ist durch den
  * PIN geschützt, falls einer gesetzt ist.
  */
@@ -59,27 +47,6 @@ export default function ProfilScreen() {
   const auswertung = useMemo(() => {
     if (!daten || !member) return null;
     const listen = computeRanglisten(daten, jahr);
-    const ewig = computeRanglisten(daten, ALLZEIT);
-    const fuehrtIn = (l: Rangliste) => siegerIds(l).includes(member.id);
-    const verlauf = listen.some(fuehrtIn) ? computeRangVerlauf(daten, jahr) : null;
-
-    const fuehrung = (l: Rangliste, jahrLabel: string, mitSeit: boolean): Fuehrung => {
-      const meins = l.eintraege.find((e) => e.member.id === member.id)!;
-      const naechster = l.eintraege.find((e) => e.wert < meins.wert);
-      const gleichauf = l.eintraege.some((e) => e.member.id !== member.id && e.wert === meins.wert);
-      return {
-        liste: l, jahrLabel, wert: meins.wert,
-        vorsprung: gleichauf ? 0 : naechster ? meins.wert - naechster.wert : null,
-        zweiter: gleichauf ? undefined : naechster?.member,
-        seit: mitSeit && verlauf ? vornSeit(verlauf, l.key, member.id) : null,
-      };
-    };
-    const fuehrungen = [
-      ...listen.filter(fuehrtIn).map((l) => fuehrung(l, jahr, true)),
-      // Gibt es nur eine Saison, ist die Ewige Tabelle dieselbe – dann nicht doppelt zeigen.
-      ...(verfuegbareJahre(daten).length > 1 ? ewig.filter(fuehrtIn).map((l) => fuehrung(l, "· Ewige Tabelle", false)) : []),
-    ];
-
     const titel = jahresTitelFuer(daten, member.id).filter((t) => t.jahr !== jahr);
 
     // Bilanz: dieselben Zahlen wie Home (anwesenheitsQuote) und Tabelle (computeRanglisten).
@@ -114,7 +81,7 @@ export default function ProfilScreen() {
         };
       });
 
-    return { fuehrungen, titel, kacheln, strafenJahr, abende };
+    return { titel, kacheln, strafenJahr, abende };
   }, [daten, member, jahr, c]);
 
   function bearbeiten() {
@@ -167,7 +134,6 @@ export default function ProfilScreen() {
       ) : (
         <>
           <ProfilHero member={member} />
-          <FuehrtGerade fuehrungen={auswertung.fuehrungen} />
           <TitelKarte titel={auswertung.titel} />
           <BilanzKarte jahr={jahr} kacheln={auswertung.kacheln} />
           <StrafenKarte jahr={jahr} memberId={member.id} strafen={auswertung.strafenJahr} kategorien={kategorien} />

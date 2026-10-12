@@ -1,18 +1,16 @@
 import React, { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { MemberProfile, StrafKategorieDef, StrafLog } from "../../types";
 import { FONT, MAX_FONT_SCALE, RADIUS, TYPE, ThemeColors, glow } from "../../constants/design";
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
-import { Jahrestitel, Rangliste, wertKurz } from "../../utils/stats";
+import { Jahrestitel } from "../../utils/stats";
 import { displayName, formatEuro } from "../../utils/format";
 import { formatWochentagDatum } from "../../utils/date";
 import { Avatar, Card, Emoji, IconSquircle, KategorieIcon, Krone, PressableScale, SectionLabel, tonFuerRangliste } from "../ui";
 import { SYMBOL } from "../../constants/symbole";
 
 const euro = (n: number) => `${formatEuro(n).replace(",00", "")} €`;
-const kurzDatum = (iso: string) => { const [, m, d] = iso.slice(0, 10).split("-"); return `${parseInt(d, 10)}.${parseInt(m, 10)}.`; };
 
 /** Kopf: Bild, Name, Rollen und die festen Angaben zur Person. */
 export function ProfilHero({ member }: { member: MemberProfile }) {
@@ -49,52 +47,6 @@ export function ProfilHero({ member }: { member: MemberProfile }) {
       </View>
       {member.notizen ? <Text style={[styles.notiz, { color: c.onHeroBlue }]}>{member.notizen}</Text> : null}
     </Card>
-  );
-}
-
-export interface Fuehrung {
-  liste: Rangliste;
-  jahrLabel: string;
-  wert: number;
-  vorsprung: number | null;
-  zweiter?: MemberProfile;
-  seit: string | null;
-}
-
-/** Wertungen, die die Person gerade anführt – Saison und Ewige Tabelle. */
-export function FuehrtGerade({ fuehrungen }: { fuehrungen: Fuehrung[] }) {
-  const c = useColors();
-  const styles = useThemedStyles(makeStyles);
-  if (fuehrungen.length === 0) return null;
-  const dunkel = c.heroStyle === "outline";
-  const fg = dunkel ? c.textDark : c.onMustard;
-  return (
-    <PressableScale
-      onPress={() => router.push("/ranglisten")}
-      scaleTo={0.99}
-      style={[styles.fuehrt, dunkel ? { backgroundColor: c.card, borderColor: c.mustardEdge, borderWidth: 1, ...glow(c.mustard, c, 16) } : { backgroundColor: c.mustardTile }]}
-      accessibilityLabel={`Führt gerade: ${fuehrungen.map((f) => `${f.liste.kurz} ${f.jahrLabel}`).join(", ")}. Zur Tabelle`}
-    >
-      <View style={styles.zeile}>
-        <View style={[styles.kroneBox, { backgroundColor: dunkel ? c.cardAlt : "rgba(28,27,25,0.08)" }]}><Krone size={18} color={dunkel ? c.mustard : c.onMustard} /></View>
-        <Text style={[styles.label, { color: dunkel ? c.mustard : c.onMustard, flex: 1 }]}>Führt gerade</Text>
-        <Ionicons name="chevron-forward" size={18} color={fg} />
-      </View>
-      {fuehrungen.map((f, i) => (
-        <View key={`${f.jahrLabel}-${f.liste.key}`} style={[styles.fuehrtZeile, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: dunkel ? c.hairline : "rgba(28,27,25,0.15)" }]}>
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={[styles.fuehrtTitel, { color: fg }]} numberOfLines={1}>{`${f.liste.kurz} ${f.jahrLabel}`}</Text>
-            <Text style={[styles.fuehrtSub, { color: fg }]} numberOfLines={1}>
-              {[
-                f.zweiter && f.vorsprung ? `${wertKurz(f.liste.key, f.vorsprung)} vor ${displayName(f.zweiter)}` : f.vorsprung === 0 ? "gleichauf" : null,
-                f.seit ? `vorn seit ${kurzDatum(f.seit)}` : null,
-              ].filter(Boolean).join(" · ")}
-            </Text>
-          </View>
-          <Text style={[styles.fuehrtWert, { color: fg }]} maxFontSizeMultiplier={MAX_FONT_SCALE}>{wertKurz(f.liste.key, f.wert)}</Text>
-        </View>
-      ))}
-    </PressableScale>
   );
 }
 
@@ -264,12 +216,6 @@ const makeStyles = (c: ThemeColors) =>
 
     zeile: { flexDirection: "row", alignItems: "center", gap: 10 },
     label: { ...TYPE.label, color: c.textMuted },
-    fuehrt: { borderRadius: RADIUS.hero, padding: 16, gap: 6 },
-    kroneBox: { width: 34, height: 34, borderRadius: 11, alignItems: "center", justifyContent: "center" },
-    fuehrtZeile: { flexDirection: "row", alignItems: "center", gap: 10, paddingTop: 10 },
-    fuehrtTitel: { fontFamily: FONT.w700, fontSize: 17 },
-    fuehrtSub: { ...TYPE.caption, fontSize: 13, opacity: 0.85 },
-    fuehrtWert: { ...TYPE.num, fontSize: 26 },
 
     kopf: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
     kartenTitel: { ...TYPE.heading, color: c.textDark },
