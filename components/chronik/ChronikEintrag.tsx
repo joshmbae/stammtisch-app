@@ -5,7 +5,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { ActivityLogEntry, MemberProfile, StrafKategorieDef } from "../../types";
 import { FONT, ThemeColors } from "../../constants/design";
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
-import { activityRoute, renderActivity } from "../../utils/activityFeed";
+import { activityRoute } from "../../utils/activityFeed";
+import { renderChronik } from "../../utils/pushText";
 import { formatUhrzeit } from "../../utils/date";
 import { PressableScale, Ton, tonFarben } from "../ui";
 
@@ -28,8 +29,8 @@ export function bereichVon(typ: ActivityLogEntry["actionType"]): Exclude<Chronik
   return null;
 }
 
-/** Tönung des Emoji-Kreises je Bereich (weiche Fläche, damit das Emoji wirkt). */
-function tonFuerAktion(typ: ActivityLogEntry["actionType"]): Ton {
+/** Tönung des Emoji-Kreises je Bereich (weiche Fläche, damit das Emoji wirkt); auch für Home. */
+export function tonFuerAktion(typ: ActivityLogEntry["actionType"]): Ton {
   if (typ.endsWith("_deleted") || typ === "termin_absage") return "neutral";
   if (typ === "straf_log_beglichen" || typ === "kasse_beglichen" || typ === "termin_zusage") return "green";
   if (typ.startsWith("straf_")) return "coral";
@@ -48,7 +49,7 @@ export function ChronikEintrag({ entry, membersById, strafKategorien, linie }: {
 }) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
-  const r = renderActivity(entry, membersById, strafKategorien);
+  const r = renderChronik(entry, membersById, strafKategorien);
   const route = activityRoute(entry);
   const ton = tonFarben(tonFuerAktion(entry.actionType), c);
   const zeit = formatUhrzeit(entry.createdAt);

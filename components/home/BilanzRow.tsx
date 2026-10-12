@@ -1,9 +1,18 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { useIsFocused } from "@react-navigation/native";
+import Animated, { FadeIn, useReducedMotion } from "react-native-reanimated";
 import { FONT, MAX_FONT_SCALE, TYPE, ThemeColors } from "../../constants/design";
-import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
-import { Card, Emoji, Krone, Ring, SectionLabel } from "../ui";
 import { SYMBOL } from "../../constants/symbole";
+import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
+import { Card, IconSquircle, Krone, Ring, SectionLabel, tonFuerRangliste } from "../ui";
+
+export interface Platzierung {
+  key: string;
+  emoji: string;
+  kurz: string;
+  platz: number;
+}
 
 export interface BilanzWerte {
   jahr: string;
@@ -11,84 +20,91 @@ export interface BilanzWerte {
   quote: number | null;
   dabei: number;
   abende: number;
-  haupt: { label: string; emoji?: string; anzahl: number; fuehrt: boolean } | null;
   offen: number;
+  /** Eigene Plätze in den Ranglisten des Jahres, beste zuerst. */
+  platzierungen: Platzierung[];
 }
 
+const WECHSEL_MS = 3500;
+const SYMBOL_GROESSE = 40;
+
 /**
- * Kompakte Jahresbilanz in einer Zeile. Links die Anwesenheit als eine
- * Einheit (Ring mit Quote, daneben „6 von 8 Abenden“), rechts die offenen
- * Strafen und ganz außen der Wert im Hauptspiel.
+ * Jahresbilanz in drei gleich gewichteten Spalten: Anwesenheit, offene
+ * Strafen und die eigenen Platzierungen, die reihum wechseln (beste zuerst).
  */
 export function BilanzRow({ werte, onPress }: { werte: BilanzWerte; onPress: () => void }) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
+  const fokus = useIsFocused();
+  const reduce = useReducedMotion();
+  const [index, setIndex] = useState(0);
+  const anzahl = werte.platzierungen.length;
+
+  useEffect(() => {
+    if (!fokus || reduce || anzahl < 2) return;
+    const id = setInterval(() => setIndex((i) => (i + 1) % anzahl), WECHSEL_MS);
+    return () => clearInterval(id);
+  }, [fokus, reduce, anzahl]);
+
+  const platz = anzahl ? werte.platzierungen[index % anzahl] : null;
   const offenText = `${werte.offen.toLocaleString("de-DE", { maximumFractionDigits: 2 })} €`;
-  const dabeiText = werte.abende ? `${werte.dabei} von ${werte.abende}` : "–";
   const label = [
     `Deine Bilanz ${werte.jahr}`,
     werte.abende ? `${werte.dabei} von ${werte.abende} Abenden dabei, ${werte.quote ?? 0} Prozent` : "noch kein Abend",
     `${offenText} offen`,
-    werte.haupt ? `${werte.haupt.anzahl} ${werte.haupt.label}${werte.haupt.fuehrt ? ", du führst" : ""}` : null,
-  ].filter(Boolean).join(", ");
+    ...werte.platzierungen.map((p) => `${p.kurz}: Platz ${p.platz}`),
+  ].join(", ");
 
   return (
     <Card onPress={onPress} enterIndex={1} accessibilityLabel={label} style={{ paddingTop: 12, paddingBottom: 14 }}>
       <SectionLabel>{`Deine Bilanz ${werte.jahr}`}</SectionLabel>
       <View style={styles.row}>
-        <View style={styles.dabei}>
-          <Ring progress={(werte.quote ?? 0) / 100} size={52} stroke={7}>
-            <Text style={styles.ringText} maxFontSizeMultiplier={1.1}>{werte.quote === null ? "–" : `${werte.quote}%`}</Text>
+        <View style={styles.spalte}>
+          <Ring progress={(werte.quote ?? 0) / 100} size={SYMBOL_GROESSE} stroke={5}>
+            <Text style={styles.ringText} maxFontSizeMultiplier={1}>{werte.quote === null ? "–" : `${werte.quote}%`}</Text>
           </Ring>
-          <View style={{ flexShrink: 1, minWidth: 0 }}>
-            <Text style={styles.wert} numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE}>{dabeiText}</Text>
-            <Text style={styles.label} numberOfLines={1}>{werte.abende ? "dabei" : "noch kein Abend"}</Text>
-          </View>
+          <Text style={styles.wert} numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE}>{werte.abende ? `${werte.dabei} von ${werte.abende}` : "–"}</Text>
+          <Text style={styles.label} numberOfLines={1}>{werte.abende ? "dabei" : "noch kein Abend"}</Text>
         </View>
+
         <View style={styles.trenner} />
-        <Wert
-          wert={offenText}
-          label="offen"
-          emoji={SYMBOL.geld}
-          farbe={werte.offen > 0 ? c.coralText : c.success}
-        />
-        {werte.haupt ? (
-          <Wert wert={`${werte.haupt.anzahl}×`} label={werte.haupt.label} emoji={werte.haupt.emoji} krone={werte.haupt.fuehrt} />
-        ) : null}
+
+        <View style={styles.spalte}>
+          <IconSquircle emoji={SYMBOL.geld} ton={werte.offen > 0 ? "coral" : "green"} size={SYMBOL_GROESSE} />
+          <Text style={[styles.wert, { color: werte.offen > 0 ? c.coralText : c.success }]} numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE}>{offenText}</Text>
+          <Text style={styles.label} numberOfLines={1}>offen</Text>
+        </View>
+
+        <View style={styles.trenner} />
+
+        {platz ? (
+          <Animated.View key={platz.key} entering={reduce ? undefined : FadeIn.duration(300)} style={styles.spalte}>
+            <IconSquircle emoji={platz.emoji} ton={tonFuerRangliste(platz.key)} size={SYMBOL_GROESSE} />
+            <View style={styles.wertZeile}>
+              {platz.platz === 1 ? <Krone size={14} /> : null}
+              <Text style={[styles.wert, { marginTop: 0 }]} numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE}>{`Platz ${platz.platz}`}</Text>
+            </View>
+            <Text style={styles.label} numberOfLines={1}>{platz.kurz}</Text>
+          </Animated.View>
+        ) : (
+          <View style={styles.spalte}>
+            <IconSquircle emoji={SYMBOL.pokal} size={SYMBOL_GROESSE} />
+            <Text style={styles.wert} numberOfLines={1}>–</Text>
+            <Text style={styles.label} numberOfLines={1}>noch kein Platz</Text>
+          </View>
+        )}
       </View>
     </Card>
   );
 }
 
-/** Rechtsbündiger Wert mit kleiner Beschriftung darunter. */
-function Wert({ wert, label, emoji, krone, farbe }: {
-  wert: string; label: string; emoji?: string; krone?: boolean; farbe?: string;
-}) {
-  const c = useColors();
-  const styles = useThemedStyles(makeStyles);
-  return (
-    <View style={styles.wertBox}>
-      <View style={styles.wertZeile}>
-        {krone ? <Krone size={14} /> : null}
-        <Text style={[styles.wert, farbe ? { color: farbe } : null]} numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE}>{wert}</Text>
-      </View>
-      <View style={styles.labelZeile}>
-        {emoji ? <Emoji size={13}>{emoji}</Emoji> : null}
-        <Text style={styles.label} numberOfLines={1}>{label}</Text>
-      </View>
-    </View>
-  );
-}
-
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
-    row: { flexDirection: "row", alignItems: "center", gap: 14, marginTop: 8 },
-    dabei: { flex: 1, minWidth: 0, flexDirection: "row", alignItems: "center", gap: 10 },
-    ringText: { ...TYPE.num, fontSize: 14, color: c.textDark },
-    trenner: { width: StyleSheet.hairlineWidth, alignSelf: "stretch", backgroundColor: c.border },
-    wertBox: { alignItems: "flex-end", maxWidth: 96 },
-    wertZeile: { flexDirection: "row", alignItems: "center", gap: 3 },
-    wert: { ...TYPE.num, fontSize: 20, color: c.textDark },
-    labelZeile: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 1 },
-    label: { fontFamily: FONT.w600, fontSize: 12, color: c.textMuted, flexShrink: 1 },
+    row: { flexDirection: "row", alignItems: "stretch", marginTop: 10 },
+    spalte: { flex: 1, minWidth: 0, alignItems: "center", gap: 2 },
+    trenner: { width: StyleSheet.hairlineWidth, backgroundColor: c.border, marginVertical: 4 },
+    ringText: { ...TYPE.num, fontSize: 12, color: c.textDark },
+    wertZeile: { flexDirection: "row", alignItems: "center", gap: 3, marginTop: 6 },
+    wert: { ...TYPE.num, fontSize: 19, color: c.textDark, marginTop: 6 },
+    label: { fontFamily: FONT.w600, fontSize: 12, color: c.textMuted },
   });

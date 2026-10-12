@@ -1,5 +1,5 @@
 import { ActivityLogEntry, MemberProfile, StrafKategorieDef } from "../types";
-import { renderActivity, terminBezeichnung } from "./activityFeed";
+import { RenderedActivity, renderActivity, terminBezeichnung } from "./activityFeed";
 import { formatWochentagDatum } from "./date";
 
 /**
@@ -7,6 +7,11 @@ import { formatWochentagDatum } from "./date";
  * sagt in einem Satz, was passiert ist, der Text liefert den Kontext. Pro
  * Ereignis gibt's mehrere Formulierungen, damit's nicht jedes Mal gleich
  * klingt — locker, aber Hochdeutsch (die App wird deutschlandweit genutzt).
+ *
+ * Dieselben Texte zeigt auch die Chronik (renderChronik). Die Variante wird
+ * pro Eintrag fest aus seiner Id gewählt, damit Push und Chronik gleich
+ * lauten. Im Log entfallen „Eingetragen von …“ (steht in der Meta-Zeile) und
+ * Aufforderungen wie „Bitte zurückzahlen!“, die nur im Moment passen.
  */
 
 export interface PushText {
@@ -34,6 +39,8 @@ interface Vars {
   termin: string;
   meta: Record<string, any>;
   ctx: PushContext;
+  /** Text für die Chronik statt für den Push. */
+  log: boolean;
 }
 
 function name(m: MemberProfile | undefined): string {
@@ -52,13 +59,26 @@ function kurzDatum(iso?: string): string {
   return formatWochentagDatum(new Date(iso + "T00:00:00"));
 }
 
-function pick<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)];
+/** Feste Wahl aus der Id: derselbe Eintrag bekommt immer dieselbe Formulierung. */
+function pick<T>(arr: T[], seed: string): T {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+  return arr[h % arr.length];
 }
 
 /** Hängt "Eingetragen von X." an, wenn's nicht der Betroffene selbst war. */
 function vonSatz(v: Vars): string {
-  return v.vonAnders ? ` Eingetragen von ${v.von}.` : "";
+  return v.vonAnders && !v.log ? ` Eingetragen von ${v.von}.` : "";
+}
+
+/** „Eingetragen von X.“ auch ohne Betroffenen (z. B. Kassenbuchung); im Log steht das in der Meta-Zeile. */
+function verbuchtSatz(v: Vars): string {
+  return v.log ? "" : ` Eingetragen von ${v.von}.`;
+}
+
+/** Aufforderung, die nur im Push passt (im Log längst erledigt oder überholt). */
+function aufruf(v: Vars, text: string): string {
+  return v.log ? "" : ` ${text}`;
 }
 
 function notizSatz(v: Vars): string {
@@ -81,12 +101,12 @@ const VARIANTEN: Partial<Record<ActivityLogEntry["actionType"], Variante[]>> = {
     (v) => ({ title: `🗑️ Strafe zurückgenommen`, body: `${v.wer} kommt um „${v.kat}“ (${v.betrag}) herum.${vonSatz(v)}` }),
   ],
   kasse_einnahme_created: [
-    (v) => ({ title: `💰 Geld in der Kasse`, body: `${v.beschreibung ?? "Einnahme"}: +${v.betrag}. Eingetragen von ${v.von}.` }),
-    (v) => ({ title: `➕ Neue Einnahme: ${v.betrag}`, body: `${v.beschreibung ?? "Ohne Beschreibung"} – ${v.von} hat's verbucht.` }),
+    (v) => ({ title: `💰 Geld in der Kasse`, body: `${v.beschreibung ?? "Einnahme"}: +${v.betrag}.${verbuchtSatz(v)}` }),
+    (v) => ({ title: `➕ Neue Einnahme: ${v.betrag}`, body: `${v.beschreibung ?? "Ohne Beschreibung"}${v.log ? "" : ` – ${v.von} hat's verbucht.`}` }),
   ],
   kasse_ausgabe_created: [
-    (v) => ({ title: `💸 Ausgabe aus der Kasse`, body: `${v.beschreibung ?? "Ausgabe"}: −${v.betrag}. Eingetragen von ${v.von}.` }),
-    (v) => ({ title: `➖ ${v.betrag} ausgegeben`, body: `${v.beschreibung ?? "Ohne Beschreibung"} – ${v.von} hat's verbucht.` }),
+    (v) => ({ title: `💸 Ausgabe aus der Kasse`, body: `${v.beschreibung ?? "Ausgabe"}: −${v.betrag}.${verbuchtSatz(v)}` }),
+    (v) => ({ title: `➖ ${v.betrag} ausgegeben`, body: `${v.beschreibung ?? "Ohne Beschreibung"}${v.log ? "" : ` – ${v.von} hat's verbucht.`}` }),
   ],
   abendkosten_created: [
     (v) => ({ title: `🍺 ${v.wer} hat die Rechnung übernommen`, body: rechnungsText(v) }),
@@ -102,7 +122,7 @@ const VARIANTEN: Partial<Record<ActivityLogEntry["actionType"], Variante[]>> = {
       : { title: `💶 Alles quitt`, body: `Die Stammtischrechnung von ${v.wer} (${v.betrag}) ist erledigt.` },
   ],
   kasse_eintrag_deleted: [
-    (v) => ({ title: `🗑️ Kassen-Eintrag gelöscht`, body: `${v.beschreibung ?? "Eintrag"} (${v.betrag}) – gelöscht von ${v.von}.` }),
+    (v) => ({ title: `🗑️ Kassen-Eintrag gelöscht`, body: `${v.beschreibung ?? "Eintrag"} (${v.betrag})${v.log ? "." : ` – gelöscht von ${v.von}.`}` }),
   ],
   spiel_log_created: [
     (v) => ({ title: `${v.meta.ereignisEmoji ?? v.meta.spielEmoji ?? "🎲"} ${v.meta.spielName ?? "Spiel"}: ${v.wer}`, body: `${v.meta.ereignisLabel ?? "Ereignis"}!${vonSatz(v)}` }),
@@ -112,8 +132,8 @@ const VARIANTEN: Partial<Record<ActivityLogEntry["actionType"], Variante[]>> = {
     (v) => ({ title: `🗑️ ${v.meta.spielName ?? "Spiel"}-Eintrag gelöscht`, body: `„${v.meta.ereignisLabel ?? "Ereignis"}“ von ${v.wer} ist wieder raus.${vonSatz(v)}` }),
   ],
   protokoll_updated: [
-    (v) => ({ title: `📝 Neues im Protokoll`, body: `${v.von} hat ${v.meta.terminDatum ? `das Protokoll vom ${v.termin}` : "das Protokoll"} aktualisiert. Schau rein!` }),
-    (v) => ({ title: `📝 Protokoll aktualisiert`, body: `${v.von} hat mitgeschrieben${v.meta.terminDatum ? ` (${v.termin})` : ""}. Was ist passiert?` }),
+    (v) => ({ title: `📝 Neues im Protokoll`, body: `${v.von} hat ${v.meta.terminDatum ? `das Protokoll vom ${v.termin}` : "das Protokoll"} aktualisiert.${aufruf(v, "Schau rein!")}` }),
+    (v) => ({ title: `📝 Protokoll aktualisiert`, body: `${v.von} hat mitgeschrieben${v.meta.terminDatum ? ` (${v.termin})` : ""}.${aufruf(v, "Was ist passiert?")}` }),
   ],
   termin_zusage: [
     (v) => ({ title: `🍻 ${v.wer} ist dabei!`, body: `${v.termin}${zusagenSatz(v)}` }),
@@ -126,11 +146,11 @@ const VARIANTEN: Partial<Record<ActivityLogEntry["actionType"], Variante[]>> = {
     (v) => ({ title: `😢 ${v.wer} muss passen`, body: `${v.termin} findet ohne ${v.wer} statt.` }),
   ],
   termin_erstellt: [
-    (v) => ({ title: `📅 Neuer Termin`, body: `${terminErstelltText(v)} Sagt zu oder ab!` }),
-    (v) => ({ title: `📅 Vormerken!`, body: `${terminErstelltText(v)} Wer ist dabei?` }),
+    (v) => ({ title: `📅 Neuer Termin`, body: `${terminErstelltText(v)}${aufruf(v, "Sagt zu oder ab!")}` }),
+    (v) => ({ title: `📅 Vormerken!`, body: `${terminErstelltText(v)}${aufruf(v, "Wer ist dabei?")}` }),
   ],
   termin_verlegt: [
-    (v) => ({ title: `🔁 Termin verlegt`, body: `${v.termin} (statt ${kurzDatum(v.meta.altDatum)}). Bitte neu einplanen!` }),
+    (v) => ({ title: `🔁 Termin verlegt`, body: `${v.termin} (statt ${kurzDatum(v.meta.altDatum)}).${aufruf(v, "Bitte neu einplanen!")}` }),
     (v) => ({ title: `🔁 Achtung, neues Datum!`, body: `${v.von} hat verlegt: jetzt ${v.termin}, vorher ${kurzDatum(v.meta.altDatum)}` }),
   ],
 };
@@ -139,9 +159,9 @@ function rechnungsText(v: Vars): string {
   const n = Number(v.meta.teilnehmerAnzahl ?? 0);
   if (n > 1) {
     const proKopf = euro(Number(v.meta.betrag ?? 0) / n);
-    return `${v.betrag} für ${n} Leute – macht ${proKopf} pro Kopf. Bitte zurückzahlen!`;
+    return `${v.betrag} für ${n} Leute – macht ${proKopf} pro Kopf.${aufruf(v, "Bitte zurückzahlen!")}`;
   }
-  return `${v.betrag} hat ${v.wer} vorgestreckt. Bitte zurückzahlen!`;
+  return `${v.betrag} hat ${v.wer} vorgestreckt.${aufruf(v, "Bitte zurückzahlen!")}`;
 }
 
 function zusagenSatz(v: Vars): string {
@@ -162,7 +182,8 @@ export function renderPushText(
   entry: ActivityLogEntry,
   membersById: Map<string, MemberProfile>,
   strafKategorien: StrafKategorieDef[] = [],
-  ctx: PushContext = {}
+  ctx: PushContext = {},
+  log = false
 ): PushText {
   const meta = entry.meta ?? {};
   const varianten = VARIANTEN[entry.actionType];
@@ -185,6 +206,30 @@ export function renderPushText(
     termin: terminBezeichnung(meta, true),
     meta,
     ctx,
+    log,
   };
-  return pick(varianten)(vars);
+  return pick(varianten, entry.id)(vars);
+}
+
+/**
+ * Chronik-Text mit denselben Formulierungen wie der Push: der Titel wird zur
+ * Hauptzeile, sein vorangestelltes Emoji zum Symbol, der Push-Text zur
+ * Zusatzzeile. Typen ohne eigene Formulierung (Altbestand) bleiben beim
+ * nüchternen Feed-Text. Alle Push-Titel beginnen mit „<Emoji> “.
+ */
+export function renderChronik(
+  entry: ActivityLogEntry,
+  membersById: Map<string, MemberProfile>,
+  strafKategorien: StrafKategorieDef[] = []
+): RenderedActivity {
+  const basis = renderActivity(entry, membersById, strafKategorien);
+  if (!VARIANTEN[entry.actionType]) return basis;
+  const { title, body } = renderPushText(entry, membersById, strafKategorien, {}, true);
+  const leer = title.indexOf(" ");
+  return {
+    emoji: leer > 0 ? title.slice(0, leer) : basis.emoji,
+    text: leer > 0 ? title.slice(leer + 1) : title,
+    detail: body.trim() || undefined,
+    actorText: basis.actorText,
+  };
 }

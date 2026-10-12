@@ -35,7 +35,7 @@ export function LiveView({ abend, start, now }: { abend: TerminAbend; start: Dat
 
   return (
     <>
-      <SegmentedTabs items={items} value={aktiv} onChange={setBereich} />
+      <SegmentedTabs variant="live" items={items} value={aktiv} onChange={setBereich} />
       {aktiv === "anwesend" ? <AnwesendGrid abend={abend} mitglieder={mitglieder} start={start} now={now} /> : null}
       {aktiv === "strafen" ? <StrafenErfassen abend={abend} mitglieder={fuerStrafen} /> : null}
       {aktiv === "spiel" ? <SpielZaehler abend={abend} mitglieder={da} /> : null}
@@ -64,7 +64,7 @@ export function BeendenLeiste({ abend }: { abend: TerminAbend }) {
 
   return (
     <View style={styles.leiste}>
-      <Button label="Abend beenden" icon="stop" variant="dark" haptic="mittel" loading={busy} onPress={beenden} style={{ height: 56 }} />
+      <Button label="Abend beenden" icon="stop" variant="secondary" haptic="mittel" loading={busy} onPress={beenden} style={{ height: 56 }} />
     </View>
   );
 }

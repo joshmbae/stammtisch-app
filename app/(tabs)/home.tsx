@@ -6,7 +6,6 @@ import {
   KassenEintrag,
   MemberProfile,
   SpielEreignisTyp,
-  SpielLog,
   StammtischTermin,
   StammtischVerordnung,
   StrafKategorieDef,
@@ -29,7 +28,7 @@ import { subscribeToActivityFeed } from "../../utils/realtime";
 import { istUngelesen, useFeedSeen } from "../../utils/feedSeen";
 import { useScreenLoad } from "../../utils/useScreenLoad";
 import { useNow } from "../../utils/useNow";
-import { aktuellesJahr, computeRanglisten, fuehrendeTitel, siegerIds, StatsDaten } from "../../utils/stats";
+import { aktuellesJahr, computeRanglisten, fuehrendeTitel, StatsDaten } from "../../utils/stats";
 import { anwesenheitsQuote } from "../../utils/format";
 import { naechsterGeburtstag } from "../../utils/date";
 import { homeHero } from "../../utils/terminPhase";
@@ -44,7 +43,7 @@ import ErrorState from "../../components/ErrorState";
 import OfflineBanner from "../../components/OfflineBanner";
 import { Avatar, Button, Card, HeaderIconButton, IconSquircle, PressableScale, Screen } from "../../components/ui";
 import { HeroCard, RsvpStatus } from "../../components/home/HeroCard";
-import { BilanzRow, BilanzWerte } from "../../components/home/BilanzRow";
+import { BilanzRow, BilanzWerte, Platzierung } from "../../components/home/BilanzRow";
 import { KasseTile } from "../../components/home/KasseTile";
 import { GeburtstagTile } from "../../components/home/GeburtstagTile";
 import { AktivitaetTimeline } from "../../components/home/AktivitaetTimeline";
@@ -127,13 +126,13 @@ export default function HomeScreen() {
       rangl.find((l) => l.key === "strafen"),
     ].filter((l): l is NonNullable<typeof l> => !!l && l.eintraege.some((e) => e.wert > 0));
 
-    return { members, rangl, fuehrende, haupt, spielTypen, listen };
+    return { members, rangl, fuehrende, spielTypen, listen };
   }, [daten, verordnung?.aktivesSpielId, jahr]);
 
   if (loading) return <LoadingSpinner />;
   if (error || !daten || !abgeleitet) return <ErrorState message={error ?? "Keine Daten."} onRetry={retry} />;
 
-  const { members, rangl, fuehrende, haupt, spielTypen, listen } = abgeleitet;
+  const { members, rangl, fuehrende, spielTypen, listen } = abgeleitet;
   const membersById = new Map(members.map((m) => [m.id, m]));
   const hero = homeHero(daten.termine, now, verordnung?.stammtischzeit);
   const heroStats = hero.phase === "leer" ? null : abendStats(hero.termin, members, daten.strafLogs, daten.spielLogs);
@@ -164,7 +163,7 @@ export default function HomeScreen() {
     }
   }
 
-  const bilanz = activeMember ? bilanzFuer(activeMember, daten, rangl, haupt, jahr) : null;
+  const bilanz = activeMember ? bilanzFuer(activeMember, daten, rangl, jahr) : null;
   const geburtstag = naechsterGeburtstag(members, now);
   const ungelesen = istUngelesen(aktivitaet[0]?.createdAt, feedGesehen);
 
@@ -231,26 +230,32 @@ export default function HomeScreen() {
   );
 }
 
-/** Eigene Werte im laufenden Jahr; offene Strafen zählen über alle Jahre (ein Kontostand). */
+/**
+ * Eigene Werte im laufenden Jahr; offene Strafen zählen über alle Jahre (ein
+ * Kontostand). Platzierungen: nur Ranglisten, in denen man vorkommt, beste
+ * zuerst, bei Gleichstand in der Reihenfolge der Tabelle.
+ */
 function bilanzFuer(
   me: MemberProfile,
   daten: StatsDaten,
   rangl: ReturnType<typeof computeRanglisten>,
-  haupt: SpielEreignisTyp | null,
   jahr: string
 ): BilanzWerte {
   const termineImJahr: StammtischTermin[] = daten.termine.filter((t) => t.datum.startsWith(jahr));
   const q = anwesenheitsQuote(termineImJahr, me.id, me.mitgliedSeit);
   const sLogs: StrafLog[] = daten.strafLogs.filter((l) => l.memberId === me.id && !l.beglichen);
-  const spLogs: SpielLog[] = haupt ? daten.spielLogs.filter((l) => l.memberId === me.id && l.ereignisTypId === haupt.id && l.loggedAt.startsWith(jahr)) : [];
-  const hauptListe = haupt ? rangl.find((l) => l.key === `spiel_${haupt.id}`) : undefined;
+  const platzierungen: Platzierung[] = rangl
+    .map((l, i) => ({ l, i, e: l.eintraege.find((x) => x.member.id === me.id && x.wert > 0) }))
+    .filter((x) => !!x.e)
+    .sort((a, b) => a.e!.platz - b.e!.platz || a.i - b.i)
+    .map(({ l, e }) => ({ key: l.key, emoji: l.emoji, kurz: l.kurz, platz: e!.platz }));
   return {
     jahr,
     quote: q.pct,
     dabei: q.count,
     abende: q.total,
-    haupt: haupt ? { label: haupt.label, emoji: haupt.emoji, anzahl: spLogs.length, fuehrt: !!hauptListe && siegerIds(hauptListe).includes(me.id) } : null,
     offen: sLogs.reduce((s, l) => s + l.betrag, 0),
+    platzierungen,
   };
 }
 

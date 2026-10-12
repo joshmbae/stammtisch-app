@@ -4,16 +4,11 @@ import { router } from "expo-router";
 import { ActivityLogEntry, MemberProfile, StrafKategorieDef } from "../../types";
 import { FONT, TYPE, ThemeColors } from "../../constants/design";
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
-import { activityRoute, renderActivity } from "../../utils/activityFeed";
+import { activityRoute } from "../../utils/activityFeed";
+import { renderChronik } from "../../utils/pushText";
 import { formatActivityZeit } from "../../utils/date";
-import { PressableScale, SectionLabel, Ton, tonFarben } from "../ui";
-
-function tonFuerAktion(typ: ActivityLogEntry["actionType"]): Ton {
-  if (typ.startsWith("straf")) return "coral";
-  if (typ.startsWith("spiel")) return "mustard";
-  if (typ.startsWith("termin")) return "green";
-  return "blue";
-}
+import { PressableScale, SectionLabel, tonFarben } from "../ui";
+import { tonFuerAktion } from "../chronik/ChronikEintrag";
 
 /** Die letzten Einträge der Chronik als kleiner Zeitstrahl. */
 export function AktivitaetTimeline({ eintraege, membersById, kategorien }: {
@@ -31,7 +26,7 @@ export function AktivitaetTimeline({ eintraege, membersById, kategorien }: {
       ) : (
         <View style={{ marginTop: 4 }}>
           {eintraege.map((e, i) => {
-            const r = renderActivity(e, membersById, kategorien);
+            const r = renderChronik(e, membersById, kategorien);
             const ziel = activityRoute(e);
             const ton = tonFarben(tonFuerAktion(e.actionType), c);
             return (
@@ -40,14 +35,15 @@ export function AktivitaetTimeline({ eintraege, membersById, kategorien }: {
                 onPress={() => router.push((ziel ?? "/feed") as never)}
                 scaleTo={0.98}
                 style={styles.zeile}
-                accessibilityLabel={`${r.text}, ${formatActivityZeit(e.createdAt)}`}
+                accessibilityLabel={[r.text, r.detail, formatActivityZeit(e.createdAt)].filter(Boolean).join(", ")}
               >
                 {i < eintraege.length - 1 ? <View style={styles.linie} /> : null}
                 <View style={[styles.punkt, { backgroundColor: ton.bg }]}>
                   <Text style={styles.emoji} maxFontSizeMultiplier={1}>{r.emoji}</Text>
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={styles.text} numberOfLines={2}>{r.text}</Text>
+                  <Text style={styles.text} numberOfLines={1}>{r.text}</Text>
+                  {r.detail ? <Text style={styles.detail} numberOfLines={1}>{r.detail}</Text> : null}
                   <Text style={styles.zeit}>{formatActivityZeit(e.createdAt)}</Text>
                 </View>
               </PressableScale>
@@ -67,6 +63,7 @@ const makeStyles = (c: ThemeColors) =>
     linie: { position: "absolute", left: 13, top: 39, bottom: -7, width: 2, borderRadius: 1, backgroundColor: c.heroStyle === "outline" ? "rgba(77,124,255,0.3)" : "#C3CCE2" },
     punkt: { width: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center", borderWidth: 3, borderColor: c.blueBg },
     emoji: { fontSize: 12 },
-    text: { fontFamily: FONT.w600, fontSize: 14, lineHeight: 19, color: c.textDark },
+    text: { fontFamily: FONT.w700, fontSize: 14, lineHeight: 19, color: c.textDark },
+    detail: { fontFamily: FONT.w500, fontSize: 13, lineHeight: 17, color: c.textMid },
     zeit: { fontFamily: FONT.w600, fontSize: 12, color: c.textMuted, marginTop: 1 },
   });
