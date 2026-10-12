@@ -1,28 +1,28 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
-  StyleSheet,
-  Platform,
-  KeyboardAvoidingView,
-  ActivityIndicator,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { StyleSheet, Text, View, Platform, KeyboardAvoidingView } from "react-native";
 import { router } from "expo-router";
 import { createStammtisch, findStammtischByName } from "../utils/storage";
 import { hashStammtischPassword } from "../utils/pin";
 import { useStammtisch } from "../contexts/StammtischContext";
-import { SHADOWS, ThemeColors, FONT } from "../constants/design";
-import { useColors, useThemedStyles } from "../contexts/ThemeContext";
-import StammtischLogo from "../components/StammtischLogo";
+import { TYPE, ThemeColors } from "../constants/design";
+import { useThemedStyles } from "../contexts/ThemeContext";
+import { Button, Card, Field, SegmentedTabs } from "../components/ui";
+import { EinstiegHero, EinstiegScreen, Vorteil } from "../components/einstieg/Einstieg";
 
 type Mode = "join" | "create";
 
+const MODI: { key: Mode; label: string }[] = [
+  { key: "join", label: "Beitreten" },
+  { key: "create", label: "Anlegen" },
+];
+
+const VORTEILE: Vorteil[] = [
+  { icon: "calendar-outline", ton: "blue", titel: "Termine & Zusagen", text: "Wer kommt zum nächsten Abend?" },
+  { icon: "card-outline", ton: "mustard", titel: "Kasse & Strafen", text: "Jeder Euro nachvollziehbar" },
+  { icon: "trending-up-outline", ton: "green", titel: "Tabelle & Rückblick", text: "Wer führt und was war los" },
+];
+
 export default function StammtischWaehlenScreen() {
-  const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const [mode, setMode] = useState<Mode>("join");
   const [name, setName] = useState("");
@@ -89,148 +89,90 @@ export default function StammtischWaehlenScreen() {
     }
   }
 
+  const anlegen = mode === "create";
+  const absenden = anlegen ? handleCreate : handleJoin;
+
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={0}>
-      <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <EinstiegScreen>
+        <EinstiegHero titel={"Euer Stammtisch.\nAlles an einem Ort."} text="Termine, Kasse und Tabelle – für alle am Tisch." vorteile={VORTEILE} />
 
-          <View style={styles.header}>
-            <StammtischLogo size={52} />
-            <Text style={styles.title}>Hey! 👋</Text>
-            <Text style={styles.subtitle}>
-              Schön, dass du da bist. Leg euren Stammtisch an oder tritt einem bei — danach verwaltet ihr Kasse, Termine, Zusagen, Strafen und mehr an einem Ort.
-            </Text>
-          </View>
+        <View style={styles.modi}>
+          <SegmentedTabs variant="blue" items={MODI} value={mode} onChange={switchMode} />
+        </View>
 
-          <View style={styles.toggleRow}>
-            <TouchableOpacity
-              style={[styles.toggleBtn, mode === "join" && styles.toggleBtnActive]}
-              onPress={() => switchMode("join")}
-              activeOpacity={0.8}
-            >
-              <Text style={[styles.toggleText, mode === "join" && styles.toggleTextActive]}>Stammtisch beitreten</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.toggleBtn, mode === "create" && styles.toggleBtnActive]}
-              onPress={() => switchMode("create")}
-              activeOpacity={0.8}
-            >
-              <Text style={[styles.toggleText, mode === "create" && styles.toggleTextActive]}>Stammtisch anlegen</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.card}>
-            <Text style={styles.fieldLabel}>Name des Stammtischs</Text>
-            <TextInput
-              style={styles.input}
-              value={name}
-              onChangeText={setName}
-              placeholder="z.B. Die Hellen"
-              placeholderTextColor={c.textLight}
-              autoCapitalize="words"
-            />
-          </View>
-
-          <View style={styles.card}>
-            <Text style={styles.fieldLabel}>Passwort</Text>
-            <TextInput
-              style={styles.input}
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Passwort"
-              placeholderTextColor={c.textLight}
-              secureTextEntry
-              autoCapitalize="none"
-            />
-          </View>
-
-          {mode === "create" && (
-            <View style={styles.card}>
-              <Text style={styles.fieldLabel}>Passwort wiederholen</Text>
-              <TextInput
-                style={styles.input}
-                value={passwordRepeat}
-                onChangeText={setPasswordRepeat}
-                placeholder="Passwort wiederholen"
-                placeholderTextColor={c.textLight}
+        <Card style={styles.form}>
+          <Field
+            label="Name des Stammtischs"
+            value={name}
+            onChangeText={setName}
+            placeholder="z. B. Die Hellen"
+            autoCapitalize="words"
+            autoCorrect={false}
+            style={styles.feld}
+          />
+          {anlegen ? (
+            <View style={styles.zeile}>
+              <Field
+                label="Passwort"
+                value={password}
+                onChangeText={setPassword}
+                placeholder="Passwort"
                 secureTextEntry
                 autoCapitalize="none"
+                autoComplete="new-password"
+                style={styles.feld}
+                containerStyle={styles.spalte}
+              />
+              <Field
+                label="Wiederholen"
+                value={passwordRepeat}
+                onChangeText={setPasswordRepeat}
+                placeholder="Passwort"
+                secureTextEntry
+                autoCapitalize="none"
+                autoComplete="new-password"
+                style={styles.feld}
+                containerStyle={styles.spalte}
+                onSubmitEditing={absenden}
               />
             </View>
+          ) : (
+            <Field
+              label="Passwort"
+              value={password}
+              onChangeText={setPassword}
+              placeholder="Bekommst du von deiner Runde"
+              secureTextEntry
+              autoCapitalize="none"
+              autoComplete="current-password"
+              style={styles.feld}
+              onSubmitEditing={absenden}
+            />
           )}
 
-          {error && <Text style={styles.error}>{error}</Text>}
+          {error ? <Text style={styles.error} accessibilityRole="alert">{error}</Text> : null}
 
-          <TouchableOpacity
-            style={[styles.submitBtn, loading && styles.submitBtnDisabled]}
-            onPress={mode === "create" ? handleCreate : handleJoin}
-            disabled={loading}
-            activeOpacity={0.85}
-          >
-            {loading ? (
-              <ActivityIndicator color={c.onAccent} />
-            ) : (
-              <Text style={styles.submitBtnText}>
-                {mode === "create" ? "Stammtisch anlegen" : "Beitreten"}
-              </Text>
-            )}
-          </TouchableOpacity>
-
-        </ScrollView>
-      </SafeAreaView>
+          <Button
+            label={anlegen ? "Stammtisch anlegen" : "Beitreten"}
+            icon={anlegen ? "add" : "log-in-outline"}
+            variant="blue"
+            onPress={absenden}
+            loading={loading}
+            style={{ marginTop: 2 }}
+          />
+        </Card>
+      </EinstiegScreen>
     </KeyboardAvoidingView>
   );
 }
 
-const makeStyles = (c: ThemeColors) => StyleSheet.create({
-  safe: { flex: 1, backgroundColor: c.background },
-  content: { padding: 24, paddingBottom: 40, alignItems: "center" },
-
-  header: { alignItems: "center", marginBottom: 28, marginTop: 8, gap: 10 },
-  title: { fontSize: 28, fontFamily: FONT.w800, color: c.textDark, marginTop: 8 },
-  subtitle: { fontFamily: FONT.w400, fontSize: 15, color: c.textMuted, textAlign: "center" },
-
-  toggleRow: {
-    flexDirection: "row",
-    backgroundColor: c.card,
-    borderRadius: 14,
-    padding: 4,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: c.border,
-    width: "100%",
-  },
-  toggleBtn: { flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: "center" },
-  toggleBtnActive: { backgroundColor: c.blue },
-  toggleText: { fontSize: 13, fontFamily: FONT.w700, color: c.textMuted },
-  toggleTextActive: { color: c.onAccent },
-
-  card: {
-    width: "100%",
-    backgroundColor: c.card,
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: c.border,
-    ...SHADOWS.card,
-  },
-  fieldLabel: { fontSize: 12, fontFamily: FONT.w700, color: c.textMuted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 },
-  input: { fontFamily: FONT.w400, backgroundColor: c.background, borderRadius: 10, borderWidth: 1, borderColor: c.border,
-    paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: c.textDark,
-  },
-
-  error: { fontFamily: FONT.w400, color: c.danger, fontSize: 13, textAlign: "center", marginTop: 4, marginBottom: 8 },
-
-  submitBtn: {
-    width: "100%",
-    backgroundColor: c.blue,
-    borderRadius: 16,
-    paddingVertical: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 8,
-  },
-  submitBtnDisabled: { opacity: 0.7 },
-  submitBtnText: { color: c.onAccent, fontSize: 16, fontFamily: FONT.w700 },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    modi: { marginTop: 16 },
+    form: { gap: 12 },
+    feld: { backgroundColor: c.cardAlt, borderColor: "transparent" },
+    zeile: { flexDirection: "row", gap: 10 },
+    spalte: { flex: 1, minWidth: 0 },
+    error: { ...TYPE.caption, fontSize: 14, lineHeight: 19, color: c.dangerText },
+  });

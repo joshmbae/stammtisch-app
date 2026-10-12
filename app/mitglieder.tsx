@@ -1,74 +1,51 @@
-import React, { useState, useCallback } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-  Image,
-  RefreshControl,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { router, useFocusEffect } from "expo-router";
+import React, { useState } from "react";
+import { Platform, StyleSheet, Text, View } from "react-native";
+import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { showAlert } from "../utils/alert";
 import { MemberProfile } from "../types";
-import {
-  loadMembers,
-  deleteMember,
-  loadTermine,
-  loadSpiele,
-  loadAllEreignisTypen,
-  loadAllVerspätungLogs,
-  loadAllSpielLogs,
-  loadAllStrafLogs,
-} from "../utils/storage";
-import { SHADOWS, ThemeColors, FONT } from "../constants/design";
+import { loadMembers, deleteMember } from "../utils/storage";
+import { TYPE, FONT, ThemeColors } from "../constants/design";
 import { useColors, useThemedStyles } from "../contexts/ThemeContext";
-import { BackButton } from "../components/BackButton";
 import LoadingSpinner from "../components/LoadingSpinner";
 import ErrorState from "../components/ErrorState";
 import OfflineBanner from "../components/OfflineBanner";
 import { useScreenLoad } from "../utils/useScreenLoad";
-import SiegerBadge from "../components/SiegerBadge";
-import { StatsDaten, FuehrenderTitel, aktuellesJahr, fuehrendeTitel } from "../utils/stats";
-import { getInitial, displayName } from "../utils/format";
+import { useFuehrende } from "../utils/useFuehrende";
+import { displayName } from "../utils/format";
 import PinPrompt from "../components/PinPrompt";
 import { verifyPin } from "../utils/pin";
+import {
+  Avatar,
+  Button,
+  Card,
+  HeaderIconButton,
+  ListGroup,
+  ListRow,
+  PressableScale,
+  Screen,
+  ScreenHeader,
+  Sheet,
+} from "../components/ui";
+
+type Aktion = "bearbeiten" | "entfernen";
+
+// iOS zeigt kein zweites Modal/Alert, solange das Sheet noch zugleitet.
+const NACH_SHEET_MS = Platform.OS === "ios" ? 400 : 0;
 
 export default function MitgliederScreen() {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
+  const fuehrende = useFuehrende();
   const [members, setMembers] = useState<MemberProfile[]>([]);
-  const [siegerTitel, setSiegerTitel] = useState<Map<string, FuehrenderTitel[]>>(new Map());
-  const [pinTarget, setPinTarget] = useState<MemberProfile | null>(null);
+  const [auswahl, setAuswahl] = useState<MemberProfile | null>(null);
+  const [pinTarget, setPinTarget] = useState<{ member: MemberProfile; aktion: Aktion } | null>(null);
   const [pinError, setPinError] = useState<string | undefined>(undefined);
 
-  async function load() {
-    const [ms, termine, alleSpiele] = await Promise.all([loadMembers(), loadTermine(), loadSpiele()]);
-    setMembers(ms);
-
-    // Für die Krönchen wird die laufende Jahreswertung gerechnet — die Daten
-    // kommen aus dem Cache, wenn sie ein anderer Screen schon geholt hat.
-    const memberIds = ms.map((m) => m.id);
-    const [alleTypen, verspätungLogs, spielLogs, strafLogs] = await Promise.all([
-      loadAllEreignisTypen(alleSpiele.map((sp) => sp.id)),
-      loadAllVerspätungLogs(memberIds),
-      loadAllSpielLogs(memberIds),
-      loadAllStrafLogs(memberIds),
-    ]);
-    const daten: StatsDaten = {
-      members: ms, termine, verspätungLogs, spielLogs, strafLogs,
-      spiele: alleSpiele.map((spiel) => ({
-        spiel,
-        ereignisTypen: alleTypen.filter((et) => et.spielId === spiel.id),
-      })),
-    };
-    setSiegerTitel(fuehrendeTitel(daten, aktuellesJahr()));
-  }
-
-  const { loading, refreshing, error, onRefresh, retry } = useScreenLoad(load, []);
+  const { loading, refreshing, error, onRefresh, retry } = useScreenLoad(async () => {
+    const ms = await loadMembers();
+    setMembers([...ms].sort((a, b) => displayName(a).localeCompare(displayName(b), "de")));
+  }, []);
 
   function confirmAndDelete(m: MemberProfile) {
     showAlert(
@@ -88,161 +65,140 @@ export default function MitgliederScreen() {
     );
   }
 
-  function handleDelete(m: MemberProfile) {
-    if (m.pinHash) {
-      setPinError(undefined);
-      setPinTarget(m);
-      return;
-    }
-    confirmAndDelete(m);
+  function ausfuehren(m: MemberProfile, aktion: Aktion) {
+    if (aktion === "bearbeiten") router.push(`/member/edit/${m.id}`);
+    else confirmAndDelete(m);
+  }
+
+  function handleAktion(aktion: Aktion) {
+    const m = auswahl;
+    if (!m) return;
+    setAuswahl(null);
+    setTimeout(() => {
+      if (m.pinHash) {
+        setPinError(undefined);
+        setPinTarget({ member: m, aktion });
+        return;
+      }
+      ausfuehren(m, aktion);
+    }, NACH_SHEET_MS);
   }
 
   async function handlePinVerify(pin: string) {
-    if (!pinTarget?.pinHash) return;
-    const ok = await verifyPin(pinTarget.id, pin);
+    if (!pinTarget?.member.pinHash) return;
+    const ok = await verifyPin(pinTarget.member.id, pin);
     if (!ok) {
       setPinError("Falscher PIN.");
       return;
     }
     const target = pinTarget;
     setPinTarget(null);
-    confirmAndDelete(target);
+    setTimeout(() => ausfuehren(target.member, target.aktion), NACH_SHEET_MS);
   }
 
+  if (loading) return <LoadingSpinner />;
+  if (error) return <ErrorState message={error} onRetry={retry} />;
+
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
-      {loading ? <LoadingSpinner /> : error ? <ErrorState message={error} onRetry={retry} /> : (
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.blue} />}
-      >
-        <OfflineBanner />
-
-        {/* Header */}
-        <View style={styles.header}>
-          <BackButton />
-          <View style={styles.headerTexts}>
-            <Text style={styles.headerTitle}>Mitglieder</Text>
-            <Text style={styles.headerSub}>Alle Stammtisch-Mitglieder</Text>
-          </View>
-          <TouchableOpacity
-            style={styles.addBtn}
-            onPress={() => router.push("/member/new")}
-          >
-            <Ionicons name="add" size={22} color={c.onAccent} />
-          </TouchableOpacity>
-        </View>
-
-        {members.length === 0 && (
-          <View style={styles.empty}>
-            <Text style={styles.emptyIcon}>🧔</Text>
-            <Text style={styles.emptyText}>Noch keine Mitglieder.{"\n"}Euer Stammtisch wartet auf euch!</Text>
-            <TouchableOpacity style={styles.emptyAddBtn} onPress={() => router.push("/member/new")}>
-              <Text style={styles.emptyAddBtnText}>Erstes Mitglied anlegen</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {members.map((m) => (
-          <View key={m.id} style={styles.memberCard}>
-            <TouchableOpacity
-              style={styles.memberCardInner}
-              onPress={() => router.push(`/member/${m.id}`)}
-              activeOpacity={0.85}
-            >
-              <View style={styles.avatarWrap}>
-                <View style={[styles.avatar, { backgroundColor: m.avatarColor }]}>
-                  {m.photoUri ? (
-                    <Image source={{ uri: m.photoUri }} style={styles.avatarImg} />
-                  ) : (
-                    <Text style={styles.avatarLetter}>{getInitial(m.name)}</Text>
-                  )}
+    <Screen
+      refreshing={refreshing}
+      onRefresh={onRefresh}
+      header={
+        <>
+          <OfflineBanner />
+          <ScreenHeader
+            back
+            title="Mitglieder"
+            subtitle={`${members.length} ${members.length === 1 ? "Mitglied" : "Mitglieder"}`}
+            right={<HeaderIconButton icon="person-add-outline" label="Mitglied hinzufügen" onPress={() => router.push("/member/new")} />}
+          />
+        </>
+      }
+    >
+      {members.length === 0 ? (
+        <Card enterIndex={0} style={{ gap: 12 }}>
+          <Text style={styles.leerTitel}>Noch keine Mitglieder</Text>
+          <Text style={styles.muted}>Euer Stammtisch wartet auf euch. Leg die Runde an, dann kann jeder sein Profil wählen.</Text>
+          <Button label="Erstes Mitglied anlegen" icon="person-add-outline" variant="blue" onPress={() => router.push("/member/new")} />
+        </Card>
+      ) : (
+        <Card enterIndex={0} style={styles.liste}>
+          {members.map((m, i) => (
+            <View key={m.id} style={[styles.zeile, i > 0 && styles.linie]}>
+              <PressableScale
+                onPress={() => router.push(`/member/${m.id}`)}
+                scaleTo={0.98}
+                style={styles.person}
+                accessibilityLabel={`${displayName(m)}, ${m.rollen.join(", ")}${m.pinHash ? ", mit PIN geschützt" : ""}`}
+              >
+                {/* Breiter als der Avatar: das Führungs-Badge mit „+N" ragt nach rechts. */}
+                <View style={styles.avatarPlatz}>
+                  <Avatar name={displayName(m)} color={m.avatarColor} photoUri={m.photoUri} size={48} fuehrt={fuehrende.get(m.id)} />
                 </View>
-                <SiegerBadge titel={siegerTitel.get(m.id) ?? []} size={16} />
-              </View>
-              <View style={styles.memberInfo}>
-                <Text style={styles.memberName}>{displayName(m)}</Text>
-                <Text style={styles.memberSub}>{m.rollen.join(", ")}{m.lieblingsgetraenk ? ` · ${m.lieblingsgetraenk}` : ""}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color={c.textLight} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.deleteBtn}
-              onPress={() => handleDelete(m)}
-            >
-              <Ionicons name="trash-outline" size={18} color={c.danger} />
-            </TouchableOpacity>
-          </View>
-        ))}
-
-        {members.length > 0 && (
-          <TouchableOpacity style={styles.addLink} onPress={() => router.push("/member/new")}>
-            <Ionicons name="add-circle-outline" size={16} color={c.blue} />
-            <Text style={styles.addLinkText}>Weiteres Mitglied hinzufügen</Text>
-          </TouchableOpacity>
-        )}
-
-      </ScrollView>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <View style={styles.nameZeile}>
+                    <Text style={styles.name} numberOfLines={1}>{displayName(m)}</Text>
+                    {m.pinHash ? <Ionicons name="lock-closed" size={13} color={c.textMuted} /> : null}
+                  </View>
+                  <Text style={styles.muted} numberOfLines={1}>
+                    {m.rollen.join(", ")}{m.lieblingsgetraenk ? ` · ${m.lieblingsgetraenk}` : ""}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
+              </PressableScale>
+              <PressableScale onPress={() => setAuswahl(m)} style={styles.mehr} accessibilityLabel={`Aktionen für ${displayName(m)}`}>
+                <Ionicons name="ellipsis-horizontal" size={20} color={c.textMid} />
+              </PressableScale>
+            </View>
+          ))}
+        </Card>
       )}
+
+      {members.length > 0 ? (
+        <Button label="Mitglied hinzufügen" icon="person-add-outline" variant="secondary" onPress={() => router.push("/member/new")} />
+      ) : null}
+
+      <Sheet visible={!!auswahl} onClose={() => setAuswahl(null)} title={auswahl ? displayName(auswahl) : ""}>
+        <ListGroup>
+          <ListRow
+            title="Bearbeiten"
+            subtitle={auswahl?.pinHash ? "PIN erforderlich" : undefined}
+            icon="create-outline"
+            ton="blue"
+            onPress={() => handleAktion("bearbeiten")}
+          />
+          <ListRow
+            title="Aus der Runde entfernen"
+            subtitle={auswahl?.pinHash ? "PIN erforderlich" : undefined}
+            icon="trash-outline"
+            destructive
+            onPress={() => handleAktion("entfernen")}
+          />
+        </ListGroup>
+      </Sheet>
 
       <PinPrompt
         visible={!!pinTarget}
         mode="verify"
-        memberName={pinTarget?.name}
+        memberName={pinTarget?.member.name}
         error={pinError}
         onCancel={() => setPinTarget(null)}
         onSubmit={handlePinVerify}
       />
-    </SafeAreaView>
+    </Screen>
   );
 }
 
-const makeStyles = (c: ThemeColors) => StyleSheet.create({
-  safe: { flex: 1, backgroundColor: c.background },
-  content: { padding: 20, paddingBottom: 48 },
-
-  header: {
-    flexDirection: "row", alignItems: "center", gap: 12,
-    backgroundColor: c.cardAlt, borderRadius: 20,
-    padding: 16, marginBottom: 16, ...SHADOWS.card,
-    borderWidth: 1, borderColor: c.border,
-  },
-  headerTexts: { flex: 1 },
-  headerTitle: { fontSize: 18, fontFamily: FONT.w800, color: c.textDark },
-  headerSub: { fontFamily: FONT.w400, fontSize: 12, color: c.textMuted, marginTop: 2 },
-  addBtn: {
-    width: 38, height: 38, borderRadius: 19,
-    backgroundColor: c.blue, alignItems: "center", justifyContent: "center",
-  },
-
-  empty: { alignItems: "center", paddingTop: 48, gap: 12 },
-  emptyIcon: { fontFamily: FONT.w400, fontSize: 48 },
-  emptyText: { fontFamily: FONT.w400, fontSize: 15, color: c.textMuted, textAlign: "center", lineHeight: 22 },
-  emptyAddBtn: {
-    backgroundColor: c.blue, borderRadius: 12,
-    paddingVertical: 12, paddingHorizontal: 24, marginTop: 8,
-  },
-  emptyAddBtnText: { color: c.onAccent, fontFamily: FONT.w700, fontSize: 14 },
-
-  memberCard: {
-    flexDirection: "row", alignItems: "center",
-    backgroundColor: c.card, borderRadius: 16, marginBottom: 10,
-    borderWidth: 1, borderColor: c.border, ...SHADOWS.light, overflow: "hidden",
-  },
-  memberCardInner: { flex: 1, flexDirection: "row", alignItems: "center", gap: 12, padding: 14 },
-  avatar: { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center", overflow: "hidden" },
-  avatarImg: { width: 48, height: 48, borderRadius: 24 },
-  avatarLetter: { fontSize: 20, fontFamily: FONT.w700, color: c.onAvatar },
-  memberInfo: { flex: 1 },
-  avatarWrap: { width: 48, height: 48 },
-  memberName: { fontSize: 15, fontFamily: FONT.w700, color: c.textDark },
-  memberSub: { fontFamily: FONT.w400, fontSize: 12, color: c.textMuted, marginTop: 2 },
-  deleteBtn: { padding: 16 },
-
-  addLink: {
-    flexDirection: "row", alignItems: "center", gap: 6,
-    paddingVertical: 8, paddingHorizontal: 4, marginTop: 4, alignSelf: "flex-start",
-  },
-  addLinkText: { fontSize: 14, fontFamily: FONT.w600, color: c.blue },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    liste: { paddingVertical: 4, paddingLeft: 14, paddingRight: 4 },
+    zeile: { flexDirection: "row", alignItems: "center" },
+    linie: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
+    person: { flex: 1, flexDirection: "row", alignItems: "center", gap: 10, minHeight: 68, paddingVertical: 8 },
+    avatarPlatz: { width: 70 },
+    nameZeile: { flexDirection: "row", alignItems: "center", gap: 6 },
+    name: { ...TYPE.bodyStrong, fontFamily: FONT.w800, fontSize: 16, color: c.textDark, flexShrink: 1 },
+    muted: { ...TYPE.caption, fontSize: 13, color: c.textMuted, marginTop: 1 },
+    mehr: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
+    leerTitel: { ...TYPE.heading, color: c.textDark },
+  });

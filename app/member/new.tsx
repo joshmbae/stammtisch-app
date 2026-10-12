@@ -1,50 +1,20 @@
 import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
-  StyleSheet,
-  Alert,
-  Image,
-  Platform,
-  KeyboardAvoidingView,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { Platform, KeyboardAvoidingView } from "react-native";
 import { router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import * as ImagePicker from "expo-image-picker";
 import { showAlert } from "../../utils/alert";
 import { MemberProfile } from "../../types";
 import { loadMembers, saveMembers, uploadAvatar, loadVerordnung } from "../../utils/storage";
-import { AVATAR_COLORS, ThemeColors, FONT } from "../../constants/design";
-import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
-import InlineDateTimePicker from "../../components/InlineDateTimePicker";
 import { useSession } from "../../contexts/SessionContext";
-import { getInitial } from "../../utils/format";
 import { toLocalIsoDate } from "../../utils/date";
 import { hashPin, isValidPin } from "../../utils/pin";
+import { Screen } from "../../components/ui";
+import { FormularKopf, MitgliedFormular, useMitgliedFormular } from "../../components/mitglied/MitgliedFormular";
 
 export default function NewMemberScreen() {
   const { activeMemberId, setActiveSession } = useSession();
-  const c = useColors();
-  const styles = useThemedStyles(makeStyles);
-  const [name, setName] = useState("");
-  const [spitzname, setSpitzname] = useState("");
-  const [rollen, setRollen] = useState<MemberProfile["rollen"]>(["Mitglied"]);
+  const f = useMitgliedFormular();
   const [rollenOptionen, setRollenOptionen] = useState<string[]>(["Mitglied"]);
-  const [lieblingsgetraenk, setLieblingsgetraenk] = useState("");
-  const [beruf, setBeruf] = useState("");
-  const [mitgliedSeit, setMitgliedSeit] = useState(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [geburtsdatum, setGeburtsdatum] = useState<Date | null>(null);
-  const [showBirthdayPicker, setShowBirthdayPicker] = useState(false);
-  const [avatarColor, setAvatarColor] = useState(AVATAR_COLORS[0]);
-  const [photoUri, setPhotoUri] = useState<string | undefined>(undefined);
-  const [notizen, setNotizen] = useState("");
-  const [pin, setPin] = useState("");
-  const [pinConfirm, setPinConfirm] = useState("");
+  const [speichert, setSpeichert] = useState(false);
 
   useEffect(() => {
     loadVerordnung().then((v) => {
@@ -52,332 +22,66 @@ export default function NewMemberScreen() {
     });
   }, []);
 
-  async function pickPhoto() {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") {
-      showAlert("Kein Zugriff", "Bitte erlaube den Zugriff auf die Fotobibliothek in den Einstellungen.");
-      return;
+  function pinUmschalten(an: boolean) {
+    f.setPinAn(an);
+    if (!an) {
+      f.setPin("");
+      f.setPinConfirm("");
     }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: "images",
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.7,
-    });
-    if (!result.canceled) setPhotoUri(result.assets[0].uri);
   }
 
   async function save() {
-    if (!name.trim()) {
+    if (!f.name.trim()) {
       showAlert("Name fehlt", "Bitte einen Namen eingeben.");
       return;
     }
-    if (pin || pinConfirm) {
-      if (!isValidPin(pin) || pin !== pinConfirm) {
+    // Schalter an heißt: ohne gültigen PIN wird nicht gespeichert.
+    if (f.pinAn || f.pin || f.pinConfirm) {
+      if (!isValidPin(f.pin) || f.pin !== f.pinConfirm) {
         showAlert("PIN ungültig", "Der PIN muss 4-stellig sein und in beiden Feldern übereinstimmen.");
         return;
       }
     }
-    const id = Date.now().toString();
-    const uploadedPhotoUri = photoUri ? await uploadAvatar(id, photoUri) : undefined;
-    const newMember: MemberProfile = {
-      id,
-      name: name.trim(),
-      spitzname: spitzname.trim() || undefined,
-      mitgliedSeit: mitgliedSeit.toISOString(),
-      geburtsdatum: geburtsdatum ? toLocalIsoDate(geburtsdatum) : undefined,
-      rollen,
-      lieblingsgetraenk: lieblingsgetraenk.trim() || undefined,
-      beruf: beruf.trim() || undefined,
-      avatarColor,
-      photoUri: uploadedPhotoUri,
-      notizen: notizen.trim() || undefined,
-      createdAt: new Date().toISOString(),
-      pinHash: pin ? await hashPin(id, pin) : undefined,
-    };
-    const existing = await loadMembers();
-    await saveMembers([...existing, newMember]);
-    if (!activeMemberId) {
-      // Onboarding: noch niemand aktiv -> direkt als neues Mitglied weiter in die App
-      await setActiveSession(newMember.id);
-      router.replace("/onboarding-intro");
-    } else {
-      router.back();
+    setSpeichert(true);
+    try {
+      const id = Date.now().toString();
+      const uploadedPhotoUri = f.photoUri ? await uploadAvatar(id, f.photoUri) : undefined;
+      const newMember: MemberProfile = {
+        id,
+        name: f.name.trim(),
+        spitzname: f.spitzname.trim() || undefined,
+        mitgliedSeit: f.mitgliedSeit.toISOString(),
+        geburtsdatum: f.geburtsdatum ? toLocalIsoDate(f.geburtsdatum) : undefined,
+        rollen: f.rollen,
+        lieblingsgetraenk: f.lieblingsgetraenk.trim() || undefined,
+        beruf: f.beruf.trim() || undefined,
+        avatarColor: f.avatarColor,
+        photoUri: uploadedPhotoUri,
+        notizen: f.notizen.trim() || undefined,
+        createdAt: new Date().toISOString(),
+        pinHash: f.pin ? await hashPin(id, f.pin) : undefined,
+      };
+      const existing = await loadMembers();
+      await saveMembers([...existing, newMember]);
+      if (!activeMemberId) {
+        // Onboarding: noch niemand aktiv -> direkt als neues Mitglied weiter in die App
+        await setActiveSession(newMember.id);
+        router.replace("/onboarding-intro");
+      } else {
+        router.back();
+      }
+    } catch {
+      showAlert("Fehler", "Das Mitglied konnte nicht gespeichert werden.");
+    } finally {
+      setSpeichert(false);
     }
   }
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={0}>
-    <SafeAreaView style={styles.safe} edges={["top"]}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="chevron-back" size={20} color={c.blue} />
-          </TouchableOpacity>
-          <Text style={styles.title}>Neues Mitglied</Text>
-        </View>
-
-        {/* Avatar / Foto */}
-        <View style={styles.card}>
-          <Text style={styles.fieldLabel}>Foto & Farbe</Text>
-          <View style={styles.avatarRow}>
-            <TouchableOpacity onPress={pickPhoto} activeOpacity={0.8}>
-              {photoUri ? (
-                <Image source={{ uri: photoUri }} style={styles.avatarPreview} />
-              ) : (
-                <View style={[styles.avatarPreview, { backgroundColor: avatarColor }]}>
-                  <Text style={styles.avatarPreviewText}>{name ? getInitial(name) : "?"}</Text>
-                </View>
-              )}
-              <View style={styles.avatarCameraBtn}>
-                <Ionicons name="camera" size={14} color={c.onAccent} />
-              </View>
-            </TouchableOpacity>
-            <View style={styles.colorGrid}>
-              {AVATAR_COLORS.map((farbe) => (
-                <TouchableOpacity
-                  key={farbe}
-                  style={[styles.colorDot, { backgroundColor: farbe }, avatarColor === farbe && styles.colorDotSelected]}
-                  onPress={() => setAvatarColor(farbe)}
-                >
-                  {avatarColor === farbe && <Ionicons name="checkmark" size={14} color={c.onAvatar} />}
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-          {photoUri && (
-            <TouchableOpacity onPress={() => setPhotoUri(undefined)} style={styles.removePhoto}>
-              <Text style={styles.removePhotoText}>Foto entfernen</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Name */}
-        <View style={styles.card}>
-          <Text style={styles.fieldLabel}>Name *</Text>
-          <TextInput
-            style={styles.input}
-            value={name}
-            onChangeText={setName}
-            placeholder="z.B. Franz Huber"
-            placeholderTextColor={c.textLight}
-          />
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.fieldLabel}>Spitzname</Text>
-          <TextInput
-            style={styles.input}
-            value={spitzname}
-            onChangeText={setSpitzname}
-            placeholder="z.B. Franzi, der Huber"
-            placeholderTextColor={c.textLight}
-          />
-        </View>
-
-        {/* Rolle */}
-        <View style={styles.card}>
-          <Text style={styles.fieldLabel}>Rolle(n) am Stammtisch</Text>
-          <View style={styles.rollenGrid}>
-            {rollenOptionen.map((r) => {
-              const selected = rollen.includes(r);
-              return (
-                <TouchableOpacity
-                  key={r}
-                  style={[styles.rolleChip, selected && { backgroundColor: c.blue, borderColor: c.blue }]}
-                  onPress={() => setRollen((prev) =>
-                    prev.includes(r)
-                      ? (prev.length > 1 ? prev.filter((x) => x !== r) : prev)
-                      : [...prev, r]
-                  )}
-                >
-                  <Text style={[styles.rolleChipText, selected && { color: c.onAccent }]}>{r}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
-
-        {/* Mitglied seit */}
-        <View style={styles.card}>
-          <Text style={styles.fieldLabel}>Mitglied seit</Text>
-          <TouchableOpacity style={styles.dateBtn} onPress={() => setShowDatePicker(true)}>
-            <Ionicons name="calendar-outline" size={18} color={c.blue} />
-            <Text style={styles.dateBtnText}>
-              {mitgliedSeit.toLocaleDateString("de-DE", { day: "2-digit", month: "long", year: "numeric" })}
-            </Text>
-          </TouchableOpacity>
-          {showDatePicker && (
-            <InlineDateTimePicker
-              value={mitgliedSeit}
-              mode="date"
-              maximumDate={new Date()}
-              onChange={setMitgliedSeit}
-              onClose={() => setShowDatePicker(false)}
-            />
-          )}
-        </View>
-
-        {/* Geburtstag */}
-        <View style={styles.card}>
-          <Text style={styles.fieldLabel}>Geburtstag</Text>
-          <TouchableOpacity style={styles.dateBtn} onPress={() => setShowBirthdayPicker(true)}>
-            <Text style={{ fontFamily: FONT.w400, fontSize: 16 }}>🎂</Text>
-            <Text style={[styles.dateBtnText, !geburtsdatum && { color: c.textLight }]}>
-              {geburtsdatum
-                ? geburtsdatum.toLocaleDateString("de-DE", { day: "2-digit", month: "long", year: "numeric" })
-                : "Geburtstag eintragen (optional)"}
-            </Text>
-            {geburtsdatum && (
-              <TouchableOpacity onPress={() => setGeburtsdatum(null)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                <Ionicons name="close-circle" size={18} color={c.textMuted} />
-              </TouchableOpacity>
-            )}
-          </TouchableOpacity>
-          {showBirthdayPicker && (
-            <InlineDateTimePicker
-              value={geburtsdatum ?? new Date(1990, 0, 1)}
-              mode="date"
-              maximumDate={new Date()}
-              onChange={setGeburtsdatum}
-              onClose={() => setShowBirthdayPicker(false)}
-            />
-          )}
-        </View>
-
-        {/* Lieblingsgetränk */}
-        <View style={styles.card}>
-          <Text style={styles.fieldLabel}>Lieblingsgetränk</Text>
-          <TextInput
-            style={styles.input}
-            value={lieblingsgetraenk}
-            onChangeText={setLieblingsgetraenk}
-            placeholder="z.B. Helles, Weißbier, Radler"
-            placeholderTextColor={c.textLight}
-          />
-        </View>
-
-        {/* Beruf */}
-        <View style={styles.card}>
-          <Text style={styles.fieldLabel}>Beruf</Text>
-          <TextInput
-            style={styles.input}
-            value={beruf}
-            onChangeText={setBeruf}
-            placeholder="z.B. Bäckermeister"
-            placeholderTextColor={c.textLight}
-          />
-        </View>
-
-        {/* Notizen */}
-        <View style={styles.card}>
-          <Text style={styles.fieldLabel}>Notizen</Text>
-          <TextInput
-            style={[styles.input, { minHeight: 80 }]}
-            value={notizen}
-            onChangeText={setNotizen}
-            placeholder="Besonderheiten, Vorlieben..."
-            placeholderTextColor={c.textLight}
-            multiline
-            textAlignVertical="top"
-          />
-        </View>
-
-        {/* PIN-Schutz */}
-        <View style={styles.card}>
-          <Text style={styles.fieldLabel}>🔒 PIN-Schutz (optional)</Text>
-          <Text style={styles.pinHint}>
-            Schützt dieses Profil davor, dass andere es bearbeiten oder löschen. Ohne PIN kann jeder das Profil verwalten — praktisch, wenn nur einer die App für alle pflegt.
-          </Text>
-          <View style={styles.pinRow}>
-            <TextInput
-              style={[styles.input, styles.pinInput]}
-              value={pin}
-              onChangeText={(t) => setPin(t.replace(/\D/g, "").slice(0, 4))}
-              keyboardType="number-pad"
-              secureTextEntry
-              maxLength={4}
-              placeholder="PIN"
-              placeholderTextColor={c.textLight}
-            />
-            <TextInput
-              style={[styles.input, styles.pinInput]}
-              value={pinConfirm}
-              onChangeText={(t) => setPinConfirm(t.replace(/\D/g, "").slice(0, 4))}
-              keyboardType="number-pad"
-              secureTextEntry
-              maxLength={4}
-              placeholder="Bestätigen"
-              placeholderTextColor={c.textLight}
-            />
-          </View>
-        </View>
-
-        {/* Speichern */}
-        <TouchableOpacity style={styles.saveBtn} onPress={save}>
-          <Ionicons name="checkmark" size={20} color={c.onAccent} />
-          <Text style={styles.saveBtnText}>Mitglied speichern</Text>
-        </TouchableOpacity>
-
-      </ScrollView>
-    </SafeAreaView>
+      <Screen header={<FormularKopf title="Neues Mitglied" subtitle="Nur der Name ist Pflicht" onSpeichern={save} speichert={speichert} />}>
+        <MitgliedFormular form={f} rollenOptionen={rollenOptionen} onPinUmschalten={pinUmschalten} />
+      </Screen>
     </KeyboardAvoidingView>
   );
 }
-
-const makeStyles = (c: ThemeColors) => StyleSheet.create({
-  safe: { flex: 1, backgroundColor: c.background },
-  content: { padding: 20, paddingBottom: 48 },
-
-  header: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 20, paddingTop: 4 },
-  backBtn: { padding: 4 },
-  title: { fontSize: 22, fontFamily: FONT.w800, color: c.textDark },
-
-  card: { backgroundColor: c.card, borderRadius: 14, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: c.border },
-  fieldLabel: { fontSize: 12, fontFamily: FONT.w700, color: c.textMuted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 },
-
-  input: { fontFamily: FONT.w400, backgroundColor: c.background, borderRadius: 10, borderWidth: 1, borderColor: c.border,
-    paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: c.textDark,
-  },
-
-  avatarRow: { flexDirection: "row", alignItems: "center", gap: 16 },
-  avatarPreview: { width: 72, height: 72, borderRadius: 36, alignItems: "center", justifyContent: "center" },
-  avatarPreviewText: { fontSize: 28, fontFamily: FONT.w700, color: c.onAvatar },
-  avatarCameraBtn: {
-    position: "absolute", bottom: 0, right: 0,
-    width: 24, height: 24, borderRadius: 12,
-    backgroundColor: c.blue, alignItems: "center", justifyContent: "center",
-    borderWidth: 2, borderColor: c.card,
-  },
-  colorGrid: { flex: 1, flexDirection: "row", gap: 8, flexWrap: "wrap" },
-  colorDot: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center" },
-  colorDotSelected: { borderWidth: 3, borderColor: c.card },
-  removePhoto: { marginTop: 8 },
-  removePhotoText: { fontSize: 12, color: c.danger, fontFamily: FONT.w600 },
-
-  rollenGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  rolleChip: {
-    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
-    backgroundColor: c.background, borderWidth: 1.5, borderColor: c.border,
-  },
-  rolleChipText: { fontSize: 13, fontFamily: FONT.w600, color: c.textDark },
-
-  dateBtn: {
-    flexDirection: "row", alignItems: "center", gap: 8,
-    backgroundColor: c.background, borderRadius: 10, borderWidth: 1, borderColor: c.border,
-    paddingHorizontal: 12, paddingVertical: 10,
-  },
-  dateBtnText: { fontSize: 14, color: c.textDark, fontFamily: FONT.w600 },
-
-  pinHint: { fontFamily: FONT.w400, fontSize: 12, color: c.textMuted, lineHeight: 17, marginBottom: 10 },
-  pinRow: { flexDirection: "row", gap: 8 },
-  pinInput: { flex: 1, textAlign: "center", letterSpacing: 4 },
-
-  saveBtn: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-    backgroundColor: c.blue, borderRadius: 16, paddingVertical: 16, marginTop: 8,
-  },
-  saveBtnText: { color: c.onAccent, fontSize: 16, fontFamily: FONT.w700 },
-});

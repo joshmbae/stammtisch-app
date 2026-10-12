@@ -1,41 +1,49 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { StyleSheet, Text, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { SHADOWS, ThemeColors, FONT } from "../constants/design";
+import { Ionicons } from "@expo/vector-icons";
+import { FONT, ThemeColors } from "../constants/design";
 import { useThemedStyles } from "../contexts/ThemeContext";
 import { useSession } from "../contexts/SessionContext";
 import { markAppIntroSeen } from "../utils/onboarding";
+import { Button, PressableScale, Ton } from "../components/ui";
+import { EinstiegHero, EinstiegScreen } from "../components/einstieg/Einstieg";
 
 interface Step {
-  icon: string;
+  icon: React.ComponentProps<typeof Ionicons>["name"];
+  ton: Ton;
   title: string;
   text: string;
 }
 
 const STEPS: Step[] = [
   {
-    icon: "🍻",
+    icon: "beer-outline",
+    ton: "mustard",
     title: "Willkommen bei DeinStammtisch!",
-    text: "Ein kurzer Überblick über die wichtigsten Bereiche der App — dauert nur eine Minute.",
+    text: "Ein kurzer Überblick über die wichtigsten Bereiche der App – dauert nur eine Minute.",
   },
   {
-    icon: "📅",
+    icon: "calendar-outline",
+    ton: "blue",
     title: "Termine",
-    text: "Im Kalender seht ihr alle Stammtische und Termine. Sagt zu oder ab, tragt Anwesenheit und Verspätungen ein — alles im Termin-Detail.",
+    text: "Unter „Termine“ seht ihr alle Stammtische und Termine. Sagt zu oder ab, tragt Anwesenheit und Verspätungen ein – alles im Termin-Detail.",
   },
   {
-    icon: "⚖️",
+    icon: "pricetags-outline",
+    ton: "coral",
     title: "Strafen",
-    text: "Wer absagt, zu spät kommt oder ein Spiel verliert, kassiert schon mal eine Strafe. Alle Strafen findet ihr gesammelt unter „Strafen“.",
+    text: "Wer absagt, zu spät kommt oder ein Spiel verliert, kassiert schon mal eine Strafe. Alle Strafen findet ihr gesammelt in der „Kasse“.",
   },
   {
-    icon: "💶",
+    icon: "wallet-outline",
+    ton: "mustard",
     title: "Kasse",
-    text: "Einnahmen, Ausgaben und Abendkosten landen in der Kasse — inklusive Kostenteilung, wer schon bezahlt hat.",
+    text: "Einnahmen, Ausgaben und Abendkosten landen in der Kasse – inklusive Kostenteilung, wer schon bezahlt hat.",
   },
   {
-    icon: "🔒",
+    icon: "lock-closed-outline",
+    ton: "green",
     title: "Euer Profil + PIN",
     text: "Jede Person hat ihr eigenes Mitglied-Profil. Optional könnt ihr es mit einer 4-stelligen PIN schützen, damit nur ihr es bearbeiten oder löschen könnt.",
   },
@@ -63,77 +71,48 @@ export default function OnboardingIntroScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={finish}>
+    <EinstiegScreen contentStyle={{ paddingTop: 8 }}>
+      <View style={styles.kopf}>
+        <Text style={styles.zaehler}>{`${step + 1} von ${STEPS.length}`}</Text>
+        <PressableScale onPress={finish} style={styles.skip} accessibilityLabel={isReplay ? "Schließen" : "Überspringen"}>
           <Text style={styles.skipText}>{isReplay ? "Schließen" : "Überspringen"}</Text>
-        </TouchableOpacity>
+        </PressableScale>
       </View>
 
-      <View style={styles.content}>
-        <Text style={styles.icon}>{current.icon}</Text>
-        <Text style={styles.title}>{current.title}</Text>
-        <Text style={styles.text}>{current.text}</Text>
-      </View>
+      {/* key: bei jedem Schritt neu einblenden */}
+      <EinstiegHero key={step} symbol={{ icon: current.icon, ton: current.ton }} titel={current.title} text={current.text} />
 
-      <View style={styles.dots}>
+      <View style={{ flex: 1, minHeight: 24 }} />
+
+      <View style={styles.dots} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
         {STEPS.map((_, i) => (
           <View key={i} style={[styles.dot, i === step && styles.dotActive]} />
         ))}
       </View>
 
       <View style={styles.footer}>
-        {step > 0 && (
-          <TouchableOpacity style={styles.backBtn} onPress={() => setStep((s) => s - 1)} activeOpacity={0.8}>
-            <Text style={styles.backBtnText}>Zurück</Text>
-          </TouchableOpacity>
-        )}
-        <TouchableOpacity
-          style={styles.nextBtn}
+        {step > 0 ? (
+          <Button label="Zurück" variant="secondary" onPress={() => setStep((s) => s - 1)} style={{ flex: 1 }} />
+        ) : null}
+        <Button
+          label={isLast ? (isReplay ? "Schließen" : "Los geht's") : "Weiter"}
+          variant="blue"
           onPress={() => (isLast ? finish() : setStep((s) => s + 1))}
-          activeOpacity={0.85}
-        >
-          <Text style={styles.nextBtnText}>
-            {isLast ? (isReplay ? "Schließen" : "Los geht's") : "Weiter"}
-          </Text>
-        </TouchableOpacity>
+          style={{ flex: 2 }}
+        />
       </View>
-    </SafeAreaView>
+    </EinstiegScreen>
   );
 }
 
-const makeStyles = (c: ThemeColors) => StyleSheet.create({
-  safe: { flex: 1, backgroundColor: c.background },
-
-  header: { flexDirection: "row", justifyContent: "flex-end", paddingHorizontal: 20, paddingTop: 8 },
-  skipText: { fontSize: 14, color: c.textMuted, fontFamily: FONT.w600 },
-
-  content: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 32, gap: 14 },
-  icon: { fontFamily: FONT.w400, fontSize: 64 },
-  title: { fontSize: 24, fontFamily: FONT.w800, color: c.textDark, textAlign: "center" },
-  text: { fontFamily: FONT.w400, fontSize: 15, color: c.textMuted, textAlign: "center", lineHeight: 22 },
-
-  dots: { flexDirection: "row", justifyContent: "center", gap: 8, marginBottom: 24 },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: c.border },
-  dotActive: { backgroundColor: c.blue, width: 20 },
-
-  footer: { flexDirection: "row", gap: 10, paddingHorizontal: 24, paddingBottom: 24 },
-  backBtn: {
-    flex: 1,
-    paddingVertical: 16,
-    borderRadius: 16,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: c.border,
-  },
-  backBtnText: { fontSize: 15, fontFamily: FONT.w700, color: c.textMuted },
-  nextBtn: {
-    flex: 2,
-    backgroundColor: c.blue,
-    borderRadius: 16,
-    paddingVertical: 16,
-    alignItems: "center",
-    ...SHADOWS.card,
-  },
-  nextBtnText: { color: c.onAccent, fontSize: 15, fontFamily: FONT.w700 },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    kopf: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
+    zaehler: { fontFamily: FONT.w700, fontSize: 13, color: c.textMuted, fontVariant: ["tabular-nums"] },
+    skip: { minHeight: 44, justifyContent: "center", paddingHorizontal: 8, marginRight: -8 },
+    skipText: { fontFamily: FONT.w700, fontSize: 15, color: c.blue },
+    dots: { flexDirection: "row", justifyContent: "center", gap: 8, marginBottom: 8 },
+    dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: c.borderDark },
+    dotActive: { backgroundColor: c.blue, width: 20 },
+    footer: { flexDirection: "row", gap: 10 },
+  });

@@ -1,65 +1,26 @@
 import React from "react";
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { View } from "react-native";
 import { router } from "expo-router";
-import { SHADOWS, ThemeColors, FONT } from "../constants/design";
-import { useThemedStyles } from "../contexts/ThemeContext";
-import StammtischLogo from "../components/StammtischLogo";
+import { Button } from "../components/ui";
+import { EinstiegHero, EinstiegScreen, Vorteil } from "../components/einstieg/Einstieg";
+
+const EINRICHTEN: Vorteil[] = [
+  { icon: "location-outline", ton: "blue", titel: "Treffpunkt", text: "Wo ihr euch trefft" },
+  { icon: "time-outline", ton: "mustard", titel: "Stammtischtag & -zeit", text: "Wann es losgeht" },
+  { icon: "document-text-outline", ton: "green", titel: "Eure Regeln", text: "Was bei euch gilt" },
+];
 
 export default function OnboardingSetupScreen() {
-  const styles = useThemedStyles(makeStyles);
   return (
-    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <StammtischLogo size={52} />
-          <Text style={styles.title}>Fast geschafft! 🎉</Text>
-          <Text style={styles.subtitle}>
-            Euer Stammtisch ist angelegt. Bevor's losgeht: hinterlegt in Ruhe eure Stammtisch-Daten
-            — Treffpunkt, Stammtischtag/-zeit und eure Regeln. Das geht unter „Einstellungen“ und
-            könnt ihr jederzeit ändern.
-          </Text>
-        </View>
-
-        <TouchableOpacity
-          style={styles.primaryBtn}
-          onPress={() => router.push("/einstellungen")}
-          activeOpacity={0.85}
-        >
-          <Text style={styles.primaryBtnText}>Jetzt einrichten</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.secondaryBtn}
-          onPress={() => router.replace("/mitglied-waehlen")}
-          activeOpacity={0.75}
-        >
-          <Text style={styles.secondaryBtnText}>Später — erstmal Mitglied anlegen</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </SafeAreaView>
+    <EinstiegScreen>
+      <EinstiegHero
+        titel="Fast geschafft!"
+        text="Euer Stammtisch ist angelegt. Hinterlegt in Ruhe eure Stammtisch-Daten – das geht unter „Einstellungen“ und lässt sich jederzeit ändern."
+        vorteile={EINRICHTEN}
+      />
+      <View style={{ flex: 1, minHeight: 24 }} />
+      <Button label="Jetzt einrichten" icon="settings-outline" variant="blue" onPress={() => router.push("/einstellungen")} />
+      <Button label="Später – erstmal Mitglied anlegen" variant="ghost" onPress={() => router.replace("/mitglied-waehlen")} />
+    </EinstiegScreen>
   );
 }
-
-const makeStyles = (c: ThemeColors) => StyleSheet.create({
-  safe: { flex: 1, backgroundColor: c.background },
-  content: { padding: 24, paddingBottom: 40, alignItems: "center", flexGrow: 1, justifyContent: "center" },
-
-  header: { alignItems: "center", marginBottom: 32, gap: 10 },
-  title: { fontSize: 26, fontFamily: FONT.w800, color: c.textDark, marginTop: 8 },
-  subtitle: { fontFamily: FONT.w400, fontSize: 15, color: c.textMuted, textAlign: "center", lineHeight: 21 },
-
-  primaryBtn: {
-    width: "100%",
-    backgroundColor: c.blue,
-    borderRadius: 16,
-    paddingVertical: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    ...SHADOWS.card,
-  },
-  primaryBtnText: { color: c.onAccent, fontSize: 16, fontFamily: FONT.w700 },
-
-  secondaryBtn: { marginTop: 16, paddingVertical: 8 },
-  secondaryBtnText: { fontFamily: FONT.w400, fontSize: 14, color: c.textMuted, textDecorationLine: "underline" },
-});

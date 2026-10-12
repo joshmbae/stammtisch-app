@@ -1,32 +1,28 @@
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  StyleSheet,
-  Image,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import React, { useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { MemberProfile, StammtischVerordnung } from "../types";
 import { loadMembers, loadVerordnung } from "../utils/storage";
 import { useSession } from "../contexts/SessionContext";
 import { useStammtisch } from "../contexts/StammtischContext";
-import { SHADOWS, ThemeColors, FONT } from "../constants/design";
-import { useThemedStyles } from "../contexts/ThemeContext";
+import { FONT, TYPE, ThemeColors } from "../constants/design";
+import { useColors, useThemedStyles } from "../contexts/ThemeContext";
 import StammtischLogo from "../components/StammtischLogo";
 import LoadingSpinner from "../components/LoadingSpinner";
-import { getInitial, displayName } from "../utils/format";
-import PinPrompt from "../components/PinPrompt";
+import ErrorState from "../components/ErrorState";
+import { useScreenLoad } from "../utils/useScreenLoad";
+import { displayName } from "../utils/format";
 import { verifyPin } from "../utils/pin";
 import { hasSeenAppIntro } from "../utils/onboarding";
+import { Avatar, Button, Card, PressableScale, Screen } from "../components/ui";
+import { PinSheet } from "../components/einstieg/PinSheet";
 
 export default function MitgliedWaehlenScreen() {
+  const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const [members, setMembers] = useState<MemberProfile[]>([]);
   const [verordnung, setVerordnung] = useState<StammtischVerordnung | null>(null);
-  const [loading, setLoading] = useState(true);
   const [pendingMember, setPendingMember] = useState<MemberProfile | null>(null);
   const [pinError, setPinError] = useState<string | undefined>(undefined);
   const { setActiveSession, clearSession } = useSession();
@@ -38,12 +34,11 @@ export default function MitgliedWaehlenScreen() {
     router.replace("/stammtisch-waehlen");
   }
 
-  useEffect(() => {
-    Promise.all([loadMembers(), loadVerordnung()]).then(([ms, v]) => {
-      setMembers(ms);
-      setVerordnung(v);
-      setLoading(false);
-    });
+  // Über useScreenLoad statt eigenem Effekt: ohne Netz blieb sonst der Spinner für immer stehen.
+  const { loading, error, retry } = useScreenLoad(async () => {
+    const [ms, v] = await Promise.all([loadMembers(), loadVerordnung()]);
+    setMembers(ms);
+    setVerordnung(v);
   }, []);
 
   async function goToApp(memberId: string) {
@@ -73,146 +68,98 @@ export default function MitgliedWaehlenScreen() {
     await goToApp(pendingMember.id);
   }
 
+  if (loading) return <LoadingSpinner />;
+  if (error) return <ErrorState message={error} onRetry={retry} />;
+
+  const name = verordnung?.name || stammtischName || "Euer Stammtisch";
+  const info = [verordnung?.treffpunkt, `${members.length} ${members.length === 1 ? "Mitglied" : "Mitglieder"}`].filter(Boolean).join(" · ");
+
   return (
-    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
-      {loading ? <LoadingSpinner /> : (
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-
-        {/* Header */}
-        <View style={styles.header}>
-          <StammtischLogo size={52} uri={verordnung?.logoUrl} />
-          <Text style={styles.title}>Wer bist du?</Text>
-          <Text style={styles.subtitle}>
-            {stammtischName ? `Stammtisch „${stammtischName}" · Wähl dein Profil` : "Wähl dein Profil um loszulegen"}
-          </Text>
+    <Screen contentStyle={styles.content}>
+      <View style={styles.kopf}>
+        <StammtischLogo size={44} uri={verordnung?.logoUrl} />
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text style={styles.stammtisch} numberOfLines={1}>{name}</Text>
+          <Text style={styles.muted} numberOfLines={1}>{info}</Text>
         </View>
+      </View>
 
-        {/* Mitglieder-Karten */}
-        {members.length > 0 ? (
-          <View style={styles.grid}>
-            {members.map((m) => (
-              <TouchableOpacity
-                key={m.id}
-                style={styles.card}
+      <View style={styles.intro}>
+        <Text style={styles.titel} accessibilityRole="header">Wer bist du?</Text>
+        <Text style={styles.untertitel}>{members.length > 0 ? "Tipp auf deinen Namen." : "Hier ist noch niemand eingetragen."}</Text>
+      </View>
+
+      {members.length > 0 ? (
+        <View style={styles.grid}>
+          {members.map((m, i) => (
+            <View key={m.id} style={styles.zelle}>
+              <Card
+                enterIndex={i}
                 onPress={() => handleSelect(m)}
-                activeOpacity={0.82}
+                style={styles.karte}
+                accessibilityLabel={`${displayName(m)}, ${m.rollen[0]}${m.pinHash ? ", mit PIN geschützt" : ""}`}
               >
-                <View style={[styles.avatar, { backgroundColor: m.avatarColor }]}>
-                  {m.photoUri ? (
-                    <Image source={{ uri: m.photoUri }} style={styles.avatarImg} />
-                  ) : (
-                    <Text style={styles.avatarLetter}>{getInitial(m.name)}</Text>
-                  )}
+                <View>
+                  <Avatar name={displayName(m)} color={m.avatarColor} photoUri={m.photoUri} size={52} />
+                  {m.pinHash ? (
+                    <View style={styles.schloss}>
+                      <Ionicons name="lock-closed" size={11} color={c.onMustard} />
+                    </View>
+                  ) : null}
                 </View>
-                <Text style={styles.cardName} numberOfLines={1}>{displayName(m)}</Text>
-                <View style={[styles.rolleBadge, { backgroundColor: m.avatarColor + "22" }]}>
-                  <Text style={[styles.rolleText, { color: m.avatarColor }]} numberOfLines={1}>{m.rollen.join(", ")}</Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        ) : (
-          <View style={styles.empty}>
-            <Text style={styles.emptyIcon}>🧔</Text>
-            <Text style={styles.emptyText}>
-              Noch keine Mitglieder angelegt.{"\n"}
-              Leg zuerst die Stammtischrunde an.
-            </Text>
-            <TouchableOpacity
-              style={styles.emptyBtn}
-              onPress={() => router.push("/member/new")}
-            >
-              <Text style={styles.emptyBtnText}>Mitglied anlegen</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* Gast-Option */}
-        <TouchableOpacity
-          style={styles.gastBtn}
-          onPress={() => router.replace("/(tabs)/home")}
-          activeOpacity={0.75}
-        >
-          <Text style={styles.gastText}>Als Gast fortfahren</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.gastBtn}
-          onPress={handleStammtischWechseln}
-          activeOpacity={0.75}
-        >
-          <Text style={styles.gastText}>Stammtisch wechseln</Text>
-        </TouchableOpacity>
-
-      </ScrollView>
+                <Text style={styles.name} numberOfLines={1}>{displayName(m)}</Text>
+                <Text style={styles.rolle} numberOfLines={1}>{m.rollen[0]}</Text>
+              </Card>
+            </View>
+          ))}
+        </View>
+      ) : (
+        <Card style={{ gap: 12 }}>
+          <Text style={styles.muted}>Leg zuerst die Stammtischrunde an, dann kann jeder sein Profil wählen.</Text>
+          <Button label="Mitglied anlegen" icon="person-add-outline" variant="blue" onPress={() => router.push("/member/new")} />
+        </Card>
       )}
 
-      <PinPrompt
-        visible={!!pendingMember}
-        mode="verify"
-        memberName={pendingMember?.name}
-        error={pinError}
-        onCancel={() => setPendingMember(null)}
-        onSubmit={handlePinVerify}
-      />
-    </SafeAreaView>
+      <View style={{ flex: 1 }} />
+
+      <View style={styles.unten}>
+        <Button
+          label="Als Gast fortfahren"
+          variant="secondary"
+          colors={{ bg: c.cardAlt, fg: c.textDark }}
+          onPress={() => router.replace("/(tabs)/home")}
+          style={{ alignSelf: "stretch" }}
+        />
+        <PressableScale onPress={handleStammtischWechseln} style={styles.wechseln} accessibilityLabel="Anderer Stammtisch">
+          <Ionicons name="swap-horizontal" size={18} color={c.blue} />
+          <Text style={styles.wechselnText}>Anderer Stammtisch</Text>
+        </PressableScale>
+      </View>
+
+      <PinSheet member={pendingMember} error={pinError} onCancel={() => setPendingMember(null)} onSubmit={handlePinVerify} />
+    </Screen>
   );
 }
 
-const makeStyles = (c: ThemeColors) => StyleSheet.create({
-  safe: { flex: 1, backgroundColor: c.background },
-  content: { padding: 24, paddingBottom: 40, alignItems: "center" },
-
-  header: { alignItems: "center", marginBottom: 32, marginTop: 8, gap: 10 },
-  title: { fontSize: 28, fontFamily: FONT.w800, color: c.textDark, marginTop: 8 },
-  subtitle: { fontFamily: FONT.w400, fontSize: 15, color: c.textMuted },
-
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-    justifyContent: "center",
-    width: "100%",
-  },
-  card: {
-    width: 140,
-    backgroundColor: c.card,
-    borderRadius: 20,
-    padding: 16,
-    alignItems: "center",
-    gap: 6,
-    borderWidth: 1,
-    borderColor: c.border,
-    ...SHADOWS.card,
-  },
-  avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 4,
-  },
-  avatarImg: { width: 60, height: 60, borderRadius: 30 },
-  avatarLetter: { fontSize: 24, fontFamily: FONT.w700, color: c.onAvatar },
-  cardName: { fontSize: 15, fontFamily: FONT.w700, color: c.textDark, textAlign: "center" },
-  rolleBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 10,
-    marginTop: 2,
-  },
-  rolleText: { fontSize: 11, fontFamily: FONT.w700 },
-
-  empty: { alignItems: "center", gap: 12, paddingVertical: 40 },
-  emptyIcon: { fontFamily: FONT.w400, fontSize: 52 },
-  emptyText: { fontFamily: FONT.w400, fontSize: 15, color: c.textMuted, textAlign: "center", lineHeight: 22 },
-  emptyBtn: {
-    backgroundColor: c.blue, borderRadius: 14,
-    paddingVertical: 12, paddingHorizontal: 24,
-  },
-  emptyBtnText: { color: c.onAccent, fontFamily: FONT.w700, fontSize: 15 },
-
-  gastBtn: { marginTop: 24 },
-  gastText: { fontFamily: FONT.w400, fontSize: 14, color: c.textMuted, textDecorationLine: "underline" },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    content: { flexGrow: 1, paddingBottom: 24 },
+    kopf: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 4, paddingTop: 10 },
+    stammtisch: { ...TYPE.heading, color: c.textDark },
+    muted: { ...TYPE.caption, fontSize: 13, color: c.textMuted },
+    intro: { paddingHorizontal: 4, marginTop: 10, marginBottom: 6 },
+    titel: { fontFamily: FONT.w800, fontSize: 28, letterSpacing: -0.5, color: c.textDark },
+    untertitel: { fontFamily: FONT.w600, fontSize: 15, color: c.textMuted, marginTop: 4 },
+    grid: { flexDirection: "row", flexWrap: "wrap", marginHorizontal: -4 },
+    zelle: { width: "33.333%", padding: 4 },
+    karte: { minHeight: 124, alignItems: "center", justifyContent: "center", gap: 3, paddingHorizontal: 8, paddingVertical: 14, borderRadius: 26 },
+    schloss: {
+      position: "absolute", right: -4, bottom: -3, width: 22, height: 22, borderRadius: 11,
+      backgroundColor: c.mustard, borderWidth: 2, borderColor: c.card, alignItems: "center", justifyContent: "center",
+    },
+    name: { fontFamily: FONT.w800, fontSize: 15, color: c.textDark, marginTop: 4, maxWidth: "100%" },
+    rolle: { ...TYPE.caption, color: c.textMuted, maxWidth: "100%" },
+    unten: { alignItems: "center", gap: 4, marginTop: 16 },
+    wechseln: { flexDirection: "row", alignItems: "center", gap: 6, minHeight: 44, paddingHorizontal: 12 },
+    wechselnText: { fontFamily: FONT.w700, fontSize: 14, color: c.blue },
+  });
