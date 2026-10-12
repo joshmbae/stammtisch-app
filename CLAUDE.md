@@ -17,3 +17,10 @@ self-contained changes:
   same session — never leave a branch open across sessions.
 - `main` should always reflect a working state; feature branches may be
   temporarily broken between commits, `main` should not be.
+
+# Local setup
+
+- Joshua's local clone (Mac): `/Users/j.baer/Documents/Privat/apps/stammtisch-app`.
+  Use this path in any terminal commands meant for his machine.
+- Start in the iOS simulator: `npx expo start --ios -c` (Expo Go). The local
+  `.env` sets `EXPO_PUBLIC_SUPABASE_SCHEMA=dev` for testing against the dev schema.
