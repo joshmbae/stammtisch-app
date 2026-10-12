@@ -1111,10 +1111,12 @@ export async function loadKasse(): Promise<KassenEintrag[]> {
 }
 
 export async function addKassenEintrag(
-  entry: Omit<KassenEintrag, "id">
+  entry: Omit<KassenEintrag, "id">,
+  /** Feste Id statt einer neuen, z. B. damit die Einnahme einer Strafe wiederzufinden ist. */
+  id?: string
 ): Promise<KassenEintrag> {
   const stammtischId = await getStammtischId();
-  const neu: KassenEintrag = { ...entry, id: nextId() };
+  const neu: KassenEintrag = { ...entry, id: id ?? nextId() };
   const { error } = await supabase.from("kasse").insert({
     id: neu.id,
     stammtisch_id: stammtischId,

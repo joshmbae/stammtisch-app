@@ -108,7 +108,7 @@ export function StrafeSheet({ strafe, kasse, onClose }: { strafe: StrafLog | nul
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const l = strafe ? kasse.strafen.find((x) => x.id === strafe.id) ?? strafe : null;
-  const loeschen = useLoeschen("Strafe löschen?", "Die Strafe wird entfernt. Eine schon gebuchte Einnahme bleibt in der Kasse.", () => kasse.strafeLoeschen(l!.id), onClose);
+  const loeschen = useLoeschen("Strafe löschen?", "Die Strafe wird entfernt. Eine schon gebuchte Einnahme bleibt in der Kasse; zum Zurücknehmen erst „Wieder offen setzen\".", () => kasse.strafeLoeschen(l!.id), onClose);
   const [busy, setBusy] = useState(false);
   if (!l) return null;
   const kat = kasse.strafKategorien.find((k) => k.id === l.kategorie);

@@ -153,14 +153,14 @@ export function useKasse() {
     const log = strafen.find((l) => l.id === logId);
     if (!log) return;
     const next = !log.beglichen;
-    await setStrafeBeglichen(log, next, {
+    const kasseGeaendert = await setStrafeBeglichen(log, next, {
       memberName: members.find((m) => m.id === log.memberId)?.name,
       kategorieLabel: strafKategorien.find((k) => k.id === log.kategorie)?.label,
       actorMemberId: activeMemberId,
     });
     setStrafen((prev) => prev.map((l) => (l.id === logId ? { ...l, beglichen: next } : l)));
-    // Die Einnahme beim Bezahlen legt setStrafeBeglichen an; neu laden, damit Übersicht und Verlauf stimmen.
-    if (next) setEintraege(await loadKasse());
+    // Einnahme kam dazu bzw. ist wieder raus: neu laden, damit Übersicht und Verlauf stimmen.
+    if (kasseGeaendert) setEintraege(await loadKasse());
   }
 
   async function strafeLoeschen(logId: string) {

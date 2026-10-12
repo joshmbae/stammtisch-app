@@ -1,25 +1,59 @@
-import { StrafLog } from "../types";
-import { addKassenEintrag, logActivity, updateStrafLog } from "./storage";
+import { KassenEintrag, StrafLog } from "../types";
+import { addKassenEintrag, deleteKassenEintrag, loadKasse, logActivity, updateStrafLog } from "./storage";
+
+/** Die Kassen-Einnahme einer bezahlten Strafe hat eine feste, aus der Strafe abgeleitete Id. */
+export const zahlungsId = (strafLogId: string) => `${strafLogId}-bezahlt`;
+
+const BESCHREIBUNG_PREFIX = "Strafe beglichen: ";
 
 /**
- * Strafe als bezahlt bzw. wieder offen markieren. Beim Bezahlen entsteht
- * genau eine Kassen-Einnahme und ein Eintrag in der Chronik; beim
- * Zurücknehmen wird nur der Status geändert.
+ * Einnahme zu einer Strafe finden: über die feste Id, sonst (Einträge von vor
+ * dieser Verknüpfung) über Text, Betrag und Termin. Gibt es dort mehrere
+ * Treffer, sind sie gleichwertig – gleicher Betrag, gleiche Person.
+ */
+function zahlungZuStrafe(kasse: KassenEintrag[], log: StrafLog, memberName?: string): KassenEintrag | undefined {
+  const direkt = kasse.find((e) => e.id === zahlungsId(log.id));
+  if (direkt) return direkt;
+  return kasse
+    .filter((e) =>
+      e.typ === "einnahme" &&
+      e.betrag === log.betrag &&
+      (e.terminId ?? null) === (log.terminId ?? null) &&
+      e.datum >= log.loggedAt &&
+      (e.beschreibung ?? "").startsWith(`${BESCHREIBUNG_PREFIX}${memberName ?? ""}`)
+    )
+    .sort((a, b) => b.datum.localeCompare(a.datum))[0];
+}
+
+/**
+ * Strafe als bezahlt bzw. wieder offen markieren. Bezahlt: genau eine
+ * Kassen-Einnahme plus Eintrag in der Chronik. Wieder offen: die Einnahme
+ * wird aus der Kasse genommen. Rückgabe: ob die Kasse geändert wurde.
  */
 export async function setStrafeBeglichen(
   log: StrafLog,
   beglichen: boolean,
   ctx: { memberName?: string; kategorieLabel?: string; actorMemberId?: string | null }
-): Promise<void> {
+): Promise<boolean> {
   await updateStrafLog(log.memberId, log.id, { beglichen });
-  if (!beglichen) return;
-  await addKassenEintrag({
-    typ: "einnahme",
-    betrag: log.betrag,
-    beschreibung: `Strafe beglichen: ${ctx.memberName ?? "Unbekannt"} – ${ctx.kategorieLabel ?? log.kategorie}`,
-    terminId: log.terminId,
-    datum: new Date().toISOString(),
-  });
+
+  if (!beglichen) {
+    const zahlung = zahlungZuStrafe(await loadKasse(), log, ctx.memberName);
+    if (!zahlung) return false;
+    await deleteKassenEintrag(zahlung.id);
+    return true;
+  }
+
+  await addKassenEintrag(
+    {
+      typ: "einnahme",
+      betrag: log.betrag,
+      beschreibung: `${BESCHREIBUNG_PREFIX}${ctx.memberName ?? "Unbekannt"} – ${ctx.kategorieLabel ?? log.kategorie}`,
+      terminId: log.terminId,
+      datum: new Date().toISOString(),
+    },
+    zahlungsId(log.id)
+  );
   await logActivity({
     actorMemberId: ctx.actorMemberId ?? undefined,
     subjectMemberId: log.memberId,
@@ -28,4 +62,5 @@ export async function setStrafeBeglichen(
     refId: log.id,
     meta: { betrag: log.betrag, kategorie: log.kategorie },
   });
+  return true;
 }
