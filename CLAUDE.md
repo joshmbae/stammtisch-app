@@ -22,5 +22,8 @@ self-contained changes:
 
 - Joshua's local clone (Mac): `/Users/j.baer/Documents/Privat/apps/stammtisch-app`.
   Use this path in any terminal commands meant for his machine.
-- Start in the iOS simulator: `npx expo start --ios -c` (Expo Go). For testing against
+- Start in the iOS simulator: `npx expo start --ios -c --go` (Expo Go). `--go` is
+  required because `expo-dev-client` is installed; without it Expo expects a
+  development build that isn't on the simulator. If the "How would you like to
+  open this project?" sheet appears, choose "Expo Go". For testing against
   the dev schema the local `.env` needs `EXPO_PUBLIC_SUPABASE_SCHEMA=dev`.
