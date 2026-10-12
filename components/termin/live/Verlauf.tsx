@@ -43,12 +43,13 @@ export function Verlauf({ abend }: { abend: TerminAbend }) {
   }
 
   for (const v of Object.values(abend.verspätungMap).flat()) {
-    // Die Strafe, die beim „zu spät?"-Knopf mit angelegt wurde.
-    const strafe = strafen.find((s) => !verbraucht.has(s.id) && s.memberId === v.memberId && s.notiz === `${v.minutenVerspätet} Min.`);
+    // Die Strafe, die beim „zu spät?"-Knopf mit angelegt wurde – Notiz „N Min." bzw. „N Min. · Grund".
+    // Nicht an die Minuten gebunden, damit sie nach einer Korrektur dazugehört.
+    const strafe = strafen.find((s) => !verbraucht.has(s.id) && s.memberId === v.memberId && /^\d+ Min\./.test(s.notiz ?? ""));
     if (strafe) verbraucht.add(strafe.id);
     eintraege.push({
       id: `v-${v.id}`, zeit: v.datum, wer: name(v.memberId), art: "strafe",
-      was: `Zu spät ${v.minutenVerspätet} Min.${strafe ? ` · ${euroKurz(strafe.betrag)}` : ""}`,
+      was: `Zu spät ${v.minutenVerspätet} Min.${v.grund ? ` · ${v.grund}` : ""}${strafe ? ` · ${euroKurz(strafe.betrag)}` : ""}`,
       loeschen: async () => {
         await abend.verspätungLöschen(v.memberId, v.id);
         if (strafe) await abend.strafeLöschen(strafe.memberId, strafe.id);
