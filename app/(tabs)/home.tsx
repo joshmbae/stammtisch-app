@@ -34,6 +34,7 @@ import { anwesenheitsQuote } from "../../utils/format";
 import { naechsterGeburtstag } from "../../utils/date";
 import { homeHero, homeHeroMitWahl } from "../../utils/terminPhase";
 import { useAppGeoeffnet } from "../../utils/appGeoeffnet";
+import { neuigkeitenGesehen } from "../../utils/neuigkeiten";
 import { abendStats } from "../../utils/abendStats";
 import { hauptEreignis } from "../../utils/spiel";
 import { monatsSalden, saldo } from "../../utils/kasse";
@@ -105,7 +106,12 @@ export default function HomeScreen() {
     landungErledigt();
     if (!fokus) return;
     const h = homeHero(daten.termine, new Date(), verordnung?.stammtischzeit);
-    if (h.phase === "live" || h.phase === "danach") router.push(`/termin/${h.termin.id}`);
+    if (h.phase === "live" || h.phase === "danach") {
+      router.push(`/termin/${h.termin.id}`);
+      return;
+    }
+    // Sonst einmalig „Was ist neu“. Neue Nutzer sind über das Tutorial schon als „gesehen“ markiert.
+    neuigkeitenGesehen().then((gesehen) => { if (!gesehen) router.push("/neuigkeiten"); }).catch(() => {});
   }, [appGeoeffnet, daten, fokus]);
 
   // Neue Aktivität live oben einreihen; Strafen und Spiel-Einträge ändern

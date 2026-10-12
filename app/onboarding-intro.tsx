@@ -16,6 +16,7 @@ import { FONT, ThemeColors } from "../constants/design";
 import { useColors, useThemedStyles } from "../contexts/ThemeContext";
 import { useSession } from "../contexts/SessionContext";
 import { markAppIntroSeen } from "../utils/onboarding";
+import { markiereNeuigkeitenGesehen } from "../utils/neuigkeiten";
 import { loadSpiele, loadVerordnung } from "../utils/storage";
 import { Button, PressableScale } from "../components/ui";
 import { BUEHNE_HOEHE, BuehneKasse, BuehneLive, BuehneTabelle, BuehneWillkommen, BuehneZusagen } from "../components/einstieg/TutorialBuehnen";
@@ -104,6 +105,8 @@ export default function OnboardingIntroScreen() {
     if (beendet.current) return;
     beendet.current = true;
     if (!isReplay && activeMemberId) await markAppIntroSeen(activeMemberId);
+    // Wer das neue Tutorial gesehen hat, braucht „Was ist neu“ nicht mehr.
+    await markiereNeuigkeitenGesehen();
     if (isReplay) router.back();
     else router.replace("/(tabs)/home");
   }
