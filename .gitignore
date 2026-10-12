@@ -40,7 +40,10 @@ yarn-error.*
 # generated native folders
 /ios
 /android
-.claude/
+# Lokale Claude-Einstellungen bleiben privat, Projekt-Skills gehören ins Repo.
+.claude/*
+!.claude/skills/
+__pycache__/
 
 # Google-Dienstkonto für Play-Uploads — gehört nie ins Repo.
 # Der Schlüssel liegt normalerweise bei EAS; falls doch mal lokal, greift das hier.
