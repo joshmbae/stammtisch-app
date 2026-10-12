@@ -3,6 +3,7 @@ import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, Tex
 import { FONT, RADIUS, TYPE, ThemeColors } from "../constants/design";
 import { useColors, useThemedStyles } from "../contexts/ThemeContext";
 import { Button, IconSquircle } from "./ui";
+import { SYMBOL } from "../constants/symbole";
 
 interface PinPromptProps {
   visible: boolean;
@@ -77,7 +78,7 @@ export default function PinPrompt({ visible, mode, memberName, error, onCancel, 
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <View style={styles.card} accessibilityViewIsModal>
-          <IconSquircle icon="lock-closed-outline" ton="blue" size={44} />
+          <IconSquircle emoji={SYMBOL.pin} ton="blue" size={44} />
           <Text style={styles.title} accessibilityRole="header">{mode === "set" ? "PIN festlegen" : "PIN eingeben"}</Text>
           <Text style={styles.subtitle}>
             {mode === "set"

@@ -10,6 +10,7 @@ import { HomeHero, terminEnde, terminStart } from "../../utils/terminPhase";
 import { formatWochentagDatum } from "../../utils/date";
 import { displayName, formatEuro } from "../../utils/format";
 import { AvatarStack, Button, FlipCountdown, IconSquircle, LiveTimer, PressableScale, PulseDot } from "../ui";
+import { SYMBOL } from "../../constants/symbole";
 
 export type RsvpStatus = "ja" | "nein" | null;
 
@@ -199,7 +200,7 @@ function Danach({ hero, now, members, stats, spielTypen }: Props) {
           </View>
         )) : (
           <View style={styles.meisteRow}>
-            <IconSquircle icon="cash-outline" ton="mustard" size={30} />
+            <IconSquircle emoji={SYMBOL.kasse} ton="mustard" size={30} />
             <Text style={[styles.small, { flex: 1, color: c.textMid }]}>Strafen des Abends</Text>
             <Text style={[styles.bodyStrong, { color: c.textDark }]}>{`${formatEuro(stats.strafenSumme)} €`}</Text>
           </View>

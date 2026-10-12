@@ -9,7 +9,8 @@ import { Kasse } from "../../utils/useKasse";
 import { monatsSalden, rechnungBeglichen, rechnungOffen, saldo, schuldnerVon } from "../../utils/kasse";
 import { formatWochentagDatum, tagesSchluessel } from "../../utils/date";
 import { displayName, formatEuro } from "../../utils/format";
-import { Card, PressableScale, SectionLabel } from "../ui";
+import { Card, Emoji, IconSquircle, PressableScale, SectionLabel } from "../ui";
+import { SYMBOL } from "../../constants/symbole";
 
 const MONATE = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
 const euro = (n: number) => `${formatEuro(n).replace(",00", "")} €`;
@@ -96,14 +97,14 @@ export function UebersichtTab({ kasse, onStrafen, onRechnungen, onEintrag }: {
         <View style={styles.zeile}>
           <View style={[styles.kachel, { backgroundColor: dunkel ? c.cardAlt : c.card }]}>
             <View style={styles.kachelKopf}>
-              <Ionicons name="arrow-down" size={14} color={c.greenText} style={{ transform: [{ rotate: "45deg" }] }} />
+              <Emoji size={14}>{SYMBOL.einnahme}</Emoji>
               <Text style={styles.kachelLabel}>Einnahmen</Text>
             </View>
             <Text style={[styles.kachelWert, { color: c.successText }]} maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} adjustsFontSizeToFit>{`+${euro(ein)}`}</Text>
           </View>
           <View style={[styles.kachel, { backgroundColor: dunkel ? c.cardAlt : c.card }]}>
             <View style={styles.kachelKopf}>
-              <Ionicons name="arrow-up" size={14} color={c.coralText} style={{ transform: [{ rotate: "45deg" }] }} />
+              <Emoji size={14}>{SYMBOL.ausgabe}</Emoji>
               <Text style={styles.kachelLabel}>Ausgaben</Text>
             </View>
             <Text style={[styles.kachelWert, { color: c.coralText }]} maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} adjustsFontSizeToFit>{`−${euro(aus)}`}</Text>
@@ -116,7 +117,7 @@ export function UebersichtTab({ kasse, onStrafen, onRechnungen, onEintrag }: {
           <Text style={[styles.label, { color: c.textMuted, marginBottom: 6 }]}>Offene Posten</Text>
           {offeneStrafen.length > 0 ? (
             <PressableScale onPress={onStrafen} style={styles.posten} accessibilityLabel={`Strafen: ${euro(offeneStrafen.reduce((s, l) => s + l.betrag, 0))} offen`}>
-              <View style={[styles.postenIcon, { backgroundColor: c.coralSoft }]}><Ionicons name="warning-outline" size={20} color={c.coralText} /></View>
+              <IconSquircle emoji={SYMBOL.strafe} ton="coral" size={40} />
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={styles.postenTitel}>Strafen</Text>
                 <Text style={styles.postenSub} numberOfLines={2}>{`bei ${strafPersonen.length} ${strafPersonen.length === 1 ? "Person" : "Personen"} · ${strafPersonen.map((p) => displayName(p!)).join(", ")}`}</Text>
@@ -132,7 +133,7 @@ export function UebersichtTab({ kasse, onStrafen, onRechnungen, onEintrag }: {
             const wann = formatWochentagDatum(new Date(termin ? `${termin.datum}T00:00:00` : e.datum));
             return (
               <PressableScale key={e.id} onPress={onRechnungen} style={[styles.posten, styles.trenner]} accessibilityLabel={`Rechnung ${wann}: ${euro(rechnungOffen(e))} offen`}>
-                <View style={[styles.postenIcon, { backgroundColor: c.blueBg }]}><Ionicons name="receipt-outline" size={20} color={c.blue} /></View>
+                <IconSquircle emoji={SYMBOL.rechnung} ton="blue" size={40} />
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text style={styles.postenTitel}>{`Rechnung ${wann}`}</Text>
                   <Text style={styles.postenSub} numberOfLines={1}>
@@ -173,7 +174,7 @@ export function UebersichtTab({ kasse, onStrafen, onRechnungen, onEintrag }: {
                   return (
                     <PressableScale key={e.id} onPress={() => onEintrag(e)} style={[styles.buchung, styles.trenner]} accessibilityLabel={`${e.beschreibung || (rein ? "Einnahme" : "Ausgabe")}: ${vorzeichen(rein ? e.betrag : -e.betrag)}`}>
                       <View style={[styles.rund, { backgroundColor: rein ? c.greenSoft : c.coralSoft }]}>
-                        <Ionicons name={rein ? "arrow-down" : "arrow-up"} size={16} color={rein ? c.greenText : c.coralText} style={{ transform: [{ rotate: "45deg" }] }} />
+                        <Emoji size={18}>{rein ? SYMBOL.einnahme : SYMBOL.ausgabe}</Emoji>
                       </View>
                       <View style={{ flex: 1, minWidth: 0 }}>
                         <Text style={styles.buchungTitel} numberOfLines={1}>{e.beschreibung?.trim() || (rein ? "Einnahme" : "Ausgabe")}</Text>
@@ -215,7 +216,6 @@ const makeStyles = (c: ThemeColors) =>
 
     posten: { flexDirection: "row", alignItems: "center", gap: 12, minHeight: 64, paddingVertical: 8 },
     trenner: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
-    postenIcon: { width: 40, height: 40, borderRadius: 13, alignItems: "center", justifyContent: "center" },
     postenTitel: { fontFamily: FONT.w800, fontSize: 16, color: c.textDark },
     postenSub: { ...TYPE.caption, fontSize: 13, color: c.textMuted },
     postenBetrag: { ...TYPE.num, fontSize: 22 },

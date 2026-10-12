@@ -27,8 +27,8 @@ import {
   SegmentedTabs,
   Ton,
 } from "../../components/ui";
+import { SYMBOL } from "../../constants/symbole";
 
-type IconName = React.ComponentProps<typeof Ionicons>["name"];
 
 const ERSCHEINUNGSBILD: { key: ThemePreference; label: string }[] = [
   { key: "system", label: "System" },
@@ -69,12 +69,12 @@ export default function RundeScreen() {
   const aktivesSpiel = spiele.find((s) => s.id === verordnung?.aktivesSpielId);
   const regeln = verordnung?.regeln?.filter((r) => r.trim()).length ?? 0;
 
-  const mehr: { label: string; info: string; icon: IconName; ton: Ton; route: string }[] = [
-    { label: "Satzung", info: regeln ? `${regeln} ${regeln === 1 ? "Regel" : "Regeln"}` : "noch leer", icon: "document-text-outline", ton: "blue", route: "/satzung" },
-    { label: "Protokolle", info: "pro Termin", icon: "create-outline", ton: "green", route: "/protokolle" },
-    { label: "Strafenkatalog", info: `${kategorien.length} ${kategorien.length === 1 ? "Kategorie" : "Kategorien"}`, icon: "pricetags-outline", ton: "coral", route: "/strafen-kategorien" },
-    { label: "Spiele", info: aktivesSpiel ? `aktiv: ${aktivesSpiel.name}` : `${spiele.length} angelegt`, icon: "dice-outline", ton: "mustard", route: "/spiele" },
-    { label: "Einstellungen", info: "Grunddaten & Verwaltung", icon: "settings-outline", ton: "neutral", route: "/einstellungen" },
+  const mehr: { label: string; info: string; emoji: string; ton: Ton; route: string }[] = [
+    { label: "Satzung", info: regeln ? `${regeln} ${regeln === 1 ? "Regel" : "Regeln"}` : "noch leer", emoji: SYMBOL.satzung, ton: "blue", route: "/satzung" },
+    { label: "Protokolle", info: "pro Termin", emoji: SYMBOL.protokoll, ton: "green", route: "/protokolle" },
+    { label: "Strafenkatalog", info: `${kategorien.length} ${kategorien.length === 1 ? "Kategorie" : "Kategorien"}`, emoji: SYMBOL.strafenkatalog, ton: "coral", route: "/strafen-kategorien" },
+    { label: "Spiele", info: aktivesSpiel ? `aktiv: ${aktivesSpiel.name}` : `${spiele.length} angelegt`, emoji: SYMBOL.spiele, ton: "mustard", route: "/spiele" },
+    { label: "Einstellungen", info: "Grunddaten & Verwaltung", emoji: SYMBOL.einstellungen, ton: "neutral", route: "/einstellungen" },
   ];
 
   return (
@@ -135,7 +135,7 @@ export default function RundeScreen() {
       <Card enterIndex={2} style={{ paddingVertical: 6 }}>
         {mehr.map((z, i) => (
           <PressableScale key={z.route} onPress={() => router.push(z.route as never)} style={[styles.mehrRow, i > 0 && styles.mehrLine]} scaleTo={0.98} accessibilityLabel={`${z.label}, ${z.info}`}>
-            <IconSquircle icon={z.icon} ton={z.ton} size={36} />
+            <IconSquircle emoji={z.emoji} ton={z.ton} size={36} />
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={styles.mehrLabel}>{z.label}</Text>
               <Text style={styles.muted} numberOfLines={1}>{z.info}</Text>

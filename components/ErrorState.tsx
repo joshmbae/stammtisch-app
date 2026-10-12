@@ -2,6 +2,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { TYPE, ThemeColors } from "../constants/design";
 import { useThemedStyles } from "../contexts/ThemeContext";
 import { Button, IconSquircle } from "./ui";
+import { SYMBOL } from "../constants/symbole";
 
 /**
  * Sichtbarer Fehlerzustand mit Wiederholen-Knopf — Ersatz für den früheren
@@ -11,7 +12,7 @@ export default function ErrorState({ message, onRetry }: { message: string; onRe
   const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.wrap} accessibilityRole="alert">
-      <IconSquircle icon="cloud-offline-outline" ton="coral" size={56} />
+      <IconSquircle emoji={SYMBOL.offline} ton="coral" size={56} />
       <Text style={styles.title}>Daten konnten nicht geladen werden</Text>
       <Text style={styles.message}>{message}</Text>
       <Button label="Erneut versuchen" icon="refresh" variant="blue" onPress={onRetry} style={{ marginTop: 8, alignSelf: "center" }} />

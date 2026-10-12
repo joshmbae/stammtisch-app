@@ -1,12 +1,12 @@
 import React from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { FONT, MAX_FONT_SCALE, TYPE, ThemeColors } from "../../constants/design";
 import { useThemedStyles } from "../../contexts/ThemeContext";
 import { MemberProfile } from "../../types";
 import { displayName } from "../../utils/format";
 import { formatWochentagDatum } from "../../utils/date";
-import { PressableScale, Scrim, initial } from "../ui";
+import { Emoji, PressableScale, Scrim, initial } from "../ui";
+import { SYMBOL } from "../../constants/symbole";
 
 interface Props {
   member: MemberProfile;
@@ -34,7 +34,7 @@ export function GeburtstagTile({ member, tage, datum, alter, onPress }: Props) {
       <Scrim top={0.35} bottom={0.78} />
       <View style={styles.kopf}>
         <Text style={styles.label}>Geburtstag</Text>
-        <Ionicons name="gift-outline" size={16} color="#FFFFFF" />
+        <Emoji size={16}>{SYMBOL.geburtstag}</Emoji>
       </View>
       <View style={styles.text}>
         <Text style={styles.titel} numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE}>{titel}</Text>

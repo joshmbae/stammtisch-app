@@ -10,6 +10,7 @@ import { formatWochentagDatum, parseTimeString, toLocalIsoDate, toTimeString } f
 import { showAlert } from "../../utils/alert";
 import InlineDateTimePicker from "../InlineDateTimePicker";
 import { Button, Chip, Field, FieldButton, PressableScale, SegmentedTabs, Sheet, ToggleRow } from "../ui";
+import { SYMBOL } from "../../constants/symbole";
 
 type Intervall = "woechentlich" | "alle2wochen" | "monatlich";
 const INTERVALLE: { key: Intervall; label: string }[] = [
@@ -183,7 +184,7 @@ export function NeuerTerminSheet({ visible, onClose, onSaved, tag, verordnung }:
 
       {!geburtstag ? (
         <View style={styles.serie}>
-          <ToggleRow title="Wiederholen" subtitle={mitSerie ? `${INTERVALLE.find((x) => x.key === intervall)!.label.toLowerCase()} · ${n} Termine` : "Serie anlegen"} icon="repeat" ton="blue" value={serie} onValueChange={setSerie} />
+          <ToggleRow title="Wiederholen" subtitle={mitSerie ? `${INTERVALLE.find((x) => x.key === intervall)!.label.toLowerCase()} · ${n} Termine` : "Serie anlegen"} emoji={SYMBOL.serie} ton="blue" value={serie} onValueChange={setSerie} />
           {mitSerie ? (
             <View style={{ gap: 10, paddingBottom: 6 }}>
               <View style={styles.chips}>

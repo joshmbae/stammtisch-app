@@ -1,9 +1,9 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { FONT, MAX_FONT_SCALE, TYPE, ThemeColors } from "../../constants/design";
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
-import { Card, Krone, Ring, SectionLabel } from "../ui";
+import { Card, Emoji, Krone, Ring, SectionLabel } from "../ui";
+import { SYMBOL } from "../../constants/symbole";
 
 export interface BilanzWerte {
   jahr: string;
@@ -49,7 +49,7 @@ export function BilanzRow({ werte, onPress }: { werte: BilanzWerte; onPress: () 
         <Wert
           wert={offenText}
           label="offen"
-          icon="cash-outline"
+          emoji={SYMBOL.geld}
           farbe={werte.offen > 0 ? c.coralText : c.success}
         />
         {werte.haupt ? (
@@ -61,8 +61,8 @@ export function BilanzRow({ werte, onPress }: { werte: BilanzWerte; onPress: () 
 }
 
 /** Rechtsbündiger Wert mit kleiner Beschriftung darunter. */
-function Wert({ wert, label, emoji, icon, krone, farbe }: {
-  wert: string; label: string; emoji?: string; icon?: React.ComponentProps<typeof Ionicons>["name"]; krone?: boolean; farbe?: string;
+function Wert({ wert, label, emoji, krone, farbe }: {
+  wert: string; label: string; emoji?: string; krone?: boolean; farbe?: string;
 }) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
@@ -73,7 +73,7 @@ function Wert({ wert, label, emoji, icon, krone, farbe }: {
         <Text style={[styles.wert, farbe ? { color: farbe } : null]} numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE}>{wert}</Text>
       </View>
       <View style={styles.labelZeile}>
-        {emoji ? <Text style={styles.emoji}>{emoji}</Text> : icon ? <Ionicons name={icon} size={12} color={farbe ?? c.textMuted} /> : null}
+        {emoji ? <Emoji size={13}>{emoji}</Emoji> : null}
         <Text style={styles.label} numberOfLines={1}>{label}</Text>
       </View>
     </View>
@@ -90,6 +90,5 @@ const makeStyles = (c: ThemeColors) =>
     wertZeile: { flexDirection: "row", alignItems: "center", gap: 3 },
     wert: { ...TYPE.num, fontSize: 20, color: c.textDark },
     labelZeile: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 1 },
-    emoji: { fontSize: 11 },
     label: { fontFamily: FONT.w600, fontSize: 12, color: c.textMuted, flexShrink: 1 },
   });

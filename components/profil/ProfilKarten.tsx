@@ -8,7 +8,8 @@ import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { Jahrestitel, Rangliste, wertKurz } from "../../utils/stats";
 import { displayName, formatEuro } from "../../utils/format";
 import { formatWochentagDatum } from "../../utils/date";
-import { Avatar, Card, IconSquircle, KategorieIcon, Krone, PressableScale, SectionLabel, tonFuerRangliste } from "../ui";
+import { Avatar, Card, Emoji, IconSquircle, KategorieIcon, Krone, PressableScale, SectionLabel, tonFuerRangliste } from "../ui";
+import { SYMBOL } from "../../constants/symbole";
 
 const euro = (n: number) => `${formatEuro(n).replace(",00", "")} €`;
 const kurzDatum = (iso: string) => { const [, m, d] = iso.slice(0, 10).split("-"); return `${parseInt(d, 10)}.${parseInt(m, 10)}.`; };
@@ -113,7 +114,7 @@ export function TitelKarte({ titel }: { titel: Jahrestitel[] }) {
           <View key={`${t.jahr}-${t.ranglisteKey}`} style={styles.titelZelle}>
             <View style={[styles.titelKachel, { backgroundColor: c.cardAlt }]} accessible accessibilityLabel={`${t.titel} ${t.jahr}`}>
               <View style={[styles.pokal, { backgroundColor: i === 0 ? c.mustard : c.mustardSoft }]}>
-                <Ionicons name="trophy" size={18} color={i === 0 ? c.onMustard : c.mustardText} />
+                <Emoji size={18}>{SYMBOL.pokal}</Emoji>
               </View>
               <Text style={styles.titelJahr}>{t.jahr}</Text>
               <Text style={styles.titelName} numberOfLines={1}>{`${t.emoji} ${t.titel}`}</Text>

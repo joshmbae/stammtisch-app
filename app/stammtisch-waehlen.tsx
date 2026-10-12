@@ -8,6 +8,7 @@ import { TYPE, ThemeColors } from "../constants/design";
 import { useThemedStyles } from "../contexts/ThemeContext";
 import { Button, Card, Field, SegmentedTabs } from "../components/ui";
 import { EinstiegHero, EinstiegScreen, Vorteil } from "../components/einstieg/Einstieg";
+import { SYMBOL } from "../constants/symbole";
 
 type Mode = "join" | "create";
 
@@ -17,9 +18,9 @@ const MODI: { key: Mode; label: string }[] = [
 ];
 
 const VORTEILE: Vorteil[] = [
-  { icon: "calendar-outline", ton: "blue", titel: "Termine & Zusagen", text: "Wer kommt zum nächsten Abend?" },
-  { icon: "card-outline", ton: "mustard", titel: "Kasse & Strafen", text: "Jeder Euro nachvollziehbar" },
-  { icon: "trending-up-outline", ton: "green", titel: "Tabelle & Rückblick", text: "Wer führt und was war los" },
+  { emoji: SYMBOL.termin, ton: "blue", titel: "Termine & Zusagen", text: "Wer kommt zum nächsten Abend?" },
+  { emoji: SYMBOL.kasse, ton: "mustard", titel: "Kasse & Strafen", text: "Jeder Euro nachvollziehbar" },
+  { emoji: SYMBOL.tabelle, ton: "green", titel: "Tabelle & Rückblick", text: "Wer führt und was war los" },
 ];
 
 export default function StammtischWaehlenScreen() {

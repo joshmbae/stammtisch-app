@@ -11,7 +11,8 @@ import { formatWochentagDatum } from "../../utils/date";
 import { displayName, formatEuro } from "../../utils/format";
 import { terminBezeichnung } from "../../utils/activityFeed";
 import { useSingleFlight } from "../../utils/useSingleFlight";
-import { Avatar, Button, Card, PressableScale, haptik } from "../ui";
+import { Avatar, Button, Card, IconSquircle, PressableScale, haptik } from "../ui";
+import { SYMBOL } from "../../constants/symbole";
 
 const euro = (n: number) => `${formatEuro(n)} €`;
 
@@ -30,7 +31,7 @@ export function RechnungenTab({ kasse, onEintrag }: { kasse: Kasse; onEintrag: (
   if (rechnungen.length === 0) {
     return (
       <Card style={{ alignItems: "center", gap: 8, paddingVertical: 28 }}>
-        <View style={[styles.leerIcon, { backgroundColor: c.blueBg }]}><Ionicons name="receipt-outline" size={26} color={c.blue} /></View>
+        <IconSquircle emoji={SYMBOL.rechnung} ton="blue" size={52} />
         <Text style={styles.leerTitel}>Keine Rechnungen</Text>
         <Text style={styles.leerText}>Wenn einer für alle zahlt: mit + oben eintragen, dann sieht jeder seinen Anteil.</Text>
       </Card>
@@ -157,7 +158,6 @@ function RechnungKarte({ e, kasse, onDetails, enterIndex }: { e: KassenEintrag; 
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
-    leerIcon: { width: 56, height: 56, borderRadius: 18, alignItems: "center", justifyContent: "center" },
     leerTitel: { ...TYPE.heading, color: c.textDark },
     leerText: { ...TYPE.body, fontSize: 14, color: c.textMuted, textAlign: "center" },
     kopf: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 8 },

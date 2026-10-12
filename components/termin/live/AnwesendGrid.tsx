@@ -8,7 +8,8 @@ import { useColors, useThemedStyles } from "../../../contexts/ThemeContext";
 import { TerminAbend } from "../../../utils/useTerminAbend";
 import { displayName, formatEuro } from "../../../utils/format";
 import { useFuehrende } from "../../../utils/useFuehrende";
-import { Avatar, PressableScale, haptik } from "../../ui";
+import { Avatar, Emoji, PressableScale, haptik } from "../../ui";
+import { SYMBOL } from "../../../constants/symbole";
 
 /** Ab wie vielen Minuten nach Beginn ein Eintreffen als „zu spät" gilt. */
 const SPAET_AB_MIN = 10;
@@ -90,7 +91,7 @@ export function AnwesendGrid({ abend, mitglieder, start, now }: { abend: TerminA
 
       {spaet && spaetMember ? (
         <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)} style={[styles.spaet, { backgroundColor: c.coralSoft }]} accessibilityLiveRegion="polite">
-          <View style={styles.spaetIcon}><Ionicons name="time-outline" size={20} color={c.coralText} /></View>
+          <View style={styles.spaetIcon}><Emoji size={20}>{SYMBOL.zuSpaet}</Emoji></View>
           <View style={{ flex: 1 }}>
             <Text style={styles.spaetTitel}>{`${displayName(spaetMember)} zu spät?`}</Text>
             <Text style={[styles.spaetSub, { color: c.coralText }]}>{`+${spaet.minuten} Min.`}</Text>

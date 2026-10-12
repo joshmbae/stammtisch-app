@@ -7,9 +7,7 @@ import { FONT, ThemeColors } from "../../constants/design";
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { activityRoute, renderActivity } from "../../utils/activityFeed";
 import { formatUhrzeit } from "../../utils/date";
-import { PressableScale } from "../ui";
-
-type IconName = React.ComponentProps<typeof Ionicons>["name"];
+import { PressableScale, Ton, tonFarben } from "../ui";
 
 export type ChronikBereich = "alle" | "strafen" | "kasse" | "termine" | "spiele";
 
@@ -30,39 +28,14 @@ export function bereichVon(typ: ActivityLogEntry["actionType"]): Exclude<Chronik
   return null;
 }
 
-/**
- * Symbol und Farbe je Aktion. Volle Farbflächen mit on…-Token in beiden
- * Themes; nur die dunkle Spiel-Fläche (Tinte) braucht im Dunkeln eine
- * eigene Fläche, weil Tinte dort fast weiß ist.
- */
-function symbolFuer(typ: ActivityLogEntry["actionType"], c: ThemeColors): { icon: IconName; bg: string; fg: string } {
-  const dunkel = c.heroStyle === "outline";
-  const neutral = { bg: c.cardAlt, fg: c.textMid };
-  const kasse = { bg: dunkel ? c.mustard : c.mustardTile, fg: c.onMustard };
-  const spiel = { bg: dunkel ? c.mustardSoft : c.textDark, fg: c.mustard };
-  switch (typ) {
-    case "straf_log_created": return { icon: "warning-outline", bg: c.coral, fg: c.onCoral };
-    case "straf_log_beglichen": return { icon: "checkmark-done", bg: c.success, fg: c.onAccent };
-    case "kasse_einnahme_created": return { icon: "arrow-down", ...kasse };
-    case "kasse_ausgabe_created": return { icon: "arrow-up", ...kasse };
-    case "abendkosten_created": return { icon: "receipt-outline", ...kasse };
-    case "kasse_beglichen": return { icon: "cash-outline", ...kasse };
-    case "spiel_log_created": return { icon: "dice-outline", ...spiel };
-    case "wette_created": return { icon: "people-outline", ...spiel };
-    case "wette_resolved": return { icon: "trophy-outline", ...spiel };
-    case "protokoll_updated": return { icon: "document-text-outline", bg: dunkel ? c.cardAlt : c.border, fg: c.textDark };
-    case "termin_zusage": return { icon: "checkmark", bg: c.success, fg: c.onAccent };
-    case "termin_absage": return { icon: "close", ...neutral };
-    case "termin_erstellt": return { icon: "calendar-outline", bg: c.blue, fg: c.onAccent };
-    case "termin_verlegt": return { icon: "swap-horizontal", bg: c.blue, fg: c.onAccent };
-    case "straf_log_deleted":
-    case "kasse_eintrag_deleted":
-    case "spiel_log_deleted":
-    case "wette_deleted":
-      return { icon: "trash-outline", ...neutral };
-    default:
-      return { icon: "ellipse-outline", ...neutral };
-  }
+/** Tönung des Emoji-Kreises je Bereich (weiche Fläche, damit das Emoji wirkt). */
+function tonFuerAktion(typ: ActivityLogEntry["actionType"]): Ton {
+  if (typ.endsWith("_deleted") || typ === "termin_absage") return "neutral";
+  if (typ === "straf_log_beglichen" || typ === "kasse_beglichen" || typ === "termin_zusage") return "green";
+  if (typ.startsWith("straf_")) return "coral";
+  if (typ.startsWith("kasse_") || typ === "abendkosten_created" || typ.startsWith("spiel_") || typ.startsWith("wette_")) return "mustard";
+  if (typ.startsWith("termin_")) return "blue";
+  return "neutral";
 }
 
 /** Eine Zeile der Chronik: farbiges Symbol, Text, „Uhrzeit · eingetragen von X". Tippen öffnet das Ziel. */
@@ -77,15 +50,15 @@ export function ChronikEintrag({ entry, membersById, strafKategorien, linie }: {
   const styles = useThemedStyles(makeStyles);
   const r = renderActivity(entry, membersById, strafKategorien);
   const route = activityRoute(entry);
-  const s = symbolFuer(entry.actionType, c);
+  const ton = tonFarben(tonFuerAktion(entry.actionType), c);
   const zeit = formatUhrzeit(entry.createdAt);
   const meta = r.actorText ? `${zeit} · ${r.actorText}` : zeit;
 
   const inhalt = (
     <>
       {linie ? <View style={styles.linie} /> : null}
-      <View style={[styles.symbol, { backgroundColor: s.bg }]}>
-        <Ionicons name={s.icon} size={18} color={s.fg} />
+      <View style={[styles.symbol, { backgroundColor: ton.bg }]}>
+        <Text style={styles.emoji} maxFontSizeMultiplier={1}>{r.emoji}</Text>
       </View>
       <View style={styles.texte}>
         <Text style={styles.text}>{r.text}</Text>
@@ -112,6 +85,7 @@ const makeStyles = (c: ThemeColors) =>
     // Linie von der Mitte des Symbols bis zur Mitte des nächsten — läuft hinter beiden durch.
     linie: { position: "absolute", left: 33, top: 30, bottom: -30, width: 2, borderRadius: 1, backgroundColor: c.border },
     symbol: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
+    emoji: { fontSize: 18, lineHeight: 24, textAlign: "center" },
     texte: { flex: 1, minWidth: 0, gap: 2 },
     text: { fontFamily: FONT.w700, fontSize: 15, lineHeight: 20, color: c.textDark },
     detail: { fontFamily: FONT.w500, fontSize: 14, lineHeight: 19, color: c.textMid },

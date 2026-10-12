@@ -8,8 +8,9 @@ import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { TerminPhase, terminStart } from "../../utils/terminPhase";
 import { displayName } from "../../utils/format";
 import { toLocalIsoDate } from "../../utils/date";
-import { Avatar, AvatarStack, Card, PressableScale, PulseDot } from "../ui";
+import { Avatar, AvatarStack, Card, Emoji, PressableScale, PulseDot } from "../ui";
 import { MONATE } from "./KalenderKarte";
+import { SYMBOL } from "../../constants/symbole";
 
 const WT = ["SO", "MO", "DI", "MI", "DO", "FR", "SA"];
 const uhr = (d: Date) => d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
@@ -181,7 +182,7 @@ function GeburtstagZeile({ member, datum, alter }: { member: MemberProfile; datu
         <Text style={styles.titel} numberOfLines={1}>{alter ? `${displayName(member)} wird ${alter}` : `${displayName(member)} hat Geburtstag`}</Text>
         <Text style={styles.sub}>{datum === heute ? "heute!" : "Geburtstag"}</Text>
       </View>
-      <Ionicons name="gift-outline" size={18} color={c.coralText} />
+      <Emoji size={20}>{SYMBOL.geburtstag}</Emoji>
     </PressableScale>
   );
 }

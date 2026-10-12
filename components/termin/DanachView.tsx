@@ -12,7 +12,8 @@ import { hauptEreignis } from "../../utils/spiel";
 import { formatWochentagDatum } from "../../utils/date";
 import { displayName, formatEuro } from "../../utils/format";
 import { useFuehrende } from "../../utils/useFuehrende";
-import { Avatar, BarList, BarRow, Button, Card, IconSquircle, Krone, PressableScale, Ring, Ton, tonFarben } from "../ui";
+import { Avatar, BarList, BarRow, Button, Card, Emoji, IconSquircle, Krone, PressableScale, Ring, Ton, tonFarben } from "../ui";
+import { SYMBOL } from "../../constants/symbole";
 
 const euro = (n: number) => `${formatEuro(n).replace(",00", "")} €`;
 
@@ -123,7 +124,7 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
           </View>
         ) : (
           <View style={[styles.kachelIcon, { backgroundColor: sel ? "rgba(255,255,255,0.22)" : tint.bg }]}>
-            <Ionicons name="cash-outline" size={18} color={sel ? voll.fg : tint.fg} />
+            <Emoji size={17}>{SYMBOL.geld}</Emoji>
           </View>
         )}
         <Text style={[styles.kachelWert, { color: sel ? voll.fg : c.textDark }]} maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1}>{k.wert}</Text>
@@ -205,7 +206,7 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
 
       {abend.rechnung ? (
         <PressableScale onPress={() => router.push(`/kasse?eintragId=${abend.rechnung!.id}`)} style={[styles.rechnung, styles.rechnungDa]} accessibilityLabel="Rechnung ansehen">
-          <IconSquircle icon="receipt-outline" ton="blue" size={40} />
+          <IconSquircle emoji={SYMBOL.rechnung} ton="blue" size={40} />
           <View style={{ flex: 1 }}>
             <Text style={styles.rechnungTitel}>{`Rechnung · ${euro(abend.rechnung.betrag)}`}</Text>
             <Text style={styles.rechnungSub}>
@@ -219,7 +220,7 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
         </PressableScale>
       ) : (
         <PressableScale onPress={() => router.push(`/kasse?neu=abendkosten&terminId=${t.id}`)} style={[styles.rechnung, styles.rechnungLeer]} accessibilityLabel="Rechnung hinzufügen, optional">
-          <IconSquircle icon="receipt-outline" ton="blue" size={40} />
+          <IconSquircle emoji={SYMBOL.rechnung} ton="blue" size={40} />
           <View style={{ flex: 1 }}>
             <Text style={styles.rechnungTitel}>Rechnung hinzufügen</Text>
             <Text style={styles.rechnungSub}>Optional – wenn einer für alle zahlt</Text>

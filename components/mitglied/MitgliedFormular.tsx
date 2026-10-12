@@ -9,6 +9,7 @@ import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { showAlert } from "../../utils/alert";
 import InlineDateTimePicker from "../InlineDateTimePicker";
 import { Avatar, Button, Card, Chip, Field, FormSection, PressableScale, SectionLabel, ToggleRow } from "../ui";
+import { SYMBOL } from "../../constants/symbole";
 
 /** Alle Eingaben des Mitglied-Formulars; Laden und Speichern machen die Screens. */
 export function useMitgliedFormular() {
@@ -259,7 +260,7 @@ export function MitgliedFormular({ form: f, rollenOptionen, pinVorhanden, onPinU
         <ToggleRow
           title="PIN-Schutz"
           subtitle={f.pinAn ? "Profil nur mit PIN wählen und ändern" : "Jeder kann dieses Profil wählen und ändern"}
-          icon="lock-closed-outline"
+          emoji={SYMBOL.pin}
           ton="blue"
           value={f.pinAn}
           onValueChange={onPinUmschalten}

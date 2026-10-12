@@ -27,6 +27,7 @@ import {
   ScreenHeader,
   Sheet,
 } from "../components/ui";
+import { SYMBOL } from "../constants/symbole";
 
 type Aktion = "bearbeiten" | "entfernen";
 
@@ -163,14 +164,14 @@ export default function MitgliederScreen() {
           <ListRow
             title="Bearbeiten"
             subtitle={auswahl?.pinHash ? "PIN erforderlich" : undefined}
-            icon="create-outline"
+            emoji={SYMBOL.bearbeiten}
             ton="blue"
             onPress={() => handleAktion("bearbeiten")}
           />
           <ListRow
             title="Aus der Runde entfernen"
             subtitle={auswahl?.pinHash ? "PIN erforderlich" : undefined}
-            icon="trash-outline"
+            emoji={SYMBOL.loeschen}
             destructive
             onPress={() => handleAktion("entfernen")}
           />

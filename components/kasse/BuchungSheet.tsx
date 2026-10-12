@@ -8,15 +8,16 @@ import { Kasse, NeueBuchung } from "../../utils/useKasse";
 import { formatWochentagDatum, toLocalIsoDate } from "../../utils/date";
 import { displayName, formatEuro } from "../../utils/format";
 import { showAlert } from "../../utils/alert";
-import { Avatar, Button, Chip, KategorieIcon, PressableScale, Sheet, haptik } from "../ui";
+import { Avatar, Button, Chip, Emoji, KategorieIcon, PressableScale, Sheet, haptik } from "../ui";
+import { SYMBOL } from "../../constants/symbole";
 
 export type BuchungsArt = "einnahme" | "ausgabe" | "abendkosten" | "strafe";
 
-const ARTEN: { key: BuchungsArt; label: string; icon: React.ComponentProps<typeof Ionicons>["name"] }[] = [
-  { key: "einnahme", label: "Einnahme", icon: "arrow-down" },
-  { key: "ausgabe", label: "Ausgabe", icon: "arrow-up" },
-  { key: "abendkosten", label: "Rechnung", icon: "receipt-outline" },
-  { key: "strafe", label: "Strafe", icon: "warning-outline" },
+const ARTEN: { key: BuchungsArt; label: string; emoji: string }[] = [
+  { key: "einnahme", label: "Einnahme", emoji: SYMBOL.einnahme },
+  { key: "ausgabe", label: "Ausgabe", emoji: SYMBOL.ausgabe },
+  { key: "abendkosten", label: "Rechnung", emoji: SYMBOL.rechnung },
+  { key: "strafe", label: "Strafe", emoji: SYMBOL.strafe },
 ];
 const SCHNELL: Partial<Record<BuchungsArt, string[]>> = {
   einnahme: ["Mitgliedsbeitrag", "Spende", "Sonstiges"],
@@ -184,7 +185,7 @@ export function BuchungSheet({ visible, kasse, onClose, start }: {
               accessibilityLabel={a.label}
               style={[styles.art, sel && { backgroundColor: c.blue }]}
             >
-              <Ionicons name={a.icon} size={18} color={sel ? c.onAccent : c.textDark} style={a.key === "einnahme" || a.key === "ausgabe" ? { transform: [{ rotate: "45deg" }] } : undefined} />
+              <Emoji size={17}>{a.emoji}</Emoji>
               <Text style={[styles.artText, sel && { color: c.onAccent }]}>{a.label}</Text>
             </PressableScale>
           );
@@ -209,7 +210,7 @@ export function BuchungSheet({ visible, kasse, onClose, start }: {
             label={`Zu Termin ${formatWochentagDatum(new Date(`${termin.datum}T00:00:00`))}`}
             selected={mitTermin}
             onPress={() => setMitTermin((v) => !v)}
-            leading={<Ionicons name="calendar-outline" size={15} color={mitTermin ? (c.heroStyle === "outline" ? c.onMustard : c.background) : c.textDark} />}
+            leading={<Emoji size={14}>{SYMBOL.termin}</Emoji>}
             accessibilityLabel={`Zum Termin ${formatWochentagDatum(new Date(`${termin.datum}T00:00:00`))} zuordnen`}
           />
         </View>

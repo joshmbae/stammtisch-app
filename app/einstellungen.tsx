@@ -30,6 +30,7 @@ import {
   RollenSheet,
   SpielWahlSheet,
 } from "../components/einstellungen/EinstellungenSheets";
+import { SYMBOL } from "../constants/symbole";
 
 const ERSCHEINUNGSBILD: { key: ThemePreference; label: string }[] = [
   { key: "system", label: "System" },
@@ -204,10 +205,10 @@ export default function EinstellungenScreen() {
     >
       <FormSection title="Stammtisch">
         <ListGroup>
-          <ListRow title="Name" value={v.name} icon="text-outline" ton="blue" onPress={() => setOffen("name")} />
+          <ListRow title="Name" value={v.name} emoji={SYMBOL.name} ton="blue" onPress={() => setOffen("name")} />
           <ListRow
             title="Logo"
-            icon="image-outline"
+            emoji={SYMBOL.logo}
             ton="blue"
             onPress={() => setOffen("logo")}
             accessibilityLabel={v.logoUrl ? "Logo ändern" : "Logo hochladen"}
@@ -218,12 +219,12 @@ export default function EinstellungenScreen() {
               </View>
             }
           />
-          <ListRow title="Treffpunkt" value={v.treffpunkt || "fehlt"} icon="location-outline" ton="blue" onPress={() => setOffen("treffpunkt")} />
-          <ListRow title="Stammtischtag" value={tagZeit || "fehlt"} icon="time-outline" ton="blue" onPress={() => setOffen("tag")} />
+          <ListRow title="Treffpunkt" value={v.treffpunkt || "fehlt"} emoji={SYMBOL.treffpunkt} ton="blue" onPress={() => setOffen("treffpunkt")} />
+          <ListRow title="Stammtischtag" value={tagZeit || "fehlt"} emoji={SYMBOL.stammtischtag} ton="blue" onPress={() => setOffen("tag")} />
           <ListRow
             title="Gegründet"
             value={v.gruendungsjahr ? formatGruendungMonat(v.gruendungsjahr) : "fehlt"}
-            icon="flag-outline"
+            emoji={SYMBOL.gegruendet}
             ton="blue"
             onPress={() => setOffen("gruendung")}
           />
@@ -235,12 +236,12 @@ export default function EinstellungenScreen() {
           <ListRow
             title="Satzung bearbeiten"
             value={regeln ? `${regeln} ${regeln === 1 ? "Regel" : "Regeln"}` : "noch leer"}
-            icon="document-text-outline"
+            emoji={SYMBOL.satzung}
             ton="mustard"
             onPress={() => setOffen("satzung")}
           />
           <View>
-            <ListRow title="Rollen" value={String(rollen.length)} icon="people-outline" ton="mustard" onPress={() => setOffen("rollen")} accessibilityLabel={`Rollen: ${rollen.join(", ") || "keine"}`} />
+            <ListRow title="Rollen" value={String(rollen.length)} emoji={SYMBOL.rollen} ton="mustard" onPress={() => setOffen("rollen")} accessibilityLabel={`Rollen: ${rollen.join(", ") || "keine"}`} />
             {rollen.length > 0 ? (
               <View style={styles.rollen} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
                 <RollenPills rollen={rollen} />
@@ -255,21 +256,21 @@ export default function EinstellungenScreen() {
           <ListRow
             title="Strafenkatalog"
             value={`${manuelleKategorien} ${manuelleKategorien === 1 ? "Kategorie" : "Kategorien"}`}
-            icon="receipt-outline"
+            emoji={SYMBOL.strafenkatalog}
             ton="coral"
             onPress={() => router.push("/strafen-kategorien")}
           />
           <ListRow
             title="Spiele"
             value={aktivesSpiel ? `${aktivesSpiel.name} aktiv` : "kein Spiel"}
-            icon="dice-outline"
+            emoji={SYMBOL.spiele}
             ton="mustard"
             onPress={() => setOffen("spiel")}
           />
           <ToggleRow
             title="Strafen am Abend erfassen"
             subtitle="Strafen-Tab im Termin"
-            icon="create-outline"
+            emoji={SYMBOL.liveErfassen}
             ton="coral"
             value={v.tabStrafenAktiv !== false}
             onValueChange={(an) => { speichern({ tabStrafenAktiv: an }); }}
@@ -280,12 +281,12 @@ export default function EinstellungenScreen() {
       <FormSection title="Dieses Gerät">
         <ListGroup>
           <View style={styles.erscheinung}>
-            <ListRow title="Erscheinungsbild" value={ERSCHEINUNGSBILD.find((e) => e.key === preference)?.label} icon="contrast-outline" />
+            <ListRow title="Erscheinungsbild" value={ERSCHEINUNGSBILD.find((e) => e.key === preference)?.label} emoji={SYMBOL.erscheinungsbild} />
             <SegmentedTabs variant="blue" items={ERSCHEINUNGSBILD} value={preference} onChange={setPreference} />
           </View>
           <ListRow
             title="Profil wechseln"
-            icon="swap-horizontal-outline"
+            emoji={SYMBOL.profilWechseln}
             onPress={() => router.push("/mitglied-waehlen")}
             accessibilityLabel={activeMember ? `Profil wechseln, angemeldet als ${displayName(activeMember)}` : "Profil wechseln"}
             right={
@@ -305,14 +306,14 @@ export default function EinstellungenScreen() {
 
       <FormSection title="Hilfe">
         <ListGroup>
-          <ListRow title="Tutorial erneut ansehen" icon="play-circle-outline" ton="green" onPress={() => router.push("/onboarding-intro?replay=1")} />
+          <ListRow title="Tutorial erneut ansehen" emoji={SYMBOL.tutorial} ton="green" onPress={() => router.push("/onboarding-intro?replay=1")} />
         </ListGroup>
       </FormSection>
 
       <FormSection>
         <Text style={styles.gefahr} accessibilityRole="header">Gefahrenzone</Text>
         <ListGroup>
-          <ListRow title="Stammtisch löschen" icon="trash-outline" destructive onPress={() => setOffen("loeschen")} />
+          <ListRow title="Stammtisch löschen" emoji={SYMBOL.loeschen} destructive onPress={() => setOffen("loeschen")} />
         </ListGroup>
       </FormSection>
 

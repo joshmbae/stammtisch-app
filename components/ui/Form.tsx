@@ -39,7 +39,7 @@ interface RowProps {
   subtitle?: string;
   /** Wert rechts, z. B. „Die Hellen" oder „5 Kategorien". */
   value?: string;
-  icon?: IconName;
+  /** iPhone-Emoji im getönten Kästchen links. */
   emoji?: string;
   ton?: Ton;
   onPress?: () => void;
@@ -50,12 +50,12 @@ interface RowProps {
 }
 
 /** Zeile in einer ListGroup: Symbol, Titel, Wert, Pfeil. */
-export function ListRow({ title, subtitle, value, icon, emoji, ton = "neutral", onPress, right, destructive, accessibilityLabel }: RowProps) {
+export function ListRow({ title, subtitle, value, emoji, ton = "neutral", onPress, right, destructive, accessibilityLabel }: RowProps) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const inhalt = (
     <>
-      {icon || emoji ? <IconSquircle icon={icon} emoji={emoji} ton={destructive ? "coral" : ton} size={34} /> : null}
+      {emoji ? <IconSquircle emoji={emoji} ton={destructive ? "coral" : ton} size={34} /> : null}
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text style={[styles.rowTitle, destructive && { color: c.dangerText }]} numberOfLines={1}>{title}</Text>
         {subtitle ? <Text style={styles.rowSub} numberOfLines={2}>{subtitle}</Text> : null}
@@ -74,7 +74,7 @@ export function ListRow({ title, subtitle, value, icon, emoji, ton = "neutral", 
 }
 
 /** Zeile mit Schalter. */
-export function ToggleRow({ title, subtitle, icon, emoji, ton, value, onValueChange, disabled }: Omit<RowProps, "onPress" | "right" | "value"> & {
+export function ToggleRow({ title, subtitle, emoji, ton, value, onValueChange, disabled }: Omit<RowProps, "onPress" | "right" | "value"> & {
   value: boolean;
   onValueChange: (v: boolean) => void;
   disabled?: boolean;
@@ -83,7 +83,7 @@ export function ToggleRow({ title, subtitle, icon, emoji, ton, value, onValueCha
   const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.row}>
-      {icon || emoji ? <IconSquircle icon={icon} emoji={emoji} ton={ton ?? "neutral"} size={34} /> : null}
+      {emoji ? <IconSquircle emoji={emoji} ton={ton ?? "neutral"} size={34} /> : null}
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text style={styles.rowTitle}>{title}</Text>
         {subtitle ? <Text style={styles.rowSub}>{subtitle}</Text> : null}

@@ -3,11 +3,12 @@ import { View } from "react-native";
 import { router } from "expo-router";
 import { Button } from "../components/ui";
 import { EinstiegHero, EinstiegScreen, Vorteil } from "../components/einstieg/Einstieg";
+import { SYMBOL } from "../constants/symbole";
 
 const EINRICHTEN: Vorteil[] = [
-  { icon: "location-outline", ton: "blue", titel: "Treffpunkt", text: "Wo ihr euch trefft" },
-  { icon: "time-outline", ton: "mustard", titel: "Stammtischtag & -zeit", text: "Wann es losgeht" },
-  { icon: "document-text-outline", ton: "green", titel: "Eure Regeln", text: "Was bei euch gilt" },
+  { emoji: SYMBOL.treffpunkt, ton: "blue", titel: "Treffpunkt", text: "Wo ihr euch trefft" },
+  { emoji: SYMBOL.stammtischtag, ton: "mustard", titel: "Stammtischtag & -zeit", text: "Wann es losgeht" },
+  { emoji: SYMBOL.satzung, ton: "green", titel: "Eure Regeln", text: "Was bei euch gilt" },
 ];
 
 export default function OnboardingSetupScreen() {

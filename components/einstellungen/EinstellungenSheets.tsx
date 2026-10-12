@@ -6,6 +6,7 @@ import { FONT, RADIUS, TYPE, ThemeColors } from "../../constants/design";
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import StammtischLogo from "../StammtischLogo";
 import { Button, Card, Field, IconSquircle, PressableScale, Sheet, tonFarben, tonFuer } from "../ui";
+import { SYMBOL } from "../../constants/symbole";
 
 type SaveFn<T> = (wert: T) => Promise<boolean>;
 
@@ -288,7 +289,7 @@ export function SpielWahlSheet({ visible, spiele, aktivesSpielId, busyId, onClos
     <Sheet visible={visible} onClose={onClose} title="Spiel am Abend">
       <Text style={styles.hinweis}>Das gewählte Spiel erscheint im Termin als eigener Tab. Manche Ereignisse buchen automatisch eine Strafe.</Text>
       <Card style={styles.wahlKarte}>
-        {zeile("none", "Kein Spiel", !aktivesSpielId, () => onSelect(null), <IconSquircle icon="remove-circle-outline" size={34} />)}
+        {zeile("none", "Kein Spiel", !aktivesSpielId, () => onSelect(null), <IconSquircle emoji={SYMBOL.keinSpiel} size={34} />)}
         {spiele.map((s) =>
           zeile(s.id, s.name, aktivesSpielId === s.id, () => onSelect(s), <IconSquircle emoji={s.emoji ?? "🎮"} ton="mustard" size={34} />)
         )}

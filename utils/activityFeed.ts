@@ -1,6 +1,7 @@
 import { ActivityLogEntry, MemberProfile, StrafKategorieDef } from "../types";
 import { formatEuro as formatEuroBase } from "./format";
 import { formatWochentagDatum } from "./date";
+import { SYMBOL } from "../constants/symbole";
 
 function formatEuro(n: number): string {
   return formatEuroBase(n) + " €";
@@ -98,19 +99,19 @@ export function renderActivity(
     }
     case "kasse_einnahme_created":
       return {
-        emoji: "➕",
+        emoji: SYMBOL.einnahme,
         text: `Einnahme verbucht: ${meta.beschreibung ?? "Sonstiges"} (${formatEuro(Number(meta.betrag ?? 0))})`,
         actorText: eingetragenVon,
       };
     case "kasse_ausgabe_created":
       return {
-        emoji: "➖",
+        emoji: SYMBOL.ausgabe,
         text: `Ausgabe verbucht: ${meta.beschreibung ?? "Sonstiges"} (${formatEuro(Number(meta.betrag ?? 0))})`,
         actorText: eingetragenVon,
       };
     case "abendkosten_created":
       return {
-        emoji: "🍺",
+        emoji: SYMBOL.rechnung,
         text: `${subjectName} hat den Abend bezahlt (${formatEuro(Number(meta.betrag ?? 0))})`,
         actorText: eingetragenVon,
       };

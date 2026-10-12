@@ -49,6 +49,7 @@ import { KasseTile } from "../../components/home/KasseTile";
 import { GeburtstagTile } from "../../components/home/GeburtstagTile";
 import { AktivitaetTimeline } from "../../components/home/AktivitaetTimeline";
 import { RanglisteRotator } from "../../components/home/RanglisteRotator";
+import { SYMBOL } from "../../constants/symbole";
 
 function begruessung(name?: string): string {
   const h = new Date().getHours();
@@ -214,7 +215,7 @@ export default function HomeScreen() {
               <GeburtstagTile {...geburtstag} onPress={() => router.push(`/member/${geburtstag.member.id}`)} />
             ) : (
               <Card style={styles.ohneGeburtstag} onPress={() => router.push("/mitglieder")} accessibilityLabel="Geburtstage eintragen">
-                <IconSquircle icon="gift-outline" ton="mustard" size={36} />
+                <IconSquircle emoji={SYMBOL.geburtstag} ton="mustard" size={36} />
                 <Text style={styles.ohneGeburtstagTitel}>Geburtstage</Text>
                 <Text style={styles.ohneGeburtstagText}>Noch keiner eingetragen. Im Profil nachtragen.</Text>
               </Card>

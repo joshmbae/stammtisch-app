@@ -13,6 +13,7 @@ import OfflineBanner from "../components/OfflineBanner";
 import { useScreenLoad } from "../utils/useScreenLoad";
 import { Card, IconSquircle, Screen, ScreenHeader, Ton } from "../components/ui";
 import { protokollAuszug } from "../components/protokoll/ProtokollText";
+import { SYMBOL } from "../constants/symbole";
 
 type ProtokollMitTermin = Protokoll & {
   termin: StammtischTermin | null;
@@ -88,7 +89,7 @@ export default function ProtokollListeScreen() {
         <ErrorState message={error} onRetry={retry} />
       ) : items.length === 0 ? (
         <Card enterIndex={0} style={styles.leer}>
-          <IconSquircle icon="document-text-outline" ton="blue" size={48} />
+          <IconSquircle emoji={SYMBOL.protokoll} ton="blue" size={48} />
           <Text style={styles.leerTitel}>Noch kein Protokoll</Text>
           <Text style={styles.leerText}>Öffne einen vergangenen Termin und schreib dort das Protokoll.</Text>
         </Card>
@@ -114,7 +115,7 @@ export default function ProtokollListeScreen() {
                   style={styles.karte}
                 >
                   <View style={styles.kopf}>
-                    <IconSquircle icon="document-text-outline" ton={tonFuerArt(item.termin)} size={40} />
+                    <IconSquircle emoji={SYMBOL.protokoll} ton={tonFuerArt(item.termin)} size={40} />
                     <View style={{ flex: 1, minWidth: 0 }}>
                       <Text style={styles.titel} numberOfLines={2}>{titel}</Text>
                       {meta ? <Text style={styles.meta} numberOfLines={1}>{meta}</Text> : null}

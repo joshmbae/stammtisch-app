@@ -6,6 +6,7 @@ export { SectionLabel } from "./SectionLabel";
 export { Avatar, AvatarStack, initial } from "./Avatar";
 export { Chip, StatusPill } from "./Chip";
 export { IconSquircle } from "./IconSquircle";
+export { Emoji } from "./Emoji";
 export { Ring } from "./Ring";
 export { BarList } from "./BarList";
 export type { BarRow } from "./BarList";

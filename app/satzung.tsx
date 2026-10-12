@@ -12,6 +12,7 @@ import { useThemedStyles } from "../contexts/ThemeContext";
 import { gruendungsDauer, formatDauer, formatGruendungMonat } from "../utils/format";
 import { Button, Card, HeaderIconButton, ListGroup, ListRow, Screen, ScreenHeader, SectionLabel } from "../components/ui";
 import { SatzungSheet } from "../components/einstellungen/SatzungSheet";
+import { SYMBOL } from "../constants/symbole";
 
 /** Die Satzung zum Nachlesen; Regeln und Anmerkungen lassen sich über den Stift bearbeiten. */
 export default function SatzungScreen() {
@@ -75,8 +76,8 @@ export default function SatzungScreen() {
 
       {v.treffpunkt || tagZeit ? (
         <ListGroup>
-          {v.treffpunkt ? <ListRow title="Treffpunkt" subtitle={v.treffpunkt} icon="location-outline" ton="blue" /> : null}
-          {tagZeit ? <ListRow title="Stammtischtag" subtitle={tagZeit} icon="time-outline" ton="blue" /> : null}
+          {v.treffpunkt ? <ListRow title="Treffpunkt" subtitle={v.treffpunkt} emoji={SYMBOL.treffpunkt} ton="blue" /> : null}
+          {tagZeit ? <ListRow title="Stammtischtag" subtitle={tagZeit} emoji={SYMBOL.stammtischtag} ton="blue" /> : null}
         </ListGroup>
       ) : null}
 

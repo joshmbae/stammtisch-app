@@ -7,7 +7,7 @@ import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { useSession } from "../../contexts/SessionContext";
 import { displayName, formatEuro } from "../../utils/format";
 import { showAlert } from "../../utils/alert";
-import { Avatar, Card, IconSquircle, ListGroup, ListRow, PressableScale, SectionLabel, StatusPill, Ton } from "../ui";
+import { Avatar, Card, Emoji, IconSquircle, ListGroup, ListRow, PressableScale, SectionLabel, StatusPill, Ton } from "../ui";
 
 export const MAX_EREIGNISSE = 4;
 
@@ -191,7 +191,7 @@ export function SpielFormular({ form }: { form: SpielForm }) {
             </View>
 
             <View style={[styles.zeile, styles.trenner]}>
-              <Ionicons name="link-outline" size={18} color={r.strafAktiv ? c.blue : c.textMuted} />
+              <Emoji size={17} style={{ opacity: r.strafAktiv ? 1 : 0.45 }}>🔗</Emoji>
               <Text style={styles.zeileText}>Strafe koppeln</Text>
               <Switch
                 value={r.strafAktiv}

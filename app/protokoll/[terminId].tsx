@@ -16,6 +16,7 @@ import ErrorState from "../../components/ErrorState";
 import OfflineBanner from "../../components/OfflineBanner";
 import { AvatarStack, Button, Card, Field, IconSquircle, PressableScale, Screen, ScreenHeader, SegmentedTabs } from "../../components/ui";
 import { ProtokollText, zerlegeProtokoll } from "../../components/protokoll/ProtokollText";
+import { SYMBOL } from "../../constants/symbole";
 
 type Modus = "lesen" | "bearbeiten";
 
@@ -256,7 +257,7 @@ export default function ProtokollScreen() {
                 </Card>
               ) : (
                 <Card enterIndex={0} style={styles.leer}>
-                  <IconSquircle icon="document-text-outline" ton="blue" size={48} />
+                  <IconSquircle emoji={SYMBOL.protokoll} ton="blue" size={48} />
                   <Text style={styles.leerTitel}>Noch kein Protokoll</Text>
                   <Text style={styles.leerText}>{`Für ${terminName}${datum ? ` am ${datum}` : ""} hat noch niemand etwas aufgeschrieben.`}</Text>
                   <Button label="Protokoll schreiben" icon="create-outline" variant="blue" size="sm" onPress={() => setModus("bearbeiten")} style={{ marginTop: 6 }} />

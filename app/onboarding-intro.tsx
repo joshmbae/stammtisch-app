@@ -1,16 +1,16 @@
 import React, { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { FONT, ThemeColors } from "../constants/design";
 import { useThemedStyles } from "../contexts/ThemeContext";
 import { useSession } from "../contexts/SessionContext";
 import { markAppIntroSeen } from "../utils/onboarding";
 import { Button, PressableScale, Ton } from "../components/ui";
 import { EinstiegHero, EinstiegScreen } from "../components/einstieg/Einstieg";
+import { SYMBOL } from "../constants/symbole";
 
 interface Step {
-  icon: React.ComponentProps<typeof Ionicons>["name"];
+  emoji: string;
   ton: Ton;
   title: string;
   text: string;
@@ -18,31 +18,31 @@ interface Step {
 
 const STEPS: Step[] = [
   {
-    icon: "beer-outline",
+    emoji: SYMBOL.stammtisch,
     ton: "mustard",
     title: "Willkommen bei DeinStammtisch!",
     text: "Ein kurzer Überblick über die wichtigsten Bereiche der App – dauert nur eine Minute.",
   },
   {
-    icon: "calendar-outline",
+    emoji: SYMBOL.termin,
     ton: "blue",
     title: "Termine",
     text: "Unter „Termine“ seht ihr alle Stammtische und Termine. Sagt zu oder ab, tragt Anwesenheit und Verspätungen ein – alles im Termin-Detail.",
   },
   {
-    icon: "pricetags-outline",
+    emoji: SYMBOL.strafenkatalog,
     ton: "coral",
     title: "Strafen",
     text: "Wer absagt, zu spät kommt oder ein Spiel verliert, kassiert schon mal eine Strafe. Alle Strafen findet ihr gesammelt in der „Kasse“.",
   },
   {
-    icon: "wallet-outline",
+    emoji: SYMBOL.kasse,
     ton: "mustard",
     title: "Kasse",
     text: "Einnahmen, Ausgaben und Abendkosten landen in der Kasse – inklusive Kostenteilung, wer schon bezahlt hat.",
   },
   {
-    icon: "lock-closed-outline",
+    emoji: SYMBOL.pin,
     ton: "green",
     title: "Euer Profil + PIN",
     text: "Jede Person hat ihr eigenes Mitglied-Profil. Optional könnt ihr es mit einer 4-stelligen PIN schützen, damit nur ihr es bearbeiten oder löschen könnt.",
@@ -80,7 +80,7 @@ export default function OnboardingIntroScreen() {
       </View>
 
       {/* key: bei jedem Schritt neu einblenden */}
-      <EinstiegHero key={step} symbol={{ icon: current.icon, ton: current.ton }} titel={current.title} text={current.text} />
+      <EinstiegHero key={step} symbol={{ emoji: current.emoji, ton: current.ton }} titel={current.title} text={current.text} />
 
       <View style={{ flex: 1, minHeight: 24 }} />
 
