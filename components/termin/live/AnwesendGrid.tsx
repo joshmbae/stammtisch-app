@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import React, { useRef, useState } from "react";
+import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeIn, FadeOut, ZoomIn } from "react-native-reanimated";
 import { MemberProfile, StrafKategorieDef } from "../../../types";
@@ -15,7 +15,7 @@ import { SYMBOL } from "../../../constants/symbole";
 const SPAET_AB_MIN = 10;
 /** Vorschlag beim Eintragen von Hand, wenn sich aus der Uhrzeit nichts ableiten lässt. */
 const SPAET_VORSCHLAG_MIN = 15;
-const SPAET_SCHRITT_MIN = 5;
+const SPAET_MAX_MIN = 999;
 
 /** Ab wie vielen Minuten eine Verspätungs-Kategorie greift, gelesen aus dem Namen („15–30 Min.", „>30 Min.", „ab 30"). */
 function spaetSchwelle(label: string): number {
@@ -40,7 +40,7 @@ export function spaetKategorie(kats: StrafKategorieDef[], minuten: number): Stra
 }
 
 /** Offene Verspätungs-Abfrage. `bestehend`: schon eingetragen, die Minuten werden nur korrigiert. */
-type SpaetAbfrage = { memberId: string; minuten: number; bestehend: boolean };
+type SpaetAbfrage = { memberId: string; minuten: number; grund: string; bestehend: boolean };
 
 /**
  * Wer sitzt am Tisch? Antippen trägt ein bzw. aus. Wer mehr als 10 Minuten
@@ -54,6 +54,7 @@ export function AnwesendGrid({ abend, mitglieder, start, now }: { abend: TerminA
   const fuehrende = useFuehrende();
   const t = abend.termin!;
   const [spaet, setSpaet] = useState<SpaetAbfrage | null>(null);
+  const minutenRef = useRef<TextInput>(null);
   const dunkel = c.heroStyle === "outline";
 
   const istDa = (m: MemberProfile) => !!t.anwesenheit?.includes(m.id);
@@ -77,7 +78,7 @@ export function AnwesendGrid({ abend, mitglieder, start, now }: { abend: TerminA
     await abend.anwesenheitSetzen(m.id, !da);
     if (!da && start) {
       const minuten = minutenSeitBeginn();
-      if (minuten > SPAET_AB_MIN && spaetMinuten(m.id) === null && !hatSpaetStrafe(m.id)) setSpaet({ memberId: m.id, minuten, bestehend: false });
+      if (minuten > SPAET_AB_MIN && spaetMinuten(m.id) === null && !hatSpaetStrafe(m.id)) setSpaet({ memberId: m.id, minuten, grund: "", bestehend: false });
     }
   }
 
@@ -87,25 +88,33 @@ export function AnwesendGrid({ abend, mitglieder, start, now }: { abend: TerminA
     const bisher = spaetMinuten(m.id);
     const seitBeginn = minutenSeitBeginn();
     const vorschlag = bisher ?? (seitBeginn > 0 ? seitBeginn : SPAET_VORSCHLAG_MIN);
-    // Steht die Strafe schon im Verlauf, nur die Minuten festhalten – keine zweite Strafe.
-    setSpaet({ memberId: m.id, minuten: vorschlag, bestehend: bisher !== null || hatSpaetStrafe(m.id) });
+    const grund = (abend.verspätungMap[m.id] ?? []).find((l) => l.grund)?.grund ?? "";
+    // Steht die Strafe schon im Verlauf, nur Minuten und Grund festhalten – keine zweite Strafe.
+    setSpaet({ memberId: m.id, minuten: vorschlag, grund, bestehend: bisher !== null || hatSpaetStrafe(m.id) });
   }
 
   function minutenAendern(delta: number) {
-    setSpaet((s) => (s ? { ...s, minuten: Math.max(SPAET_SCHRITT_MIN, s.minuten + delta) } : s));
+    setSpaet((s) => (s ? { ...s, minuten: Math.min(SPAET_MAX_MIN, Math.max(1, (s.minuten || 0) + delta)) } : s));
+  }
+
+  /** Freie Eingabe: nur Ziffern; leer bleibt erlaubt, solange getippt wird. */
+  function minutenTippen(text: string) {
+    const zahl = parseInt(text.replace(/\D/g, ""), 10);
+    setSpaet((s) => (s ? { ...s, minuten: Number.isNaN(zahl) ? 0 : Math.min(SPAET_MAX_MIN, zahl) } : s));
   }
 
   async function spaetSpeichern() {
-    if (!spaet) return;
+    if (!spaet || spaet.minuten < 1) return;
     const s = spaet;
+    const grund = s.grund.trim() || undefined;
     setSpaet(null);
     haptik("mittel");
     if (s.bestehend) {
-      // Nur die Minuten korrigieren – die Strafe steht schon im Verlauf.
+      // Nur Minuten und Grund korrigieren – die Strafe steht schon im Verlauf.
       for (const log of abend.verspätungMap[s.memberId] ?? []) await abend.verspätungLöschen(s.memberId, log.id);
-      await abend.verspätungEintragen(s.memberId, s.minuten);
+      await abend.verspätungEintragen(s.memberId, s.minuten, grund);
     } else {
-      await abend.verspätungMitStrafe(s.memberId, s.minuten, spaetKategorie(abend.strafKategorien, s.minuten));
+      await abend.verspätungMitStrafe(s.memberId, s.minuten, spaetKategorie(abend.strafKategorien, s.minuten), grund);
     }
   }
 
@@ -170,17 +179,32 @@ export function AnwesendGrid({ abend, mitglieder, start, now }: { abend: TerminA
           </View>
           <View style={styles.spaetFuss}>
             <View style={styles.stepper}>
-              <PressableScale onPress={() => minutenAendern(-SPAET_SCHRITT_MIN)} style={styles.stepKnopf} hitSlop={4} accessibilityLabel={`${SPAET_SCHRITT_MIN} Minuten weniger`}>
+              <PressableScale onPress={() => minutenAendern(-1)} style={styles.stepKnopf} hitSlop={4} accessibilityLabel="Eine Minute weniger">
                 <Ionicons name="remove" size={18} color={c.textDark} />
               </PressableScale>
-              <Text style={[styles.stepWert, { color: c.coralText }]} accessibilityLiveRegion="polite">{`+${spaet.minuten} Min.`}</Text>
-              <PressableScale onPress={() => minutenAendern(SPAET_SCHRITT_MIN)} style={styles.stepKnopf} hitSlop={4} accessibilityLabel={`${SPAET_SCHRITT_MIN} Minuten mehr`}>
+              <Pressable style={styles.minutenFeld} onPress={() => minutenRef.current?.focus()} accessible={false}>
+                <TextInput
+                  ref={minutenRef}
+                  style={[styles.minutenEingabe, { color: c.coralText }]}
+                  value={spaet.minuten > 0 ? String(spaet.minuten) : ""}
+                  onChangeText={minutenTippen}
+                  keyboardType="number-pad"
+                  maxLength={3}
+                  selectTextOnFocus
+                  placeholder="0"
+                  placeholderTextColor={c.textLight}
+                  accessibilityLabel="Minuten zu spät"
+                />
+                <Text style={[styles.minutenEinheit, { color: c.coralText }]}>Min.</Text>
+              </Pressable>
+              <PressableScale onPress={() => minutenAendern(1)} style={styles.stepKnopf} hitSlop={4} accessibilityLabel="Eine Minute mehr">
                 <Ionicons name="add" size={18} color={c.textDark} />
               </PressableScale>
             </View>
             <PressableScale
               onPress={spaetSpeichern}
-              style={[styles.spaetJa, { backgroundColor: c.coral }]}
+              disabled={spaet.minuten < 1}
+              style={[styles.spaetJa, { backgroundColor: spaet.minuten < 1 ? c.cardAlt : c.coral }]}
               accessibilityLabel={spaet.bestehend
                 ? `Verspätung auf ${spaet.minuten} Minuten ändern`
                 : `${displayName(spaetMember)} ${spaet.minuten} Minuten zu spät eintragen${kat ? `, ${formatEuro(kat.betrag)} Euro Strafe` : ""}`}
@@ -188,6 +212,16 @@ export function AnwesendGrid({ abend, mitglieder, start, now }: { abend: TerminA
               <Text style={[styles.spaetJaText, { color: c.onCoral }]} numberOfLines={1}>{spaetKnopf}</Text>
             </PressableScale>
           </View>
+          <TextInput
+            style={styles.grundEingabe}
+            value={spaet.grund}
+            onChangeText={(grund) => setSpaet((s) => (s ? { ...s, grund } : s))}
+            placeholder="Grund (optional), z. B. Zug verspätet"
+            placeholderTextColor={c.textLight}
+            maxLength={80}
+            returnKeyType="done"
+            accessibilityLabel="Grund für die Verspätung"
+          />
         </Animated.View>
       ) : null}
 
@@ -241,7 +275,16 @@ const makeStyles = (c: ThemeColors) =>
     spaetFuss: { flexDirection: "row", alignItems: "center", gap: 10 },
     stepper: { flexDirection: "row", alignItems: "center", gap: 6 },
     stepKnopf: { width: 36, height: 36, borderRadius: 18, backgroundColor: c.card, alignItems: "center", justifyContent: "center" },
-    stepWert: { fontFamily: FONT.w700, fontSize: 15, minWidth: 64, textAlign: "center", fontVariant: ["tabular-nums"] },
+    minutenFeld: {
+      flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 3, height: 36, minWidth: 72, paddingHorizontal: 8,
+      borderRadius: RADIUS.sm, backgroundColor: c.card,
+    },
+    minutenEingabe: { fontFamily: FONT.w700, fontSize: 16, lineHeight: 20, minWidth: 26, textAlign: "right", paddingVertical: 0, fontVariant: ["tabular-nums"] },
+    minutenEinheit: { fontFamily: FONT.w600, fontSize: 13, lineHeight: 20 },
+    grundEingabe: {
+      height: 40, borderRadius: RADIUS.sm, paddingHorizontal: 12, backgroundColor: c.card,
+      fontFamily: FONT.w400, fontSize: 14, color: c.textDark,
+    },
     spaetJa: { flex: 1, height: 40, paddingHorizontal: 12, borderRadius: RADIUS.pill, alignItems: "center", justifyContent: "center" },
     spaetJaText: { fontFamily: FONT.w600, fontSize: 14 },
 

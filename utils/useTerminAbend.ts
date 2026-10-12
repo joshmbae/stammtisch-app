@@ -229,9 +229,9 @@ export function useTerminAbend(id: string) {
   }
 
   /** Zu spät gekommen: Verspätung festhalten und, falls es eine Kategorie dafür gibt, die Strafe dazu. */
-  async function verspätungMitStrafe(memberId: string, minuten: number, kategorie?: StrafKategorieDef) {
-    await verspätungEintragen(memberId, minuten);
-    if (kategorie) await strafeEintragen(memberId, kategorie, kategorie.betrag, `${minuten} Min.`);
+  async function verspätungMitStrafe(memberId: string, minuten: number, kategorie?: StrafKategorieDef, grund?: string) {
+    await verspätungEintragen(memberId, minuten, grund);
+    if (kategorie) await strafeEintragen(memberId, kategorie, kategorie.betrag, grund ? `${minuten} Min. · ${grund}` : `${minuten} Min.`);
   }
 
   async function verspätungLöschen(memberId: string, logId: string) {
