@@ -116,3 +116,42 @@ async function loadZusagenAnzahl(terminId: string): Promise<number | undefined> 
   const { data } = await supabase.from("termine").select("anwesenheit").eq("id", terminId).maybeSingle();
   return Array.isArray(data?.anwesenheit) ? data!.anwesenheit.length : undefined;
 }
+
+/**
+ * Persönliche Erinnerung an genau ein Mitglied (z. B. „Bist du dabei?“ aus
+ * dem Termin). Geht nur an diese Person, nicht an alle, und landet nicht in
+ * der Chronik. Gibt false zurück, wenn die Person kein Push-Gerät registriert
+ * hat oder der Versand scheitert – der Aufrufer bietet dann Teilen an.
+ */
+export async function sendErinnerungPush(memberId: string, nachricht: {
+  title: string;
+  body: string;
+  subtitle?: string;
+  url: string;
+  terminId?: string;
+}): Promise<boolean> {
+  try {
+    const { data: tokenRows, error } = await supabase.from("push_tokens").select("token").eq("member_id", memberId);
+    if (error || !tokenRows || tokenRows.length === 0) return false;
+    const messages = tokenRows.map((t: any) => ({
+      to: t.token,
+      title: nachricht.title,
+      ...(nachricht.subtitle ? { subtitle: nachricht.subtitle } : {}),
+      body: nachricht.body,
+      sound: "default",
+      data: { url: nachricht.url, terminId: nachricht.terminId ?? null, actionType: "termin_erinnerung" },
+    }));
+    const res = await fetch("https://exp.host/--/api/v2/push/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify(messages),
+    });
+    if (!res.ok) return false;
+    const json = await res.json();
+    const tickets: any[] = Array.isArray(json?.data) ? json.data : [json?.data];
+    return tickets.some((t) => t?.status === "ok");
+  } catch (e) {
+    console.warn("Erinnerung konnte nicht gesendet werden:", e);
+    return false;
+  }
+}

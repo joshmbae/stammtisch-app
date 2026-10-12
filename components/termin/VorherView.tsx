@@ -11,6 +11,7 @@ import { agendaPunkte, agendaText } from "../../utils/agenda";
 import { formatWochentagDatum } from "../../utils/date";
 import { displayName } from "../../utils/format";
 import { useFuehrende } from "../../utils/useFuehrende";
+import { sendErinnerungPush } from "../../utils/push";
 import { Avatar, Button, Card, FlipCountdown, PressableScale } from "../ui";
 
 const WOCHENTAG = ["SO", "MO", "DI", "MI", "DO", "FR", "SA"];
@@ -157,13 +158,31 @@ function WerKommt({ abend, start }: { abend: TerminAbend; start: Date | null }) 
   const n = Math.max(1, mitglieder.length);
   const name = (m: MemberProfile) => (m.id === abend.activeMemberId ? "Du" : displayName(m));
   const [erinnert, setErinnert] = useState<string[]>([]);
+  const [sendet, setSendet] = useState<string | null>(null);
 
+  /** Erst per Push direkt an die Person; ohne registriertes Gerät über das Teilen-Menü. */
   async function erinnern(m: MemberProfile) {
+    if (sendet || erinnert.includes(m.id)) return;
     const wann = `${formatWochentagDatum(new Date(`${t.datum}T00:00:00`))}${start ? ` um ${uhr(start)}` : ""}`;
+    const ich = abend.members.find((x) => x.id === abend.activeMemberId);
+    setSendet(m.id);
     try {
+      const perPush = await sendErinnerungPush(m.id, {
+        title: `${ich ? displayName(ich) : "Die Runde"} fragt: Bist du dabei?`,
+        body: `Stammtisch am ${wann}. Sag kurz in der App zu oder ab.`,
+        subtitle: abend.verordnung.name || undefined,
+        url: `/termin/${t.id}`,
+        terminId: t.id,
+      });
+      if (perPush) {
+        setErinnert((prev) => [...prev, m.id]);
+        return;
+      }
       const r = await Share.share({ message: `Servus ${displayName(m)}, bist du am ${wann} beim Stammtisch dabei? Sag kurz in der App zu oder ab.` });
       if (r.action !== Share.dismissedAction) setErinnert((prev) => [...prev, m.id]);
-    } catch { /* Teilen abgebrochen oder nicht verfügbar */ }
+    } catch { /* Teilen abgebrochen oder nicht verfügbar */ } finally {
+      setSendet(null);
+    }
   }
 
   return (
@@ -221,9 +240,9 @@ function WerKommt({ abend, start }: { abend: TerminAbend; start: Date | null }) 
                   <Text style={styles.personSub}>{schon ? "erinnert" : "noch keine Antwort"}</Text>
                 </View>
                 {ich ? null : (
-                  <PressableScale onPress={() => erinnern(m)} style={[styles.erinnern, schon && { backgroundColor: c.greenSoft }]} accessibilityLabel={`${displayName(m)} erinnern`}>
+                  <PressableScale onPress={() => erinnern(m)} disabled={sendet === m.id} style={[styles.erinnern, schon && { backgroundColor: c.greenSoft }]} accessibilityLabel={`${displayName(m)} erinnern`}>
                     <Ionicons name={schon ? "checkmark" : "notifications-outline"} size={16} color={schon ? c.greenText : c.blue} />
-                    <Text style={[styles.erinnernText, schon && { color: c.greenText }]}>{schon ? "Erinnert" : "Erinnern"}</Text>
+                    <Text style={[styles.erinnernText, schon && { color: c.greenText }]}>{schon ? "Erinnert" : sendet === m.id ? "Sendet …" : "Erinnern"}</Text>
                   </PressableScale>
                 )}
               </View>

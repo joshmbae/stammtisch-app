@@ -20,6 +20,8 @@ export function artFarbe(art: TerminArt, c: ThemeColors): string {
   return art === "stammtisch" ? c.blue : art === "veranstaltung" ? c.mustard : c.coral;
 }
 
+/** Tage in Wochen zu je 7 aufteilen. */
+const wochen = <T,>(tage: T[]): T[][] => Array.from({ length: Math.ceil(tage.length / 7) }, (_, i) => tage.slice(i * 7, i * 7 + 7));
 const montag = (d: Date) => { const m = new Date(d.getFullYear(), d.getMonth(), d.getDate()); m.setDate(m.getDate() - ((m.getDay() + 6) % 7)); return m; };
 const plusTage = (d: Date, n: number) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
 function kalenderwoche(d: Date): number {
@@ -91,32 +93,40 @@ export function KalenderKarte({ termine, gewaehlt, onWaehlen }: {
       <View style={styles.reihe}>
         {WOCHENTAGE.map((w) => <Text key={w} style={styles.wochentag}>{w}</Text>)}
       </View>
-      <View style={styles.raster}>
-        {tage.map((d, i) => {
-          if (!d) return <View key={`l${i}`} style={styles.zelle} />;
-          const iso = toLocalIsoDate(d);
-          const arten = [...new Set(termine.filter((t) => amTag(t, iso)).map((t) => t.art))].slice(0, 3);
-          const istHeute = iso === heute;
-          const istGewaehlt = iso === gewaehlt;
-          return (
-            <PressableScale
-              key={iso}
-              onPress={() => onWaehlen(istGewaehlt ? null : iso)}
-              scaleTo={0.9}
-              style={styles.zelle}
-              accessibilityRole="button"
-              accessibilityState={{ selected: istGewaehlt }}
-              accessibilityLabel={`${d.toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" })}${arten.length ? `, ${arten.length} Termin${arten.length > 1 ? "e" : ""}` : ""}`}
-            >
-              <View style={[styles.tag, istHeute && { backgroundColor: c.blueBg }, istGewaehlt && { backgroundColor: c.textDark }]}>
-                <Text style={[styles.tagText, istHeute && { color: c.blue, fontFamily: FONT.w800 }, istGewaehlt && { color: c.background, fontFamily: FONT.w800 }]}>{d.getDate()}</Text>
-              </View>
-              <View style={styles.punkte}>
-                {arten.map((a) => <View key={a} style={[styles.punkt, { backgroundColor: artFarbe(a, c) }]} />)}
-              </View>
-            </PressableScale>
-          );
-        })}
+      {/* Feste Wochenzeilen mit gleich breiten Spalten: Prozentbreiten in einer
+          umbrechenden Zeile summieren sich auf iOS über 100 % und schieben den
+          Sonntag in die nächste Zeile. */}
+      <View>
+        {wochen(tage).map((woche, w) => (
+          <View key={w} style={styles.reihe}>
+            {woche.map((d, i) => {
+              if (!d) return <View key={`l${i}`} style={styles.zelle} />;
+              const iso = toLocalIsoDate(d);
+              const arten = [...new Set(termine.filter((t) => amTag(t, iso)).map((t) => t.art))].slice(0, 3);
+              const istHeute = iso === heute;
+              const istGewaehlt = iso === gewaehlt;
+              return (
+                <View key={iso} style={styles.zelle}>
+                  <PressableScale
+                    onPress={() => onWaehlen(istGewaehlt ? null : iso)}
+                    scaleTo={0.9}
+                    style={styles.zelleKnopf}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: istGewaehlt }}
+                    accessibilityLabel={`${d.toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" })}${arten.length ? `, ${arten.length} Termin${arten.length > 1 ? "e" : ""}` : ""}`}
+                  >
+                    <View style={[styles.tag, istHeute && { backgroundColor: c.blueBg }, istGewaehlt && { backgroundColor: c.textDark }]}>
+                      <Text style={[styles.tagText, istHeute && { color: c.blue, fontFamily: FONT.w800 }, istGewaehlt && { color: c.background, fontFamily: FONT.w800 }]}>{d.getDate()}</Text>
+                    </View>
+                    <View style={styles.punkte}>
+                      {arten.map((a) => <View key={a} style={[styles.punkt, { backgroundColor: artFarbe(a, c) }]} />)}
+                    </View>
+                  </PressableScale>
+                </View>
+              );
+            })}
+          </View>
+        ))}
       </View>
 
       <View style={styles.legende} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
@@ -141,8 +151,8 @@ const makeStyles = (c: ThemeColors) =>
     umschalterText: { fontFamily: FONT.w800, fontSize: 14, color: c.textDark },
     reihe: { flexDirection: "row" },
     wochentag: { flex: 1, textAlign: "center", ...TYPE.caption, color: c.textMuted },
-    raster: { flexDirection: "row", flexWrap: "wrap" },
-    zelle: { width: `${100 / 7}%`, alignItems: "center", paddingVertical: 2, minHeight: 48 },
+    zelle: { flex: 1, minHeight: 48 },
+    zelleKnopf: { flex: 1, alignItems: "center", paddingVertical: 2 },
     tag: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center" },
     tagText: { fontFamily: FONT.w700, fontSize: 16, color: c.textDark },
     punkte: { flexDirection: "row", gap: 3, height: 6, alignItems: "center", marginTop: 2 },
