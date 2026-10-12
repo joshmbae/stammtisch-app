@@ -1,15 +1,11 @@
 import React, { useState, useCallback } from "react";
-import { View, Text, StyleSheet, ScrollView, Image, RefreshControl, TouchableOpacity, ActivityIndicator } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { router, useFocusEffect } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { useFocusEffect } from "expo-router";
 import { ActivityLogEntry, MemberProfile, StrafKategorieDef } from "../types";
 import { loadActivityFeed, loadActivityFeedBefore, loadMembers, loadStrafKategorien } from "../utils/storage";
-import { activityRoute, renderActivity } from "../utils/activityFeed";
-import { formatTagUeberschrift, formatUhrzeit, tagesSchluessel } from "../utils/date";
-import { SHADOWS, ThemeColors, FONT } from "../constants/design";
-import { useColors, useThemedStyles } from "../contexts/ThemeContext";
-import { BackButton } from "../components/BackButton";
+import { formatTagUeberschrift, tagesSchluessel } from "../utils/date";
+import { TYPE, ThemeColors } from "../constants/design";
+import { useThemedStyles } from "../contexts/ThemeContext";
 import LoadingSpinner from "../components/LoadingSpinner";
 import ErrorState from "../components/ErrorState";
 import OfflineBanner from "../components/OfflineBanner";
@@ -18,61 +14,10 @@ import { markFeedSeen } from "../utils/feedSeen";
 import { supabase } from "../utils/supabase";
 import { subscribeToActivityFeed } from "../utils/realtime";
 import { useStammtisch } from "../contexts/StammtischContext";
+import { Button, Card, Chip, IconSquircle, Screen, ScreenHeader } from "../components/ui";
+import { CHRONIK_FILTER, ChronikBereich, ChronikEintrag, bereichVon } from "../components/chronik/ChronikEintrag";
 
 const PAGE_SIZE = 50;
-
-function FeedRow({
-  entry,
-  membersById,
-  strafKategorien,
-  last,
-}: {
-  entry: ActivityLogEntry;
-  membersById: Map<string, MemberProfile>;
-  strafKategorien: StrafKategorieDef[];
-  last: boolean;
-}) {
-  const c = useColors();
-  const styles = useThemedStyles(makeStyles);
-  const rendered = renderActivity(entry, membersById, strafKategorien);
-  const subjectId = entry.subjectMemberId ?? entry.actorMemberId;
-  const subject = subjectId ? membersById.get(subjectId) : undefined;
-  const route = activityRoute(entry);
-
-  const avatar = subject?.photoUri ? (
-    <Image source={{ uri: subject.photoUri }} style={styles.avatar} />
-  ) : (
-    <View style={[styles.avatar, { backgroundColor: subject?.avatarColor ?? c.border, alignItems: "center", justifyContent: "center" }]}>
-      <Text style={{ fontFamily: FONT.w400, fontSize: 16 }}>{rendered.emoji}</Text>
-    </View>
-  );
-
-  return (
-    <TouchableOpacity
-      style={[styles.row, last && { borderBottomWidth: 0 }]}
-      onPress={route ? () => router.push(route as any) : undefined}
-      disabled={!route}
-      activeOpacity={0.7}
-    >
-      {subject ? (
-        <TouchableOpacity onPress={() => router.push(`/member/${subject.id}`)} activeOpacity={0.7} hitSlop={6}>
-          {avatar}
-        </TouchableOpacity>
-      ) : avatar}
-      <View style={styles.rowBody}>
-        <Text style={styles.rowText}>
-          {subject?.photoUri ? `${rendered.emoji} ` : ""}{rendered.text}
-        </Text>
-        {rendered.detail ? <Text style={styles.rowDetail}>{rendered.detail}</Text> : null}
-        <Text style={styles.rowMeta}>
-          {formatUhrzeit(entry.createdAt)}
-          {rendered.actorText ? ` · ${rendered.actorText}` : ""}
-        </Text>
-      </View>
-      {route ? <Ionicons name="chevron-forward" size={16} color={c.textLight} style={{ marginTop: 10 }} /> : null}
-    </TouchableOpacity>
-  );
-}
 
 /** Gruppiert die (absteigend sortierten) Einträge nach Kalendertag. */
 function nachTagen(entries: ActivityLogEntry[]): { key: string; label: string; entries: ActivityLogEntry[] }[] {
@@ -87,13 +32,13 @@ function nachTagen(entries: ActivityLogEntry[]): { key: string; label: string; e
 }
 
 export default function FeedScreen() {
-  const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const [entries, setEntries] = useState<ActivityLogEntry[]>([]);
   const [members, setMembers] = useState<MemberProfile[]>([]);
   const [strafKategorien, setStrafKategorien] = useState<StrafKategorieDef[]>([]);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [filter, setFilter] = useState<ChronikBereich>("alle");
   const { stammtischId } = useStammtisch();
 
   async function load() {
@@ -135,105 +80,87 @@ export default function FeedScreen() {
   );
 
   const membersById = new Map(members.map((m) => [m.id, m]));
+  const sichtbar = filter === "alle" ? entries : entries.filter((e) => bereichVon(e.actionType) === filter);
+  const gruppen = nachTagen(sichtbar);
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
-      {loading ? <LoadingSpinner /> : error ? <ErrorState message={error} onRetry={retry} /> : (
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.blue} />}
-      >
-        <OfflineBanner />
-        <View style={styles.header}>
-          <BackButton />
-          <View style={styles.headerTexts}>
-            <Text style={styles.headerTitle}>Chronik</Text>
-            <Text style={styles.headerSub}>Was in der Runde passiert ist</Text>
-          </View>
-        </View>
-
-        {entries.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyEmoji}>📋</Text>
-            <Text style={styles.emptyTitle}>Noch nichts los</Text>
-            <Text style={styles.emptySub}>Strafen, Bezahlungen und Schock-Ergebnisse tauchen hier auf.</Text>
-          </View>
-        ) : (
-          <>
-            {nachTagen(entries).map((gruppe) => (
-              <View key={gruppe.key} style={styles.dayGroup}>
-                <Text style={styles.dayLabel}>{gruppe.label}</Text>
-                <View style={styles.card}>
+    <Screen
+      refreshing={refreshing}
+      onRefresh={onRefresh}
+      header={
+        <>
+          <OfflineBanner />
+          <ScreenHeader back title="Chronik" subtitle="Was in der Runde passiert ist" />
+          {!loading && !error && entries.length > 0 ? (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips} style={styles.chipLeiste}>
+              {CHRONIK_FILTER.map((f) => (
+                <Chip key={f.key} label={f.label} selected={filter === f.key} onPress={() => setFilter(f.key)} accessibilityLabel={`Filter: ${f.label}`} />
+              ))}
+            </ScrollView>
+          ) : null}
+        </>
+      }
+    >
+      {loading ? (
+        <LoadingSpinner />
+      ) : error ? (
+        <ErrorState message={error} onRetry={retry} />
+      ) : entries.length === 0 ? (
+        <Card enterIndex={0} style={styles.leer}>
+          <IconSquircle icon="time-outline" ton="blue" size={48} />
+          <Text style={styles.leerTitel}>Noch nichts los</Text>
+          <Text style={styles.leerText}>Strafen, Bezahlungen, Zusagen und Spiel-Ergebnisse tauchen hier auf.</Text>
+        </Card>
+      ) : (
+        <>
+          {gruppen.length === 0 ? (
+            <Text style={styles.leerFilter}>
+              {hasMore ? "In den geladenen Einträgen ist hier nichts dabei." : "Keine Einträge in diesem Bereich."}
+            </Text>
+          ) : (
+            gruppen.map((gruppe, gi) => (
+              <View key={gruppe.key} style={styles.tag}>
+                <Text style={styles.tagLabel} accessibilityRole="header">{gruppe.label}</Text>
+                <Card enterIndex={gi < 6 ? gi : undefined} style={styles.karte}>
                   {gruppe.entries.map((entry, i) => (
-                    <FeedRow
+                    <ChronikEintrag
                       key={entry.id}
                       entry={entry}
                       membersById={membersById}
                       strafKategorien={strafKategorien}
-                      last={i === gruppe.entries.length - 1}
+                      linie={i < gruppe.entries.length - 1}
                     />
                   ))}
-                </View>
+                </Card>
               </View>
-            ))}
-            {hasMore && (
-              <TouchableOpacity style={styles.moreBtn} onPress={loadMore} disabled={loadingMore} activeOpacity={0.8}>
-                {loadingMore
-                  ? <ActivityIndicator size="small" color={c.blue} />
-                  : <Text style={styles.moreBtnText}>Ältere Einträge laden</Text>}
-              </TouchableOpacity>
-            )}
-          </>
-        )}
-      </ScrollView>
+            ))
+          )}
+          {hasMore ? (
+            <Button
+              label="Ältere laden"
+              icon="arrow-down"
+              variant="secondary"
+              size="sm"
+              loading={loadingMore}
+              onPress={loadMore}
+              style={styles.mehr}
+            />
+          ) : null}
+        </>
       )}
-    </SafeAreaView>
+    </Screen>
   );
 }
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
-  safe: { flex: 1, backgroundColor: c.background },
-  content: { padding: 20, paddingBottom: 48 },
-
-  header: {
-    flexDirection: "row", alignItems: "center", gap: 12,
-    backgroundColor: c.cardAlt, borderRadius: 20,
-    padding: 16, marginBottom: 16, ...SHADOWS.card,
-    borderWidth: 1, borderColor: c.border,
-  },
-  headerTexts: { flex: 1 },
-  headerTitle: { fontSize: 18, fontFamily: FONT.w800, color: c.textDark },
-  headerSub: { fontFamily: FONT.w400, fontSize: 12, color: c.textMuted, marginTop: 2 },
-
-  card: {
-    backgroundColor: c.card, borderRadius: 18,
-    borderWidth: 1, borderColor: c.border, ...SHADOWS.light,
-    paddingHorizontal: 14,
-  },
-  row: {
-    flexDirection: "row", alignItems: "flex-start", gap: 12,
-    paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: c.border,
-  },
-  avatar: { width: 36, height: 36, borderRadius: 18, marginTop: 1 },
-  rowBody: { flex: 1 },
-  rowText: { fontSize: 14, fontFamily: FONT.w600, color: c.textDark, lineHeight: 19 },
-  rowDetail: { fontFamily: FONT.w400i, fontSize: 13, color: c.textMuted, marginTop: 3, lineHeight: 18 },
-  rowMeta: { fontFamily: FONT.w400, fontSize: 11, color: c.textLight, marginTop: 3 },
-
-  dayGroup: { marginBottom: 14 },
-  dayLabel: {
-    fontSize: 12, fontFamily: FONT.w800, color: c.textMuted,
-    textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6, marginLeft: 4,
-  },
-  moreBtn: {
-    alignItems: "center", justifyContent: "center", paddingVertical: 14, marginTop: 4,
-    borderRadius: 14, borderWidth: 1, borderColor: c.border, backgroundColor: c.card,
-  },
-  moreBtnText: { fontSize: 14, fontFamily: FONT.w700, color: c.blue },
-
-  emptyState: { alignItems: "center", paddingVertical: 60, gap: 8 },
-  emptyEmoji: { fontFamily: FONT.w400, fontSize: 40 },
-  emptyTitle: { fontSize: 17, fontFamily: FONT.w800, color: c.textDark },
-  emptySub: { fontFamily: FONT.w400, fontSize: 13, color: c.textMuted, textAlign: "center", paddingHorizontal: 30 },
+  chipLeiste: { flexGrow: 0, flexShrink: 0 },
+  chips: { gap: 6, paddingHorizontal: 16, paddingBottom: 8 },
+  tag: { gap: 6 },
+  tagLabel: { ...TYPE.label, color: c.textMuted, marginTop: 4, marginLeft: 4 },
+  karte: { padding: 0, paddingVertical: 4 },
+  mehr: { alignSelf: "center", marginTop: 4 },
+  leer: { alignItems: "center", gap: 8, paddingVertical: 32 },
+  leerTitel: { ...TYPE.heading, color: c.textDark, marginTop: 4 },
+  leerText: { ...TYPE.body, fontSize: 14, color: c.textMuted, textAlign: "center", paddingHorizontal: 12 },
+  leerFilter: { ...TYPE.body, fontSize: 14, color: c.textMuted, textAlign: "center", paddingVertical: 24 },
 });

@@ -1,44 +1,44 @@
-import React, { useState, useCallback } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  RefreshControl,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { router, useFocusEffect } from "expo-router";
+import React, { useState } from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Protokoll, StammtischTermin } from "../types";
 import { loadProtokolle, loadTermine } from "../utils/storage";
-import { SHADOWS, ThemeColors, FONT } from "../constants/design";
+import { FONT, TYPE, ThemeColors } from "../constants/design";
 import { useColors, useThemedStyles } from "../contexts/ThemeContext";
-import { BackButton } from "../components/BackButton";
+import { formatWochentagDatum } from "../utils/date";
 import LoadingSpinner from "../components/LoadingSpinner";
 import ErrorState from "../components/ErrorState";
 import OfflineBanner from "../components/OfflineBanner";
 import { useScreenLoad } from "../utils/useScreenLoad";
+import { Card, IconSquircle, Screen, ScreenHeader, Ton } from "../components/ui";
+import { protokollAuszug } from "../components/protokoll/ProtokollText";
 
 type ProtokollMitTermin = Protokoll & {
   termin: StammtischTermin | null;
 };
 
-function formatDatum(iso: string): string {
-  return new Date(iso + "T00:00:00").toLocaleDateString("de-DE", {
-    weekday: "short",
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
+function terminLabel(t: StammtischTermin | null): string {
+  if (!t) return "Unbekannter Termin";
+  return t.titel ?? (t.art === "stammtisch" ? "Stammtisch" : t.art === "geburtstag" ? "Geburtstag" : "Veranstaltung");
 }
 
-function formatUpdated(iso: string): string {
-  return new Date(iso).toLocaleDateString("de-DE", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "2-digit",
-  });
+function tonFuerArt(t: StammtischTermin | null): Ton {
+  if (t?.art === "geburtstag") return "coral";
+  if (t?.art === "veranstaltung") return "mustard";
+  return "blue";
+}
+
+/** Gruppiert die (nach Termin-Datum absteigend sortierten) Protokolle nach Jahr. */
+function nachJahren(items: ProtokollMitTermin[]): { jahr: string; items: ProtokollMitTermin[] }[] {
+  const gruppen: { jahr: string; items: ProtokollMitTermin[] }[] = [];
+  for (const it of items) {
+    const jahr = it.termin?.datum.slice(0, 4) ?? "Ohne Termin";
+    const letzte = gruppen[gruppen.length - 1];
+    if (letzte && letzte.jahr === jahr) letzte.items.push(it);
+    else gruppen.push({ jahr, items: [it] });
+  }
+  return gruppen;
 }
 
 export default function ProtokollListeScreen() {
@@ -66,109 +66,81 @@ export default function ProtokollListeScreen() {
 
   const { loading, refreshing, error, onRefresh, retry } = useScreenLoad(load, []);
 
+  let index = 0;
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
-      {loading ? <LoadingSpinner /> : error ? <ErrorState message={error} onRetry={retry} /> : (
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.blue} />}
-      >
-        <OfflineBanner />
-
-        <View style={styles.header}>
-          <BackButton />
-          <View style={styles.headerTexts}>
-            <Text style={styles.headerTitle}>Protokolle</Text>
-            <Text style={styles.headerSub}>Aufzeichnungen aller Stammtische</Text>
+    <Screen
+      refreshing={refreshing}
+      onRefresh={onRefresh}
+      header={
+        <>
+          <OfflineBanner />
+          <ScreenHeader
+            back
+            title="Protokolle"
+            subtitle={!loading && items.length > 0 ? `${items.length} ${items.length === 1 ? "Protokoll" : "Protokolle"}` : "Aufzeichnungen aller Termine"}
+          />
+        </>
+      }
+    >
+      {loading ? (
+        <LoadingSpinner />
+      ) : error ? (
+        <ErrorState message={error} onRetry={retry} />
+      ) : items.length === 0 ? (
+        <Card enterIndex={0} style={styles.leer}>
+          <IconSquircle icon="document-text-outline" ton="blue" size={48} />
+          <Text style={styles.leerTitel}>Noch kein Protokoll</Text>
+          <Text style={styles.leerText}>Öffne einen vergangenen Termin und schreib dort das Protokoll.</Text>
+        </Card>
+      ) : (
+        nachJahren(items).map((gruppe) => (
+          <View key={gruppe.jahr} style={styles.gruppe}>
+            <Text style={styles.jahr} accessibilityRole="header">{gruppe.jahr}</Text>
+            {gruppe.items.map((item) => {
+              const titel = item.titel || terminLabel(item.termin);
+              const datum = item.termin ? formatWochentagDatum(new Date(item.termin.datum + "T00:00:00")) : null;
+              const anwesend = item.termin?.anwesenheit?.length ?? 0;
+              const meta = [datum, item.titel && item.termin ? terminLabel(item.termin) : null, anwesend > 0 ? `${anwesend} da` : null]
+                .filter(Boolean)
+                .join(" · ");
+              const auszug = protokollAuszug(item.inhalt);
+              const i = index++;
+              return (
+                <Card
+                  key={item.id}
+                  enterIndex={i < 8 ? i : undefined}
+                  onPress={() => router.push(`/protokoll/${item.terminId}`)}
+                  accessibilityLabel={`${titel}${meta ? `, ${meta}` : ""}. Protokoll öffnen`}
+                  style={styles.karte}
+                >
+                  <View style={styles.kopf}>
+                    <IconSquircle icon="document-text-outline" ton={tonFuerArt(item.termin)} size={40} />
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <Text style={styles.titel} numberOfLines={2}>{titel}</Text>
+                      {meta ? <Text style={styles.meta} numberOfLines={1}>{meta}</Text> : null}
+                    </View>
+                    <Ionicons name="chevron-forward" size={16} color={c.textMuted} />
+                  </View>
+                  {auszug ? <Text style={styles.auszug} numberOfLines={3}>{auszug}</Text> : null}
+                </Card>
+              );
+            })}
           </View>
-        </View>
-
-        {items.length === 0 ? (
-          <View style={styles.empty}>
-            <Text style={styles.emptyIcon}>📝</Text>
-            <Text style={styles.emptyText}>
-              Noch kein Protokoll geschrieben.{"\n"}
-              Öffne einen Termin und starte das Protokoll.
-            </Text>
-          </View>
-        ) : (
-          items.map((item) => {
-            const isStammtisch = item.termin?.art === "stammtisch";
-            const terminName = item.termin
-              ? (item.termin.titel ?? (isStammtisch ? "Stammtisch" : "Veranstaltung"))
-              : "Unbekannter Termin";
-            const terminDatum = item.termin ? formatDatum(item.termin.datum) : "";
-
-            return (
-              <TouchableOpacity
-                key={item.id}
-                style={styles.card}
-                onPress={() => router.push(`/protokoll/${item.terminId}`)}
-                activeOpacity={0.88}
-              >
-                <View style={styles.cardHeader}>
-                  <View style={[
-                    styles.typIcon,
-                    { backgroundColor: isStammtisch ? c.blue + "18" : c.purple + "18" }
-                  ]}>
-                    <Text style={styles.typEmoji}>{isStammtisch ? "🍺" : "🎉"}</Text>
-                  </View>
-                  <View style={styles.cardMeta}>
-                    <Text style={styles.cardTitel}>
-                      {item.titel || terminName}
-                    </Text>
-                    <Text style={styles.cardDatum}>{terminDatum}</Text>
-                  </View>
-                  <View style={styles.cardRight}>
-                    <Text style={styles.cardDate}>
-                      {formatUpdated(item.updatedAt)}
-                    </Text>
-                    <Ionicons name="chevron-forward" size={16} color={c.textLight} />
-                  </View>
-                </View>
-                <Text style={styles.cardExcerpt} numberOfLines={3}>
-                  {item.inhalt}
-                </Text>
-              </TouchableOpacity>
-            );
-          })
-        )}
-      </ScrollView>
+        ))
       )}
-    </SafeAreaView>
+    </Screen>
   );
 }
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
-  safe: { flex: 1, backgroundColor: c.background },
-  content: { padding: 20, paddingBottom: 48 },
-
-  header: {
-    flexDirection: "row", alignItems: "center", gap: 12,
-    backgroundColor: c.cardAlt, borderRadius: 20,
-    padding: 16, marginBottom: 16, ...SHADOWS.card,
-    borderWidth: 1, borderColor: c.border,
-  },
-  headerTexts: { flex: 1 },
-  headerTitle: { fontSize: 18, fontFamily: FONT.w800, color: c.textDark },
-  headerSub: { fontFamily: FONT.w400, fontSize: 12, color: c.textMuted, marginTop: 2 },
-
-  empty: { alignItems: "center", paddingTop: 60, gap: 12 },
-  emptyIcon: { fontFamily: FONT.w400, fontSize: 48 },
-  emptyText: { fontFamily: FONT.w400, fontSize: 15, color: c.textMuted, textAlign: "center", lineHeight: 22 },
-
-  card: {
-    backgroundColor: c.card, borderRadius: 18, padding: 14, marginBottom: 12,
-    borderWidth: 1, borderColor: c.border, ...SHADOWS.light,
-  },
-  cardHeader: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 10 },
-  typIcon: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
-  typEmoji: { fontFamily: FONT.w400, fontSize: 20 },
-  cardMeta: { flex: 1 },
-  cardTitel: { fontSize: 15, fontFamily: FONT.w800, color: c.textDark },
-  cardDatum: { fontSize: 12, color: c.blue, fontFamily: FONT.w600, marginTop: 2 },
-  cardRight: { alignItems: "flex-end", gap: 4 },
-  cardDate: { fontFamily: FONT.w400, fontSize: 12, color: c.textLight },
-  cardExcerpt: { fontFamily: FONT.w400, fontSize: 13, color: c.textMuted, lineHeight: 19 },
+  gruppe: { gap: 8 },
+  jahr: { ...TYPE.label, color: c.textMuted, marginTop: 4, marginLeft: 4 },
+  karte: { padding: 14, gap: 10 },
+  kopf: { flexDirection: "row", alignItems: "center", gap: 12 },
+  titel: { fontFamily: FONT.w800, fontSize: 16, lineHeight: 21, color: c.textDark },
+  meta: { ...TYPE.caption, fontSize: 13, color: c.textMuted, marginTop: 2 },
+  auszug: { fontFamily: FONT.w500, fontSize: 14, lineHeight: 20, color: c.textMid },
+  leer: { alignItems: "center", gap: 8, paddingVertical: 32 },
+  leerTitel: { ...TYPE.heading, color: c.textDark, marginTop: 4 },
+  leerText: { ...TYPE.body, fontSize: 14, color: c.textMuted, textAlign: "center", paddingHorizontal: 12 },
 });
