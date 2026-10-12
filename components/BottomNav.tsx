@@ -42,7 +42,7 @@ export function BottomNav({ state, descriptors, navigation }: BottomTabBarProps)
     <View style={[styles.wrap, { bottom: Math.max(insets.bottom, 12) + 4 }]} pointerEvents="box-none">
       <View style={styles.bar} onLayout={(e) => setBreite(e.nativeEvent.layout.width)}>
         <View style={styles.glas} pointerEvents="none">
-          {Platform.OS === "ios" ? <BlurView intensity={40} tint="systemChromeMaterialDark" style={StyleSheet.absoluteFill} /> : null}
+          {Platform.OS === "ios" ? <BlurView intensity={60} tint="systemUltraThinMaterialDark" style={StyleSheet.absoluteFill} /> : null}
           <View style={[StyleSheet.absoluteFill, { backgroundColor: c.tabBarGlass }]} />
         </View>
         <View style={styles.reihe} accessibilityRole="tablist">
