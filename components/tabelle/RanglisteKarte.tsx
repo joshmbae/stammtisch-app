@@ -1,0 +1,220 @@
+import React from "react";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import Animated, { FadeIn } from "react-native-reanimated";
+import { MemberProfile } from "../../types";
+import { FONT, MAX_FONT_SCALE, RADIUS, TYPE, ThemeColors } from "../../constants/design";
+import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
+import { FuehrenderTitel, RangVerlauf, Rangliste, fuehrendeJePunkt, platzReihe, trend, vornSeit, wertKurz } from "../../utils/stats";
+import { displayName } from "../../utils/format";
+import { Avatar, Card, IconSquircle, Krone, PressableScale, tonFuerRangliste } from "../ui";
+
+/** „Schock-Aus" statt „Schocken — Schock-Aus", „Teilnahme" statt „Teilnahme-Rangliste". */
+const UNTERTITEL: Record<string, string> = {
+  teilnahme: "Abende dabei",
+  verspaetung: "Minuten zu spät",
+  strafen: "Strafen gesamt",
+};
+const kurzDatum = (iso: string) => { const [, m, d] = iso.split("-"); return `${parseInt(d, 10)}.${parseInt(m, 10)}.`; };
+
+interface Props {
+  liste: Rangliste;
+  offen: boolean;
+  onToggle: () => void;
+  ichId: string | null;
+  fuehrende: Map<string, FuehrenderTitel[]>;
+  /** Erst da, wenn eine Karte aufgeklappt ist (teure Rechnung). */
+  verlauf: RangVerlauf | null;
+  hinweis?: string;
+  enterIndex: number;
+}
+
+/**
+ * Eine Wertung als Karte: zugeklappt die ersten drei, aufgeklappt die ganze
+ * Liste mit Trend seit dem letzten Abend und „Wer führte?" über die Saison.
+ */
+export function RanglisteKarte({ liste, offen, onToggle, ichId, fuehrende, verlauf, hinweis, enterIndex }: Props) {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
+  const ich = ichId ? liste.eintraege.find((e) => e.member.id === ichId) : undefined;
+  const top = liste.eintraege.slice(0, 3);
+  const zuProfil = (m: MemberProfile) => router.push(`/member/${m.id}`);
+
+  return (
+    <Card enterIndex={enterIndex} style={{ gap: 12 }}>
+      <PressableScale onPress={onToggle} scaleTo={0.99} style={styles.kopf} accessibilityState={{ expanded: offen }} accessibilityLabel={`${liste.kurz}${ich ? `, du bist auf Platz ${ich.platz}` : ""}. ${offen ? "Zuklappen" : "Aufklappen"}`}>
+        <IconSquircle emoji={liste.emoji} ton={tonFuerRangliste(liste.key)} size={44} />
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text style={styles.titel} numberOfLines={1}>{liste.kurz}</Text>
+          <Text style={styles.untertitel} numberOfLines={1}>{UNTERTITEL[liste.key] ?? (liste.key.startsWith("spiel_") ? `beim ${liste.titel.split(" — ")[0]}` : liste.untertitel)}</Text>
+        </View>
+        {ich ? (
+          <View style={[styles.platzPill, { backgroundColor: ich.platz === 1 ? c.mustard : c.blueBg }]}>
+            <Text style={[styles.platzText, { color: ich.platz === 1 ? c.onMustard : c.blue }]}>{`Du: Platz ${ich.platz}`}</Text>
+          </View>
+        ) : null}
+        <Ionicons name={offen ? "chevron-up" : "chevron-down"} size={20} color={c.textMuted} />
+      </PressableScale>
+
+      {!offen ? (
+        <View style={styles.top3}>
+          {top.map((e) => {
+            const istIch = e.member.id === ichId;
+            return (
+              <PressableScale key={e.member.id} onPress={() => zuProfil(e.member)} style={styles.topZelle} accessibilityLabel={`Platz ${e.platz}: ${displayName(e.member)}, ${wertKurz(liste.key, e.wert)}`}>
+                <View>
+                  {e.platz === 1 ? <View style={styles.kroneTop}><Krone size={16} /></View> : null}
+                  <View style={istIch ? [styles.ichRing, { borderColor: c.blue }] : null}>
+                    <Avatar name={displayName(e.member)} color={e.member.avatarColor} photoUri={e.member.photoUri} size={34} />
+                  </View>
+                </View>
+                <View style={{ flexShrink: 1 }}>
+                  <Text style={[styles.topName, istIch && { color: c.blue }]} numberOfLines={1}>{displayName(e.member)}</Text>
+                  <Text style={styles.topWert} maxFontSizeMultiplier={MAX_FONT_SCALE}>{wertKurz(liste.key, e.wert)}</Text>
+                </View>
+              </PressableScale>
+            );
+          })}
+        </View>
+      ) : (
+        <Animated.View entering={FadeIn.duration(200)} style={{ gap: 14 }}>
+          <View>
+            {liste.eintraege.map((e) => {
+              const istIch = e.member.id === ichId;
+              const t = verlauf ? trend(verlauf, liste.key, e.member.id) : 0;
+              return (
+                <PressableScale
+                  key={e.member.id}
+                  onPress={() => zuProfil(e.member)}
+                  style={[styles.zeile, istIch && { backgroundColor: c.blueBg }]}
+                  accessibilityLabel={`Platz ${e.platz}: ${displayName(e.member)}, ${wertKurz(liste.key, e.wert)}${t > 0 ? ", aufgestiegen" : t < 0 ? ", abgerutscht" : ""}`}
+                >
+                  <View style={styles.rang}>{e.platz === 1 ? <Krone size={18} /> : <Text style={styles.rangText}>{`${e.platz}.`}</Text>}</View>
+                  <Avatar name={displayName(e.member)} color={e.member.avatarColor} photoUri={e.member.photoUri} size={32} fuehrt={fuehrende.get(e.member.id)} ringColor={istIch ? c.blueBg : c.card} />
+                  <Text style={styles.name} numberOfLines={1}>{displayName(e.member)}</Text>
+                  {istIch ? <View style={[styles.du, { backgroundColor: c.card }]}><Text style={[styles.duText, { color: c.blue }]}>DU</Text></View> : null}
+                  <View style={{ flex: 1 }} />
+                  <Text style={styles.wert} maxFontSizeMultiplier={MAX_FONT_SCALE}>{wertKurz(liste.key, e.wert)}</Text>
+                  <View style={styles.trend} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+                    {t > 0 ? <Ionicons name="caret-up" size={12} color={c.successText} />
+                      : t < 0 ? <Ionicons name="caret-down" size={12} color={c.coralText} />
+                      : <Text style={styles.trendGleich}>–</Text>}
+                  </View>
+                </PressableScale>
+              );
+            })}
+          </View>
+          {verlauf && verlauf.punkte.length > 1 ? <WerFuehrte liste={liste} verlauf={verlauf} ichId={ichId} /> : null}
+          {hinweis ? <Text style={styles.hinweis}>{hinweis}</Text> : null}
+        </Animated.View>
+      )}
+    </Card>
+  );
+}
+
+/** Streifen: wer nach jedem Abend vorn lag, darunter der eigene Platz. */
+function WerFuehrte({ liste, verlauf, ichId }: { liste: Rangliste; verlauf: RangVerlauf; ichId: string | null }) {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
+  const fuehrende = fuehrendeJePunkt(verlauf, liste.key);
+  const meine = ichId ? platzReihe(verlauf, liste.key, ichId) : [];
+  const seit = ichId ? vornSeit(verlauf, liste.key, ichId) : null;
+  const vorneAbende = meine.filter((p) => p === 1).length;
+  const byId = new Map(liste.eintraege.map((e) => [e.member.id, e.member]));
+  // Reihe läuft bis zum aktuellen Abend; bei vielen Abenden steht der neueste rechts im Blick.
+  const ref = React.useRef<ScrollView>(null);
+  const ref2 = React.useRef<ScrollView>(null);
+
+  return (
+    <View style={[styles.verlauf, { borderTopColor: c.border }]}>
+      <View style={styles.verlaufKopf}>
+        <Text style={styles.verlaufTitel}>Wer führte?</Text>
+        <Text style={styles.untertitel}>nach jedem Abend</Text>
+      </View>
+      {ichId && vorneAbende > 0 ? (
+        <Text style={styles.verlaufSub}>{`${seit ? `Du vorn seit ${kurzDatum(seit)} · ` : ""}${vorneAbende} von ${verlauf.punkte.length} Abenden`}</Text>
+      ) : null}
+      <ScrollView
+        ref={ref}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        scrollEventThrottle={16}
+        onScroll={(e) => ref2.current?.scrollTo({ x: e.nativeEvent.contentOffset.x, animated: false })}
+        onContentSizeChange={() => { ref.current?.scrollToEnd({ animated: false }); ref2.current?.scrollToEnd({ animated: false }); }}
+      >
+        <View style={styles.reihe}>
+          {verlauf.punkte.map((p, i) => {
+            const ids = fuehrende[i];
+            const m = ids[0] ? byId.get(ids[0]) : undefined;
+            const ich = !!ichId && ids.includes(ichId);
+            return (
+              <View key={p.datum} style={styles.spalte} accessible accessibilityLabel={`${kurzDatum(p.datum)}: vorn ${ids.map((id) => (byId.get(id) ? displayName(byId.get(id)!) : "?")).join(", ") || "niemand"}`}>
+                <View style={[styles.kachel, { backgroundColor: m ? m.avatarColor : c.cardAlt }, ich && { borderWidth: 2, borderColor: c.mustard }]}>
+                  <Text style={[styles.kachelText, { color: m ? c.onAvatar : c.textMuted }]}>{m ? displayName(m)[0] : "–"}</Text>
+                  {ids.length > 1 ? <Text style={[styles.mehr, { color: c.onAvatar }]}>{`+${ids.length - 1}`}</Text> : null}
+                </View>
+                <Text style={styles.datum}>{p.heute ? "heute" : kurzDatum(p.datum)}</Text>
+              </View>
+            );
+          })}
+        </View>
+      </ScrollView>
+      {ichId && meine.some((x) => x !== null) ? (
+        <>
+          <Text style={[styles.label, { marginTop: 4 }]}>Dein Platz</Text>
+          {/* Folgt der Reihe darüber, damit die Spalten übereinander stehen. */}
+          <ScrollView ref={ref2} horizontal scrollEnabled={false} showsHorizontalScrollIndicator={false}>
+            <View style={styles.reihe}>
+              {meine.map((pl, i) => (
+                <View key={i} style={[styles.platzKachel, { backgroundColor: pl === 1 ? c.mustard : c.cardAlt }]} accessible accessibilityLabel={`${kurzDatum(verlauf.punkte[i].datum)}: dein Platz ${pl ?? "keiner"}`}>
+                  <Text style={[styles.platzKachelText, { color: pl === 1 ? c.onMustard : c.textDark }]}>{pl ? `${pl}.` : "–"}</Text>
+                </View>
+              ))}
+            </View>
+          </ScrollView>
+        </>
+      ) : null}
+    </View>
+  );
+}
+
+const SPALTE = 44;
+
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    kopf: { flexDirection: "row", alignItems: "center", gap: 12, minHeight: 48 },
+    titel: { ...TYPE.heading, fontSize: 18, color: c.textDark },
+    untertitel: { ...TYPE.caption, fontSize: 13, color: c.textMuted },
+    platzPill: { paddingHorizontal: 10, height: 28, borderRadius: RADIUS.pill, justifyContent: "center" },
+    platzText: { fontFamily: FONT.w800, fontSize: 13 },
+    top3: { flexDirection: "row", gap: 8 },
+    topZelle: { flex: 1, flexDirection: "row", alignItems: "center", gap: 8, minHeight: 48, paddingTop: 10 },
+    kroneTop: { position: "absolute", top: -14, left: 9 },
+    ichRing: { borderWidth: 2, borderRadius: 20, padding: 1, margin: -3 },
+    topName: { fontFamily: FONT.w700, fontSize: 14, color: c.textDark },
+    topWert: { ...TYPE.num, fontSize: 18, color: c.textDark },
+    zeile: { flexDirection: "row", alignItems: "center", gap: 10, minHeight: 50, paddingHorizontal: 8, marginHorizontal: -8, borderRadius: RADIUS.md },
+    rang: { width: 26, alignItems: "center" },
+    rangText: { fontFamily: FONT.w800, fontSize: 14, color: c.textMuted },
+    name: { fontFamily: FONT.w800, fontSize: 16, color: c.textDark, flexShrink: 1 },
+    du: { paddingHorizontal: 8, height: 22, borderRadius: 11, justifyContent: "center" },
+    duText: { fontFamily: FONT.w900, fontSize: 11, letterSpacing: 0.5 },
+    wert: { ...TYPE.num, fontSize: 17, color: c.textDark },
+    trend: { width: 16, alignItems: "center" },
+    trendGleich: { fontFamily: FONT.w700, fontSize: 14, color: c.textMuted },
+    hinweis: { ...TYPE.caption, fontSize: 13, color: c.textMuted },
+    verlauf: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 14, gap: 8 },
+    verlaufKopf: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" },
+    verlaufTitel: { ...TYPE.heading, color: c.textDark },
+    verlaufSub: { fontFamily: FONT.w700, fontSize: 14, color: c.textDark },
+    reihe: { flexDirection: "row", gap: 6 },
+    spalte: { width: SPALTE, alignItems: "center", gap: 4 },
+    kachel: { width: SPALTE, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center", flexDirection: "row" },
+    kachelText: { fontFamily: FONT.w800, fontSize: 15 },
+    mehr: { fontFamily: FONT.w800, fontSize: 9, marginLeft: 1 },
+    datum: { fontFamily: FONT.w600, fontSize: 12, color: c.textMuted },
+    label: { ...TYPE.label, color: c.textMuted },
+    platzKachel: { width: SPALTE, height: 30, borderRadius: 9, alignItems: "center", justifyContent: "center" },
+    platzKachelText: { fontFamily: FONT.w800, fontSize: 13 },
+  });

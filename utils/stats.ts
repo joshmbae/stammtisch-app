@@ -371,3 +371,44 @@ export function computeRangVerlauf(daten: StatsDaten, jahr: JahrFilter): RangVer
 
   return { punkte, plaetze };
 }
+
+// ─── Anzeige & Führung ────────────────────────────────────────────────────────
+
+/** Kurze Anzeige eines Ranglisten-Werts: „9×", „45′", „36 €", „7". */
+export function wertKurz(key: string, wert: number): string {
+  if (key.startsWith("spiel_")) return `${wert}×`;
+  if (key === "verspaetung") return `${wert}′`;
+  if (key === "strafen") return `${formatEuro(wert).replace(",00", "")} €`;
+  return String(wert);
+}
+
+/** Platz-Reihe einer Person in einer Rangliste über die Stichtage (null = nicht gelistet). */
+export function platzReihe(verlauf: RangVerlauf, key: string, memberId: string): (number | null)[] {
+  return verlauf.plaetze.get(key)?.get(memberId) ?? new Array(verlauf.punkte.length).fill(null);
+}
+
+/** Wer stand an jedem Stichtag auf Platz 1 (bei Gleichstand alle)? */
+export function fuehrendeJePunkt(verlauf: RangVerlauf, key: string): string[][] {
+  const proMember = verlauf.plaetze.get(key);
+  return verlauf.punkte.map((_, i) => {
+    const ids: string[] = [];
+    proMember?.forEach((reihe, id) => { if (reihe[i] === 1) ids.push(id); });
+    return ids;
+  });
+}
+
+/** Seit welchem Stichtag führt jemand ununterbrochen (null = führt gerade nicht)? */
+export function vornSeit(verlauf: RangVerlauf, key: string, memberId: string): string | null {
+  const reihe = platzReihe(verlauf, key, memberId);
+  let i = reihe.length - 1;
+  if (i < 0 || reihe[i] !== 1) return null;
+  while (i > 0 && reihe[i - 1] === 1) i--;
+  return verlauf.punkte[i].datum;
+}
+
+/** Platzveränderung seit dem vorletzten Stichtag: >0 = aufgestiegen, <0 = abgerutscht. */
+export function trend(verlauf: RangVerlauf, key: string, memberId: string): number {
+  const reihe = platzReihe(verlauf, key, memberId).filter((p): p is number => p !== null);
+  if (reihe.length < 2) return 0;
+  return reihe[reihe.length - 2] - reihe[reihe.length - 1];
+}
