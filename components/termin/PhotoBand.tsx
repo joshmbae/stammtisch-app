@@ -63,17 +63,10 @@ export function PhotoBand({ titel, untertitel, bildUrl, uploading, onUpload, onR
       <PressableScale onPress={onBack} style={styles.rund} accessibilityLabel="Zurück" hitSlop={6}>
         <Ionicons name="chevron-back" size={20} color={c.textDark} />
       </PressableScale>
-      <View style={{ flexDirection: "row", gap: 8 }}>
-        {bildUrl ? (
-          <PressableScale onPress={waehlen} style={styles.fotoPill} accessibilityLabel="Foto ändern" disabled={uploading}>
-            {uploading ? <ActivityIndicator size="small" color="#FFFFFF" /> : <Ionicons name="camera-outline" size={16} color="#FFFFFF" />}
-            <Text style={styles.fotoPillText}>Foto</Text>
-          </PressableScale>
-        ) : null}
-        <PressableScale onPress={onEdit} style={styles.rund} accessibilityLabel="Termin bearbeiten" hitSlop={6}>
-          <Ionicons name="pencil" size={18} color={c.textDark} />
-        </PressableScale>
-      </View>
+      {/* Foto ändern/entfernen geht über Antippen des Fotos (Vollbild), daher hier kein eigener Knopf. */}
+      <PressableScale onPress={onEdit} style={styles.rund} accessibilityLabel="Termin bearbeiten" hitSlop={6}>
+        <Ionicons name="pencil" size={18} color={c.textDark} />
+      </PressableScale>
     </View>
   );
 
@@ -141,6 +134,11 @@ export function PhotoBand({ titel, untertitel, bildUrl, uploading, onUpload, onR
           <Image source={{ uri: bildUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
           <Scrim top={0.45} bottom={0.8} />
         </PressableScale>
+        {uploading ? (
+          <View style={styles.ladenAufFoto} pointerEvents="none">
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          </View>
+        ) : null}
         {knoepfe}
         <View style={styles.titelAufFoto} pointerEvents="none">
           <Text style={[styles.titel, { color: "#FFFFFF" }]} numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE} accessibilityRole="header">{titel}</Text>
@@ -178,11 +176,11 @@ const makeStyles = (c: ThemeColors) =>
       borderWidth: StyleSheet.hairlineWidth, borderColor: c.hairline,
     },
     rundHell: { width: 44, height: 44, borderRadius: 22, backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center" },
-    fotoPill: {
-      height: 44, paddingHorizontal: 14, borderRadius: RADIUS.pill, flexDirection: "row", alignItems: "center", gap: 6,
-      backgroundColor: "rgba(20,18,16,0.55)",
+    // Beim Ersetzen des Fotos: Ladeanzeige mitten auf dem alten Bild.
+    ladenAufFoto: {
+      position: "absolute", alignSelf: "center", top: "45%", width: 44, height: 44, borderRadius: 22,
+      backgroundColor: "rgba(20,18,16,0.55)", alignItems: "center", justifyContent: "center",
     },
-    fotoPillText: { fontFamily: FONT.w600, fontSize: 14, color: "#FFFFFF" },
     liveBand: { overflow: "hidden", paddingBottom: 16, borderBottomWidth: 1 },
     liveRing: { position: "absolute", width: 300, height: 300, borderRadius: 150, borderWidth: 44, right: -90, top: -70 },
     liveKnoepfe: { flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 16, height: 44 },
