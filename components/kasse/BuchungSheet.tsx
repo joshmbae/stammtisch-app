@@ -8,7 +8,7 @@ import { Kasse, NeueBuchung } from "../../utils/useKasse";
 import { formatWochentagDatum, toLocalIsoDate } from "../../utils/date";
 import { displayName, formatEuro } from "../../utils/format";
 import { showAlert } from "../../utils/alert";
-import { Avatar, Button, Chip, Emoji, KategorieIcon, PressableScale, Sheet, haptik } from "../ui";
+import { Button, Chip, Emoji, KategorieIcon, PersonChip, PressableScale, Sheet, haptik } from "../ui";
 import { SYMBOL } from "../../constants/symbole";
 
 export type BuchungsArt = "einnahme" | "ausgabe" | "abendkosten" | "strafe";
@@ -141,7 +141,7 @@ export function BuchungSheet({ visible, kasse, onClose, start }: {
   const personenChips = (gewaehlt: (id: string) => boolean, tippen: (id: string) => void) => (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16 }} contentContainerStyle={styles.chips}>
       {kasse.members.map((m) => (
-        <Chip key={m.id} label={displayName(m)} selected={gewaehlt(m.id)} onPress={() => tippen(m.id)} leading={<Avatar name={displayName(m)} color={m.avatarColor} photoUri={m.photoUri} size={22} />} />
+        <PersonChip key={m.id} member={m} ich={kasse.activeMemberId} selected={gewaehlt(m.id)} onPress={() => tippen(m.id)} />
       ))}
     </ScrollView>
   );

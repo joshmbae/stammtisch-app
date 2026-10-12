@@ -4,7 +4,7 @@ export type { HapticArt } from "./PressableScale";
 export { Card } from "./Card";
 export { SectionLabel } from "./SectionLabel";
 export { Avatar, AvatarStack, initial } from "./Avatar";
-export { Chip, StatusPill } from "./Chip";
+export { Chip, PersonChip, StatusPill } from "./Chip";
 export { IconSquircle } from "./IconSquircle";
 export { Emoji } from "./Emoji";
 export { Ring } from "./Ring";

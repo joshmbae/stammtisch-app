@@ -5,6 +5,9 @@ import { useThemedStyles } from "../../contexts/ThemeContext";
 import { PressableScale } from "./PressableScale";
 import { Ton, tonFarben } from "./ton";
 import { useColors } from "../../contexts/ThemeContext";
+import { MemberProfile } from "../../types";
+import { displayName } from "../../utils/format";
+import { Avatar } from "./Avatar";
 
 interface ChipProps {
   label: string;
@@ -62,3 +65,27 @@ const makeStyles = (c: ThemeColors) =>
     pill: { alignSelf: "flex-start", height: 24, paddingHorizontal: 9, borderRadius: 999, justifyContent: "center" },
     pillText: { fontFamily: FONT.w600, fontSize: 12 },
   });
+
+/**
+ * Personen-Auswahl, überall gleich: Avatar + Name, bei einem selbst „Du".
+ * Für Filter (Kasse), Buchungen und Strafen am Abend.
+ */
+export function PersonChip({ member, ich, selected, onPress }: {
+  member: MemberProfile;
+  /** Id des angemeldeten Mitglieds – diese Person heißt „Du". */
+  ich?: string | null;
+  selected?: boolean;
+  onPress?: () => void;
+}) {
+  const name = displayName(member);
+  const label = member.id === ich ? "Du" : name;
+  return (
+    <Chip
+      label={label}
+      selected={selected}
+      onPress={onPress}
+      accessibilityLabel={member.id === ich ? `Du (${name})` : name}
+      leading={<Avatar name={name} color={member.avatarColor} photoUri={member.photoUri} size={22} />}
+    />
+  );
+}

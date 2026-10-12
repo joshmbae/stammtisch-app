@@ -6,7 +6,8 @@ import { FONT, RADIUS, TYPE, ThemeColors } from "../../../constants/design";
 import { useColors, useThemedStyles } from "../../../contexts/ThemeContext";
 import { TerminAbend } from "../../../utils/useTerminAbend";
 import { displayName, formatEuro } from "../../../utils/format";
-import { Button, Chip, KategorieIcon, PressableScale, haptik } from "../../ui";
+import { Button, KategorieIcon, PersonChip, PressableScale, haptik } from "../../ui";
+import { useSession } from "../../../contexts/SessionContext";
 import { formatUhrzeit } from "../../../utils/date";
 import { VerlaufListe } from "./VerlaufListe";
 
@@ -23,6 +24,7 @@ export function StrafenErfassen({ abend, mitglieder, vorauswahl }: {
 }) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
+  const { activeMemberId } = useSession();
   const [wer, setWer] = useState<string | null>(vorauswahl ?? null);
   const [wofuer, setWofuer] = useState<StrafKategorieDef | null>(null);
   const [betrag, setBetrag] = useState("");
@@ -60,7 +62,7 @@ export function StrafenErfassen({ abend, mitglieder, vorauswahl }: {
       <Text style={styles.label}>Wer</Text>
       <View style={styles.chips}>
         {mitglieder.map((m) => (
-          <Chip key={m.id} label={displayName(m)} selected={m.id === wer} onPress={() => setWer(m.id === wer ? null : m.id)} />
+          <PersonChip key={m.id} member={m} ich={activeMemberId} selected={m.id === wer} onPress={() => setWer(m.id === wer ? null : m.id)} />
         ))}
       </View>
 

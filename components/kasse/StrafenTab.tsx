@@ -10,7 +10,7 @@ import { formatWochentagDatum } from "../../utils/date";
 import { displayName, formatEuro } from "../../utils/format";
 import { terminBezeichnung } from "../../utils/activityFeed";
 import { useSingleFlight } from "../../utils/useSingleFlight";
-import { Avatar, Button, Card, Chip, KategorieIcon, PressableScale, haptik } from "../ui";
+import { Button, Card, Chip, KategorieIcon, PersonChip, PressableScale, haptik } from "../ui";
 import { begleichenDialog, zahlungsAnbieter } from "../../utils/zahlungslink";
 import { showAlert } from "../../utils/alert";
 
@@ -200,12 +200,7 @@ export function StrafenTab({ kasse, filter, onFilter, onStrafe }: {
         <Chip label="Alle" selected={!filter} onPress={() => onFilter(null)} />
         {chipLeute.map((m) => (
           <View key={m.id} onLayout={(e) => { chipX.current.set(m.id, e.nativeEvent.layout.x); if (m.id === filter) setChipsBereit((n) => n + 1); }}>
-            <Chip
-              label={m.id === ich ? "Du" : displayName(m)}
-              selected={filter === m.id}
-              onPress={() => onFilter(filter === m.id ? null : m.id)}
-              leading={<Avatar name={displayName(m)} color={m.avatarColor} photoUri={m.photoUri} size={22} />}
-            />
+            <PersonChip member={m} ich={ich} selected={filter === m.id} onPress={() => onFilter(filter === m.id ? null : m.id)} />
           </View>
         ))}
       </ScrollView>
