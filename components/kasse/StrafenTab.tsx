@@ -18,6 +18,8 @@ const euro = (n: number) => `${formatEuro(n).replace(",00", "")} €`;
  * Alle Strafen der Runde: offene Summe mit den größten Schuldnern, Filter
  * nach Person, offene Strafen nach Termin gruppiert. Der Kreis rechts hakt
  * ab (= Einnahme in der Kasse); Antippen der Zeile öffnet Details.
+ * Persönlich: Hinweis auf die eigenen offenen Strafen und „Du" als erster
+ * Personen-Filter; mit Filter zeigt die Karte oben die Summe dieser Person.
  */
 export function StrafenTab({ kasse, filter, onFilter, onStrafe }: {
   kasse: Kasse;
@@ -39,7 +41,12 @@ export function StrafenTab({ kasse, filter, onFilter, onStrafe }: {
   }, [filter, chipsBereit]);
   const name = (id: string) => { const m = kasse.members.find((x) => x.id === id); return m ? displayName(m) : "?"; };
 
+  const ich = kasse.activeMemberId;
   const alleOffen = kasse.strafen.filter((l) => !l.beglichen);
+  const meineOffen = ich ? alleOffen.filter((l) => l.memberId === ich) : [];
+  const meineSumme = meineOffen.reduce((s, l) => s + l.betrag, 0);
+  // „Du" zuerst, dann die anderen in gewohnter Reihenfolge.
+  const chipLeute = [...kasse.members.filter((m) => m.id === ich), ...kasse.members.filter((m) => m.id !== ich)];
   const proPerson = new Map<string, number>();
   for (const l of alleOffen) proPerson.set(l.memberId, (proPerson.get(l.memberId) ?? 0) + l.betrag);
   const top = [...proPerson.entries()].sort((a, b) => b[1] - a[1]);
@@ -48,6 +55,7 @@ export function StrafenTab({ kasse, filter, onFilter, onStrafe }: {
 
   const gefiltert = kasse.strafen.filter((l) => !filter || l.memberId === filter);
   const offen = gefiltert.filter((l) => !l.beglichen);
+  const offenSumme = offen.reduce((s, l) => s + l.betrag, 0);
   const beglichen = gefiltert.filter((l) => l.beglichen);
 
   // Offene nach Termin gruppieren, neueste Termine zuerst; ohne Termin am Ende.
@@ -75,16 +83,16 @@ export function StrafenTab({ kasse, filter, onFilter, onStrafe }: {
     const kat = kasse.strafKategorien.find((k) => k.id === l.kategorie);
     const was = kat?.systemKey === "sonstiges" && l.notiz ? l.notiz : kat?.label ?? "Strafe";
     const zusatz = kat?.systemKey === "sonstiges" ? null : l.notiz;
+    const unter = (filter ? [zusatz] : [was, zusatz]).filter(Boolean).join(" · ");
     return (
       <View key={l.id} style={[styles.zeile, i > 0 && styles.trenner]}>
         <PressableScale onPress={() => onStrafe(l)} style={styles.zeileInfo} accessibilityLabel={`${name(l.memberId)}: ${was}, ${euro(l.betrag)}${l.beglichen ? ", bezahlt" : ", offen"}. Details`}>
           <KategorieIcon kat={kat} size={36} />
           <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-            <Text style={styles.name} numberOfLines={1}>{name(l.memberId)}</Text>
-            <View style={styles.subZeile}>
-              <Text style={styles.sub} numberOfLines={1}>{[was, zusatz].filter(Boolean).join(" · ")}</Text>
-              {!l.beglichen ? <View style={[styles.pill, { backgroundColor: c.coralSoft }]}><Text style={[styles.pillText, { color: c.coralText }]}>offen</Text></View> : null}
-            </View>
+            {/* Gefiltert ist die Person klar – dann steht die Strafe vorne statt des Namens. */}
+            <Text style={styles.name} numberOfLines={1}>{filter ? was : name(l.memberId)}</Text>
+            {/* Kein „offen“-Badge: Abschnitt, Betrag in Koralle und leerer Kreis sagen das schon. */}
+            {unter ? <Text style={styles.sub} numberOfLines={1}>{unter}</Text> : null}
           </View>
           <Text style={[styles.betrag, l.beglichen ? styles.bezahlt : { color: c.coralText }]} maxFontSizeMultiplier={MAX_FONT_SCALE}>{euro(l.betrag)}</Text>
         </PressableScale>
@@ -109,6 +117,28 @@ export function StrafenTab({ kasse, filter, onFilter, onStrafe }: {
 
   return (
     <>
+      {!filter && meineOffen.length > 0 ? (
+        <PressableScale onPress={() => onFilter(ich!)} style={[styles.meins, { backgroundColor: c.coralSoft }]} accessibilityRole="button" accessibilityLabel={`Deine offenen Strafen: ${euro(meineSumme)}, ${meineOffen.length}. Anzeigen`}>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.meinsTitel, { color: c.coralText }]}>{`Du hast ${euro(meineSumme)} offen`}</Text>
+            <Text style={styles.meta}>{`${meineOffen.length} ${meineOffen.length === 1 ? "Strafe" : "Strafen"} – hier abhaken, wenn bezahlt`}</Text>
+          </View>
+          <Text style={[styles.meinsLink, { color: c.coralText }]}>Anzeigen</Text>
+          <Ionicons name="chevron-forward" size={14} color={c.coralText} />
+        </PressableScale>
+      ) : null}
+
+      {filter ? (
+        <Card enterIndex={0} style={styles.oben}>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.label, { color: offenSumme > 0 ? c.coralText : c.successText }]}>
+              {filter === ich ? (offenSumme > 0 ? "Du hast offen" : "Du hast alles bezahlt") : offenSumme > 0 ? `${name(filter)} hat offen` : `${name(filter)} hat alles bezahlt`}
+            </Text>
+            <Text style={[styles.summe, { color: offenSumme > 0 ? c.coralText : c.successText }]} maxFontSizeMultiplier={MAX_FONT_SCALE}>{euro(offenSumme)}</Text>
+            <Text style={styles.meta}>{`${offen.length} ${offen.length === 1 ? "Strafe" : "Strafen"} offen`}</Text>
+          </View>
+        </Card>
+      ) : (
       <Card enterIndex={0} style={styles.oben}>
         <View style={{ flex: 1, minWidth: 110 }}>
           <Text style={[styles.label, { color: summe > 0 ? c.coralText : c.successText }]}>{summe > 0 ? "Offen gesamt" : "Alles bezahlt"}</Text>
@@ -129,6 +159,7 @@ export function StrafenTab({ kasse, filter, onFilter, onStrafe }: {
           </View>
         ) : null}
       </Card>
+      )}
       <View style={styles.hinweis}>
         <Ionicons name="information-circle-outline" size={16} color={c.textMuted} />
         <Text style={styles.hinweisText}>Bezahlte Strafen landen automatisch als Einnahme in der Kasse.</Text>
@@ -136,10 +167,10 @@ export function StrafenTab({ kasse, filter, onFilter, onStrafe }: {
 
       <ScrollView ref={chipLeiste} horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16 }} contentContainerStyle={styles.filter}>
         <Chip label="Alle" selected={!filter} onPress={() => onFilter(null)} />
-        {kasse.members.map((m) => (
+        {chipLeute.map((m) => (
           <View key={m.id} onLayout={(e) => { chipX.current.set(m.id, e.nativeEvent.layout.x); if (m.id === filter) setChipsBereit((n) => n + 1); }}>
             <Chip
-              label={displayName(m)}
+              label={m.id === ich ? "Du" : displayName(m)}
               selected={filter === m.id}
               onPress={() => onFilter(filter === m.id ? null : m.id)}
               leading={<Avatar name={displayName(m)} color={m.avatarColor} photoUri={m.photoUri} size={22} />}
@@ -153,7 +184,7 @@ export function StrafenTab({ kasse, filter, onFilter, onStrafe }: {
         <Text style={styles.meta}>{`${offen.length} offen`}</Text>
       </View>
       {offen.length === 0 ? (
-        <Card><Text style={styles.leer}>{filter ? `${name(filter)} hat nichts offen.` : "Nichts offen. Sauber!"}</Text></Card>
+        <Card><Text style={styles.leer}>{filter === ich ? "Du hast nichts offen." : filter ? `${name(filter)} hat nichts offen.` : "Nichts offen. Sauber!"}</Text></Card>
       ) : (
         <Card enterIndex={1} style={{ paddingVertical: 4 }}>
           {gruppenListe.map(([terminId, liste], gi) => (
@@ -192,6 +223,9 @@ const makeStyles = (c: ThemeColors) =>
     topWert: { fontFamily: FONT.w700, fontSize: 14, color: c.textDark },
     spur: { height: 8, borderRadius: 4, backgroundColor: c.coralSoft, overflow: "hidden" },
     fuell: { height: "100%", borderRadius: 4 },
+    meins: { flexDirection: "row", alignItems: "center", gap: 8, borderRadius: RADIUS.md, paddingVertical: 10, paddingLeft: 14, paddingRight: 12 },
+    meinsTitel: { fontFamily: FONT.w600, fontSize: 15 },
+    meinsLink: { fontFamily: FONT.w600, fontSize: 14 },
     hinweis: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 6, marginTop: -4 },
     hinweisText: { ...TYPE.caption, fontSize: 13, color: c.textMuted, flex: 1 },
     filter: { gap: 8, paddingHorizontal: 16 },
@@ -204,10 +238,7 @@ const makeStyles = (c: ThemeColors) =>
     zeileInfo: { flex: 1, flexDirection: "row", alignItems: "center", gap: 12, minHeight: 44 },
     trenner: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
     name: { fontFamily: FONT.w600, fontSize: 15, color: c.textDark },
-    subZeile: { flexDirection: "row", alignItems: "center", gap: 6 },
     sub: { ...TYPE.caption, fontSize: 13, color: c.textMuted, flexShrink: 1 },
-    pill: { paddingHorizontal: 8, height: 20, borderRadius: 10, justifyContent: "center" },
-    pillText: { fontFamily: FONT.w700, fontSize: 12 },
     betrag: { ...TYPE.num, fontSize: 17 },
     bezahlt: { color: c.textMuted, textDecorationLine: "line-through" },
     kreis: { width: 32, height: 32, borderRadius: 16, borderWidth: 2, borderColor: c.borderDark, alignItems: "center", justifyContent: "center" },

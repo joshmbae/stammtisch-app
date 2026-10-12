@@ -206,7 +206,11 @@ export default function HomeScreen() {
             rsvpBusy={rsvpBusy}
           />
 
-          {bilanz ? <BilanzRow werte={bilanz} onPress={() => router.push(`/member/${activeMember!.id}`)} /> : null}
+          {bilanz ? <BilanzRow
+            werte={bilanz}
+            onPress={() => router.push(`/member/${activeMember!.id}`)}
+            onOffen={() => router.push(`/kasse?tab=strafen&memberId=${activeMember!.id}`)}
+          /> : null}
 
           <View style={styles.kacheln}>
             <KasseTile saldo={saldo(kasse)} monate={monatsSalden(kasse, 6, now)} onPress={() => router.push("/kasse")} />

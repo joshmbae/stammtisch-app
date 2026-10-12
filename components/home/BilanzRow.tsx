@@ -5,7 +5,7 @@ import Animated, { FadeIn, useReducedMotion } from "react-native-reanimated";
 import { FONT, MAX_FONT_SCALE, MOTION, TYPE, ThemeColors } from "../../constants/design";
 import { SYMBOL } from "../../constants/symbole";
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
-import { Card, IconSquircle, Krone, Ring, SectionLabel, tonFuerRangliste } from "../ui";
+import { Card, IconSquircle, Krone, PressableScale, Ring, SectionLabel, tonFuerRangliste } from "../ui";
 
 export interface Platzierung {
   key: string;
@@ -32,7 +32,12 @@ const SYMBOL_GROESSE = 28;
  * offene Strafen und die eigenen Platzierungen, die reihum wechseln (beste
  * zuerst). Bewusst flach gehalten.
  */
-export function BilanzRow({ werte, onPress }: { werte: BilanzWerte; onPress: () => void }) {
+export function BilanzRow({ werte, onPress, onOffen }: {
+  werte: BilanzWerte;
+  onPress: () => void;
+  /** „offen“ antippen: zur eigenen, gefilterten Strafenliste. */
+  onOffen?: () => void;
+}) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const fokus = useIsFocused();
@@ -68,11 +73,18 @@ export function BilanzRow({ werte, onPress }: { werte: BilanzWerte; onPress: () 
 
         <View style={styles.trenner} />
 
-        <View style={styles.spalte}>
+        <PressableScale
+          onPress={onOffen}
+          disabled={!onOffen}
+          scaleTo={0.96}
+          style={styles.spalte}
+          accessibilityRole="button"
+          accessibilityLabel={`${offenText} offen. Zu deinen Strafen`}
+        >
           <IconSquircle emoji={SYMBOL.strafe} ton={werte.offen > 0 ? "coral" : "green"} size={SYMBOL_GROESSE} />
           <Text style={[styles.wert, { color: werte.offen > 0 ? c.coralText : c.success }]} numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE}>{offenText}</Text>
           <Text style={styles.label} numberOfLines={1}>offen</Text>
-        </View>
+        </PressableScale>
 
         <View style={styles.trenner} />
 
