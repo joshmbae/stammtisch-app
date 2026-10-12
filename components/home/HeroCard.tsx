@@ -208,7 +208,7 @@ function Danach({ hero, now, members, stats, spielTypen }: Props) {
       <View style={styles.row}>
         <Button label="Rückblick" icon="play" variant="dark" onPress={() => router.push(`/termin/${t.id}`)} style={{ flex: 1 }} />
         {stats.strafenOffen > 0 ? (
-          <Button label={`${formatEuro(stats.strafenOffen).replace(",00", "")} € offen`} variant="secondary" onPress={() => router.push("/strafen")} style={{ flex: 1 }} />
+          <Button label={`${formatEuro(stats.strafenOffen).replace(",00", "")} € offen`} variant="secondary" onPress={() => router.push("/kasse?tab=strafen")} style={{ flex: 1 }} />
         ) : (
           <Button label="Alles bezahlt" icon="checkmark" variant="secondary" onPress={() => router.push(`/termin/${t.id}`)} style={{ flex: 1 }} />
         )}

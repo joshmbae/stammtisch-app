@@ -40,7 +40,7 @@ export function activityRoute(entry: ActivityLogEntry): string | null {
     case "straf_log_created":
     case "straf_log_beglichen":
     case "straf_log_deleted":
-      return entry.subjectMemberId ? `/strafen?memberId=${entry.subjectMemberId}` : "/strafen";
+      return entry.subjectMemberId ? `/kasse?tab=strafen&memberId=${entry.subjectMemberId}` : "/kasse?tab=strafen";
     case "kasse_einnahme_created":
     case "kasse_ausgabe_created":
     case "abendkosten_created":

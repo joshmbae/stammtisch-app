@@ -189,7 +189,7 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
       ) : null}
 
       {stats.strafenOffen > 0 ? (
-        <PressableScale onPress={() => router.push("/strafen")} style={[styles.hinweis, { backgroundColor: c.coralSoft }]} accessibilityLabel={`${euro(stats.strafenOffen)} noch offen, in der Kasse abhaken`}>
+        <PressableScale onPress={() => router.push("/kasse?tab=strafen")} style={[styles.hinweis, { backgroundColor: c.coralSoft }]} accessibilityLabel={`${euro(stats.strafenOffen)} noch offen, in der Kasse abhaken`}>
           <View style={{ flex: 1 }}>
             <Text style={[styles.hinweisTitel, { color: c.coralText }]}>{`${euro(stats.strafenOffen)} noch offen`}</Text>
             <Text style={[styles.hinweisSub, { color: c.coralText }]}>{`${strafenMitSpiel ? "Strafen und Niederlagen" : "Strafen"} · in der Kasse abhaken`}</Text>

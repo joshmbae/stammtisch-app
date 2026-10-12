@@ -368,7 +368,7 @@ export default function MemberDetailScreen() {
                  solange etwas aussteht, grün sobald alles beglichen ist. */
               <TouchableOpacity
                 style={[styles.statBox, strafOffen > 0 ? styles.statBoxOffen : styles.statBoxBeglichen]}
-                onPress={() => router.push(`/strafen?memberId=${id}`)}
+                onPress={() => router.push(`/kasse?tab=strafen&memberId=${id}`)}
                 activeOpacity={0.7}
                 accessibilityRole="button"
                 accessibilityLabel={strafOffen > 0

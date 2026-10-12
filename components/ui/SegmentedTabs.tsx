@@ -16,8 +16,8 @@ interface Props<K extends string> {
   items: TabItem<K>[];
   value: K;
   onChange: (k: K) => void;
-  /** "dark" = dunkle Leiste mit Senf-Daumen (Live), "light" = helle Leiste. */
-  variant?: "dark" | "light";
+  /** "dark" = dunkle Leiste mit Senf-Daumen (Live), "light" = helle Leiste, "blue" = helle Leiste mit blauem Daumen (Kasse). */
+  variant?: "dark" | "light" | "blue";
 }
 
 /** Große Bereichs-Tabs mit gleitendem Daumen. */
@@ -33,10 +33,11 @@ export function SegmentedTabs<K extends string>({ items, value, onChange, varian
   const daumen = useAnimatedStyle(() => ({ transform: [{ translateX: x.value }] }));
   const onLayout = (e: LayoutChangeEvent) => setBreite(e.nativeEvent.layout.width);
   const dunkel = variant === "dark";
+  const blau = variant === "blue";
 
   return (
     <View style={[styles.bar, dunkel ? styles.barDark : styles.barLight]} onLayout={onLayout} accessibilityRole="tablist">
-      {segment > 0 ? <Animated.View style={[styles.thumb, dunkel ? styles.thumbDark : styles.thumbLight, { width: segment }, daumen]} /> : null}
+      {segment > 0 ? <Animated.View style={[styles.thumb, dunkel ? styles.thumbDark : blau ? styles.thumbBlue : styles.thumbLight, { width: segment }, daumen]} /> : null}
       {items.map((it) => {
         const aktiv = it.key === value;
         return (
@@ -50,11 +51,11 @@ export function SegmentedTabs<K extends string>({ items, value, onChange, varian
             accessibilityLabel={it.sub ? `${it.label}, ${it.sub}` : it.label}
             style={styles.item}
           >
-            <Text style={[styles.label, dunkel ? (aktiv ? styles.onThumbDark : styles.onBarDark) : aktiv ? styles.onThumbLight : styles.onBarLight]} numberOfLines={1}>
+            <Text style={[styles.label, dunkel ? (aktiv ? styles.onThumbDark : styles.onBarDark) : aktiv ? (blau ? styles.onThumbBlue : styles.onThumbLight) : styles.onBarLight]} numberOfLines={1}>
               {it.label}
             </Text>
             {it.sub ? (
-              <Text style={[styles.sub, dunkel ? (aktiv ? styles.onThumbDark : styles.onBarDark) : aktiv ? styles.onThumbLight : styles.onBarLight]} numberOfLines={1}>
+              <Text style={[styles.sub, dunkel ? (aktiv ? styles.onThumbDark : styles.onBarDark) : aktiv ? (blau ? styles.onThumbBlue : styles.onThumbLight) : styles.onBarLight]} numberOfLines={1}>
                 {it.sub}
               </Text>
             ) : null}
@@ -73,6 +74,7 @@ const makeStyles = (c: ThemeColors) =>
     thumb: { position: "absolute", top: 5, bottom: 5, left: 5, borderRadius: 15 },
     thumbDark: { backgroundColor: c.mustard },
     thumbLight: { backgroundColor: c.card },
+    thumbBlue: { backgroundColor: c.blue },
     item: { flex: 1, alignItems: "center", justifyContent: "center", minHeight: 46, paddingHorizontal: 4 },
     label: { fontFamily: FONT.w800, fontSize: 14 },
     sub: { fontFamily: FONT.w700, fontSize: 12, opacity: 0.8, fontVariant: ["tabular-nums"] },
@@ -80,4 +82,5 @@ const makeStyles = (c: ThemeColors) =>
     onThumbDark: { color: c.onMustard },
     onBarLight: { color: c.textMuted },
     onThumbLight: { color: c.textDark },
+    onThumbBlue: { color: c.onAccent },
   });

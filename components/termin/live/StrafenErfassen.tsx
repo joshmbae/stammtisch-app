@@ -1,34 +1,14 @@
 import React, { useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { MemberProfile, StrafKategorieDef, StrafLog } from "../../../types";
 import { FONT, RADIUS, TYPE, ThemeColors } from "../../../constants/design";
 import { useColors, useThemedStyles } from "../../../contexts/ThemeContext";
 import { TerminAbend } from "../../../utils/useTerminAbend";
 import { displayName, formatEuro } from "../../../utils/format";
-import { Button, Card, Chip, PressableScale, haptik, tonFarben, tonFuer } from "../../ui";
+import { Button, Card, Chip, KategorieIcon, PressableScale, haptik } from "../../ui";
 
 export const euroKurz = (n: number) => `${formatEuro(n).replace(",00", "")} €`;
-
-/** Symbol einer Strafen-Kategorie: eigenes Emoji, Line-Icons nur für Systemfälle. */
-export function KategorieIcon({ kat, size = 36 }: { kat?: StrafKategorieDef; size?: number }) {
-  const c = useColors();
-  const ton = kat ? tonFuer(kat.id) : "neutral";
-  const f = tonFarben(kat?.systemKey === "sonstiges" ? "neutral" : ton, c);
-  const istSpaet = !!kat && /spät/i.test(kat.label);
-  return (
-    <View style={{ width: size, height: size, borderRadius: Math.round(size * 0.32), backgroundColor: f.bg, alignItems: "center", justifyContent: "center" }} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-      {!kat || kat.systemKey === "sonstiges" ? (
-        <Ionicons name="ellipsis-horizontal" size={Math.round(size * 0.5)} color={f.fg} />
-      ) : istSpaet ? (
-        <Ionicons name="time-outline" size={Math.round(size * 0.52)} color={f.fg} />
-      ) : (
-        <Text style={{ fontSize: Math.round(size * 0.5) }} maxFontSizeMultiplier={1}>{kat.emoji}</Text>
-      )}
-    </View>
-  );
-}
 
 /**
  * Strafe in zwei Griffen: wer, wofür, eintragen. Bei Kategorien ohne festen

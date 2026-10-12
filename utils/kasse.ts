@@ -23,3 +23,33 @@ export function monatsSalden(eintraege: KassenEintrag[], anzahl = 6, now = new D
   }
   return ergebnis;
 }
+
+/** Schuldner einer Stammtischrechnung: alle Teilnehmer außer dem Zahler. */
+export function schuldnerVon(e: KassenEintrag): string[] {
+  return (e.teilnehmerIds ?? []).filter((id) => id !== e.bezahltVon);
+}
+
+/** Anteil pro Kopf einer Stammtischrechnung (ohne Teilnehmerliste: der ganze Betrag). */
+export function anteilProKopf(e: KassenEintrag): number {
+  return e.teilnehmerIds && e.teilnehmerIds.length > 0 ? e.betrag / e.teilnehmerIds.length : e.betrag;
+}
+
+/**
+ * Ist eine Stammtischrechnung komplett zurückgezahlt? Altbestand ohne
+ * Teilnehmerliste nutzt den einfachen beglichen-Schalter.
+ */
+export function rechnungBeglichen(e: KassenEintrag): boolean {
+  if (e.teilnehmerIds && e.teilnehmerIds.length > 0) {
+    return schuldnerVon(e).every((id) => (e.beglichenIds ?? []).includes(id));
+  }
+  return !!e.beglichen;
+}
+
+/** Was an einer Stammtischrechnung noch offen ist (an den Zahler). */
+export function rechnungOffen(e: KassenEintrag): number {
+  if (e.teilnehmerIds && e.teilnehmerIds.length > 0) {
+    const offen = schuldnerVon(e).filter((id) => !(e.beglichenIds ?? []).includes(id));
+    return offen.length * anteilProKopf(e);
+  }
+  return e.beglichen ? 0 : e.betrag;
+}
