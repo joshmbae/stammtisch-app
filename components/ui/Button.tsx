@@ -42,6 +42,7 @@ export function Button({ label, onPress, variant = "primary", icon, size = "md",
       disabled={disabled || loading}
       haptic={haptic}
       accessibilityLabel={accessibilityLabel ?? label}
+      hitSlop={size === "sm" ? { top: 3, bottom: 3 } : undefined}
       style={[
         styles.btn,
         size === "sm" ? styles.sm : styles.md,
@@ -66,8 +67,8 @@ export function Button({ label, onPress, variant = "primary", icon, size = "md",
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     btn: { borderRadius: 999, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingHorizontal: 18, borderWidth: StyleSheet.hairlineWidth },
-    md: { minHeight: 52 },
-    sm: { minHeight: 44, paddingHorizontal: 14 },
-    text: { fontFamily: FONT.w800, fontSize: 16 },
+    md: { minHeight: 48 },
+    sm: { minHeight: 38, paddingHorizontal: 14 },
+    text: { fontFamily: FONT.w700, fontSize: 16 },
     textSm: { fontSize: 14 },
   });

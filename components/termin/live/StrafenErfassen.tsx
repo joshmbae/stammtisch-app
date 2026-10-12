@@ -158,7 +158,7 @@ const makeStyles = (c: ThemeColors) =>
     },
     katKopf: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" },
     katBetrag: { ...TYPE.num, fontSize: 17 },
-    katLabel: { fontFamily: FONT.w700, fontSize: 14, color: c.textDark },
+    katLabel: { fontFamily: FONT.w600, fontSize: 14, color: c.textDark },
     freiZeile: { flexDirection: "row", gap: 8 },
     input: {
       minHeight: 48, borderRadius: RADIUS.md, paddingHorizontal: 14, backgroundColor: c.card,
@@ -167,7 +167,7 @@ const makeStyles = (c: ThemeColors) =>
     zeile: { flexDirection: "row", alignItems: "center", gap: 12, minHeight: 52 },
     trenner: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
     zeileText: { flex: 1, fontFamily: FONT.w500, fontSize: 15, color: c.textMid },
-    zeileName: { fontFamily: FONT.w800, color: c.textDark },
+    zeileName: { fontFamily: FONT.w700, color: c.textDark },
     zeileBetrag: { ...TYPE.num, fontSize: 16, color: c.textDark },
     bezahlt: { color: c.textMuted, textDecorationLine: "line-through" },
   });

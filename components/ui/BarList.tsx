@@ -58,7 +58,7 @@ const makeStyles = (c: ThemeColors) =>
     rowLine: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
     nameCol: { width: 112 },
     nameRow: { flexDirection: "row", alignItems: "center", gap: 4 },
-    name: { fontFamily: FONT.w800, fontSize: 15, color: c.textDark, flexShrink: 1 },
+    name: { fontFamily: FONT.w700, fontSize: 15, color: c.textDark, flexShrink: 1 },
     sub: { ...TYPE.caption, color: c.textMuted },
     track: { flex: 1, height: 10, borderRadius: 999, backgroundColor: c.cardAlt, overflow: "hidden" },
     fill: { height: "100%", borderRadius: 999 },

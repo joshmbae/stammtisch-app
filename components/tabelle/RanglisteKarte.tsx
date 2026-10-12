@@ -44,7 +44,7 @@ export function RanglisteKarte({ liste, offen, onToggle, ichId, fuehrende, verla
   return (
     <Card enterIndex={enterIndex} style={{ gap: 12 }}>
       <PressableScale onPress={onToggle} scaleTo={0.99} style={styles.kopf} accessibilityState={{ expanded: offen }} accessibilityLabel={`${liste.kurz}${ich ? `, du bist auf Platz ${ich.platz}` : ""}. ${offen ? "Zuklappen" : "Aufklappen"}`}>
-        <IconSquircle emoji={liste.emoji} ton={tonFuerRangliste(liste.key)} size={44} />
+        <IconSquircle emoji={liste.emoji} ton={tonFuerRangliste(liste.key)} size={36} />
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={styles.titel} numberOfLines={1}>{liste.kurz}</Text>
           <Text style={styles.untertitel} numberOfLines={1}>{UNTERTITEL[liste.key] ?? (liste.key.startsWith("spiel_") ? `beim ${liste.titel.split(" — ")[0]}` : liste.untertitel)}</Text>
@@ -184,37 +184,37 @@ const SPALTE = 44;
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     kopf: { flexDirection: "row", alignItems: "center", gap: 12, minHeight: 48 },
-    titel: { ...TYPE.heading, fontSize: 18, color: c.textDark },
+    titel: { ...TYPE.heading, color: c.textDark },
     untertitel: { ...TYPE.caption, fontSize: 13, color: c.textMuted },
     platzPill: { paddingHorizontal: 10, height: 28, borderRadius: RADIUS.pill, justifyContent: "center" },
-    platzText: { fontFamily: FONT.w800, fontSize: 13 },
+    platzText: { fontFamily: FONT.w700, fontSize: 13 },
     top3: { flexDirection: "row", gap: 8 },
     topZelle: { flex: 1, flexDirection: "row", alignItems: "center", gap: 8, minHeight: 48, paddingTop: 10 },
     kroneTop: { position: "absolute", top: -14, left: 9 },
     ichRing: { borderWidth: 2, borderRadius: 20, padding: 1, margin: -3 },
-    topName: { fontFamily: FONT.w700, fontSize: 14, color: c.textDark },
+    topName: { fontFamily: FONT.w600, fontSize: 14, color: c.textDark },
     topWert: { ...TYPE.num, fontSize: 18, color: c.textDark },
-    zeile: { flexDirection: "row", alignItems: "center", gap: 10, minHeight: 50, paddingHorizontal: 8, marginHorizontal: -8, borderRadius: RADIUS.md },
+    zeile: { flexDirection: "row", alignItems: "center", gap: 10, minHeight: 44, paddingHorizontal: 8, marginHorizontal: -8, borderRadius: RADIUS.md },
     rang: { width: 26, alignItems: "center" },
-    rangText: { fontFamily: FONT.w800, fontSize: 14, color: c.textMuted },
-    name: { fontFamily: FONT.w800, fontSize: 16, color: c.textDark, flexShrink: 1 },
+    rangText: { fontFamily: FONT.w700, fontSize: 14, color: c.textMuted },
+    name: { fontFamily: FONT.w600, fontSize: 15, color: c.textDark, flexShrink: 1 },
     du: { paddingHorizontal: 8, height: 22, borderRadius: 11, justifyContent: "center" },
-    duText: { fontFamily: FONT.w900, fontSize: 11, letterSpacing: 0.5 },
-    wert: { ...TYPE.num, fontSize: 17, color: c.textDark },
+    duText: { fontFamily: FONT.w700, fontSize: 11, letterSpacing: 0.5 },
+    wert: { ...TYPE.num, fontSize: 16, color: c.textDark },
     trend: { width: 16, alignItems: "center" },
-    trendGleich: { fontFamily: FONT.w700, fontSize: 14, color: c.textMuted },
+    trendGleich: { fontFamily: FONT.w600, fontSize: 14, color: c.textMuted },
     hinweis: { ...TYPE.caption, fontSize: 13, color: c.textMuted },
     verlauf: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 14, gap: 8 },
     verlaufKopf: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" },
     verlaufTitel: { ...TYPE.heading, color: c.textDark },
-    verlaufSub: { fontFamily: FONT.w700, fontSize: 14, color: c.textDark },
+    verlaufSub: { fontFamily: FONT.w600, fontSize: 14, color: c.textDark },
     reihe: { flexDirection: "row", gap: 6 },
     spalte: { width: SPALTE, alignItems: "center", gap: 4 },
     kachel: { width: SPALTE, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center", flexDirection: "row" },
-    kachelText: { fontFamily: FONT.w800, fontSize: 15 },
-    mehr: { fontFamily: FONT.w800, fontSize: 9, marginLeft: 1 },
+    kachelText: { fontFamily: FONT.w700, fontSize: 15 },
+    mehr: { fontFamily: FONT.w700, fontSize: 9, marginLeft: 1 },
     datum: { fontFamily: FONT.w600, fontSize: 12, color: c.textMuted },
     label: { ...TYPE.label, color: c.textMuted },
     platzKachel: { width: SPALTE, height: 30, borderRadius: 9, alignItems: "center", justifyContent: "center" },
-    platzKachelText: { fontFamily: FONT.w800, fontSize: 13 },
+    platzKachelText: { fontFamily: FONT.w700, fontSize: 13 },
   });

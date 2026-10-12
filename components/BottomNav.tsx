@@ -111,5 +111,5 @@ const makeStyles = (c: ThemeColors) =>
     knopf: { flex: 1 },
     pille: { flex: 1, borderRadius: 999, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 6 },
     pilleAktiv: { backgroundColor: c.tabActive },
-    label: { fontFamily: FONT.w800, fontSize: 14, color: c.navActiveText },
+    label: { fontFamily: FONT.w700, fontSize: 14, color: c.navActiveText },
   });

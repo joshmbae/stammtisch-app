@@ -27,5 +27,5 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     backgroundColor: c.mustardSoft, borderRadius: RADIUS.md,
     paddingVertical: 10, paddingHorizontal: 14,
   },
-  text: { flex: 1, fontSize: 13, fontFamily: FONT.w700, color: c.mustardText },
+  text: { flex: 1, fontSize: 13, fontFamily: FONT.w600, color: c.mustardText },
 });

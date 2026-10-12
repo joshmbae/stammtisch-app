@@ -152,21 +152,21 @@ const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     kopf: { flexDirection: "row", alignItems: "center", gap: 10 },
     label: { ...TYPE.label, color: c.textMuted },
-    titel: { fontFamily: FONT.w800, fontSize: 17, color: c.textDark },
+    titel: { fontFamily: FONT.w700, fontSize: 17, color: c.textDark },
     punkte: { flexDirection: "row", alignItems: "center" },
     // Punkt klein, Tippfläche 44 pt hoch und so breit wie möglich ohne Nachbarn zu überdecken.
     punktFlaeche: { height: 44, paddingHorizontal: 4, justifyContent: "center" },
     punkt: { width: 6, height: 6, borderRadius: 3, backgroundColor: c.borderDark },
     punktAktiv: { width: 18, backgroundColor: c.textDark },
     alle: { minHeight: 44, justifyContent: "center", paddingLeft: 4 },
-    alleText: { fontFamily: FONT.w700, fontSize: 14, color: c.blue },
+    alleText: { fontFamily: FONT.w600, fontSize: 14, color: c.blue },
     leer: { ...TYPE.caption, fontSize: 13, color: c.textMuted, paddingVertical: 24, textAlign: "center" },
     // Feste Höhe und abgeschnitten: die Säulen stehen unterhalb und werden hochgeschoben.
     podium: { flexDirection: "row", gap: 10, marginTop: 10, height: PODIUM_H, overflow: "hidden" },
     spalte: { flex: 1, height: PODIUM_H },
     kopfBox: { position: "absolute", left: 0, right: 0, bottom: SAEULE_MAX + 6, alignItems: "center" },
     kopfInhalt: { alignItems: "center", gap: 6, maxWidth: "100%" },
-    name: { fontFamily: FONT.w700, fontSize: 13, color: c.textDark, maxWidth: "100%" },
+    name: { fontFamily: FONT.w600, fontSize: 13, color: c.textDark, maxWidth: "100%" },
     saeule: {
       position: "absolute", left: 0, right: 0, bottom: 0, height: SAEULE_MAX,
       borderTopLeftRadius: 16, borderTopRightRadius: 16, alignItems: "center", paddingTop: 10,

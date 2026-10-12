@@ -134,7 +134,7 @@ export default function MitgliederScreen() {
               >
                 {/* Breiter als der Avatar: das Führungs-Badge mit „+N" ragt nach rechts. */}
                 <View style={styles.avatarPlatz}>
-                  <Avatar name={displayName(m)} color={m.avatarColor} photoUri={m.photoUri} size={48} fuehrt={fuehrende.get(m.id)} />
+                  <Avatar name={displayName(m)} color={m.avatarColor} photoUri={m.photoUri} size={40} fuehrt={fuehrende.get(m.id)} />
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <View style={styles.nameZeile}>
@@ -198,7 +198,7 @@ const makeStyles = (c: ThemeColors) =>
     person: { flex: 1, flexDirection: "row", alignItems: "center", gap: 10, minHeight: 68, paddingVertical: 8 },
     avatarPlatz: { width: 70 },
     nameZeile: { flexDirection: "row", alignItems: "center", gap: 6 },
-    name: { ...TYPE.bodyStrong, fontFamily: FONT.w800, fontSize: 16, color: c.textDark, flexShrink: 1 },
+    name: { ...TYPE.bodyStrong, fontFamily: FONT.w700, fontSize: 16, color: c.textDark, flexShrink: 1 },
     muted: { ...TYPE.caption, fontSize: 13, color: c.textMuted, marginTop: 1 },
     mehr: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
     leerTitel: { ...TYPE.heading, color: c.textDark },

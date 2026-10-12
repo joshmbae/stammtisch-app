@@ -26,6 +26,7 @@ export function Chip({ label, selected, onPress, leading, accessibilityLabel }: 
       accessibilityState={{ selected: !!selected }}
       accessibilityLabel={accessibilityLabel ?? label}
       style={[styles.chip, selected && styles.chipOn]}
+      hitSlop={{ top: 5, bottom: 5 }}
     >
       {leading}
       <Text style={[styles.text, selected && styles.textOn]} numberOfLines={1}>
@@ -50,14 +51,14 @@ export function StatusPill({ label, ton = "neutral" }: { label: string; ton?: To
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     chip: {
-      minHeight: 44, paddingHorizontal: 16, borderRadius: 999,
+      minHeight: 34, paddingHorizontal: 14, borderRadius: 999,
       backgroundColor: c.card, borderWidth: StyleSheet.hairlineWidth, borderColor: c.hairline,
       flexDirection: "row", alignItems: "center", gap: 8,
     },
     // Hell: Tinte; dunkel: Signalgelb, damit die Auswahl leuchtet.
     chipOn: c.heroStyle === "outline" ? { backgroundColor: c.mustard, borderColor: c.mustard } : { backgroundColor: c.textDark, borderColor: c.textDark },
-    text: { fontFamily: FONT.w800, fontSize: 15, color: c.textDark },
+    text: { fontFamily: FONT.w600, fontSize: 14, color: c.textDark },
     textOn: { color: c.heroStyle === "outline" ? c.onMustard : c.background },
     pill: { alignSelf: "flex-start", height: 24, paddingHorizontal: 9, borderRadius: 999, justifyContent: "center" },
-    pillText: { fontFamily: FONT.w800, fontSize: 12 },
+    pillText: { fontFamily: FONT.w600, fontSize: 12 },
   });

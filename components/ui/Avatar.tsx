@@ -120,13 +120,13 @@ export function AvatarStack({ members, size = 28, max = 7, ringColor }: { member
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     center: { alignItems: "center", justifyContent: "center" },
-    letter: { fontFamily: FONT.w800 },
+    letter: { fontFamily: FONT.w700 },
     badgeRow: { position: "absolute", flexDirection: "row", alignItems: "center" },
     mehr: {
       marginLeft: -4, paddingHorizontal: 4, minWidth: 18, borderWidth: 2,
       backgroundColor: c.textDark, alignItems: "center", justifyContent: "center",
     },
-    mehrText: { fontFamily: FONT.w800, fontSize: 9, color: c.background },
+    mehrText: { fontFamily: FONT.w700, fontSize: 9, color: c.background },
     stack: { flexDirection: "row", alignItems: "center" },
-    restText: { fontFamily: FONT.w800, fontSize: 11, color: c.textMid },
+    restText: { fontFamily: FONT.w700, fontSize: 11, color: c.textMid },
   });

@@ -167,7 +167,7 @@ export function StrafeSheet({ strafe, kasse, onClose }: { strafe: StrafLog | nul
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
-    betrag: { ...TYPE.num, fontSize: 40, lineHeight: 46 },
+    betrag: { ...TYPE.num, fontSize: 34, lineHeight: 40 },
     text: { ...TYPE.body, color: c.textDark, lineHeight: 22 },
     karte: { backgroundColor: c.card, borderRadius: RADIUS.tile, paddingHorizontal: 16, borderWidth: StyleSheet.hairlineWidth, borderColor: c.hairline },
     zeile: { paddingVertical: 12, gap: 2, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border },
@@ -175,7 +175,7 @@ const makeStyles = (c: ThemeColors) =>
     zeileWertReihe: { flexDirection: "row", alignItems: "center", gap: 4 },
     zeileWert: { flex: 1, fontFamily: FONT.w600, fontSize: 15, color: c.textDark, lineHeight: 21 },
     strafKopf: { flexDirection: "row", alignItems: "center", gap: 14 },
-    strafWas: { fontFamily: FONT.w800, fontSize: 18, color: c.textDark },
-    strafStatus: { fontFamily: FONT.w700, fontSize: 13 },
-    strafBetrag: { ...TYPE.num, fontSize: 26 },
+    strafWas: { fontFamily: FONT.w700, fontSize: 18, color: c.textDark },
+    strafStatus: { fontFamily: FONT.w600, fontSize: 13 },
+    strafBetrag: { ...TYPE.num, fontSize: 22 },
   });

@@ -115,7 +115,7 @@ export default function ProtokollListeScreen() {
                   style={styles.karte}
                 >
                   <View style={styles.kopf}>
-                    <IconSquircle emoji={SYMBOL.protokoll} ton={tonFuerArt(item.termin)} size={40} />
+                    <IconSquircle emoji={SYMBOL.protokoll} ton={tonFuerArt(item.termin)} size={36} />
                     <View style={{ flex: 1, minWidth: 0 }}>
                       <Text style={styles.titel} numberOfLines={2}>{titel}</Text>
                       {meta ? <Text style={styles.meta} numberOfLines={1}>{meta}</Text> : null}
@@ -138,7 +138,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   jahr: { ...TYPE.label, color: c.textMuted, marginTop: 4, marginLeft: 4 },
   karte: { padding: 14, gap: 10 },
   kopf: { flexDirection: "row", alignItems: "center", gap: 12 },
-  titel: { fontFamily: FONT.w800, fontSize: 16, lineHeight: 21, color: c.textDark },
+  titel: { fontFamily: FONT.w700, fontSize: 16, lineHeight: 21, color: c.textDark },
   meta: { ...TYPE.caption, fontSize: 13, color: c.textMuted, marginTop: 2 },
   auszug: { fontFamily: FONT.w500, fontSize: 14, lineHeight: 20, color: c.textMid },
   leer: { alignItems: "center", gap: 8, paddingVertical: 32 },

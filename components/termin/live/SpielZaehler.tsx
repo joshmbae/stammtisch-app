@@ -103,7 +103,7 @@ const makeStyles = (c: ThemeColors) =>
       flexDirection: "row", alignItems: "center", gap: 8, minHeight: 64, paddingVertical: 8, paddingLeft: 12, paddingRight: 8,
       borderRadius: RADIUS.tile, backgroundColor: c.card, borderWidth: StyleSheet.hairlineWidth, borderColor: c.hairline,
     },
-    name: { flex: 1, fontFamily: FONT.w800, fontSize: 15, color: c.textDark, marginLeft: 2 },
+    name: { flex: 1, fontFamily: FONT.w700, fontSize: 15, color: c.textDark, marginLeft: 2 },
     knopf: { height: 48, borderRadius: 16, alignItems: "center", justifyContent: "center", overflow: "visible" },
     zahl: { ...TYPE.num, fontSize: 22 },
     fuss: { ...TYPE.caption, fontSize: 13, color: c.textMuted, textAlign: "center", marginTop: 4 },

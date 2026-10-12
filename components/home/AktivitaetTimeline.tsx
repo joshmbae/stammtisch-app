@@ -63,7 +63,7 @@ const makeStyles = (c: ThemeColors) =>
     linie: { position: "absolute", left: 13, top: 39, bottom: -7, width: 2, borderRadius: 1, backgroundColor: c.heroStyle === "outline" ? "rgba(77,124,255,0.3)" : "#C3CCE2" },
     punkt: { width: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center", borderWidth: 3, borderColor: c.blueBg },
     emoji: { fontSize: 12 },
-    text: { fontFamily: FONT.w700, fontSize: 14, lineHeight: 19, color: c.textDark },
+    text: { fontFamily: FONT.w600, fontSize: 14, lineHeight: 19, color: c.textDark },
     detail: { fontFamily: FONT.w500, fontSize: 13, lineHeight: 17, color: c.textMid },
     zeit: { fontFamily: FONT.w600, fontSize: 12, color: c.textMuted, marginTop: 1 },
   });

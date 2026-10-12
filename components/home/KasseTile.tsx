@@ -69,7 +69,7 @@ const makeStyles = (c: ThemeColors) =>
     kopf: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
     label: { ...TYPE.label },
     pfeil: { width: 26, height: 26, borderRadius: 13, alignItems: "center", justifyContent: "center" },
-    betrag: { ...TYPE.num, fontSize: 28, lineHeight: 32, marginTop: 6 },
+    betrag: { ...TYPE.num, fontSize: 24, lineHeight: 28, marginTop: 6 },
     euro: { fontSize: 18 },
     stapelZeile: { flexDirection: "row", alignItems: "flex-end", gap: 6, height: 40, marginTop: "auto" },
     stapel: { flex: 1, flexDirection: "column-reverse", gap: 1.5 },

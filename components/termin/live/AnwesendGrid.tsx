@@ -119,14 +119,14 @@ const makeStyles = (c: ThemeColors) =>
     kachelDa: c.heroStyle === "outline"
       ? { backgroundColor: c.live, borderColor: c.liveEdge, borderWidth: 1 }
       : { backgroundColor: c.live, borderColor: c.live },
-    name: { fontFamily: FONT.w800, fontSize: 14, color: c.textDark, maxWidth: "100%" },
-    abgesagt: { fontFamily: FONT.w700, fontSize: 12, color: c.coralText, marginTop: -4 },
+    name: { fontFamily: FONT.w700, fontSize: 14, color: c.textDark, maxWidth: "100%" },
+    abgesagt: { fontFamily: FONT.w600, fontSize: 12, color: c.coralText, marginTop: -4 },
     haken: { position: "absolute", top: 8, right: 8, width: 22, height: 22, borderRadius: 11, alignItems: "center", justifyContent: "center" },
     spaet: { borderRadius: RADIUS.tile, paddingVertical: 10, paddingLeft: 14, paddingRight: 10, flexDirection: "row", alignItems: "center", gap: 10 },
     spaetIcon: { width: 36, height: 36, borderRadius: 12, backgroundColor: c.card, alignItems: "center", justifyContent: "center" },
-    spaetTitel: { fontFamily: FONT.w800, fontSize: 16, color: c.textDark },
+    spaetTitel: { fontFamily: FONT.w700, fontSize: 16, color: c.textDark },
     spaetSub: { fontFamily: FONT.w600, fontSize: 13 },
     spaetJa: { height: 46, paddingHorizontal: 16, borderRadius: RADIUS.pill, alignItems: "center", justifyContent: "center" },
-    spaetJaText: { fontFamily: FONT.w800, fontSize: 15 },
+    spaetJaText: { fontFamily: FONT.w700, fontSize: 15 },
     spaetNein: { width: 46, height: 46, borderRadius: 23, backgroundColor: c.card, alignItems: "center", justifyContent: "center" },
   });

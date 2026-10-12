@@ -108,9 +108,9 @@ export default function OnboardingIntroScreen() {
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     kopf: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
-    zaehler: { fontFamily: FONT.w700, fontSize: 13, color: c.textMuted, fontVariant: ["tabular-nums"] },
+    zaehler: { fontFamily: FONT.w600, fontSize: 13, color: c.textMuted, fontVariant: ["tabular-nums"] },
     skip: { minHeight: 44, justifyContent: "center", paddingHorizontal: 8, marginRight: -8 },
-    skipText: { fontFamily: FONT.w700, fontSize: 15, color: c.blue },
+    skipText: { fontFamily: FONT.w600, fontSize: 15, color: c.blue },
     dots: { flexDirection: "row", justifyContent: "center", gap: 8, marginBottom: 8 },
     dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: c.borderDark },
     dotActive: { backgroundColor: c.blue, width: 20 },

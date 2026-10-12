@@ -20,13 +20,15 @@ interface Props<K extends string> {
   variant?: "light" | "blue" | "live";
 }
 
-/** Große Bereichs-Tabs mit gleitendem Daumen. */
+const INNEN = 3;
+
+/** Bereichs-Tabs mit gleitendem Daumen. */
 export function SegmentedTabs<K extends string>({ items, value, onChange, variant = "light" }: Props<K>) {
   const styles = useThemedStyles(makeStyles);
   const [breite, setBreite] = useState(0);
   const index = Math.max(0, items.findIndex((i) => i.key === value));
   const x = useSharedValue(0);
-  const segment = breite > 0 ? (breite - 10) / items.length : 0;
+  const segment = breite > 0 ? (breite - 2 * INNEN) / items.length : 0;
   React.useEffect(() => {
     x.value = withSpring(index * segment, MOTION.spring);
   }, [index, segment]);
@@ -50,6 +52,7 @@ export function SegmentedTabs<K extends string>({ items, value, onChange, varian
             accessibilityState={{ selected: aktiv }}
             accessibilityLabel={it.sub ? `${it.label}, ${it.sub}` : it.label}
             style={styles.item}
+            hitSlop={{ top: 4, bottom: 4 }}
           >
             <Text style={[styles.label, aktiv ? aufThumb : styles.onBar]} numberOfLines={1}>
               {it.label}
@@ -68,15 +71,15 @@ export function SegmentedTabs<K extends string>({ items, value, onChange, varian
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
-    bar: { flexDirection: "row", borderRadius: 20, padding: 5, minHeight: 56, backgroundColor: c.cardAlt },
-    thumb: { position: "absolute", top: 5, bottom: 5, left: 5, borderRadius: 15 },
+    bar: { flexDirection: "row", borderRadius: 14, padding: INNEN, minHeight: 40, backgroundColor: c.cardAlt },
+    thumb: { position: "absolute", top: INNEN, bottom: INNEN, left: INNEN, borderRadius: 11 },
     thumbLight: { backgroundColor: c.card },
     thumbBlue: { backgroundColor: c.blue },
     // Im Dunkeln ist c.live eine dunkle Fläche – dort leuchtet der Daumen in Mint.
     thumbLive: { backgroundColor: c.heroStyle === "outline" ? c.liveAccent : c.live },
-    item: { flex: 1, alignItems: "center", justifyContent: "center", minHeight: 46, paddingHorizontal: 4 },
-    label: { fontFamily: FONT.w800, fontSize: 14 },
-    sub: { fontFamily: FONT.w700, fontSize: 12, opacity: 0.8, fontVariant: ["tabular-nums"] },
+    item: { flex: 1, alignItems: "center", justifyContent: "center", minHeight: 34, paddingHorizontal: 4 },
+    label: { fontFamily: FONT.w600, fontSize: 14 },
+    sub: { fontFamily: FONT.w500, fontSize: 11, opacity: 0.8, fontVariant: ["tabular-nums"] },
     onBar: { color: c.textMuted },
     onThumbLight: { color: c.textDark },
     onThumbBlue: { color: c.onAccent },

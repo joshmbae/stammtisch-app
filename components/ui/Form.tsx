@@ -166,7 +166,7 @@ const makeStyles = (c: ThemeColors) =>
     gruppe: { paddingVertical: 2, paddingHorizontal: 14 },
     trenner: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
     row: { flexDirection: "row", alignItems: "center", gap: 12, minHeight: 56, paddingVertical: 8 },
-    rowTitle: { fontFamily: FONT.w700, fontSize: 16, color: c.textDark },
+    rowTitle: { fontFamily: FONT.w600, fontSize: 16, color: c.textDark },
     rowSub: { ...TYPE.caption, fontSize: 13, color: c.textMuted },
     rowValue: { fontFamily: FONT.w600, fontSize: 15, color: c.textMuted, maxWidth: "45%" },
     label: { ...TYPE.label, color: c.textMuted },

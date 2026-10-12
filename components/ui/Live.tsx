@@ -37,7 +37,7 @@ export function LiveTimer({ start, now, style }: { start: Date; now: Date; style
   const sek = Math.max(0, Math.floor((now.getTime() - start.getTime()) / 1000));
   const text = `${Math.floor(sek / 3600)}:${zwei(Math.floor(sek / 60) % 60)}:${zwei(sek % 60)}`;
   return (
-    <Text style={[{ fontFamily: FONT.w800, fontVariant: ["tabular-nums"] }, style]} accessibilityRole="timer" accessibilityLabel={`läuft seit ${text}`} maxFontSizeMultiplier={MAX_FONT_SCALE}>
+    <Text style={[{ fontFamily: FONT.w700, fontVariant: ["tabular-nums"] }, style]} accessibilityRole="timer" accessibilityLabel={`läuft seit ${text}`} maxFontSizeMultiplier={MAX_FONT_SCALE}>
       {text}
     </Text>
   );
@@ -100,7 +100,7 @@ export function CountBurst({ trigger, text, color }: { trigger: number; text: st
   const st = useAnimatedStyle(() => ({ transform: [{ translateY: y.value }], opacity: o.value }));
   if (!sichtbar) return null;
   return (
-    <Animated.Text pointerEvents="none" style={[{ position: "absolute", top: 4, right: 10, fontFamily: FONT.w800, fontSize: 16, color }, st]} accessibilityElementsHidden>
+    <Animated.Text pointerEvents="none" style={[{ position: "absolute", top: 4, right: 10, fontFamily: FONT.w700, fontSize: 16, color }, st]} accessibilityElementsHidden>
       {text}
     </Animated.Text>
   );
@@ -110,7 +110,7 @@ const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     flipRow: { flexDirection: "row", gap: 8 },
     flipCol: { flex: 1, alignItems: "center", gap: 4 },
-    flipTile: { alignSelf: "stretch", minHeight: 54, borderRadius: 14, alignItems: "center", justifyContent: "center", overflow: "hidden" },
-    flipDigit: { fontFamily: FONT.w800, fontSize: 28, fontVariant: ["tabular-nums"] },
+    flipTile: { alignSelf: "stretch", minHeight: 46, borderRadius: 12, alignItems: "center", justifyContent: "center", overflow: "hidden" },
+    flipDigit: { fontFamily: FONT.w700, fontSize: 24, fontVariant: ["tabular-nums"] },
     flipLabel: { fontFamily: FONT.w600, fontSize: 12 },
   });

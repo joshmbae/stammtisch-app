@@ -373,7 +373,7 @@ const makeStyles = (c: ThemeColors) =>
     farbRing: { width: 38, height: 38, borderRadius: 19, borderWidth: 2, borderColor: "transparent", alignItems: "center", justifyContent: "center" },
     farbPunkt: { width: 30, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center" },
     fotoWeg: { flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start", minHeight: 44, marginTop: 4, marginBottom: -8 },
-    fotoWegText: { fontFamily: FONT.w700, fontSize: 14, color: c.dangerText },
+    fotoWegText: { fontFamily: FONT.w600, fontSize: 14, color: c.dangerText },
 
     zweiSpalten: { flexDirection: "row", gap: 10 },
     zeile: { flexDirection: "row", gap: 10 },
@@ -395,5 +395,5 @@ const makeStyles = (c: ThemeColors) =>
     pinEingabe: { ...StyleSheet.absoluteFillObject, opacity: 0.02, color: "transparent", fontSize: 16 },
 
     entfernen: { flexDirection: "row", alignItems: "center", gap: 8, alignSelf: "flex-start", minHeight: 44 },
-    entfernenText: { fontFamily: FONT.w800, fontSize: 16, color: c.dangerText },
+    entfernenText: { fontFamily: FONT.w700, fontSize: 16, color: c.dangerText },
   });

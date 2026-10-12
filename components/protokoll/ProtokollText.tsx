@@ -123,15 +123,15 @@ const makeStyles = (c: ThemeColors) =>
     absatz: { fontFamily: FONT.w500, fontSize: 15, lineHeight: 22, color: c.textDark },
     punkt: { flexDirection: "row", gap: 10, marginTop: 12 },
     nr: { width: 24, height: 24, borderRadius: 12, backgroundColor: c.blueBg, alignItems: "center", justifyContent: "center" },
-    nrText: { fontFamily: FONT.w800, fontSize: 12, color: c.blue },
-    punktTitel: { fontFamily: FONT.w800, fontSize: 15, lineHeight: 21, color: c.textDark },
+    nrText: { fontFamily: FONT.w700, fontSize: 12, color: c.blue },
+    punktTitel: { fontFamily: FONT.w700, fontSize: 15, lineHeight: 21, color: c.textDark },
     punktText: { fontFamily: FONT.w500, fontSize: 15, lineHeight: 22, color: c.textMid },
     beschluss: {
       flexDirection: "row", gap: 8, alignItems: "flex-start", marginTop: 8,
       borderRadius: 12, backgroundColor: c.greenSoft, paddingVertical: 8, paddingHorizontal: 10,
     },
     beschlussText: { flex: 1, fontFamily: FONT.w600, fontSize: 14, lineHeight: 20, color: c.textDark },
-    beschlussLabel: { fontFamily: FONT.w800 },
+    beschlussLabel: { fontFamily: FONT.w700 },
     liste: { flexDirection: "row", gap: 10, marginTop: 6 },
     bullet: { width: 6, height: 6, borderRadius: 3, backgroundColor: c.blue, marginTop: 8 },
   });

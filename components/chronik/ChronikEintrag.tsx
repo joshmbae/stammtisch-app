@@ -88,7 +88,7 @@ const makeStyles = (c: ThemeColors) =>
     symbol: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
     emoji: { fontSize: 18, lineHeight: 24, textAlign: "center" },
     texte: { flex: 1, minWidth: 0, gap: 2 },
-    text: { fontFamily: FONT.w700, fontSize: 15, lineHeight: 20, color: c.textDark },
+    text: { fontFamily: FONT.w600, fontSize: 15, lineHeight: 20, color: c.textDark },
     detail: { fontFamily: FONT.w500, fontSize: 14, lineHeight: 19, color: c.textMid },
     meta: { fontFamily: FONT.w600, fontSize: 12, color: c.textMuted, fontVariant: ["tabular-nums"] },
   });

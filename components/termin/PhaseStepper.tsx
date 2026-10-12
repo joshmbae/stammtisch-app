@@ -65,5 +65,5 @@ const makeStyles = (c: ThemeColors) =>
       backgroundColor: c.card, borderWidth: StyleSheet.hairlineWidth, borderColor: c.hairline,
     },
     punkt: { width: 8, height: 8, borderRadius: 4 },
-    text: { fontFamily: FONT.w800, fontSize: 14, color: c.textDark },
+    text: { fontFamily: FONT.w700, fontSize: 14, color: c.textDark },
   });

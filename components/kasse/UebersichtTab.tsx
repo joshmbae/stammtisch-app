@@ -88,7 +88,7 @@ export function UebersichtTab({ kasse, onStrafen, onRechnungen, onEintrag }: {
                 style={styles.saeuleFlaeche}
               >
                 <View style={[styles.saeule, { height: h, backgroundColor: sel ? c.blue : dunkel ? "rgba(255,201,60,0.22)" : "rgba(28,27,25,0.14)" }, sel && dunkel && glow(c.blue, c, 10)]} />
-                <Text style={[styles.monat, { color: dunkel ? c.textMuted : c.onMustard }, sel && { fontFamily: FONT.w900 }]}>{MONATE[x.monat.getMonth()][0]}</Text>
+                <Text style={[styles.monat, { color: dunkel ? c.textMuted : c.onMustard }, sel && { fontFamily: FONT.w800 }]}>{MONATE[x.monat.getMonth()][0]}</Text>
               </PressableScale>
             );
           })}
@@ -117,7 +117,7 @@ export function UebersichtTab({ kasse, onStrafen, onRechnungen, onEintrag }: {
           <Text style={[styles.label, { color: c.textMuted, marginBottom: 6 }]}>Offene Posten</Text>
           {offeneStrafen.length > 0 ? (
             <PressableScale onPress={onStrafen} style={styles.posten} accessibilityLabel={`Strafen: ${euro(offeneStrafen.reduce((s, l) => s + l.betrag, 0))} offen`}>
-              <IconSquircle emoji={SYMBOL.strafe} ton="coral" size={40} />
+              <IconSquircle emoji={SYMBOL.strafe} ton="coral" size={36} />
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={styles.postenTitel}>Strafen</Text>
                 <Text style={styles.postenSub} numberOfLines={2}>{`bei ${strafPersonen.length} ${strafPersonen.length === 1 ? "Person" : "Personen"} · ${strafPersonen.map((p) => displayName(p!)).join(", ")}`}</Text>
@@ -133,7 +133,7 @@ export function UebersichtTab({ kasse, onStrafen, onRechnungen, onEintrag }: {
             const wann = formatWochentagDatum(new Date(termin ? `${termin.datum}T00:00:00` : e.datum));
             return (
               <PressableScale key={e.id} onPress={onRechnungen} style={[styles.posten, styles.trenner]} accessibilityLabel={`Rechnung ${wann}: ${euro(rechnungOffen(e))} offen`}>
-                <IconSquircle emoji={SYMBOL.rechnung} ton="blue" size={40} />
+                <IconSquircle emoji={SYMBOL.rechnung} ton="blue" size={36} />
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text style={styles.postenTitel}>{`Rechnung ${wann}`}</Text>
                   <Text style={styles.postenSub} numberOfLines={1}>
@@ -201,32 +201,32 @@ const makeStyles = (c: ThemeColors) =>
     zeile: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10 },
     label: { ...TYPE.label },
     standChip: { paddingHorizontal: 10, height: 28, borderRadius: RADIUS.pill, justifyContent: "center" },
-    standChipText: { fontFamily: FONT.w700, fontSize: 12 },
-    betrag: { ...TYPE.num, fontSize: 60, lineHeight: 66, letterSpacing: -2 },
-    euro: { fontSize: 30, letterSpacing: 0 },
-    balken: { flexDirection: "row", alignItems: "flex-end", height: 86, marginHorizontal: -2 },
-    saeuleFlaeche: { flex: 1, height: 86, justifyContent: "flex-end", alignItems: "center", paddingHorizontal: 2, gap: 4 },
+    standChipText: { fontFamily: FONT.w600, fontSize: 12 },
+    betrag: { ...TYPE.num, fontSize: 44, lineHeight: 50, letterSpacing: -1.2 },
+    euro: { fontSize: 24, letterSpacing: 0 },
+    balken: { flexDirection: "row", alignItems: "flex-end", height: 64, marginHorizontal: -2 },
+    saeuleFlaeche: { flex: 1, height: 64, justifyContent: "flex-end", alignItems: "center", paddingHorizontal: 2, gap: 4 },
     saeule: { alignSelf: "stretch", borderRadius: 6 },
-    monat: { fontFamily: FONT.w700, fontSize: 12 },
-    monatText: { fontFamily: FONT.w800, fontSize: 15, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.heroStyle === "outline" ? c.hairline : "rgba(28,27,25,0.15)", paddingTop: 10 },
+    monat: { fontFamily: FONT.w600, fontSize: 12 },
+    monatText: { fontFamily: FONT.w700, fontSize: 15, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.heroStyle === "outline" ? c.hairline : "rgba(28,27,25,0.15)", paddingTop: 10 },
     kachel: { flex: 1, borderRadius: RADIUS.tile, padding: 12, gap: 4 },
     kachelKopf: { flexDirection: "row", alignItems: "center", gap: 6 },
     kachelLabel: { ...TYPE.label, color: c.textMuted },
-    kachelWert: { ...TYPE.num, fontSize: 28 },
+    kachelWert: { ...TYPE.num, fontSize: 22 },
 
-    posten: { flexDirection: "row", alignItems: "center", gap: 12, minHeight: 64, paddingVertical: 8 },
+    posten: { flexDirection: "row", alignItems: "center", gap: 12, minHeight: 56, paddingVertical: 8 },
     trenner: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
-    postenTitel: { fontFamily: FONT.w800, fontSize: 16, color: c.textDark },
+    postenTitel: { fontFamily: FONT.w600, fontSize: 15, color: c.textDark },
     postenSub: { ...TYPE.caption, fontSize: 13, color: c.textMuted },
-    postenBetrag: { ...TYPE.num, fontSize: 22 },
+    postenBetrag: { ...TYPE.num, fontSize: 18 },
 
     leer: { ...TYPE.body, fontSize: 14, color: c.textMuted },
     tagKopf: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingTop: 12, paddingBottom: 6 },
     tagText: { ...TYPE.label, color: c.textMuted },
-    tagSumme: { fontFamily: FONT.w800, fontSize: 12 },
-    buchung: { flexDirection: "row", alignItems: "center", gap: 12, minHeight: 60, paddingVertical: 8 },
+    tagSumme: { fontFamily: FONT.w700, fontSize: 12 },
+    buchung: { flexDirection: "row", alignItems: "center", gap: 12, minHeight: 52, paddingVertical: 8 },
     rund: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
-    buchungTitel: { fontFamily: FONT.w800, fontSize: 15, color: c.textDark },
+    buchungTitel: { fontFamily: FONT.w700, fontSize: 15, color: c.textDark },
     buchungSub: { ...TYPE.caption, fontSize: 13, color: c.textMuted },
-    buchungBetrag: { ...TYPE.num, fontSize: 18 },
+    buchungBetrag: { ...TYPE.num, fontSize: 16 },
   });

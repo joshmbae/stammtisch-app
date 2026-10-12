@@ -105,7 +105,7 @@ const makeStyles = (c: ThemeColors) =>
     raster: { flexDirection: "row", flexWrap: "wrap", marginHorizontal: -4 },
     zelle: { width: "50%", padding: 4 },
     chip: { minHeight: 52, borderRadius: RADIUS.md + 2, paddingLeft: 12, flexDirection: "row", alignItems: "center" },
-    wer: { fontFamily: FONT.w800, fontSize: 14, color: c.textDark },
+    wer: { fontFamily: FONT.w700, fontSize: 14, color: c.textDark },
     was: { fontFamily: FONT.w600, fontSize: 13 },
     x: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
     xKreis: { width: 26, height: 26, borderRadius: 13, backgroundColor: c.heroStyle === "outline" ? "rgba(255,255,255,0.1)" : "rgba(28,27,25,0.08)", alignItems: "center", justifyContent: "center" },

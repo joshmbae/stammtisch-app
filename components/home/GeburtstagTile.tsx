@@ -48,10 +48,10 @@ const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     tile: { flex: 1, minHeight: 132, borderRadius: 24, overflow: "hidden", justifyContent: "flex-end" },
     initialWrap: { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center", paddingTop: 28, paddingBottom: 46 },
-    initial: { fontFamily: FONT.w800, fontSize: 52, color: "rgba(255,255,255,0.9)" },
+    initial: { fontFamily: FONT.w700, fontSize: 52, color: "rgba(255,255,255,0.9)" },
     kopf: { position: "absolute", top: 14, left: 14, right: 14, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
     label: { ...TYPE.label, color: "#FFFFFF" },
     text: { padding: 12 },
-    titel: { fontFamily: FONT.w800, fontSize: 16, color: "#FFFFFF" },
+    titel: { fontFamily: FONT.w700, fontSize: 16, color: "#FFFFFF" },
     sub: { fontFamily: FONT.w600, fontSize: 12, color: "rgba(255,255,255,0.88)" },
   });

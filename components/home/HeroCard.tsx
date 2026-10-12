@@ -136,7 +136,7 @@ function Live({ hero, now, members, stats, stammtischzeit, spielTypen }: Props) 
         </View>
       </View>
       <View>
-        <LiveTimer start={start} now={now} style={{ fontSize: 54, lineHeight: 58, letterSpacing: -1.5, color: c.heroStyle === "outline" ? c.liveAccent : c.onLive }} />
+        <LiveTimer start={start} now={now} style={{ fontSize: 44, lineHeight: 48, letterSpacing: -1.2, color: c.heroStyle === "outline" ? c.liveAccent : c.onLive }} />
         <Text style={[styles.small, { color: c.liveSub }]}>{`seit ${zeitText(start)}${t.ort ? ` · ${t.ort}` : ""}`}</Text>
       </View>
       <View style={[styles.row, { justifyContent: "flex-start", gap: 12 }]}>
@@ -237,16 +237,16 @@ const makeStyles = (c: ThemeColors) =>
     row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
     label: { ...TYPE.label },
     chip: { minHeight: 32, borderRadius: 999, paddingHorizontal: 10, flexDirection: "row", alignItems: "center", gap: 4 },
-    chipText: { fontFamily: FONT.w700, fontSize: 13 },
+    chipText: { fontFamily: FONT.w600, fontSize: 13 },
     small: { ...TYPE.caption, fontSize: 13 },
     bodyStrong: { ...TYPE.bodyStrong },
-    titel: { ...TYPE.title, fontSize: 24 },
+    titel: { ...TYPE.title, fontSize: 22 },
     track: { height: 6, borderRadius: 999, backgroundColor: "rgba(255,255,255,0.2)", overflow: "hidden" },
     fill: { height: "100%", borderRadius: 999 },
     round: { width: 36, height: 36, borderRadius: 18, backgroundColor: "rgba(255,255,255,0.14)", alignItems: "center", justifyContent: "center" },
     liveChip: { flex: 1, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 9, backgroundColor: "rgba(255,255,255,0.1)", flexDirection: "row", alignItems: "baseline", gap: 6 },
     liveZahl: { ...TYPE.num, fontSize: 20 },
-    gross: { ...TYPE.num, fontSize: 46, lineHeight: 50, letterSpacing: -1.5 },
+    gross: { ...TYPE.num, fontSize: 36, lineHeight: 40, letterSpacing: -1 },
     dots: { flex: 1, flexDirection: "row", flexWrap: "wrap", justifyContent: "flex-end", gap: 4 },
     dot: { width: 10, height: 10, borderRadius: 5 },
     meisteRow: { flexDirection: "row", alignItems: "center", gap: 10 },

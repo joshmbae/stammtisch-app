@@ -189,6 +189,6 @@ const makeStyles = (c: ThemeColors) =>
       height: 44, paddingHorizontal: 14, borderRadius: RADIUS.pill, flexDirection: "row", alignItems: "center", gap: 6,
       backgroundColor: c.card, borderWidth: StyleSheet.hairlineWidth, borderColor: c.hairline,
     },
-    bearbeitenText: { fontFamily: FONT.w700, fontSize: 14, color: c.textDark },
+    bearbeitenText: { fontFamily: FONT.w600, fontSize: 14, color: c.textDark },
     leer: { fontFamily: FONT.w600, fontSize: 15, color: c.textMuted, textAlign: "center", paddingVertical: 32 },
   });

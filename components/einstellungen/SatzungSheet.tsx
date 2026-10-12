@@ -116,7 +116,7 @@ const makeStyles = (c: ThemeColors) =>
       backgroundColor: c.card, borderRadius: RADIUS.md, borderWidth: StyleSheet.hairlineWidth, borderColor: c.hairline,
     },
     nr: { width: 26, height: 26, borderRadius: 13, backgroundColor: c.blueBg, alignItems: "center", justifyContent: "center" },
-    nrText: { fontFamily: FONT.w800, fontSize: 13, color: c.blue },
+    nrText: { fontFamily: FONT.w700, fontSize: 13, color: c.blue },
     regelInput: { flex: 1, fontFamily: FONT.w600, fontSize: 15, color: c.textDark, paddingVertical: 12, lineHeight: 20 },
     weg: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
     neuReihe: { flexDirection: "row", alignItems: "flex-end", gap: 10 },

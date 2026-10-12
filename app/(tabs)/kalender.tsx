@@ -164,7 +164,7 @@ export default function TermineScreen() {
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     tagKopf: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 4 },
-    tagTitel: { flex: 1, fontFamily: FONT.w800, fontSize: 17, color: c.textDark },
+    tagTitel: { flex: 1, fontFamily: FONT.w700, fontSize: 17, color: c.textDark },
     tagAktion: { height: 44, paddingHorizontal: 10, justifyContent: "center" },
-    tagAktionText: { fontFamily: FONT.w700, fontSize: 14, color: c.textMuted },
+    tagAktionText: { fontFamily: FONT.w600, fontSize: 14, color: c.textMuted },
   });

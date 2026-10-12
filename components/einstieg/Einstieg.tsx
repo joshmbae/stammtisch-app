@@ -70,10 +70,10 @@ const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     root: { flex: 1, backgroundColor: c.background },
     inhalt: { flexGrow: 1, paddingHorizontal: 20, paddingTop: 32, paddingBottom: 32, gap: 12 },
-    titel: { fontFamily: FONT.w800, fontSize: 31, lineHeight: 34, letterSpacing: -0.6, color: c.textDark, marginTop: 26 },
+    titel: { fontFamily: FONT.w700, fontSize: 31, lineHeight: 34, letterSpacing: -0.6, color: c.textDark, marginTop: 26 },
     text: { fontFamily: FONT.w600, fontSize: 15, lineHeight: 21, color: c.textMuted, marginTop: 8 },
     liste: { marginTop: 24, gap: 10 },
     vorteil: { flexDirection: "row", alignItems: "center", gap: 12 },
-    vorteilTitel: { ...TYPE.bodyStrong, fontFamily: FONT.w800, color: c.textDark },
+    vorteilTitel: { ...TYPE.bodyStrong, fontFamily: FONT.w700, color: c.textDark },
     vorteilText: { ...TYPE.caption, fontSize: 13, color: c.textMuted },
   });

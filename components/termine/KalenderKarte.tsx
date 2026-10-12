@@ -79,13 +79,13 @@ export function KalenderKarte({ termine, gewaehlt, onWaehlen }: {
           <Text style={styles.titel}>{titel}</Text>
           {untertitel ? <Text style={styles.sub}>{untertitel}</Text> : null}
         </PressableScale>
-        <PressableScale onPress={() => blaettern(-1)} style={styles.rund} accessibilityLabel={monat ? "Vorheriger Monat" : "Vorherige Woche"}>
+        <PressableScale onPress={() => blaettern(-1)} style={styles.rund} hitSlop={4} accessibilityLabel={monat ? "Vorheriger Monat" : "Vorherige Woche"}>
           <Ionicons name="chevron-back" size={18} color={c.textDark} />
         </PressableScale>
-        <PressableScale onPress={() => blaettern(1)} style={styles.rund} accessibilityLabel={monat ? "Nächster Monat" : "Nächste Woche"}>
+        <PressableScale onPress={() => blaettern(1)} style={styles.rund} hitSlop={4} accessibilityLabel={monat ? "Nächster Monat" : "Nächste Woche"}>
           <Ionicons name="chevron-forward" size={18} color={c.textDark} />
         </PressableScale>
-        <PressableScale onPress={() => setMonat((m) => !m)} style={styles.umschalter} accessibilityLabel={monat ? "Wochenansicht" : "Monatsansicht"}>
+        <PressableScale onPress={() => setMonat((m) => !m)} style={styles.umschalter} hitSlop={4} accessibilityLabel={monat ? "Wochenansicht" : "Monatsansicht"}>
           <Text style={styles.umschalterText}>{monat ? "Woche" : "Monat"}</Text>
         </PressableScale>
       </View>
@@ -116,7 +116,7 @@ export function KalenderKarte({ termine, gewaehlt, onWaehlen }: {
                     accessibilityLabel={`${d.toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" })}${arten.length ? `, ${arten.length} Termin${arten.length > 1 ? "e" : ""}` : ""}`}
                   >
                     <View style={[styles.tag, istHeute && { backgroundColor: c.blueBg }, istGewaehlt && { backgroundColor: c.textDark }]}>
-                      <Text style={[styles.tagText, istHeute && { color: c.blue, fontFamily: FONT.w800 }, istGewaehlt && { color: c.background, fontFamily: FONT.w800 }]}>{d.getDate()}</Text>
+                      <Text style={[styles.tagText, istHeute && { color: c.blue, fontFamily: FONT.w700 }, istGewaehlt && { color: c.background, fontFamily: FONT.w700 }]}>{d.getDate()}</Text>
                     </View>
                     <View style={styles.punkte}>
                       {arten.map((a) => <View key={a} style={[styles.punkt, { backgroundColor: artFarbe(a, c) }]} />)}
@@ -146,15 +146,15 @@ const makeStyles = (c: ThemeColors) =>
     kopf: { flexDirection: "row", alignItems: "center", gap: 8 },
     titel: { ...TYPE.heading, color: c.textDark },
     sub: { ...TYPE.caption, fontSize: 13, color: c.textMuted },
-    rund: { width: 44, height: 44, borderRadius: 22, backgroundColor: c.cardAlt, alignItems: "center", justifyContent: "center" },
-    umschalter: { height: 44, paddingHorizontal: 14, borderRadius: RADIUS.pill, backgroundColor: c.cardAlt, justifyContent: "center" },
-    umschalterText: { fontFamily: FONT.w800, fontSize: 14, color: c.textDark },
+    rund: { width: 36, height: 36, borderRadius: 18, backgroundColor: c.cardAlt, alignItems: "center", justifyContent: "center" },
+    umschalter: { height: 36, paddingHorizontal: 12, borderRadius: RADIUS.pill, backgroundColor: c.cardAlt, justifyContent: "center" },
+    umschalterText: { fontFamily: FONT.w700, fontSize: 14, color: c.textDark },
     reihe: { flexDirection: "row" },
     wochentag: { flex: 1, textAlign: "center", ...TYPE.caption, color: c.textMuted },
     zelle: { flex: 1, minHeight: 48 },
     zelleKnopf: { flex: 1, alignItems: "center", paddingVertical: 2 },
     tag: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center" },
-    tagText: { fontFamily: FONT.w700, fontSize: 16, color: c.textDark },
+    tagText: { fontFamily: FONT.w600, fontSize: 16, color: c.textDark },
     punkte: { flexDirection: "row", gap: 3, height: 6, alignItems: "center", marginTop: 2 },
     punkt: { width: 6, height: 6, borderRadius: 3 },
     legende: { flexDirection: "row", gap: 14, flexWrap: "wrap" },

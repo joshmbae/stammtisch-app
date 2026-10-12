@@ -189,13 +189,13 @@ export const FONT = {
 
 /** Schriftrollen. Zahlen haben gleich breite Ziffern, damit Timer nicht springen. */
 export const TYPE = {
-  label: { fontFamily: FONT.w800, fontSize: 12, letterSpacing: 0.8, textTransform: "uppercase" },
-  title: { fontFamily: FONT.w800, fontSize: 22, letterSpacing: -0.4 },
-  heading: { fontFamily: FONT.w800, fontSize: 17 },
-  body: { fontFamily: FONT.w500, fontSize: 15 },
-  bodyStrong: { fontFamily: FONT.w700, fontSize: 15 },
-  caption: { fontFamily: FONT.w600, fontSize: 12 },
-  num: { fontFamily: FONT.w800, fontVariant: ["tabular-nums"], letterSpacing: -0.4 },
+  label: { fontFamily: FONT.w700, fontSize: 12, letterSpacing: 0.6, textTransform: "uppercase" },
+  title: { fontFamily: FONT.w700, fontSize: 22, letterSpacing: -0.4 },
+  heading: { fontFamily: FONT.w700, fontSize: 17 },
+  body: { fontFamily: FONT.w400, fontSize: 15 },
+  bodyStrong: { fontFamily: FONT.w600, fontSize: 15 },
+  caption: { fontFamily: FONT.w500, fontSize: 12 },
+  num: { fontFamily: FONT.w700, fontVariant: ["tabular-nums"], letterSpacing: -0.4 },
 } satisfies Record<string, TextStyle>;
 
 /** Höchstfaktor für die Systemschriftgröße bei großen Zahlen und Hero-Inhalten. */

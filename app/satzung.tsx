@@ -130,7 +130,7 @@ const makeStyles = (c: ThemeColors) =>
     regeln: { marginTop: 12, gap: 14 },
     regel: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
     nr: { width: 26, height: 26, borderRadius: 13, backgroundColor: c.blueBg, alignItems: "center", justifyContent: "center", marginTop: 1 },
-    nrText: { fontFamily: FONT.w800, fontSize: 13, color: c.blue },
+    nrText: { fontFamily: FONT.w700, fontSize: 13, color: c.blue },
     regelText: { flex: 1, fontFamily: FONT.w600, fontSize: 15, lineHeight: 22, color: c.textDark },
     sonstiges: { ...TYPE.body, fontSize: 15, lineHeight: 22, color: c.textMid, marginTop: 10 },
     leer: { alignItems: "center", gap: 14, paddingVertical: 24 },

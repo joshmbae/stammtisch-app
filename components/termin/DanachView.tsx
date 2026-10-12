@@ -206,7 +206,7 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
 
       {abend.rechnung ? (
         <PressableScale onPress={() => router.push(`/kasse?eintragId=${abend.rechnung!.id}`)} style={[styles.rechnung, styles.rechnungDa]} accessibilityLabel="Rechnung ansehen">
-          <IconSquircle emoji={SYMBOL.rechnung} ton="blue" size={40} />
+          <IconSquircle emoji={SYMBOL.rechnung} ton="blue" size={36} />
           <View style={{ flex: 1 }}>
             <Text style={styles.rechnungTitel}>{`Rechnung · ${euro(abend.rechnung.betrag)}`}</Text>
             <Text style={styles.rechnungSub}>
@@ -220,7 +220,7 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
         </PressableScale>
       ) : (
         <PressableScale onPress={() => router.push(`/kasse?neu=abendkosten&terminId=${t.id}`)} style={[styles.rechnung, styles.rechnungLeer]} accessibilityLabel="Rechnung hinzufügen, optional">
-          <IconSquircle emoji={SYMBOL.rechnung} ton="blue" size={40} />
+          <IconSquircle emoji={SYMBOL.rechnung} ton="blue" size={36} />
           <View style={{ flex: 1 }}>
             <Text style={styles.rechnungTitel}>Rechnung hinzufügen</Text>
             <Text style={styles.rechnungSub}>Optional – wenn einer für alle zahlt</Text>
@@ -261,7 +261,7 @@ const makeStyles = (c: ThemeColors) =>
     ringProzent: { fontSize: 15 },
     ringDa: { ...TYPE.caption, color: c.textMuted, marginTop: -2 },
     label: { ...TYPE.label, color: c.textMuted },
-    anwTitel: { fontFamily: FONT.w800, fontSize: 19, color: c.textDark },
+    anwTitel: { fontFamily: FONT.w700, fontSize: 19, color: c.textDark },
     miniReihe: { flexDirection: "row", flexWrap: "wrap", rowGap: 4 },
     anwSub: { ...TYPE.caption, color: c.textMuted },
 
@@ -271,7 +271,7 @@ const makeStyles = (c: ThemeColors) =>
     },
     kachelIcon: { position: "absolute", top: 12, left: 12, width: 34, height: 34, borderRadius: 11, alignItems: "center", justifyContent: "center" },
     kachelWert: { ...TYPE.num, fontSize: 24 },
-    kachelLabel: { fontFamily: FONT.w700, fontSize: 13 },
+    kachelLabel: { fontFamily: FONT.w600, fontSize: 13 },
 
     kopf: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 4 },
     kartenTitel: { ...TYPE.heading, color: c.textDark, flexShrink: 1 },
@@ -279,13 +279,13 @@ const makeStyles = (c: ThemeColors) =>
     leer: { ...TYPE.body, fontSize: 14, color: c.textMuted, paddingVertical: 6 },
 
     hinweis: { minHeight: 60, borderRadius: RADIUS.tile, paddingHorizontal: 16, paddingVertical: 12, flexDirection: "row", alignItems: "center", gap: 10 },
-    hinweisTitel: { fontFamily: FONT.w800, fontSize: 16 },
+    hinweisTitel: { fontFamily: FONT.w700, fontSize: 16 },
     hinweisSub: { ...TYPE.caption, fontSize: 13, opacity: 0.9 },
 
     rechnung: { minHeight: 72, borderRadius: RADIUS.tile, padding: 14, flexDirection: "row", alignItems: "center", gap: 12 },
     rechnungLeer: { borderWidth: 1.5, borderStyle: "dashed", borderColor: c.borderDark },
     rechnungDa: { backgroundColor: c.card, borderWidth: StyleSheet.hairlineWidth, borderColor: c.hairline },
-    rechnungTitel: { fontFamily: FONT.w800, fontSize: 16, color: c.textDark },
+    rechnungTitel: { fontFamily: FONT.w700, fontSize: 16, color: c.textDark },
     rechnungSub: { ...TYPE.caption, fontSize: 13, color: c.textMuted },
 
     protokollText: { ...TYPE.body, lineHeight: 22, color: c.textDark },

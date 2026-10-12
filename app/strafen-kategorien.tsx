@@ -137,7 +137,7 @@ export default function StrafenKategorienScreen() {
               accessibilityLabel={`${k.label}, ${frei ? "Betrag frei" : euro(k.betrag)}${k.istSystem ? ", Systemkategorie" : ""}. Bearbeiten`}
               style={styles.kat}
             >
-              <KategorieIcon kat={k} size={48} />
+              <KategorieIcon kat={k} size={36} />
               <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
                 <View style={styles.titelReihe}>
                   <Text style={styles.katLabel} numberOfLines={2}>{k.label}</Text>
@@ -164,7 +164,7 @@ export default function StrafenKategorienScreen() {
               accessibilityLabel={`${spiel ? `${spiel.name}, ` : ""}${kat.label}, ${euro(kat.betrag)}, automatisch. Im Spiel bearbeiten`}
               style={styles.kat}
             >
-              <IconSquircle emoji={spiel?.emoji ?? kat.emoji} ton="mustard" size={48} />
+              <IconSquircle emoji={spiel?.emoji ?? kat.emoji} ton="mustard" size={36} />
               <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
                 <Text style={styles.katLabel} numberOfLines={2}>{spiel ? `${spiel.name} · ${kat.label}` : kat.label}</Text>
                 <View style={styles.titelReihe}>
@@ -222,12 +222,12 @@ const makeStyles = (c: ThemeColors) =>
     leer: { ...TYPE.body, fontSize: 14, color: c.textMuted, paddingHorizontal: 4 },
     kat: { flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 14 },
     titelReihe: { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" },
-    katLabel: { fontFamily: FONT.w800, fontSize: 16, color: c.textDark, flexShrink: 1 },
+    katLabel: { fontFamily: FONT.w700, fontSize: 16, color: c.textDark, flexShrink: 1 },
     katSub: { ...TYPE.caption, fontSize: 13, color: c.textMuted },
     betrag: { ...TYPE.num, fontSize: 24, color: c.textDark },
     betragFrei: { color: c.textMuted },
-    link: { fontFamily: FONT.w700, fontSize: 13, color: c.blue },
+    link: { fontFamily: FONT.w600, fontSize: 13, color: c.blue },
     vorlageRechts: { flexDirection: "row", alignItems: "center", gap: 10 },
-    vorlageBetrag: { fontFamily: FONT.w700, fontSize: 15, color: c.textMid },
+    vorlageBetrag: { fontFamily: FONT.w600, fontSize: 15, color: c.textMid },
     plus: { width: 44, height: 44, borderRadius: 22, backgroundColor: c.blueBg, alignItems: "center", justifyContent: "center" },
   });

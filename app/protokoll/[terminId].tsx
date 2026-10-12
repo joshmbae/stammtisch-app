@@ -335,7 +335,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   abschnitt: { marginTop: 18 },
   kopf: { ...TYPE.label, color: c.textMuted, marginBottom: 8 },
   stackZeile: { flexDirection: "row", alignItems: "center", gap: 10 },
-  anzahl: { fontFamily: FONT.w800, fontSize: 13, color: c.greenText },
+  anzahl: { fontFamily: FONT.w700, fontSize: 13, color: c.greenText },
   namen: { fontFamily: FONT.w600, fontSize: 14, lineHeight: 20, color: c.textDark, marginTop: 8 },
   abgesagt: { fontFamily: FONT.w600, fontSize: 14, lineHeight: 20, color: c.textMuted, marginTop: 4 },
 
@@ -343,7 +343,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   leerTitel: { ...TYPE.heading, color: c.textDark, marginTop: 4 },
   leerText: { ...TYPE.body, fontSize: 14, color: c.textMuted, textAlign: "center", paddingHorizontal: 8 },
 
-  titelInput: { fontFamily: FONT.w800, fontSize: 17 },
+  titelInput: { fontFamily: FONT.w700, fontSize: 17 },
   statusZeile: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
   statusLinks: { flex: 1, flexDirection: "row", alignItems: "center", gap: 8 },
   statusPunkt: { width: 8, height: 8, borderRadius: 4 },
@@ -354,7 +354,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth, borderColor: c.hairline,
     flexDirection: "row", alignItems: "center", gap: 6,
   },
-  bausteinText: { fontFamily: FONT.w700, fontSize: 14, color: c.textDark },
+  bausteinText: { fontFamily: FONT.w600, fontSize: 14, color: c.textDark },
   inhaltInput: { minHeight: 340, fontFamily: FONT.w500, fontSize: 15, lineHeight: 22, borderRadius: 20, padding: 16, paddingTop: 16 },
   hilfe: { ...TYPE.caption, fontSize: 12, lineHeight: 17, color: c.textMuted, marginTop: -4, paddingHorizontal: 4 },
 });

@@ -113,8 +113,8 @@ const makeStyles = (c: ThemeColors) =>
       flex: 1, height: 56, borderRadius: RADIUS.md, backgroundColor: c.card, alignItems: "center", justifyContent: "center",
       borderWidth: StyleSheet.hairlineWidth, borderColor: c.hairline,
     },
-    punkt: { fontFamily: FONT.w900, fontSize: 28, color: c.textDark },
+    punkt: { fontFamily: FONT.w800, fontSize: 28, color: c.textDark },
     versteckt: { position: "absolute", opacity: 0, width: 1, height: 1 },
-    error: { fontFamily: FONT.w700, fontSize: 13 },
+    error: { fontFamily: FONT.w600, fontSize: 13 },
     actions: { flexDirection: "row", gap: 10, marginTop: 4 },
   });

@@ -266,7 +266,7 @@ const makeStyles = (c: ThemeColors) =>
     gruss: { fontFamily: FONT.w600, fontSize: 13, color: c.textMuted },
     kacheln: { flexDirection: "row", gap: 12 },
     ohneGeburtstag: { flex: 1, minHeight: 132, gap: 4 },
-    ohneGeburtstagTitel: { fontFamily: FONT.w800, fontSize: 16, color: c.textDark, marginTop: "auto" },
+    ohneGeburtstagTitel: { fontFamily: FONT.w700, fontSize: 16, color: c.textDark, marginTop: "auto" },
     ohneGeburtstagText: { ...TYPE.caption, fontSize: 13, color: c.textMuted },
     leerTitel: { ...TYPE.title, color: c.textDark },
     leerText: { ...TYPE.body, color: c.textMid, marginTop: 6 },

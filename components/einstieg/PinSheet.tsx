@@ -103,5 +103,5 @@ const makeStyles = (c: ThemeColors) =>
     block: { alignSelf: "stretch", flexDirection: "row", flexWrap: "wrap", rowGap: 8, marginTop: 8, justifyContent: "space-between" },
     taste: { width: "31.5%", height: 56, borderRadius: 999, backgroundColor: c.cardAlt, alignItems: "center", justifyContent: "center" },
     tasteLeer: { backgroundColor: "transparent" },
-    ziffer: { ...TYPE.num, fontFamily: FONT.w700, fontSize: 24, color: c.textDark },
+    ziffer: { ...TYPE.num, fontFamily: FONT.w600, fontSize: 24, color: c.textDark },
   });

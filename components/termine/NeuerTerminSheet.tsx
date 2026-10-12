@@ -220,7 +220,7 @@ const makeStyles = (c: ThemeColors) =>
     chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
     anzahlZeile: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: c.cardAlt, borderRadius: RADIUS.md, padding: 10 },
     label: { ...TYPE.label, color: c.textMuted },
-    anzahlDatum: { fontFamily: FONT.w800, fontSize: 15, color: c.textDark },
+    anzahlDatum: { fontFamily: FONT.w700, fontSize: 15, color: c.textDark },
     stepper: { width: 44, height: 44, borderRadius: 22, backgroundColor: c.card, alignItems: "center", justifyContent: "center" },
-    anzahl: { fontFamily: FONT.w800, fontSize: 15, color: c.textDark, minWidth: 84, textAlign: "center" },
+    anzahl: { fontFamily: FONT.w700, fontSize: 15, color: c.textDark, minWidth: 84, textAlign: "center" },
   });

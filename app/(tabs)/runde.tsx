@@ -96,7 +96,7 @@ export default function RundeScreen() {
       <Card enterIndex={0}>
         <SectionLabel meta={dauer ? formatDauer(dauer) : undefined}>Unser Stammtisch</SectionLabel>
         <View style={styles.stammtischRow}>
-          <StammtischLogo size={52} uri={verordnung?.logoUrl} />
+          <StammtischLogo size={44} uri={verordnung?.logoUrl} />
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text style={styles.stammtischName} numberOfLines={1}>{name}</Text>
             {wannWo ? <Text style={styles.muted} numberOfLines={2}>{wannWo}</Text> : null}
@@ -123,7 +123,7 @@ export default function RundeScreen() {
                 style={styles.member}
                 accessibilityLabel={`${displayName(m)}, ${m.rollen.join(", ")}`}
               >
-                <Avatar name={displayName(m)} color={m.avatarColor} photoUri={m.photoUri} size={52} fuehrt={fuehrende.get(m.id)} />
+                <Avatar name={displayName(m)} color={m.avatarColor} photoUri={m.photoUri} size={44} fuehrt={fuehrende.get(m.id)} />
                 <Text style={styles.memberName} numberOfLines={1}>{displayName(m)}</Text>
                 <Text style={styles.memberRolle} numberOfLines={1}>{m.rollen[0]}</Text>
               </PressableScale>
@@ -135,7 +135,7 @@ export default function RundeScreen() {
       <Card enterIndex={2} style={{ paddingVertical: 6 }}>
         {mehr.map((z, i) => (
           <PressableScale key={z.route} onPress={() => router.push(z.route as never)} style={[styles.mehrRow, i > 0 && styles.mehrLine]} scaleTo={0.98} accessibilityLabel={`${z.label}, ${z.info}`}>
-            <IconSquircle emoji={z.emoji} ton={z.ton} size={36} />
+            <IconSquircle emoji={z.emoji} ton={z.ton} size={32} />
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={styles.mehrLabel}>{z.label}</Text>
               <Text style={styles.muted} numberOfLines={1}>{z.info}</Text>
@@ -160,13 +160,13 @@ export default function RundeScreen() {
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     stammtischRow: { flexDirection: "row", alignItems: "center", gap: 14, marginTop: 12 },
-    stammtischName: { ...TYPE.heading, fontSize: 19, color: c.textDark },
+    stammtischName: { ...TYPE.heading, color: c.textDark },
     muted: { ...TYPE.caption, fontSize: 13, color: c.textMuted, marginTop: 1 },
-    grid: { flexDirection: "row", flexWrap: "wrap", marginTop: 12, rowGap: 14 },
-    member: { width: "25%", alignItems: "center", gap: 4, minHeight: 92, paddingTop: 2 },
-    memberName: { fontFamily: FONT.w800, fontSize: 13, color: c.textDark, maxWidth: "92%" },
+    grid: { flexDirection: "row", flexWrap: "wrap", marginTop: 12, rowGap: 10 },
+    member: { width: "25%", alignItems: "center", gap: 4, minHeight: 84, paddingTop: 2 },
+    memberName: { fontFamily: FONT.w600, fontSize: 13, color: c.textDark, maxWidth: "92%" },
     memberRolle: { ...TYPE.caption, color: c.textMuted, maxWidth: "92%" },
-    mehrRow: { flexDirection: "row", alignItems: "center", gap: 12, minHeight: 60, paddingVertical: 8 },
+    mehrRow: { flexDirection: "row", alignItems: "center", gap: 12, minHeight: 52, paddingVertical: 7 },
     mehrLine: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
     mehrLabel: { ...TYPE.bodyStrong, color: c.textDark },
   });
