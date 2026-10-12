@@ -68,12 +68,18 @@ export function Avatar({ name, color, photoUri, size = 40, fuehrt, absent, ringC
               styles.center,
               {
                 width: badgeSize, height: badgeSize, borderRadius: badgeSize / 2,
-                borderWidth: 2, borderColor: ring,
+                borderWidth: 2, borderColor: ring, overflow: "hidden",
                 backgroundColor: tonFarben(tonFuerRangliste(badge[0].key), c).bg,
               },
             ]}
           >
-            <Text style={{ fontSize: Math.round(badgeSize * 0.56) }} maxFontSizeMultiplier={1}>{badge[0].emoji}</Text>
+            {/* Feste Zeilenhöhe, sonst steht ein eckiges Emoji (✅) über den Kreis hinaus. */}
+            <Text
+              style={{ fontSize: Math.round(badgeSize * 0.46), lineHeight: badgeSize - 4, textAlign: "center" }}
+              maxFontSizeMultiplier={1}
+            >
+              {badge[0].emoji}
+            </Text>
           </View>
           {badge.length > 1 && size >= 36 ? (
             <View style={[styles.mehr, { height: badgeSize * 0.8, borderRadius: badgeSize, borderColor: ring }]}>
