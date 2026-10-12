@@ -43,7 +43,7 @@ import {
 } from "./storage";
 import { supabase } from "./supabase";
 import { dedupeInsert, patchById, removeByIdEverywhere, subscribeToTerminChanges } from "./realtime";
-import { setStrafeBeglichen } from "./strafenActions";
+import { setStrafeBeglichen, setStrafenBeglichen } from "./strafenActions";
 import { useScreenLoad } from "./useScreenLoad";
 import { useSession } from "../contexts/SessionContext";
 
@@ -85,6 +85,17 @@ export function useTerminAbend(id: string) {
   const [strafKategorien, setStrafKategorien] = useState<StrafKategorieDef[]>([]);
   const [verspätungMap, setVerspätungMap] = useState<ProMitglied<VerspätungLog>>({});
   const [strafMap, setStrafMap] = useState<ProMitglied<StrafLog>>({});
+  /** Eigene offene Strafen über alle Abende – zum Begleichen im Danach-Bereich. */
+  const [meineOffen, setMeineOffen] = useState<StrafLog[]>([]);
+  const ichRef = useRef(activeMemberId);
+  ichRef.current = activeMemberId;
+  const meineOffenPflegen = (log: StrafLog) => {
+    if (log.memberId !== ichRef.current) return;
+    setMeineOffen((prev) => {
+      const ohne = prev.filter((l) => l.id !== log.id);
+      return log.beglichen ? ohne : [log, ...ohne];
+    });
+  };
   const [spielLogMap, setSpielLogMap] = useState<ProMitglied<SpielLog>>({});
   const [aktivesSpiel, setAktivesSpiel] = useState<Spiel | null>(null);
   const [ereignisTypen, setEreignisTypen] = useState<SpielEreignisTyp[]>([]);
@@ -129,6 +140,7 @@ export function useTerminAbend(id: string) {
     setVerspätungMap(nachMitglied(vLogs.filter((l) => l.terminId === t.id), memberIds));
     setSpielLogMap(nachMitglied(spLogs.filter((l) => l.terminId === t.id && (!spiel || l.spielId === spiel.id)), memberIds));
     setStrafMap(nachMitglied(stLogs.filter((l) => l.terminId === t.id), memberIds));
+    setMeineOffen(stLogs.filter((l) => l.memberId === activeMemberId && !l.beglichen));
   }
 
   const screen = useScreenLoad(load, [id]);
@@ -144,9 +156,9 @@ export function useTerminAbend(id: string) {
             setSpielLogMap((prev) => dedupeInsert(prev, log, log.memberId));
           },
           onSpielLogDelete: (logId) => setSpielLogMap((prev) => removeByIdEverywhere(prev, logId)),
-          onStrafLogInsert: (log) => setStrafMap((prev) => dedupeInsert(prev, log, log.memberId)),
-          onStrafLogUpdate: (log) => setStrafMap((prev) => patchById(prev, log, log.memberId)),
-          onStrafLogDelete: (logId) => setStrafMap((prev) => removeByIdEverywhere(prev, logId)),
+          onStrafLogInsert: (log) => { setStrafMap((prev) => dedupeInsert(prev, log, log.memberId)); meineOffenPflegen(log); },
+          onStrafLogUpdate: (log) => { setStrafMap((prev) => patchById(prev, log, log.memberId)); meineOffenPflegen(log); },
+          onStrafLogDelete: (logId) => { setStrafMap((prev) => removeByIdEverywhere(prev, logId)); setMeineOffen((prev) => prev.filter((l) => l.id !== logId)); },
           onVerspätungInsert: (log) => setVerspätungMap((prev) => dedupeInsert(prev, log, log.memberId)),
           onVerspätungDelete: (logId) => setVerspätungMap((prev) => removeByIdEverywhere(prev, logId)),
           onTerminUpdate: (t) => setTermin((prev) => (prev ? { ...prev, ...t } : t)),
@@ -341,6 +353,25 @@ export function useTerminAbend(id: string) {
       actorMemberId: activeMemberId,
     });
     setStrafMap((prev) => patchById(prev, { ...log, beglichen: next }, memberId));
+    meineOffenPflegen({ ...log, beglichen: next });
+  }
+
+  /** Eigene offene Strafen (alle oder die übergebenen) auf einmal begleichen – eine Chronik-Meldung für alle. */
+  async function meineStrafenBegleichen(logs: StrafLog[] = meineOffen) {
+    if (!activeMemberId || logs.length === 0) return;
+    await setStrafenBeglichen(logs, {
+      memberName: members.find((m) => m.id === activeMemberId)?.name,
+      kategorieLabel: (log) => strafKategorien.find((k) => k.id === log.kategorie)?.label,
+      actorMemberId: activeMemberId,
+      terminId: termin?.id,
+    });
+    const ids = new Set(logs.map((l) => l.id));
+    setMeineOffen((prev) => prev.filter((l) => !ids.has(l.id)));
+    setStrafMap((prev) => {
+      let next = prev;
+      for (const log of logs) if (log.terminId === termin?.id) next = patchById<StrafLog>(next, { ...log, beglichen: true }, log.memberId);
+      return next;
+    });
   }
 
   async function strafeLöschen(memberId: string, logId: string) {
@@ -432,7 +463,7 @@ export function useTerminAbend(id: string) {
     verspätungMap, strafMap, spielLogMap, aktivesSpiel, ereignisTypen, uploadingBild, rechnung,
     rsvp, anwesenheitUmschalten, anwesenheitSetzen, alleAnwesend, verspätungEintragen, verspätungLöschen,
     spielEreignisEintragen, spielEreignisLöschen,
-    strafeEintragen, strafeBeglichenUmschalten, strafeLöschen,
+    strafeEintragen, strafeBeglichenUmschalten, strafeLöschen, meineOffen, meineStrafenBegleichen,
     bildHochladen, bildEntfernen, speichern, löschen, agendaSpeichern, abendStarten, abendBeenden,
   };
 }

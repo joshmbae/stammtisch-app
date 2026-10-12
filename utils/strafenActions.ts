@@ -33,7 +33,7 @@ function zahlungZuStrafe(kasse: KassenEintrag[], log: StrafLog, memberName?: str
 export async function setStrafeBeglichen(
   log: StrafLog,
   beglichen: boolean,
-  ctx: { memberName?: string; kategorieLabel?: string; actorMemberId?: string | null }
+  ctx: { memberName?: string; kategorieLabel?: string; actorMemberId?: string | null; ohneChronik?: boolean }
 ): Promise<boolean> {
   await updateStrafLog(log.memberId, log.id, { beglichen });
 
@@ -54,6 +54,7 @@ export async function setStrafeBeglichen(
     },
     zahlungsId(log.id)
   );
+  if (ctx.ohneChronik) return true;
   await logActivity({
     actorMemberId: ctx.actorMemberId ?? undefined,
     subjectMemberId: log.memberId,
@@ -63,4 +64,32 @@ export async function setStrafeBeglichen(
     meta: { betrag: log.betrag, kategorie: log.kategorie },
   });
   return true;
+}
+
+/**
+ * Mehrere Strafen einer Person auf einmal begleichen: pro Strafe die übliche
+ * Kassen-Einnahme, aber nur ein Chronik-Eintrag (und damit eine Push) für alle.
+ * Der Eintrag nutzt den bekannten Typ „straf_log_beglichen“; statt einer
+ * Kategorie steht „N Strafen“ in meta.kategorie, das zeigen auch ältere App-Versionen an.
+ */
+export async function setStrafenBeglichen(
+  logs: StrafLog[],
+  ctx: { memberName?: string; kategorieLabel: (log: StrafLog) => string | undefined; actorMemberId?: string | null; terminId?: string }
+): Promise<void> {
+  const offen = logs.filter((l) => !l.beglichen);
+  if (offen.length === 0) return;
+  if (offen.length === 1) {
+    await setStrafeBeglichen(offen[0], true, { memberName: ctx.memberName, kategorieLabel: ctx.kategorieLabel(offen[0]), actorMemberId: ctx.actorMemberId });
+    return;
+  }
+  for (const log of offen) {
+    await setStrafeBeglichen(log, true, { memberName: ctx.memberName, kategorieLabel: ctx.kategorieLabel(log), actorMemberId: ctx.actorMemberId, ohneChronik: true });
+  }
+  await logActivity({
+    actorMemberId: ctx.actorMemberId ?? undefined,
+    subjectMemberId: offen[0].memberId,
+    actionType: "straf_log_beglichen",
+    terminId: ctx.terminId,
+    meta: { betrag: offen.reduce((s, l) => s + l.betrag, 0), kategorie: `${offen.length} Strafen` },
+  });
 }

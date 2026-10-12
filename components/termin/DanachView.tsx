@@ -14,6 +14,7 @@ import { displayName, formatEuro } from "../../utils/format";
 import { useFuehrende } from "../../utils/useFuehrende";
 import { Avatar, BarList, BarRow, Button, Card, Emoji, IconSquircle, Krone, PressableScale, Ring, Ton, tonFarben } from "../ui";
 import { SYMBOL } from "../../constants/symbole";
+import { MeineStrafenKarte } from "./MeineStrafenKarte";
 
 const euro = (n: number) => `${formatEuro(n).replace(",00", "")} €`;
 
@@ -188,6 +189,8 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
         </Card>
         </>
       ) : null}
+
+      <MeineStrafenKarte abend={abend} />
 
       {stats.strafenOffen > 0 ? (
         <PressableScale onPress={() => router.push("/kasse?tab=strafen")} style={[styles.hinweis, { backgroundColor: c.coralSoft }]} accessibilityLabel={`${euro(stats.strafenOffen)} noch offen, in der Kasse abhaken`}>
