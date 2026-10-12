@@ -25,12 +25,14 @@ export interface BilanzWerte {
   platzierungen: Platzierung[];
 }
 
-const WECHSEL_MS = 3500;
-const SYMBOL_GROESSE = 40;
+const WECHSEL_MS = 5000;
+const RING_GROESSE = 46;
+const SYMBOL_GROESSE = 28;
 
 /**
- * Jahresbilanz in drei gleich gewichteten Spalten: Anwesenheit, offene
- * Strafen und die eigenen Platzierungen, die reihum wechseln (beste zuerst).
+ * Jahresbilanz in drei gleich gewichteten Spalten: Anwesenheit (Ring),
+ * offene Strafen und die eigenen Platzierungen, die reihum wechseln (beste
+ * zuerst). Bewusst flach gehalten.
  */
 export function BilanzRow({ werte, onPress }: { werte: BilanzWerte; onPress: () => void }) {
   const c = useColors();
@@ -60,11 +62,10 @@ export function BilanzRow({ werte, onPress }: { werte: BilanzWerte; onPress: () 
       <SectionLabel>{`Deine Bilanz ${werte.jahr}`}</SectionLabel>
       <View style={styles.row}>
         <View style={styles.spalte}>
-          <Ring progress={(werte.quote ?? 0) / 100} size={SYMBOL_GROESSE} stroke={5}>
+          <Ring progress={(werte.quote ?? 0) / 100} size={RING_GROESSE} stroke={5}>
             <Text style={styles.ringText} maxFontSizeMultiplier={1}>{werte.quote === null ? "–" : `${werte.quote}%`}</Text>
           </Ring>
-          <Text style={styles.wert} numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE}>{werte.abende ? `${werte.dabei} von ${werte.abende}` : "–"}</Text>
-          <Text style={styles.label} numberOfLines={1}>{werte.abende ? "dabei" : "noch kein Abend"}</Text>
+          <Text style={[styles.label, { marginTop: 4 }]} numberOfLines={1}>{werte.abende ? "dabei" : "noch kein Abend"}</Text>
         </View>
 
         <View style={styles.trenner} />
@@ -81,7 +82,7 @@ export function BilanzRow({ werte, onPress }: { werte: BilanzWerte; onPress: () 
           <Animated.View key={platz.key} entering={reduce ? undefined : FadeIn.duration(300)} style={styles.spalte}>
             <IconSquircle emoji={platz.emoji} ton={tonFuerRangliste(platz.key)} size={SYMBOL_GROESSE} />
             <View style={styles.wertZeile}>
-              {platz.platz === 1 ? <Krone size={14} /> : null}
+              {platz.platz === 1 ? <Krone size={12} /> : null}
               <Text style={[styles.wert, { marginTop: 0 }]} numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE}>{`Platz ${platz.platz}`}</Text>
             </View>
             <Text style={styles.label} numberOfLines={1}>{platz.kurz}</Text>
@@ -101,10 +102,10 @@ export function BilanzRow({ werte, onPress }: { werte: BilanzWerte; onPress: () 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     row: { flexDirection: "row", alignItems: "stretch", marginTop: 10 },
-    spalte: { flex: 1, minWidth: 0, alignItems: "center", gap: 2 },
+    spalte: { flex: 1, minWidth: 0, alignItems: "center", justifyContent: "center", gap: 1 },
     trenner: { width: StyleSheet.hairlineWidth, backgroundColor: c.border, marginVertical: 4 },
-    ringText: { ...TYPE.num, fontSize: 12, color: c.textDark },
-    wertZeile: { flexDirection: "row", alignItems: "center", gap: 3, marginTop: 6 },
-    wert: { ...TYPE.num, fontSize: 19, color: c.textDark, marginTop: 6 },
+    ringText: { ...TYPE.num, fontSize: 13, color: c.textDark },
+    wertZeile: { flexDirection: "row", alignItems: "center", gap: 3, marginTop: 4 },
+    wert: { ...TYPE.num, fontSize: 16, color: c.textDark, marginTop: 4 },
     label: { fontFamily: FONT.w600, fontSize: 12, color: c.textMuted },
   });
