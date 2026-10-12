@@ -1,12 +1,12 @@
 import React from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { MemberProfile } from "../../types";
 import { FONT, MAX_FONT_SCALE, RADIUS, TYPE, ThemeColors } from "../../constants/design";
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
-import { FuehrenderTitel, RangVerlauf, Rangliste, fuehrendeJePunkt, platzReihe, trend, vornSeit, wertKurz } from "../../utils/stats";
+import { FuehrenderTitel, RangVerlauf, Rangliste, trend, wertKurz } from "../../utils/stats";
 import { displayName } from "../../utils/format";
 import { Avatar, Card, IconSquircle, Krone, PressableScale, tonFuerRangliste } from "../ui";
 
@@ -16,7 +16,6 @@ const UNTERTITEL: Record<string, string> = {
   verspaetung: "Minuten zu spät",
   strafen: "Strafen gesamt",
 };
-const kurzDatum = (iso: string) => { const [, m, d] = iso.split("-"); return `${parseInt(d, 10)}.${parseInt(m, 10)}.`; };
 
 interface Props {
   liste: Rangliste;
@@ -32,7 +31,7 @@ interface Props {
 
 /**
  * Eine Wertung als Karte: zugeklappt die ersten drei, aufgeklappt die ganze
- * Liste mit Trend seit dem letzten Abend und „Wer führte?" über die Saison.
+ * Liste mit Trend seit dem letzten Abend.
  */
 export function RanglisteKarte({ liste, offen, onToggle, ichId, fuehrende, verlauf, hinweis, enterIndex }: Props) {
   const c = useColors();
@@ -105,81 +104,12 @@ export function RanglisteKarte({ liste, offen, onToggle, ichId, fuehrende, verla
               );
             })}
           </View>
-          {verlauf && verlauf.punkte.length > 1 ? <WerFuehrte liste={liste} verlauf={verlauf} ichId={ichId} /> : null}
           {hinweis ? <Text style={styles.hinweis}>{hinweis}</Text> : null}
         </Animated.View>
       )}
     </Card>
   );
 }
-
-/** Streifen: wer nach jedem Abend vorn lag, darunter der eigene Platz. */
-function WerFuehrte({ liste, verlauf, ichId }: { liste: Rangliste; verlauf: RangVerlauf; ichId: string | null }) {
-  const c = useColors();
-  const styles = useThemedStyles(makeStyles);
-  const fuehrende = fuehrendeJePunkt(verlauf, liste.key);
-  const meine = ichId ? platzReihe(verlauf, liste.key, ichId) : [];
-  const seit = ichId ? vornSeit(verlauf, liste.key, ichId) : null;
-  const vorneAbende = meine.filter((p) => p === 1).length;
-  const byId = new Map(liste.eintraege.map((e) => [e.member.id, e.member]));
-  // Reihe läuft bis zum aktuellen Abend; bei vielen Abenden steht der neueste rechts im Blick.
-  const ref = React.useRef<ScrollView>(null);
-  const ref2 = React.useRef<ScrollView>(null);
-
-  return (
-    <View style={[styles.verlauf, { borderTopColor: c.border }]}>
-      <View style={styles.verlaufKopf}>
-        <Text style={styles.verlaufTitel}>Wer führte?</Text>
-        <Text style={styles.untertitel}>nach jedem Abend</Text>
-      </View>
-      {ichId && vorneAbende > 0 ? (
-        <Text style={styles.verlaufSub}>{`${seit ? `Du vorn seit ${kurzDatum(seit)} · ` : ""}${vorneAbende} von ${verlauf.punkte.length} Abenden`}</Text>
-      ) : null}
-      <ScrollView
-        ref={ref}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        scrollEventThrottle={16}
-        onScroll={(e) => ref2.current?.scrollTo({ x: e.nativeEvent.contentOffset.x, animated: false })}
-        onContentSizeChange={() => { ref.current?.scrollToEnd({ animated: false }); ref2.current?.scrollToEnd({ animated: false }); }}
-      >
-        <View style={styles.reihe}>
-          {verlauf.punkte.map((p, i) => {
-            const ids = fuehrende[i];
-            const m = ids[0] ? byId.get(ids[0]) : undefined;
-            const ich = !!ichId && ids.includes(ichId);
-            return (
-              <View key={p.datum} style={styles.spalte} accessible accessibilityLabel={`${kurzDatum(p.datum)}: vorn ${ids.map((id) => (byId.get(id) ? displayName(byId.get(id)!) : "?")).join(", ") || "niemand"}`}>
-                <View style={[styles.kachel, { backgroundColor: m ? m.avatarColor : c.cardAlt }, ich && { borderWidth: 2, borderColor: c.mustard }]}>
-                  <Text style={[styles.kachelText, { color: m ? c.onAvatar : c.textMuted }]}>{m ? displayName(m)[0] : "–"}</Text>
-                  {ids.length > 1 ? <Text style={[styles.mehr, { color: c.onAvatar }]}>{`+${ids.length - 1}`}</Text> : null}
-                </View>
-                <Text style={styles.datum}>{p.heute ? "heute" : kurzDatum(p.datum)}</Text>
-              </View>
-            );
-          })}
-        </View>
-      </ScrollView>
-      {ichId && meine.some((x) => x !== null) ? (
-        <>
-          <Text style={[styles.label, { marginTop: 4 }]}>Dein Platz</Text>
-          {/* Folgt der Reihe darüber, damit die Spalten übereinander stehen. */}
-          <ScrollView ref={ref2} horizontal scrollEnabled={false} showsHorizontalScrollIndicator={false}>
-            <View style={styles.reihe}>
-              {meine.map((pl, i) => (
-                <View key={i} style={[styles.platzKachel, { backgroundColor: pl === 1 ? c.mustard : c.cardAlt }]} accessible accessibilityLabel={`${kurzDatum(verlauf.punkte[i].datum)}: dein Platz ${pl ?? "keiner"}`}>
-                  <Text style={[styles.platzKachelText, { color: pl === 1 ? c.onMustard : c.textDark }]}>{pl ? `${pl}.` : "–"}</Text>
-                </View>
-              ))}
-            </View>
-          </ScrollView>
-        </>
-      ) : null}
-    </View>
-  );
-}
-
-const SPALTE = 44;
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
@@ -204,17 +134,4 @@ const makeStyles = (c: ThemeColors) =>
     trend: { width: 16, alignItems: "center" },
     trendGleich: { fontFamily: FONT.w600, fontSize: 14, color: c.textMuted },
     hinweis: { ...TYPE.caption, fontSize: 13, color: c.textMuted },
-    verlauf: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 14, gap: 8 },
-    verlaufKopf: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" },
-    verlaufTitel: { ...TYPE.heading, color: c.textDark },
-    verlaufSub: { fontFamily: FONT.w600, fontSize: 14, color: c.textDark },
-    reihe: { flexDirection: "row", gap: 6 },
-    spalte: { width: SPALTE, alignItems: "center", gap: 4 },
-    kachel: { width: SPALTE, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center", flexDirection: "row" },
-    kachelText: { fontFamily: FONT.w700, fontSize: 15 },
-    mehr: { fontFamily: FONT.w700, fontSize: 9, marginLeft: 1 },
-    datum: { fontFamily: FONT.w600, fontSize: 12, color: c.textMuted },
-    label: { ...TYPE.label, color: c.textMuted },
-    platzKachel: { width: SPALTE, height: 30, borderRadius: 9, alignItems: "center", justifyContent: "center" },
-    platzKachelText: { fontFamily: FONT.w700, fontSize: 13 },
   });

@@ -29,7 +29,7 @@ import { RanglisteKarte } from "../../components/tabelle/RanglisteKarte";
 
 /**
  * Alle Wertungen auf einer Seite: pro Rangliste eine Karte, zugeklappt mit
- * den ersten drei, aufgeklappt mit allen Plätzen und dem Verlauf. Gewertet
+ * den ersten drei, aufgeklappt mit allen Plätzen und dem Trend seit dem letzten Abend. Gewertet
  * wird pro Kalenderjahr oder über alle Jahre.
  */
 export default function TabelleScreen() {

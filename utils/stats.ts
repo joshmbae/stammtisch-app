@@ -387,25 +387,6 @@ export function platzReihe(verlauf: RangVerlauf, key: string, memberId: string):
   return verlauf.plaetze.get(key)?.get(memberId) ?? new Array(verlauf.punkte.length).fill(null);
 }
 
-/** Wer stand an jedem Stichtag auf Platz 1 (bei Gleichstand alle)? */
-export function fuehrendeJePunkt(verlauf: RangVerlauf, key: string): string[][] {
-  const proMember = verlauf.plaetze.get(key);
-  return verlauf.punkte.map((_, i) => {
-    const ids: string[] = [];
-    proMember?.forEach((reihe, id) => { if (reihe[i] === 1) ids.push(id); });
-    return ids;
-  });
-}
-
-/** Seit welchem Stichtag führt jemand ununterbrochen (null = führt gerade nicht)? */
-export function vornSeit(verlauf: RangVerlauf, key: string, memberId: string): string | null {
-  const reihe = platzReihe(verlauf, key, memberId);
-  let i = reihe.length - 1;
-  if (i < 0 || reihe[i] !== 1) return null;
-  while (i > 0 && reihe[i - 1] === 1) i--;
-  return verlauf.punkte[i].datum;
-}
-
 /** Platzveränderung seit dem vorletzten Stichtag: >0 = aufgestiegen, <0 = abgerutscht. */
 export function trend(verlauf: RangVerlauf, key: string, memberId: string): number {
   const reihe = platzReihe(verlauf, key, memberId).filter((p): p is number => p !== null);
