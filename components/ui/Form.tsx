@@ -95,6 +95,8 @@ export function ToggleRow({ title, subtitle, icon, emoji, ton, value, onValueCha
         trackColor={{ false: c.borderDark, true: c.blue }}
         thumbColor="#FFFFFF"
         ios_backgroundColor={c.borderDark}
+        // Web färbt den Knopf sonst in der Akzentfarbe ein.
+        {...({ activeThumbColor: "#FFFFFF" } as object)}
         accessibilityLabel={title}
       />
     </View>
