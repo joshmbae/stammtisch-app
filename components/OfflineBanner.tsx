@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { ThemeColors, FONT } from "../constants/design";
+import { FONT, RADIUS, ThemeColors } from "../constants/design";
 import { useColors, useThemedStyles } from "../contexts/ThemeContext";
 import { useOffline } from "../utils/cache";
 
@@ -15,7 +15,7 @@ export default function OfflineBanner() {
   if (!offline) return null;
   return (
     <View style={styles.banner} accessibilityRole="alert">
-      <Ionicons name="cloud-offline-outline" size={15} color={c.warning} />
+      <Ionicons name="cloud-offline-outline" size={16} color={c.mustardText} />
       <Text style={styles.text}>Offline — angezeigt wird der zuletzt geladene Stand.</Text>
     </View>
   );
@@ -24,9 +24,8 @@ export default function OfflineBanner() {
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
   banner: {
     flexDirection: "row", alignItems: "center", gap: 8,
-    backgroundColor: c.goldBg, borderRadius: 12,
-    borderWidth: 1, borderColor: c.border,
-    paddingVertical: 8, paddingHorizontal: 12, marginBottom: 12,
+    backgroundColor: c.mustardSoft, borderRadius: RADIUS.md,
+    paddingVertical: 10, paddingHorizontal: 14,
   },
-  text: { flex: 1, fontSize: 12, fontFamily: FONT.w600, color: c.textMid },
+  text: { flex: 1, fontSize: 13, fontFamily: FONT.w700, color: c.mustardText },
 });

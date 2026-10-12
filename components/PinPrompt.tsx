@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
-import { Modal, View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform } from "react-native";
-import { SHADOWS, ThemeColors, FONT } from "../constants/design";
+import React, { useEffect, useRef, useState } from "react";
+import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { FONT, RADIUS, TYPE, ThemeColors } from "../constants/design";
 import { useColors, useThemedStyles } from "../contexts/ThemeContext";
+import { Button, IconSquircle } from "./ui";
 
 interface PinPromptProps {
   visible: boolean;
@@ -12,6 +13,37 @@ interface PinPromptProps {
   onSubmit: (pin: string) => void;
 }
 
+/** Vier Kästchen über einem unsichtbaren Zahlenfeld – Tippen öffnet die Tastatur. */
+function PinFeld({ wert, onChange, label, autoFocus }: { wert: string; onChange: (v: string) => void; label: string; autoFocus?: boolean }) {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
+  const ref = useRef<TextInput>(null);
+  return (
+    <Pressable onPress={() => ref.current?.focus()} accessibilityLabel={label} style={{ gap: 6 }}>
+      <Text style={styles.label}>{label}</Text>
+      <View style={styles.kaesten}>
+        {[0, 1, 2, 3].map((i) => (
+          <View key={i} style={[styles.kasten, i === wert.length && { borderColor: c.blue, borderWidth: 2 }]}>
+            <Text style={styles.punkt}>{wert[i] ? "•" : ""}</Text>
+          </View>
+        ))}
+      </View>
+      <TextInput
+        ref={ref}
+        value={wert}
+        onChangeText={(t) => onChange(t.replace(/\D/g, "").slice(0, 4))}
+        keyboardType="number-pad"
+        secureTextEntry
+        maxLength={4}
+        autoFocus={autoFocus}
+        style={styles.versteckt}
+        accessibilityLabel={label}
+      />
+    </Pressable>
+  );
+}
+
+/** PIN festlegen oder abfragen (Profil bearbeiten/löschen). */
 export default function PinPrompt({ visible, mode, memberName, error, onCancel, onSubmit }: PinPromptProps) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
@@ -43,56 +75,21 @@ export default function PinPrompt({ visible, mode, memberName, error, onCancel, 
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
-      <KeyboardAvoidingView
-        style={styles.overlay}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
-        <View style={styles.card}>
-          <Text style={styles.title}>{mode === "set" ? "PIN festlegen" : "PIN eingeben"}</Text>
+      <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        <View style={styles.card} accessibilityViewIsModal>
+          <IconSquircle icon="lock-closed-outline" ton="blue" size={44} />
+          <Text style={styles.title} accessibilityRole="header">{mode === "set" ? "PIN festlegen" : "PIN eingeben"}</Text>
           <Text style={styles.subtitle}>
             {mode === "set"
               ? `Lege einen 4-stelligen PIN für ${memberName ?? "dieses Profil"} fest. Ab jetzt braucht es diesen PIN, um das Profil zu bearbeiten oder zu löschen.`
               : `Gib den PIN für ${memberName ?? "dieses Profil"} ein, um fortzufahren.`}
           </Text>
-
-          <TextInput
-            style={styles.input}
-            value={pin}
-            onChangeText={(t) => setPin(t.replace(/\D/g, "").slice(0, 4))}
-            keyboardType="number-pad"
-            secureTextEntry
-            maxLength={4}
-            placeholder="PIN"
-            placeholderTextColor={c.textLight}
-            autoFocus
-          />
-
-          {mode === "set" && (
-            <TextInput
-              style={styles.input}
-              value={pinConfirm}
-              onChangeText={(t) => setPinConfirm(t.replace(/\D/g, "").slice(0, 4))}
-              keyboardType="number-pad"
-              secureTextEntry
-              maxLength={4}
-              placeholder="PIN bestätigen"
-              placeholderTextColor={c.textLight}
-            />
-          )}
-
-          {(error || mismatchError) && <Text style={styles.error}>{error ?? mismatchError}</Text>}
-
+          <PinFeld wert={pin} onChange={setPin} label="PIN" autoFocus />
+          {mode === "set" ? <PinFeld wert={pinConfirm} onChange={setPinConfirm} label="PIN bestätigen" /> : null}
+          {error || mismatchError ? <Text style={[styles.error, { color: c.dangerText }]} accessibilityLiveRegion="polite">{error ?? mismatchError}</Text> : null}
           <View style={styles.actions}>
-            <TouchableOpacity style={styles.cancelBtn} onPress={onCancel}>
-              <Text style={styles.cancelText}>Abbrechen</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.submitBtn, !canSubmit && styles.submitBtnDisabled]}
-              onPress={handleSubmit}
-              disabled={!canSubmit}
-            >
-              <Text style={styles.submitText}>{mode === "set" ? "Speichern" : "Bestätigen"}</Text>
-            </TouchableOpacity>
+            <Button label="Abbrechen" variant="secondary" onPress={onCancel} style={{ flex: 1 }} />
+            <Button label={mode === "set" ? "Speichern" : "Bestätigen"} variant="blue" onPress={handleSubmit} disabled={!canSubmit} style={{ flex: 1 }} />
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -100,53 +97,23 @@ export default function PinPrompt({ visible, mode, memberName, error, onCancel, 
   );
 }
 
-const makeStyles = (c: ThemeColors) => StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: c.overlay,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 24,
-  },
-  card: {
-    width: "100%",
-    maxWidth: 340,
-    backgroundColor: c.card,
-    borderRadius: 20,
-    padding: 20,
-    gap: 12,
-    ...SHADOWS.card,
-  },
-  title: { fontSize: 17, fontFamily: FONT.w800, color: c.textDark },
-  subtitle: { fontFamily: FONT.w400, fontSize: 13, color: c.textMuted, lineHeight: 18 },
-  input: { fontFamily: FONT.w400, borderWidth: 1,
-    borderColor: c.border,
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    fontSize: 20,
-    letterSpacing: 6,
-    color: c.textDark,
-    backgroundColor: c.cardAlt,
-  },
-  error: { fontSize: 12, color: c.danger, fontFamily: FONT.w600 },
-  actions: { flexDirection: "row", gap: 10, marginTop: 4 },
-  cancelBtn: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: c.border,
-  },
-  cancelText: { fontSize: 14, fontFamily: FONT.w700, color: c.textMuted },
-  submitBtn: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: "center",
-    backgroundColor: c.blue,
-  },
-  submitBtnDisabled: { opacity: 0.5 },
-  submitText: { fontSize: 14, fontFamily: FONT.w700, color: c.onAccent },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    overlay: { flex: 1, backgroundColor: c.overlay, alignItems: "center", justifyContent: "center", padding: 24 },
+    card: {
+      width: "100%", maxWidth: 360, backgroundColor: c.background, borderRadius: RADIUS.hero, padding: 20, gap: 12,
+      borderWidth: StyleSheet.hairlineWidth, borderColor: c.hairline,
+    },
+    title: { ...TYPE.title, color: c.textDark },
+    subtitle: { ...TYPE.body, fontSize: 14, color: c.textMuted, lineHeight: 20 },
+    label: { ...TYPE.label, color: c.textMuted },
+    kaesten: { flexDirection: "row", gap: 10 },
+    kasten: {
+      flex: 1, height: 56, borderRadius: RADIUS.md, backgroundColor: c.card, alignItems: "center", justifyContent: "center",
+      borderWidth: StyleSheet.hairlineWidth, borderColor: c.hairline,
+    },
+    punkt: { fontFamily: FONT.w900, fontSize: 28, color: c.textDark },
+    versteckt: { position: "absolute", opacity: 0, width: 1, height: 1 },
+    error: { fontFamily: FONT.w700, fontSize: 13 },
+    actions: { flexDirection: "row", gap: 10, marginTop: 4 },
+  });
