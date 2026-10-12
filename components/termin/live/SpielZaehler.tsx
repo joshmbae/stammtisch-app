@@ -6,14 +6,15 @@ import { useColors, useThemedStyles } from "../../../contexts/ThemeContext";
 import { TerminAbend } from "../../../utils/useTerminAbend";
 import { displayName } from "../../../utils/format";
 import { showAlert } from "../../../utils/alert";
-import { Avatar, CountBurst, PressableScale, Ton, haptik } from "../../ui";
+import { Avatar, Card, CountBurst, PressableScale, Ton, haptik } from "../../ui";
 import { euroKurz } from "./StrafenErfassen";
 
 const TOENE: Ton[] = ["mustard", "coral", "green", "blue"];
 
 /**
- * Eine Zeile pro Person am Tisch, ein Zähl-Knopf pro Ereignis des Spiels.
- * Bei 0 blass, ab dem ersten Treffer kräftig. Rückgängig über den Verlauf.
+ * Eine Zeile pro Person am Tisch, ein Zähl-Knopf pro Ereignis des Spiels
+ * (meist zwei, manchmal drei oder mehr). Bei 0 blass, ab dem ersten Treffer
+ * kräftig. Rückgängig über den Verlauf.
  */
 export function SpielZaehler({ abend, mitglieder }: { abend: TerminAbend; mitglieder: MemberProfile[] }) {
   const c = useColors();
@@ -52,21 +53,22 @@ export function SpielZaehler({ abend, mitglieder }: { abend: TerminAbend; mitgli
     return <Text style={styles.leer}>Noch niemand am Tisch. Erst unter „Anwesend" eintragen.</Text>;
   }
 
-  // Bei mehr Ereignissen schmalere Knöpfe, damit die Zeile auf jedes Handy passt.
-  const breite = typen.length <= 2 ? 84 : typen.length === 3 ? 64 : 52;
+  // Bei mehr Ereignissen schmalere Knöpfe, damit Name und Zähler auf jedes Handy passen.
+  const breite = typen.length <= 2 ? 72 : typen.length === 3 ? 58 : 48;
   const mitStrafe = typen.filter((t) => (t.strafBetrag ?? 0) > 0);
 
   return (
-    <View style={{ gap: 8 }}>
+    <View style={{ gap: 6 }}>
       <View style={styles.kopf} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
         <View style={{ flex: 1 }} />
         {typen.map((t) => (
-          <Text key={t.id} style={[styles.spalte, { width: breite }]} numberOfLines={1}>{t.label}</Text>
+          <Text key={t.id} style={[styles.spalte, { width: breite }]} numberOfLines={2}>{t.label}</Text>
         ))}
       </View>
-      {mitglieder.map((m) => (
-        <View key={m.id} style={styles.zeile}>
-          <Avatar name={displayName(m)} color={m.avatarColor} photoUri={m.photoUri} size={32} />
+      <Card style={{ paddingVertical: 2, paddingHorizontal: 12 }}>
+      {mitglieder.map((m, zeileIndex) => (
+        <View key={m.id} style={[styles.zeile, zeileIndex > 0 && styles.trenner]}>
+          <Avatar name={displayName(m)} color={m.avatarColor} photoUri={m.photoUri} size={28} />
           <Text style={styles.name} numberOfLines={1}>{displayName(m)}</Text>
           {typen.map((t, i) => {
             const key = `${m.id}:${t.id}`;
@@ -87,6 +89,7 @@ export function SpielZaehler({ abend, mitglieder }: { abend: TerminAbend; mitgli
           })}
         </View>
       ))}
+      </Card>
       {mitStrafe.length > 0 ? (
         <Text style={styles.fuss}>{mitStrafe.map((t) => `${t.label} kostet ${euroKurz(t.strafBetrag!)}`).join(" · ")}</Text>
       ) : null}
@@ -97,14 +100,13 @@ export function SpielZaehler({ abend, mitglieder }: { abend: TerminAbend; mitgli
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     leer: { ...TYPE.body, fontSize: 14, color: c.textMuted, paddingVertical: 8 },
-    kopf: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12 },
-    spalte: { ...TYPE.label, fontSize: 11, color: c.textMuted, textAlign: "center" },
-    zeile: {
-      flexDirection: "row", alignItems: "center", gap: 8, minHeight: 64, paddingVertical: 8, paddingLeft: 12, paddingRight: 8,
-      borderRadius: RADIUS.tile, backgroundColor: c.card, borderWidth: StyleSheet.hairlineWidth, borderColor: c.hairline,
-    },
-    name: { flex: 1, fontFamily: FONT.w700, fontSize: 15, color: c.textDark, marginLeft: 2 },
-    knopf: { height: 48, borderRadius: 16, alignItems: "center", justifyContent: "center", overflow: "visible" },
-    zahl: { ...TYPE.num, fontSize: 22 },
+    // Gleiche Einrückung wie die Karte (12), damit die Überschriften über ihren Knöpfen stehen.
+    kopf: { flexDirection: "row", alignItems: "flex-end", gap: 6, paddingHorizontal: 12 },
+    spalte: { fontFamily: FONT.w600, fontSize: 11, lineHeight: 13, color: c.textMuted, textAlign: "center" },
+    zeile: { flexDirection: "row", alignItems: "center", gap: 6, minHeight: 50, paddingVertical: 6 },
+    trenner: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
+    name: { flex: 1, fontFamily: FONT.w600, fontSize: 15, color: c.textDark, marginLeft: 4 },
+    knopf: { height: 38, borderRadius: RADIUS.md, alignItems: "center", justifyContent: "center", overflow: "visible" },
+    zahl: { ...TYPE.num, fontSize: 18 },
     fuss: { ...TYPE.caption, fontSize: 13, color: c.textMuted, textAlign: "center", marginTop: 4 },
   });

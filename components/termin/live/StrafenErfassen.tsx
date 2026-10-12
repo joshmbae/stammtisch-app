@@ -78,11 +78,13 @@ export function StrafenErfassen({ abend, mitglieder, vorauswahl }: {
                   accessibilityLabel={`${k.label}${k.betrag > 0 ? `, ${euroKurz(k.betrag)}` : ""}`}
                   style={[styles.kat, sel && { borderColor: c.coral, borderWidth: 2, backgroundColor: c.coralSoft }]}
                 >
-                  <View style={styles.katKopf}>
-                    <KategorieIcon kat={k} />
-                    {k.betrag > 0 ? <Text style={[styles.katBetrag, { color: c.coralText }]}>{euroKurz(k.betrag)}</Text> : null}
+                  <KategorieIcon kat={k} size={30} />
+                  <View style={styles.katText}>
+                    <Text style={styles.katLabel} numberOfLines={2}>{k.label}</Text>
+                    <Text style={[styles.katBetrag, { color: k.betrag > 0 ? c.coralText : c.textMuted }]}>
+                      {k.betrag > 0 ? euroKurz(k.betrag) : "Betrag frei"}
+                    </Text>
                   </View>
-                  <Text style={styles.katLabel} numberOfLines={2}>{k.label}</Text>
                 </PressableScale>
               </View>
             );
@@ -133,7 +135,7 @@ export function StrafenErfassen({ abend, mitglieder, vorauswahl }: {
               const m = abend.members.find((x) => x.id === l.memberId);
               return (
                 <View key={l.id} style={[styles.zeile, i > 0 && styles.trenner]}>
-                  <KategorieIcon kat={k} size={32} />
+                  <KategorieIcon kat={k} size={28} />
                   <Text style={styles.zeileText} numberOfLines={1}>
                     <Text style={styles.zeileName}>{m ? displayName(m) : "?"}</Text>
                     {` · ${l.notiz && k?.systemKey === "sonstiges" ? l.notiz : k?.label ?? "Strafe"}`}
@@ -154,24 +156,24 @@ const makeStyles = (c: ThemeColors) =>
     label: { ...TYPE.label, color: c.textMuted },
     leer: { ...TYPE.body, fontSize: 14, color: c.textMuted },
     chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-    raster: { flexDirection: "row", flexWrap: "wrap", marginHorizontal: -5 },
-    zelle: { width: "50%", padding: 5 },
+    raster: { flexDirection: "row", flexWrap: "wrap", marginHorizontal: -4 },
+    zelle: { width: "50%", padding: 4 },
     kat: {
-      minHeight: 84, borderRadius: RADIUS.tile, padding: 12, gap: 8, justifyContent: "space-between",
+      flexDirection: "row", alignItems: "center", gap: 10, minHeight: 56, borderRadius: RADIUS.md, paddingVertical: 8, paddingHorizontal: 10,
       backgroundColor: c.card, borderWidth: StyleSheet.hairlineWidth, borderColor: c.hairline,
     },
-    katKopf: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" },
-    katBetrag: { ...TYPE.num, fontSize: 17 },
-    katLabel: { fontFamily: FONT.w600, fontSize: 14, color: c.textDark },
+    katText: { flex: 1, minWidth: 0 },
+    katBetrag: { ...TYPE.num, fontSize: 13, marginTop: 1 },
+    katLabel: { fontFamily: FONT.w600, fontSize: 14, lineHeight: 18, color: c.textDark },
     freiZeile: { flexDirection: "row", gap: 8 },
     input: {
-      minHeight: 48, borderRadius: RADIUS.md, paddingHorizontal: 14, backgroundColor: c.card,
+      minHeight: 44, borderRadius: RADIUS.md, paddingHorizontal: 14, backgroundColor: c.card,
       borderWidth: StyleSheet.hairlineWidth, borderColor: c.hairline, fontFamily: FONT.w600, fontSize: 15, color: c.textDark,
     },
-    zeile: { flexDirection: "row", alignItems: "center", gap: 12, minHeight: 52 },
+    zeile: { flexDirection: "row", alignItems: "center", gap: 10, minHeight: 46 },
     trenner: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
-    zeileText: { flex: 1, fontFamily: FONT.w500, fontSize: 15, color: c.textMid },
-    zeileName: { fontFamily: FONT.w700, color: c.textDark },
-    zeileBetrag: { ...TYPE.num, fontSize: 16, color: c.textDark },
+    zeileText: { flex: 1, fontFamily: FONT.w400, fontSize: 14, color: c.textMid },
+    zeileName: { fontFamily: FONT.w600, color: c.textDark },
+    zeileBetrag: { ...TYPE.num, fontSize: 15, color: c.textDark },
     bezahlt: { color: c.textMuted, textDecorationLine: "line-through" },
   });
