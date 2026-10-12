@@ -11,10 +11,11 @@ import {
   loadMembers,
   loadStrafKategorien,
   loadTermine,
+  loadVerordnung,
   logActivity,
   updateKassenEintrag,
 } from "./storage";
-import { setStrafeBeglichen } from "./strafenActions";
+import { setStrafeBeglichen, setStrafenBeglichen } from "./strafenActions";
 import { anteilProKopf } from "./kasse";
 import { useScreenLoad } from "./useScreenLoad";
 import { useSession } from "../contexts/SessionContext";
@@ -37,9 +38,11 @@ export function useKasse() {
   const [strafKategorien, setStrafKategorien] = useState<StrafKategorieDef[]>([]);
   /** Wer welchen Kassen-Eintrag angelegt hat (aus der Chronik). */
   const [actorByRefId, setActorByRefId] = useState<Map<string, string>>(new Map());
+  const [zahlungsLink, setZahlungsLink] = useState<string | undefined>(undefined);
 
   async function load() {
-    const [k, ms, activity, ts, kats] = await Promise.all([loadKasse(), loadMembers(), loadActivityFeed(300), loadTermine(), loadStrafKategorien()]);
+    const [k, ms, activity, ts, kats, v] = await Promise.all([loadKasse(), loadMembers(), loadActivityFeed(300), loadTermine(), loadStrafKategorien(), loadVerordnung()]);
+    setZahlungsLink(v.zahlungsLink);
     const logs = await loadAllStrafLogs(ms.map((m) => m.id));
     setEintraege(k);
     setMembers(ms);
@@ -178,11 +181,25 @@ export function useKasse() {
     });
   }
 
+  /** Eigene offene Strafen auf einmal begleichen (eine Chronik-Meldung). */
+  async function meineStrafenBegleichen() {
+    const offen = strafen.filter((l) => l.memberId === activeMemberId && !l.beglichen);
+    if (!activeMemberId || offen.length === 0) return;
+    await setStrafenBeglichen(offen, {
+      memberName: members.find((m) => m.id === activeMemberId)?.name,
+      kategorieLabel: (log) => strafKategorien.find((k) => k.id === log.kategorie)?.label,
+      actorMemberId: activeMemberId,
+    });
+    const ids = new Set(offen.map((l) => l.id));
+    setStrafen((prev) => prev.map((l) => (ids.has(l.id) ? { ...l, beglichen: true } : l)));
+    setEintraege(await loadKasse());
+  }
+
   return {
     ...screen,
     activeMemberId,
-    eintraege, members, termine, strafen, strafKategorien, actorByRefId,
-    buchen, eintragLoeschen, rechnungUmschalten, anteilUmschalten, strafeUmschalten, strafeLoeschen,
+    eintraege, members, termine, strafen, strafKategorien, actorByRefId, zahlungsLink,
+    buchen, eintragLoeschen, rechnungUmschalten, anteilUmschalten, strafeUmschalten, strafeLoeschen, meineStrafenBegleichen,
   };
 }
 

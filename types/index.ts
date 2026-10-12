@@ -231,4 +231,6 @@ export interface StammtischVerordnung {
   aktivesSpielId?: string;
   rollenOptionen?: string[];
   tabStrafenAktiv?: boolean;
+  /** Wohin Strafen gezahlt werden, z. B. ein PayPal-Pool (nur https). Leerer Text = entfernen. */
+  zahlungsLink?: string;
 }

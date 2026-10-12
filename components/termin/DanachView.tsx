@@ -14,6 +14,7 @@ import { displayName, formatEuro } from "../../utils/format";
 import { useFuehrende } from "../../utils/useFuehrende";
 import { useSession } from "../../contexts/SessionContext";
 import { showAlert } from "../../utils/alert";
+import { begleichenDialog } from "../../utils/zahlungslink";
 import { Avatar, BarList, BarRow, Button, Card, Emoji, IconSquircle, Krone, PressableScale, Ring, Ton, haptik, tonFarben } from "../ui";
 import { SYMBOL } from "../../constants/symbole";
 
@@ -61,23 +62,22 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
   }
 
   function zahlen(offen: typeof strafLogs, betrag: number) {
-    showAlert(`${euro(betrag)} begleichen?`, `${offen.length} ${offen.length === 1 ? "Strafe von heute wird" : "Strafen von heute werden"} als bezahlt markiert und in die Kasse gebucht.`, [
-      { text: "Abbrechen", style: "cancel" },
-      {
-        text: "Begleichen",
-        onPress: async () => {
-          setZahltGerade(true);
-          try {
-            await abend.meineStrafenBegleichen(offen);
-            haptik("erfolg");
-          } catch {
-            showAlert("Fehler", "Nicht alles konnte gespeichert werden. Bitte in der Kasse prüfen.");
-          } finally {
-            setZahltGerade(false);
-          }
-        },
+    begleichenDialog({
+      link: abend.verordnung.zahlungsLink,
+      betragText: euro(betrag),
+      beschreibung: `${offen.length} ${offen.length === 1 ? "Strafe von heute wird" : "Strafen von heute werden"}`,
+      onBeglichen: async () => {
+        setZahltGerade(true);
+        try {
+          await abend.meineStrafenBegleichen(offen);
+          haptik("erfolg");
+        } catch {
+          showAlert("Fehler", "Nicht alles konnte gespeichert werden. Bitte in der Kasse prüfen.");
+        } finally {
+          setZahltGerade(false);
+        }
       },
-    ]);
+    });
   }
 
   const kategorien: Kategorie[] = [];

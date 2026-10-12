@@ -10,7 +10,9 @@ import { formatWochentagDatum } from "../../utils/date";
 import { displayName, formatEuro } from "../../utils/format";
 import { terminBezeichnung } from "../../utils/activityFeed";
 import { useSingleFlight } from "../../utils/useSingleFlight";
-import { Avatar, Card, Chip, KategorieIcon, PressableScale, haptik } from "../ui";
+import { Avatar, Button, Card, Chip, KategorieIcon, PressableScale, haptik } from "../ui";
+import { begleichenDialog, zahlungsAnbieter } from "../../utils/zahlungslink";
+import { showAlert } from "../../utils/alert";
 
 const euro = (n: number) => `${formatEuro(n).replace(",00", "")} €`;
 
@@ -31,6 +33,7 @@ export function StrafenTab({ kasse, filter, onFilter, onStrafe }: {
   const styles = useThemedStyles(makeStyles);
   const guard = useSingleFlight();
   const [beglicheneOffen, setBeglicheneOffen] = useState(false);
+  const [zahltGerade, setZahltGerade] = useState(false);
   // Gewählte Person sichtbar halten, z. B. nach einem Link aus dem Profil.
   const chipLeiste = useRef<ScrollView>(null);
   const chipX = useRef(new Map<string, number>());
@@ -73,6 +76,25 @@ export function StrafenTab({ kasse, filter, onFilter, onStrafe }: {
     if (!t) return terminId ? "Termin gelöscht" : "Ohne Termin";
     return terminBezeichnung({ terminDatum: t.datum, terminTitel: t.titel, terminArt: t.art }, true);
   };
+
+  function allesZahlen() {
+    begleichenDialog({
+      link: kasse.zahlungsLink,
+      betragText: euro(meineSumme),
+      beschreibung: `${meineOffen.length} ${meineOffen.length === 1 ? "Strafe wird" : "Strafen werden"}`,
+      onBeglichen: async () => {
+        setZahltGerade(true);
+        try {
+          await kasse.meineStrafenBegleichen();
+          haptik("erfolg");
+        } catch {
+          showAlert("Fehler", "Nicht alles konnte gespeichert werden. Bitte die Liste prüfen.");
+        } finally {
+          setZahltGerade(false);
+        }
+      },
+    });
+  }
 
   async function abhaken(l: StrafLog) {
     haptik(l.beglichen ? "leicht" : "erfolg");
@@ -137,6 +159,15 @@ export function StrafenTab({ kasse, filter, onFilter, onStrafe }: {
             <Text style={[styles.summe, { color: offenSumme > 0 ? c.coralText : c.successText }]} maxFontSizeMultiplier={MAX_FONT_SCALE}>{euro(offenSumme)}</Text>
             <Text style={styles.meta}>{`${offen.length} ${offen.length === 1 ? "Strafe" : "Strafen"} offen`}</Text>
           </View>
+          {filter === ich && offenSumme > 0 ? (
+            <Button
+              label={kasse.zahlungsLink ? `Mit ${zahlungsAnbieter(kasse.zahlungsLink)} zahlen` : "Alles begleichen"}
+              size="sm"
+              variant="danger"
+              loading={zahltGerade}
+              onPress={allesZahlen}
+            />
+          ) : null}
         </Card>
       ) : (
       <Card enterIndex={0} style={styles.oben}>

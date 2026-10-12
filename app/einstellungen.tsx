@@ -31,6 +31,7 @@ import {
   SpielWahlSheet,
 } from "../components/einstellungen/EinstellungenSheets";
 import { SYMBOL } from "../constants/symbole";
+import { normalisiereZahlungsLink, zahlungsAnbieter } from "../utils/zahlungslink";
 
 const ERSCHEINUNGSBILD: { key: ThemePreference; label: string }[] = [
   { key: "system", label: "System" },
@@ -38,7 +39,7 @@ const ERSCHEINUNGSBILD: { key: ThemePreference; label: string }[] = [
   { key: "dark", label: "Dunkel" },
 ];
 
-type Offen = "name" | "treffpunkt" | "tag" | "gruendung" | "logo" | "satzung" | "rollen" | "spiel" | "loeschen" | null;
+type Offen = "name" | "treffpunkt" | "tag" | "zahlung" | "gruendung" | "logo" | "satzung" | "rollen" | "spiel" | "loeschen" | null;
 
 /**
  * Einstellungen als Liste: jede Zeile öffnet ein Sheet, das seinen Teil
@@ -179,7 +180,12 @@ export default function EinstellungenScreen() {
   const tagZeit = [v.stammtischTag, v.stammtischzeit].filter(Boolean).join(", ");
   const version = Constants.expoConfig?.version;
 
-  const feldSheet = (key: "name" | "treffpunkt" | "tag"): { title: string; felder: FeldDef[]; hinweis?: string } => {
+  const feldSheet = (key: "name" | "treffpunkt" | "tag" | "zahlung"): { title: string; felder: FeldDef[]; hinweis?: string } => {
+    if (key === "zahlung") return {
+      title: "Zahlungslink",
+      hinweis: "Wohin ihr Strafen zahlt, z. B. euer PayPal-Pool. Beim Begleichen fragt die App, ob man dorthin möchte. Leer lassen, um den Link zu entfernen.",
+      felder: [{ key: "zahlungsLink", label: "Link", value: v.zahlungsLink, placeholder: "https://www.paypal.com/pool/…" }],
+    };
     if (key === "name") return { title: "Name", felder: [{ key: "name", label: "Name des Stammtischs", value: v.name, placeholder: "z. B. Die Hellen", pflicht: true }] };
     if (key === "treffpunkt") return { title: "Treffpunkt", felder: [{ key: "treffpunkt", label: "Treffpunkt", value: v.treffpunkt, placeholder: "z. B. Gasthof Zum Wirt, hinten links" }] };
     return {
@@ -190,7 +196,7 @@ export default function EinstellungenScreen() {
       ],
     };
   };
-  const offenesFeld = offen === "name" || offen === "treffpunkt" || offen === "tag" ? feldSheet(offen) : null;
+  const offenesFeld = offen === "name" || offen === "treffpunkt" || offen === "tag" || offen === "zahlung" ? feldSheet(offen) : null;
 
   return (
     <Screen
@@ -261,6 +267,13 @@ export default function EinstellungenScreen() {
             onPress={() => router.push("/strafen-kategorien")}
           />
           <ListRow
+            title="Zahlungslink"
+            value={v.zahlungsLink ? zahlungsAnbieter(v.zahlungsLink) : "keiner"}
+            emoji={SYMBOL.einnahme}
+            ton="green"
+            onPress={() => setOffen("zahlung")}
+          />
+          <ListRow
             title="Spiele"
             value={aktivesSpiel ? `${aktivesSpiel.name} aktiv` : "kein Spiel"}
             emoji={SYMBOL.spiele}
@@ -324,15 +337,24 @@ export default function EinstellungenScreen() {
         title={offenesFeld?.title ?? ""}
         felder={offenesFeld?.felder ?? []}
         onClose={() => setOffen(null)}
-        onSave={(w) =>
-          speichern(
+        onSave={(w) => {
+          if (offen === "zahlung") {
+            if (!w.zahlungsLink) return speichern({ zahlungsLink: "" });
+            const link = normalisiereZahlungsLink(w.zahlungsLink);
+            if (!link) {
+              showAlert("Ungültiger Link", "Bitte einen https-Link eingeben, z. B. den Link zu eurem PayPal-Pool.");
+              return Promise.resolve(false);
+            }
+            return speichern({ zahlungsLink: link });
+          }
+          return speichern(
             offen === "name"
               ? { name: w.name }
               : offen === "treffpunkt"
                 ? { treffpunkt: w.treffpunkt || undefined }
                 : { stammtischTag: w.stammtischTag || undefined, stammtischzeit: w.stammtischzeit || undefined }
-          )
-        }
+          );
+        }}
       />
       <GruendungSheet visible={offen === "gruendung"} value={v.gruendungsjahr} onClose={() => setOffen(null)} onSave={(g) => speichern({ gruendungsjahr: g })} />
       <LogoSheet visible={offen === "logo"} uri={v.logoUrl} uploading={uploadingLogo} onClose={() => setOffen(null)} onPick={pickLogo} onRemove={removeLogo} />

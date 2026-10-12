@@ -277,6 +277,7 @@ function rowToVerordnung(row: any): StammtischVerordnung {
     aktivesSpielId: row.aktives_spiel_id ?? undefined,
     rollenOptionen: row.rollen_optionen ?? undefined,
     tabStrafenAktiv: row.tab_strafen_aktiv ?? true,
+    zahlungsLink: row.zahlungs_link ?? undefined,
   };
 }
 
@@ -310,6 +311,8 @@ export async function saveVerordnung(v: StammtischVerordnung): Promise<void> {
     aktives_spiel_id: v.aktivesSpielId ?? null,
     rollen_optionen: v.rollenOptionen ?? ROLLEN_OPTIONEN_DEFAULT,
     tab_strafen_aktiv: v.tabStrafenAktiv ?? true,
+    // Nur mitschicken, wenn gesetzt: so speichert die App auch gegen ein Schema ohne die Spalte.
+    ...(v.zahlungsLink !== undefined ? { zahlungs_link: v.zahlungsLink || null } : {}),
   });
   if (error) throw error;
 }
