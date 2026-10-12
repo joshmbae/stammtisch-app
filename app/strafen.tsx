@@ -27,7 +27,6 @@ import {
 } from "../utils/storage";
 import { SHADOWS, ThemeColors, FONT } from "../constants/design";
 import { useColors, useThemedStyles } from "../contexts/ThemeContext";
-import { HamburgerButton } from "../components/HamburgerButton";
 import { BackButton } from "../components/BackButton";
 import LoadingSpinner from "../components/LoadingSpinner";
 import ErrorState from "../components/ErrorState";
@@ -170,7 +169,6 @@ export default function StrafenScreen() {
           {/* Header */}
           <View style={styles.header}>
             <BackButton />
-            <HamburgerButton />
             <View style={styles.headerTexts}>
               <Text style={styles.headerTitle}>Strafen</Text>
               <Text style={styles.headerSub}>Alle Strafen der Runde</Text>

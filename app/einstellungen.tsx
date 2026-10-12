@@ -17,18 +17,17 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import { showAlert } from "../../utils/alert";
-import { StammtischVerordnung, Spiel, SPIEL_VORLAGEN, StrafKategorieDef } from "../../types";
-import { loadVerordnung, saveVerordnung, uploadStammtischLogo, loadSpiele, loadStrafKategorien, instantiateSpielVorlage, deleteStammtisch } from "../../utils/storage";
-import { hashStammtischPassword } from "../../utils/pin";
-import { SHADOWS, ThemeColors, FONT } from "../../constants/design";
-import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
-import { HamburgerButton } from "../../components/HamburgerButton";
-import { BackButton } from "../../components/BackButton";
-import LoadingSpinner from "../../components/LoadingSpinner";
-import InlineDateTimePicker from "../../components/InlineDateTimePicker";
-import { useStammtisch } from "../../contexts/StammtischContext";
-import { useSession } from "../../contexts/SessionContext";
+import { showAlert } from "../utils/alert";
+import { StammtischVerordnung, Spiel, SPIEL_VORLAGEN, StrafKategorieDef } from "../types";
+import { loadVerordnung, saveVerordnung, uploadStammtischLogo, loadSpiele, loadStrafKategorien, instantiateSpielVorlage, deleteStammtisch } from "../utils/storage";
+import { hashStammtischPassword } from "../utils/pin";
+import { SHADOWS, ThemeColors, FONT } from "../constants/design";
+import { useColors, useThemedStyles } from "../contexts/ThemeContext";
+import { BackButton } from "../components/BackButton";
+import LoadingSpinner from "../components/LoadingSpinner";
+import InlineDateTimePicker from "../components/InlineDateTimePicker";
+import { useStammtisch } from "../contexts/StammtischContext";
+import { useSession } from "../contexts/SessionContext";
 
 /** Parst "YYYY" oder "YYYY-MM" (legacy: nur Jahr -> Januar). */
 function parseGruendung(value?: string): Date {
@@ -220,7 +219,6 @@ export default function EinstellungenScreen() {
 
         <View style={styles.header}>
           <BackButton />
-          <HamburgerButton />
           <View style={styles.headerTexts}>
             <Text style={styles.headerTitle}>Einstellungen</Text>
             <Text style={styles.headerSub}>Stammtischverordnung & Verwaltung</Text>

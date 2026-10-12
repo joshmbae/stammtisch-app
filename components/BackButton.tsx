@@ -3,16 +3,16 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useColors } from "../contexts/ThemeContext";
 
-/** Führt von jedem Menüpunkt (außer Übersicht selbst) zurück zur Übersicht. */
+/** Eine Ebene zurück; ohne Verlauf (z. B. nach Deep-Link) zur Übersicht. */
 export function BackButton({ color }: { color?: string }) {
   const c = useColors();
   return (
     <TouchableOpacity
-      onPress={() => router.replace("/(tabs)/home")}
+      onPress={() => (router.canGoBack() ? router.back() : router.replace("/(tabs)/home"))}
       style={styles.btn}
       hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       accessibilityRole="button"
-      accessibilityLabel="Zurück zur Übersicht"
+      accessibilityLabel="Zurück"
     >
       <Ionicons name="chevron-back" size={26} color={color ?? c.textDark} />
     </TouchableOpacity>
@@ -20,5 +20,6 @@ export function BackButton({ color }: { color?: string }) {
 }
 
 const styles = StyleSheet.create({
-  btn: { padding: 4 },
+  // 44 × 44 Bedienfläche, auch ohne hitSlop.
+  btn: { width: 44, height: 44, alignItems: "center", justifyContent: "center", marginLeft: -8 },
 });

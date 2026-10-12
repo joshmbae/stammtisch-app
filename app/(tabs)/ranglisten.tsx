@@ -19,7 +19,7 @@ import {
   SpielEreignisTyp,
   StrafLog,
   StammtischTermin,
-} from "../types";
+} from "../../types";
 import {
   loadMembers,
   loadVerordnung,
@@ -29,19 +29,17 @@ import {
   loadAllVerspätungLogs,
   loadAllSpielLogs,
   loadAllStrafLogs,
-} from "../utils/storage";
-import { SHADOWS, ThemeColors, FONT } from "../constants/design";
-import { useColors, useThemedStyles } from "../contexts/ThemeContext";
-import { useSession } from "../contexts/SessionContext";
-import RangVerlaufChart, { VerlaufSerie } from "../components/RangVerlaufChart";
-import { HamburgerButton } from "../components/HamburgerButton";
-import { BackButton } from "../components/BackButton";
-import LoadingSpinner from "../components/LoadingSpinner";
-import ErrorState from "../components/ErrorState";
-import OfflineBanner from "../components/OfflineBanner";
-import { useScreenLoad } from "../utils/useScreenLoad";
-import { getInitial, displayName } from "../utils/format";
-import SiegerBadge from "../components/SiegerBadge";
+} from "../../utils/storage";
+import { SHADOWS, ThemeColors, FONT } from "../../constants/design";
+import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
+import { useSession } from "../../contexts/SessionContext";
+import RangVerlaufChart, { VerlaufSerie } from "../../components/RangVerlaufChart";
+import LoadingSpinner from "../../components/LoadingSpinner";
+import ErrorState from "../../components/ErrorState";
+import OfflineBanner from "../../components/OfflineBanner";
+import { useScreenLoad } from "../../utils/useScreenLoad";
+import { getInitial, displayName } from "../../utils/format";
+import SiegerBadge from "../../components/SiegerBadge";
 import {
   ALLZEIT,
   FuehrenderTitel,
@@ -54,7 +52,8 @@ import {
   computeRangVerlauf,
   fuehrendeTitel,
   verfuegbareJahre,
-} from "../utils/stats";
+} from "../../utils/stats";
+import { NAV_INSET } from "../../components/ui";
 
 const MAX_HERVORGEHOBEN = 3;
 
@@ -188,10 +187,8 @@ export default function RanglistenScreen() {
         <OfflineBanner />
 
         <View style={styles.header}>
-          <BackButton />
-          <HamburgerButton />
           <View style={styles.headerTexts}>
-            <Text style={styles.headerTitle}>Ranglisten</Text>
+            <Text style={styles.headerTitle}>Tabelle</Text>
             <Text style={styles.headerSub}>
               {jahr === ALLZEIT ? "Gesamtwertung über alle Jahre" : `Wertung ${jahr}`}
             </Text>
@@ -303,7 +300,8 @@ export default function RanglistenScreen() {
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: c.background },
-  content: { padding: 20, paddingBottom: 48 },
+  // Platz für die schwebende Leiste unten.
+  content: { padding: 20, paddingBottom: NAV_INSET },
 
   header: {
     flexDirection: "row", alignItems: "center", gap: 12,

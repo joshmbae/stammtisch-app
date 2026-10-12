@@ -42,9 +42,10 @@ import { useSession } from "../../contexts/SessionContext";
 import { useStammtisch } from "../../contexts/StammtischContext";
 import { supabase } from "../../utils/supabase";
 import { subscribeToActivityFeed } from "../../utils/realtime";
+import { istUngelesen, useFeedSeen } from "../../utils/feedSeen";
+import { HeaderIconButton, NAV_INSET } from "../../components/ui";
 import { SHADOWS, ThemeColors, FONT } from "../../constants/design";
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
-import { HamburgerButton } from "../../components/HamburgerButton";
 import StammtischLogo from "../../components/StammtischLogo";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import ErrorState from "../../components/ErrorState";
@@ -215,6 +216,8 @@ export default function HomeScreen() {
   const [kasse, setKasse]                     = useState<KassenEintrag[]>([]);
   const [terminCount, setTerminCount]         = useState(0);
   const [lastActivity, setLastActivity]       = useState<ActivityLogEntry | null>(null);
+  const feedGesehen = useFeedSeen();
+  const chronikUngelesen = istUngelesen(lastActivity?.createdAt, feedGesehen);
   const [strafKategorien, setStrafKategorien] = useState<StrafKategorieDef[]>([]);
   const [siegerTitel, setSiegerTitel] = useState<Map<string, FuehrenderTitel[]>>(new Map());
 
@@ -336,12 +339,17 @@ export default function HomeScreen() {
 
         {/* ── Header ── */}
         <View style={styles.header}>
-          <HamburgerButton />
           <StammtischLogo size={40} uri={verordnung?.logoUrl} />
           <View style={styles.headerCenter}>
             <Text style={styles.headerStammtisch}>{verordnung?.name ?? "Mein Stammtisch"}</Text>
             <Text style={styles.headerGreeting}>{greeting}</Text>
           </View>
+          <HeaderIconButton
+            icon="notifications-outline"
+            label={chronikUngelesen ? "Chronik, neue Einträge" : "Chronik"}
+            dot={chronikUngelesen}
+            onPress={() => router.push("/feed")}
+          />
           {activeMember ? (
             <TouchableOpacity
               style={[styles.myAvatarBtn, { backgroundColor: activeMember.avatarColor }]}
@@ -629,7 +637,7 @@ export default function HomeScreen() {
                 <Text style={styles.onboardingBtnEmoji}>🧔</Text>
                 <Text style={styles.onboardingBtnText}>Mitglied anlegen</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.onboardingBtn, { borderColor: c.gold }]} onPress={() => router.push("/(tabs)/guide")}>
+              <TouchableOpacity style={[styles.onboardingBtn, { borderColor: c.gold }]} onPress={() => router.push("/einstellungen")}>
                 <Text style={styles.onboardingBtnEmoji}>📜</Text>
                 <Text style={styles.onboardingBtnText}>Verordnung</Text>
               </TouchableOpacity>
@@ -647,7 +655,8 @@ export default function HomeScreen() {
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: c.background },
-  content: { padding: 20, paddingBottom: 48 },
+  // Platz für die schwebende Leiste unten.
+  content: { padding: 20, paddingBottom: NAV_INSET },
 
   // ── Header ────────────────────────────────────────────────────────────────
   header: {

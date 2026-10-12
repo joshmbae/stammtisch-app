@@ -16,10 +16,8 @@ import { StatusBar } from "expo-status-bar";
 import * as SystemUI from "expo-system-ui";
 import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } from "@react-navigation/native";
 import { ThemeProvider, useTheme } from "../contexts/ThemeContext";
-import { MenuProvider } from "../contexts/MenuContext";
 import { SessionProvider } from "../contexts/SessionContext";
 import { StammtischProvider } from "../contexts/StammtischContext";
-import { MenuDrawer } from "../components/MenuDrawer";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -89,31 +87,29 @@ function ThemedApp() {
       <StatusBar style={scheme === "dark" ? "light" : "dark"} />
       <StammtischProvider>
         <SessionProvider>
-          <MenuProvider>
-            <MenuDrawer />
-            <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
-              <Stack.Screen name="index" />
-              <Stack.Screen name="stammtisch-waehlen" />
-              <Stack.Screen name="onboarding-setup" />
-              <Stack.Screen name="onboarding-intro" />
-              <Stack.Screen name="mitglied-waehlen" />
-              <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="member/new" />
-              <Stack.Screen name="member/[id]" />
-              <Stack.Screen name="member/edit/[id]" />
-              <Stack.Screen name="mitglieder" />
-              <Stack.Screen name="termin/[id]" />
-              <Stack.Screen name="protokolle" />
-              <Stack.Screen name="protokoll/[terminId]" />
-              <Stack.Screen name="kasse" />
-              <Stack.Screen name="strafen" />
-              <Stack.Screen name="strafen-kategorien" />
-              <Stack.Screen name="ranglisten" />
-              <Stack.Screen name="spiele" />
-              <Stack.Screen name="spiel/new" />
-              <Stack.Screen name="spiel/[id]" />
-            </Stack>
-          </MenuProvider>
+          <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
+            <Stack.Screen name="index" />
+            <Stack.Screen name="stammtisch-waehlen" />
+            <Stack.Screen name="onboarding-setup" />
+            <Stack.Screen name="onboarding-intro" />
+            <Stack.Screen name="mitglied-waehlen" />
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="member/new" />
+            <Stack.Screen name="member/[id]" />
+            <Stack.Screen name="member/edit/[id]" />
+            <Stack.Screen name="mitglieder" />
+            <Stack.Screen name="termin/[id]" />
+            <Stack.Screen name="protokolle" />
+            <Stack.Screen name="protokoll/[terminId]" />
+            <Stack.Screen name="strafen" />
+            <Stack.Screen name="strafen-kategorien" />
+            <Stack.Screen name="einstellungen" />
+            <Stack.Screen name="feed" />
+            <Stack.Screen name="satzung" />
+            <Stack.Screen name="spiele" />
+            <Stack.Screen name="spiel/new" />
+            <Stack.Screen name="spiel/[id]" />
+          </Stack>
         </SessionProvider>
       </StammtischProvider>
     </NavigationThemeProvider>

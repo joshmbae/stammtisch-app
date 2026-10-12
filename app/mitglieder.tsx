@@ -26,7 +26,6 @@ import {
 } from "../utils/storage";
 import { SHADOWS, ThemeColors, FONT } from "../constants/design";
 import { useColors, useThemedStyles } from "../contexts/ThemeContext";
-import { HamburgerButton } from "../components/HamburgerButton";
 import { BackButton } from "../components/BackButton";
 import LoadingSpinner from "../components/LoadingSpinner";
 import ErrorState from "../components/ErrorState";
@@ -123,9 +122,8 @@ export default function MitgliederScreen() {
         {/* Header */}
         <View style={styles.header}>
           <BackButton />
-          <HamburgerButton />
           <View style={styles.headerTexts}>
-            <Text style={styles.headerTitle}>Die Runde</Text>
+            <Text style={styles.headerTitle}>Mitglieder</Text>
             <Text style={styles.headerSub}>Alle Stammtisch-Mitglieder</Text>
           </View>
           <TouchableOpacity

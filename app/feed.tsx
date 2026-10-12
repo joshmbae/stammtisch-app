@@ -9,12 +9,12 @@ import { activityRoute, renderActivity } from "../utils/activityFeed";
 import { formatTagUeberschrift, formatUhrzeit, tagesSchluessel } from "../utils/date";
 import { SHADOWS, ThemeColors, FONT } from "../constants/design";
 import { useColors, useThemedStyles } from "../contexts/ThemeContext";
-import { HamburgerButton } from "../components/HamburgerButton";
 import { BackButton } from "../components/BackButton";
 import LoadingSpinner from "../components/LoadingSpinner";
 import ErrorState from "../components/ErrorState";
 import OfflineBanner from "../components/OfflineBanner";
 import { useScreenLoad } from "../utils/useScreenLoad";
+import { markFeedSeen } from "../utils/feedSeen";
 import { supabase } from "../utils/supabase";
 import { subscribeToActivityFeed } from "../utils/realtime";
 import { useStammtisch } from "../contexts/StammtischContext";
@@ -99,6 +99,8 @@ export default function FeedScreen() {
   async function load() {
     const [feed, ms, kats] = await Promise.all([loadActivityFeed(PAGE_SIZE), loadMembers(), loadStrafKategorien()]);
     setEntries(feed);
+    // Chronik geöffnet = alles bis zum neuesten Eintrag gesehen (Punkt an der Glocke verschwindet).
+    markFeedSeen(feed[0]?.createdAt);
     setMembers(ms);
     setStrafKategorien(kats);
     setHasMore(feed.length >= PAGE_SIZE);
@@ -126,6 +128,7 @@ export default function FeedScreen() {
       if (!stammtischId) return;
       const channel = subscribeToActivityFeed(stammtischId, (entry) => {
         setEntries((prev) => (prev.some((e) => e.id === entry.id) ? prev : [entry, ...prev]));
+        markFeedSeen(entry.createdAt);
       });
       return () => { supabase.removeChannel(channel); };
     }, [stammtischId])
@@ -144,9 +147,8 @@ export default function FeedScreen() {
         <OfflineBanner />
         <View style={styles.header}>
           <BackButton />
-          <HamburgerButton />
           <View style={styles.headerTexts}>
-            <Text style={styles.headerTitle}>Aktivität</Text>
+            <Text style={styles.headerTitle}>Chronik</Text>
             <Text style={styles.headerSub}>Was in der Runde passiert ist</Text>
           </View>
         </View>

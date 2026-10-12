@@ -28,14 +28,13 @@ import { useSession } from "../../contexts/SessionContext";
 import { SHADOWS, ThemeColors, FONT } from "../../constants/design";
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { displayName } from "../../utils/format";
-import { HamburgerButton } from "../../components/HamburgerButton";
-import { BackButton } from "../../components/BackButton";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import ErrorState from "../../components/ErrorState";
 import OfflineBanner from "../../components/OfflineBanner";
 import { useScreenLoad } from "../../utils/useScreenLoad";
 import InlineDateTimePicker from "../../components/InlineDateTimePicker";
 import { toLocalIsoDate, toTimeString, parseTimeString } from "../../utils/date";
+import { NAV_INSET } from "../../components/ui";
 
 // ─── Konstanten ───────────────────────────────────────────────────────────────
 
@@ -692,10 +691,8 @@ export default function KalenderTab() {
 
         {/* ── Header ── */}
         <View style={styles.header}>
-          <BackButton />
-          <HamburgerButton />
           <View style={styles.headerTexts}>
-            <Text style={styles.headerTitle}>Kalender</Text>
+            <Text style={styles.headerTitle}>Termine</Text>
             <Text style={styles.headerSub}>Termine & Geburtstage</Text>
           </View>
           <TouchableOpacity
@@ -814,7 +811,8 @@ export default function KalenderTab() {
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: c.background },
-  content: { padding: 20, paddingBottom: 48 },
+  // Platz für die schwebende Leiste unten.
+  content: { padding: 20, paddingBottom: NAV_INSET },
 
   header: {
     flexDirection: "row", alignItems: "center", gap: 12,

@@ -18,8 +18,8 @@ import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import Swipeable from "react-native-gesture-handler/Swipeable";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { showAlert } from "../utils/alert";
-import { KassenEintrag, KassenEintragTyp, MemberProfile, StammtischTermin } from "../types";
+import { showAlert } from "../../utils/alert";
+import { KassenEintrag, KassenEintragTyp, MemberProfile, StammtischTermin } from "../../types";
 import {
   loadKasse,
   addKassenEintrag,
@@ -29,20 +29,19 @@ import {
   logActivity,
   loadActivityFeed,
   loadTermine,
-} from "../utils/storage";
-import { terminBezeichnung } from "../utils/activityFeed";
-import { formatUhrzeit, formatWochentagDatum } from "../utils/date";
-import { SHADOWS, ThemeColors, FONT } from "../constants/design";
-import { useColors, useThemedStyles } from "../contexts/ThemeContext";
-import { HamburgerButton } from "../components/HamburgerButton";
-import { BackButton } from "../components/BackButton";
-import LoadingSpinner from "../components/LoadingSpinner";
-import ErrorState from "../components/ErrorState";
-import OfflineBanner from "../components/OfflineBanner";
-import { useScreenLoad } from "../utils/useScreenLoad";
-import { useSession } from "../contexts/SessionContext";
-import { formatEuro, getInitial } from "../utils/format";
-import { useSingleFlight } from "../utils/useSingleFlight";
+} from "../../utils/storage";
+import { terminBezeichnung } from "../../utils/activityFeed";
+import { formatUhrzeit, formatWochentagDatum } from "../../utils/date";
+import { SHADOWS, ThemeColors, FONT } from "../../constants/design";
+import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
+import LoadingSpinner from "../../components/LoadingSpinner";
+import ErrorState from "../../components/ErrorState";
+import OfflineBanner from "../../components/OfflineBanner";
+import { useScreenLoad } from "../../utils/useScreenLoad";
+import { useSession } from "../../contexts/SessionContext";
+import { formatEuro, getInitial } from "../../utils/format";
+import { useSingleFlight } from "../../utils/useSingleFlight";
+import { NAV_INSET } from "../../components/ui";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -427,10 +426,8 @@ export default function KasseScreen() {
 
           {/* Header */}
           <View style={styles.header}>
-            <BackButton />
-            <HamburgerButton />
             <View style={styles.headerTexts}>
-              <Text style={styles.headerTitle}>Stammtischkasse</Text>
+              <Text style={styles.headerTitle}>Kasse</Text>
               <Text style={styles.headerSub}>Einnahmen, Ausgaben & Stammtischrechnung</Text>
             </View>
           </View>
@@ -753,7 +750,8 @@ export default function KasseScreen() {
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: c.background },
-  content: { padding: 20, paddingBottom: 60 },
+  // Platz für die schwebende Leiste unten.
+  content: { padding: 20, paddingBottom: NAV_INSET },
 
   header: {
     flexDirection: "row", alignItems: "center", gap: 12,

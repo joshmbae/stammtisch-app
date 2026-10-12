@@ -23,7 +23,7 @@ export default function OnboardingSetupScreen() {
 
         <TouchableOpacity
           style={styles.primaryBtn}
-          onPress={() => router.push("/(tabs)/guide")}
+          onPress={() => router.push("/einstellungen")}
           activeOpacity={0.85}
         >
           <Text style={styles.primaryBtnText}>Jetzt einrichten</Text>

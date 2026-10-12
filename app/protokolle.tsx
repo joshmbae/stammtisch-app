@@ -14,7 +14,6 @@ import { Protokoll, StammtischTermin } from "../types";
 import { loadProtokolle, loadTermine } from "../utils/storage";
 import { SHADOWS, ThemeColors, FONT } from "../constants/design";
 import { useColors, useThemedStyles } from "../contexts/ThemeContext";
-import { HamburgerButton } from "../components/HamburgerButton";
 import { BackButton } from "../components/BackButton";
 import LoadingSpinner from "../components/LoadingSpinner";
 import ErrorState from "../components/ErrorState";
@@ -79,7 +78,6 @@ export default function ProtokollListeScreen() {
 
         <View style={styles.header}>
           <BackButton />
-          <HamburgerButton />
           <View style={styles.headerTexts}>
             <Text style={styles.headerTitle}>Protokolle</Text>
             <Text style={styles.headerSub}>Aufzeichnungen aller Stammtische</Text>
