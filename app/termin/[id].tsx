@@ -8,7 +8,6 @@ import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { useTerminAbend } from "../../utils/useTerminAbend";
 import { useNow } from "../../utils/useNow";
 import { TerminPhase, terminPhase, terminStart } from "../../utils/terminPhase";
-import { SYMBOL } from "../../constants/symbole";
 import { formatWochentagDatum } from "../../utils/date";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import ErrorState from "../../components/ErrorState";
@@ -99,10 +98,7 @@ export default function TerminScreen() {
             onBack={zurueck}
             onEdit={() => setBearbeiten(true)}
             live={phase === "live" && zeige === "live" ? { start: start ?? now, now } : undefined}
-            motiv={{
-              flaeche: zeige === "danach" ? "senf" : "blau",
-              emoji: termin.art === "veranstaltung" ? SYMBOL.veranstaltung : termin.art === "geburtstag" ? SYMBOL.geburtstag : SYMBOL.stammtisch,
-            }}
+            motiv={{ flaeche: zeige === "danach" ? "senf" : "blau" }}
           />
           <OfflineBanner />
           <PhaseStepper phase={phase} ansicht={zeige} onChange={setAnsicht} />

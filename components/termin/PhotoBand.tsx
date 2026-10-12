@@ -20,8 +20,8 @@ interface Props {
   onEdit: () => void;
   /** Während der Abend läuft: grünes Band mit Timer statt Foto. */
   live?: { start: Date; now: Date };
-  /** Ohne Foto: Standardmotiv – Fläche je Phase, Emoji je Termin-Art. */
-  motiv: { flaeche: "blau" | "senf"; emoji: string };
+  /** Ohne Foto: Fläche in der Farbe der Phase (wie die Karte auf Home). */
+  motiv: { flaeche: "blau" | "senf" };
 }
 
 const FOTO_HOEHE = 200;
@@ -30,9 +30,9 @@ const MOTIV_HOEHE = 124;
 
 /**
  * Kopf des Termins: mit Foto füllt es das Band (Tippen = groß ansehen), ohne
- * Foto ein Standardmotiv in der Farbe der Phase (wie die Karte auf Home) mit
- * großem Emoji der Termin-Art. Titel und Datum stehen immer hier, damit der
- * Rahmen in allen Phasen gleich bleibt.
+ * Foto ein flaches Band in der Farbe der Phase (wie die Karte auf Home).
+ * Titel und Datum stehen immer hier, damit der Rahmen in allen Phasen gleich
+ * bleibt.
  */
 export function PhotoBand({ titel, untertitel, bildUrl, uploading, onUpload, onRemove, onBack, onEdit, live, motiv }: Props) {
   const c = useColors();
@@ -166,7 +166,6 @@ export function PhotoBand({ titel, untertitel, bildUrl, uploading, onUpload, onR
     <View style={[styles.motiv, { height: MOTIV_HOEHE + insets.top, backgroundColor: flaeche.bg, borderBottomColor: flaeche.kante }]}>
       <StatusBar style={hellerText ? "light" : "dark"} />
       <View style={[styles.motivRing, { borderColor: flaeche.ring }]} pointerEvents="none" />
-      <Text style={styles.motivEmoji} maxFontSizeMultiplier={1} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">{motiv.emoji}</Text>
       <View style={[styles.knopfZeile, { top: insets.top + 8 }]} pointerEvents="box-none">
         <PressableScale onPress={onBack} style={[styles.rund, styles.rundGlasMotiv]} accessibilityLabel="Zurück" hitSlop={6}>
           <Ionicons name="chevron-back" size={20} color={flaeche.text} />
@@ -180,7 +179,7 @@ export function PhotoBand({ titel, untertitel, bildUrl, uploading, onUpload, onR
           </PressableScale>
         </View>
       </View>
-      <View style={[styles.titelAufFoto, { right: 100 }]}>
+      <View style={styles.titelAufFoto}>
         <Text style={[styles.titel, { color: flaeche.text }]} numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE} accessibilityRole="header">{titel}</Text>
         <Text style={[styles.unter, { color: flaeche.sub }]} numberOfLines={1}>{untertitel}</Text>
       </View>
@@ -215,8 +214,6 @@ const makeStyles = (c: ThemeColors) =>
     unter: { fontFamily: FONT.w600, fontSize: 13, color: c.textMuted, marginTop: 2 },
     motiv: { overflow: "hidden", borderBottomWidth: 1 },
     motivRing: { position: "absolute", width: 220, height: 220, borderRadius: 110, borderWidth: 34, right: -80, top: -80 },
-    // Emoji als Bildersatz unten rechts, unter den Knöpfen.
-    motivEmoji: { position: "absolute", right: 20, bottom: -6, fontSize: 64, lineHeight: 78, transform: [{ rotate: "-12deg" }] },
     rundGlasMotiv: { backgroundColor: "rgba(255,255,255,0.16)", borderColor: "rgba(255,255,255,0.18)" },
     vollbild: { flex: 1, backgroundColor: "rgba(12,11,10,0.94)", paddingHorizontal: 16, gap: 16 },
     vollKopf: { flexDirection: "row", alignItems: "center", gap: 12 },
