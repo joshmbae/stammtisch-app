@@ -14,10 +14,17 @@ import * as Notifications from "expo-notifications";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import * as SystemUI from "expo-system-ui";
+import * as SplashScreen from "expo-splash-screen";
 import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } from "@react-navigation/native";
 import { ThemeProvider, useTheme } from "../contexts/ThemeContext";
 import { SessionProvider } from "../contexts/SessionContext";
 import { StammtischProvider } from "../contexts/StammtischContext";
+
+// Der Splash bleibt stehen, bis Schrift und gespeichertes Farbschema geladen
+// sind (ThemedApp blendet ihn aus) – sonst blitzt beim Start ein leerer bzw.
+// falsch gefärbter Bildschirm auf.
+SplashScreen.preventAutoHideAsync().catch(() => {});
+SplashScreen.setOptions({ duration: 200, fade: true });
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -69,6 +76,9 @@ function ThemedApp() {
   useEffect(() => {
     SystemUI.setBackgroundColorAsync(colors.background).catch(() => {});
   }, [colors.background]);
+  useEffect(() => {
+    SplashScreen.hideAsync().catch(() => {});
+  }, []);
   const base = scheme === "dark" ? DarkTheme : DefaultTheme;
   const navigationTheme = {
     ...base,
