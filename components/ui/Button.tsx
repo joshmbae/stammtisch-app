@@ -18,10 +18,12 @@ interface Props {
   haptic?: HapticArt;
   style?: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
+  /** Eigene Farben, z. B. halbtransparent auf einer Hero-Fläche. Hat Vorrang vor `variant`. */
+  colors?: { bg: string; fg: string; border?: string };
 }
 
 /** Pillen-Button. Text- und Iconfarbe kommen immer aus dem passenden on…-Token. */
-export function Button({ label, onPress, variant = "primary", icon, size = "md", loading, disabled, haptic = "leicht", style, accessibilityLabel }: Props) {
+export function Button({ label, onPress, variant = "primary", icon, size = "md", loading, disabled, haptic = "leicht", style, accessibilityLabel, colors }: Props) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const farben: Record<Variant, { bg: string; fg: string; border?: string }> = {
@@ -33,7 +35,7 @@ export function Button({ label, onPress, variant = "primary", icon, size = "md",
     danger: { bg: c.coral, fg: c.onCoral },
     ghost: { bg: "transparent", fg: c.blue },
   };
-  const f = farben[variant];
+  const f = colors ?? farben[variant];
   return (
     <PressableScale
       onPress={onPress}

@@ -70,3 +70,27 @@ export function formatTagUeberschrift(iso: string): string {
 export function formatUhrzeit(iso: string): string {
   return new Date(iso).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
 }
+
+/**
+ * Nächster Geburtstag ab heute (heute zählt mit). `alter` nur, wenn das
+ * Geburtsjahr bekannt ist — dann wird die Person an dem Tag so alt.
+ */
+export function naechsterGeburtstag<M extends { geburtsdatum?: string }>(
+  members: M[],
+  heute = new Date()
+): { member: M; tage: number; datum: Date; alter: number | null } | null {
+  const tag = new Date(heute.getFullYear(), heute.getMonth(), heute.getDate());
+  let best: { member: M; tage: number; datum: Date; alter: number | null } | null = null;
+  for (const m of members) {
+    const match = m.geburtsdatum?.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!match) continue;
+    const [, jahr, monat, tagImMonat] = match;
+    let datum = new Date(tag.getFullYear(), parseInt(monat, 10) - 1, parseInt(tagImMonat, 10));
+    if (datum < tag) datum = new Date(tag.getFullYear() + 1, parseInt(monat, 10) - 1, parseInt(tagImMonat, 10));
+    const tage = Math.round((datum.getTime() - tag.getTime()) / 86400000);
+    const geburtsjahr = parseInt(jahr, 10);
+    const alter = geburtsjahr > 1900 ? datum.getFullYear() - geburtsjahr : null;
+    if (!best || tage < best.tage) best = { member: m, tage, datum, alter };
+  }
+  return best;
+}

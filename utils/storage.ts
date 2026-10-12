@@ -289,7 +289,7 @@ export async function loadVerordnung(): Promise<StammtischVerordnung> {
       .from("verordnung")
       .select("*")
       .eq("stammtisch_id", stammtischId)
-      .single();
+      .maybeSingle();
     if (error || !data) return { name: "Mein Stammtisch", regeln: [], rollenOptionen: ROLLEN_OPTIONEN_DEFAULT };
     return rowToVerordnung(data);
   });

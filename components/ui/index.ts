@@ -15,6 +15,7 @@ export { SegmentedTabs } from "./SegmentedTabs";
 export type { TabItem } from "./SegmentedTabs";
 export { Screen, ScreenHeader, HeaderIconButton, NAV_INSET } from "./Screen";
 export { Scrim } from "./Scrim";
+export { Krone } from "./Krone";
 export { PulseDot, LiveTimer, FlipCountdown, CountBurst } from "./Live";
 export { tonFarben, tonFuer, tonFuerRangliste } from "./ton";
 export type { Ton } from "./ton";
