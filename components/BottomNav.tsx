@@ -45,6 +45,7 @@ export function BottomNav({ state, descriptors, navigation }: BottomTabBarProps)
           {Platform.OS === "ios" ? <BlurView intensity={60} tint="systemUltraThinMaterialDark" style={StyleSheet.absoluteFill} /> : null}
           <View style={[StyleSheet.absoluteFill, { backgroundColor: c.tabBarGlass }]} />
         </View>
+        <View style={styles.rand} pointerEvents="none" />
         <View style={styles.reihe} accessibilityRole="tablist">
           {breite > 0
             ? state.routes.map((route, index) => {
@@ -97,6 +98,12 @@ const makeStyles = (c: ThemeColors) =>
       ...StyleSheet.absoluteFillObject,
       borderRadius: 999,
       overflow: "hidden",
+    },
+    // Rand als eigene Ebene: ein borderWidth am clippenden View schneidet die
+    // runden Enden auf iOS flach ab.
+    rand: {
+      ...StyleSheet.absoluteFillObject,
+      borderRadius: 999,
       borderWidth: 1,
       borderColor: c.navBorder,
     },
