@@ -36,7 +36,6 @@ import {
   logActivity,
   saveAgenda,
   setAnwesenheitAll,
-  setAnkunftZeit,
   setRsvpStatus,
   toggleAnwesenheit,
   updateTermin,
@@ -198,23 +197,13 @@ export function useTerminAbend(id: string) {
   /** Live: jemand ist da bzw. doch nicht (für jedes Mitglied, nicht nur sich selbst). */
   async function anwesenheitSetzen(memberId: string, da: boolean) {
     if (!termin) return;
-    const jetzt = new Date().toISOString();
-    setTermin((prev) => {
-      if (!prev) return prev;
-      const ankunftZeiten = { ...(prev.ankunftZeiten ?? {}) };
-      if (da) ankunftZeiten[memberId] ??= jetzt;
-      else delete ankunftZeiten[memberId];
-      return {
-        ...prev,
-        anwesenheit: da ? [...(prev.anwesenheit ?? []).filter((x) => x !== memberId), memberId] : (prev.anwesenheit ?? []).filter((x) => x !== memberId),
-        absagen: (prev.absagen ?? []).filter((x) => x !== memberId),
-        ankunftZeiten,
-      };
-    });
+    setTermin((prev) => prev ? {
+      ...prev,
+      anwesenheit: da ? [...(prev.anwesenheit ?? []).filter((x) => x !== memberId), memberId] : (prev.anwesenheit ?? []).filter((x) => x !== memberId),
+      absagen: (prev.absagen ?? []).filter((x) => x !== memberId),
+    } : prev);
     try {
       await setRsvpStatus(termin.id, memberId, da ? "ja" : null);
-      // Ankunftszeit ist Zusatzinfo für den Verlauf – scheitert sie, bleibt die Anwesenheit trotzdem gespeichert.
-      await setAnkunftZeit(termin.id, memberId, da ? jetzt : null).catch((e) => console.warn("Ankunftszeit nicht gespeichert:", e));
     } finally {
       await frischerTermin();
     }

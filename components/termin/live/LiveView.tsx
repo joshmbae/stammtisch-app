@@ -7,7 +7,7 @@ import { abendStats } from "../../../utils/abendStats";
 import { hauptEreignis } from "../../../utils/spiel";
 import { showAlert } from "../../../utils/alert";
 import { Button, SegmentedTabs, TabItem } from "../../ui";
-import { AnwesendGrid } from "./AnwesendGrid";
+import { AnwesendListe } from "./AnwesendListe";
 import { StrafenErfassen, euroKurz } from "./StrafenErfassen";
 import { SpielZaehler } from "./SpielZaehler";
 
@@ -38,8 +38,8 @@ export function LiveView({ abend, start, now }: { abend: TerminAbend; start: Dat
   return (
     <>
       <SegmentedTabs variant="live" items={items} value={aktiv} onChange={wechseln} />
-      {aktiv === "anwesend" ? <AnwesendGrid
-          abend={abend} mitglieder={mitglieder} start={start} now={now}
+      {aktiv === "anwesend" ? <AnwesendListe
+          abend={abend} mitglieder={mitglieder} start={start}
           onStrafe={strafenAn ? (id) => { setStrafeFuer(id); setBereich("strafen"); } : undefined}
         /> : null}
       {aktiv === "strafen" ? <StrafenErfassen abend={abend} mitglieder={fuerStrafen} vorauswahl={strafeFuer} /> : null}

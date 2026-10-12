@@ -692,7 +692,6 @@ export function rowToTermin(row: any): StammtischTermin {
     anwesenheit: row.anwesenheit ?? [],
     absagen: row.absagen ?? [],
     absageGruende: row.absage_gruende ?? {},
-    ankunftZeiten: row.ankunft_zeiten ?? {},
     bildUrl: row.bild_url ?? undefined,
   };
 }
@@ -1214,26 +1213,6 @@ export async function setRsvpStatus(
     delete absageGruende[memberId];
   }
   await updateTermin(terminId, { anwesenheit, absagen, absageGruende });
-}
-
-/**
- * Ankunftszeit beim Einchecken am Abend setzen (`zeit`) bzw. entfernen (`null`).
- * Eine schon gesetzte Zeit bleibt, damit erneutes Antippen sie nicht verschiebt.
- * Eigene Funktion statt Teil von setRsvpStatus: Zusagen vorab haben keine Ankunftszeit.
- */
-export async function setAnkunftZeit(terminId: string, memberId: string, zeit: string | null): Promise<Record<string, string>> {
-  const { data, error } = await supabase
-    .from("termine")
-    .select("ankunft_zeiten")
-    .eq("id", terminId)
-    .single();
-  if (error || !data) throw error ?? new Error("Termin nicht gefunden");
-  const zeiten: Record<string, string> = { ...(data.ankunft_zeiten ?? {}) };
-  if (zeit === null) delete zeiten[memberId];
-  else if (!zeiten[memberId]) zeiten[memberId] = zeit;
-  const { error: updateError } = await supabase.from("termine").update({ ankunft_zeiten: zeiten }).eq("id", terminId);
-  if (updateError) throw updateError;
-  return zeiten;
 }
 
 /** Setzt/ändert nur die Begründung einer bestehenden Absage, ohne den Status anzufassen. */
