@@ -31,19 +31,17 @@ export function EinstiegScreen({ children, contentStyle }: { children: React.Rea
 }
 
 /** Logo, große Überschrift, Satz darunter und optional eine Liste mit Symbolen. */
-export function EinstiegHero({ titel, text, vorteile, symbol }: {
+export function EinstiegHero({ titel, text, vorteile }: {
   titel: string;
   text?: string;
   vorteile?: Vorteil[];
-  /** Statt des Logos ein Symbol in einer großen Kachel (z. B. im Rundgang). */
-  symbol?: { emoji: string; ton: Ton };
 }) {
   const styles = useThemedStyles(makeStyles);
   const ein = (i: number) => FadeInDown.duration(MOTION.base).delay(i * MOTION.stagger * 2);
   return (
     <View>
       <Animated.View entering={ein(0)}>
-        {symbol ? <IconSquircle emoji={symbol.emoji} ton={symbol.ton} size={112} /> : <StammtischLogo size={112} />}
+        <StammtischLogo size={112} />
       </Animated.View>
       <Animated.View entering={ein(1)}>
         <Text style={styles.titel} accessibilityRole="header">{titel}</Text>
