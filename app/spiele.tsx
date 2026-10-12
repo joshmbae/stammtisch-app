@@ -1,120 +1,106 @@
-import React, { useState, useCallback } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { router, useFocusEffect } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { Spiel, StammtischVerordnung } from "../types";
-import { loadSpiele, loadVerordnung } from "../utils/storage";
-import { SHADOWS, ThemeColors, FONT } from "../constants/design";
-import { useColors, useThemedStyles } from "../contexts/ThemeContext";
-import { BackButton } from "../components/BackButton";
+import React, { useState } from "react";
+import { StyleSheet, Text } from "react-native";
+import { router } from "expo-router";
+import { Spiel, SpielEreignisTyp, SPIEL_VORLAGEN, StammtischVerordnung } from "../types";
+import { instantiateSpielVorlage, loadAllEreignisTypen, loadSpiele, loadVerordnung } from "../utils/storage";
+import { formatEuro } from "../utils/format";
+
+import { showAlert } from "../utils/alert";
+import { useScreenLoad } from "../utils/useScreenLoad";
+import { TYPE, ThemeColors } from "../constants/design";
+import { useThemedStyles } from "../contexts/ThemeContext";
 import LoadingSpinner from "../components/LoadingSpinner";
 import ErrorState from "../components/ErrorState";
 import OfflineBanner from "../components/OfflineBanner";
-import { useScreenLoad } from "../utils/useScreenLoad";
+import { Button, Card, FormSection, HeaderIconButton, ListGroup, ListRow, Screen, ScreenHeader } from "../components/ui";
+import { WeitereSpiele } from "../components/spiele/SpielFormular";
+
+const euro = (n: number) => `${formatEuro(n).replace(",00", "")} €`;
 
 export default function SpieleScreen() {
-  const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const [spiele, setSpiele] = useState<Spiel[]>([]);
+  const [typen, setTypen] = useState<SpielEreignisTyp[]>([]);
   const [verordnung, setVerordnung] = useState<StammtischVerordnung | null>(null);
+  const [vorlageBusy, setVorlageBusy] = useState<string | null>(null);
 
-  async function load() {
+  const { loading, refreshing, error, onRefresh, retry } = useScreenLoad(async () => {
     const [s, v] = await Promise.all([loadSpiele(), loadVerordnung()]);
     setSpiele(s);
     setVerordnung(v);
+    setTypen(await loadAllEreignisTypen(s.map((x) => x.id)));
+  }, []);
+
+  async function vorlageAnlegen(vorlage: (typeof SPIEL_VORLAGEN)[number]) {
+    setVorlageBusy(vorlage.name);
+    try {
+      const spiel = await instantiateSpielVorlage(vorlage);
+      router.push(`/spiel/${spiel.id}`);
+    } catch {
+      showAlert("Fehler", "Spiel-Vorlage konnte nicht angelegt werden.");
+    } finally {
+      setVorlageBusy(null);
+    }
   }
 
-  const { loading, refreshing, error, onRefresh, retry } = useScreenLoad(load, []);
+  if (loading) return <LoadingSpinner />;
+  if (error) return <ErrorState message={error} onRetry={retry} />;
+
+  const aktiv = spiele.find((s) => s.id === verordnung?.aktivesSpielId);
+  const ereignisText = (spielId: string) =>
+    typen
+      .filter((t) => t.spielId === spielId)
+      .map((t) => (t.strafBetrag ? `${t.label} (${euro(t.strafBetrag)})` : t.label))
+      .join(", ");
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
-      {loading ? <LoadingSpinner /> : error ? <ErrorState message={error} onRetry={retry} /> : (
-        <ScrollView
-          contentContainerStyle={styles.content}
-          showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.blue} />}
-        >
+    <Screen
+      refreshing={refreshing}
+      onRefresh={onRefresh}
+      contentStyle={{ gap: 16 }}
+      header={
+        <>
           <OfflineBanner />
-
-          <View style={styles.header}>
-            <BackButton />
-            <View style={styles.headerTexts}>
-              <Text style={styles.headerTitle}>Spiele</Text>
-              <Text style={styles.headerSub}>Eigene Stammtisch-Spiele verwalten</Text>
-            </View>
-          </View>
-
-          {spiele.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyEmoji}>🎲</Text>
-              <Text style={styles.emptyTitle}>Noch keine Spiele</Text>
-              <Text style={styles.emptySub}>
-                Lege in den Einstellungen eine Vorlage an oder erstelle hier ein eigenes Spiel.
-              </Text>
-            </View>
-          ) : (
-            spiele.map((s) => (
-              <TouchableOpacity
+          <ScreenHeader
+            back
+            title="Spiele"
+            subtitle={`${spiele.length} ${spiele.length === 1 ? "Spiel" : "Spiele"}${aktiv ? ` · ${aktiv.name} aktiv` : ""}`}
+            right={<HeaderIconButton icon="add" label="Neues Spiel" onPress={() => router.push("/spiel/new")} />}
+          />
+        </>
+      }
+    >
+      {spiele.length === 0 ? (
+        <Card enterIndex={0} style={{ gap: 12, alignItems: "center", paddingVertical: 24 }}>
+          <Text style={styles.leer}>Noch keine Spiele. Legt ein eigenes an oder übernehmt unten eine Vorlage.</Text>
+          <Button label="Neues Spiel" icon="add" variant="blue" size="sm" onPress={() => router.push("/spiel/new")} />
+        </Card>
+      ) : (
+        <FormSection title="Eure Spiele">
+          <ListGroup>
+            {spiele.map((s) => (
+              <ListRow
                 key={s.id}
-                style={styles.spielCard}
+                title={s.name}
+                subtitle={ereignisText(s.id) || "noch keine Ereignisse"}
+                value={verordnung?.aktivesSpielId === s.id ? "aktiv" : undefined}
+                emoji={s.emoji ?? "🎮"}
+                ton="mustard"
                 onPress={() => router.push(`/spiel/${s.id}`)}
-                activeOpacity={0.85}
-              >
-                <Text style={styles.spielEmoji}>{s.emoji ?? "🎮"}</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.spielName}>{s.name}</Text>
-                  {verordnung?.aktivesSpielId === s.id && (
-                    <Text style={styles.spielAktivBadge}>Aktiv</Text>
-                  )}
-                </View>
-                <Ionicons name="chevron-forward" size={18} color={c.textLight} />
-              </TouchableOpacity>
-            ))
-          )}
-
-          <TouchableOpacity style={styles.addBtn} onPress={() => router.push("/spiel/new")} activeOpacity={0.85}>
-            <Ionicons name="add" size={20} color={c.onAccent} />
-            <Text style={styles.addBtnText}>Neues Spiel</Text>
-          </TouchableOpacity>
-
-        </ScrollView>
+              />
+            ))}
+          </ListGroup>
+          <Text style={styles.hinweis}>Welches Spiel am Abend läuft, legt ihr im Spiel über „Aktiv" oder in den Einstellungen fest.</Text>
+        </FormSection>
       )}
-    </SafeAreaView>
+
+      <WeitereSpiele titel="Vorlagen" spiele={spiele} mitSpielen={false} busy={vorlageBusy} onVorlage={vorlageAnlegen} />
+    </Screen>
   );
 }
 
-const makeStyles = (c: ThemeColors) => StyleSheet.create({
-  safe: { flex: 1, backgroundColor: c.background },
-  content: { padding: 20, paddingBottom: 48 },
-
-  header: {
-    flexDirection: "row", alignItems: "center", gap: 12,
-    backgroundColor: c.cardAlt, borderRadius: 20,
-    padding: 16, marginBottom: 16, ...SHADOWS.card,
-    borderWidth: 1, borderColor: c.border,
-  },
-  headerTexts: { flex: 1 },
-  headerTitle: { fontSize: 18, fontFamily: FONT.w800, color: c.textDark },
-  headerSub: { fontFamily: FONT.w400, fontSize: 12, color: c.textMuted, marginTop: 2 },
-
-  spielCard: {
-    flexDirection: "row", alignItems: "center", gap: 12,
-    backgroundColor: c.card, borderRadius: 14, padding: 14, marginBottom: 10,
-    borderWidth: 1, borderColor: c.border, ...SHADOWS.light,
-  },
-  spielEmoji: { fontFamily: FONT.w400, fontSize: 26 },
-  spielName: { fontSize: 15, fontFamily: FONT.w700, color: c.textDark },
-  spielAktivBadge: { fontSize: 11, fontFamily: FONT.w700, color: c.success, marginTop: 2 },
-
-  addBtn: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-    backgroundColor: c.blue, borderRadius: 16, paddingVertical: 16, marginTop: 8,
-  },
-  addBtnText: { color: c.onAccent, fontSize: 16, fontFamily: FONT.w700 },
-
-  emptyState: { alignItems: "center", paddingVertical: 40, gap: 8 },
-  emptyEmoji: { fontFamily: FONT.w400, fontSize: 40 },
-  emptyTitle: { fontSize: 17, fontFamily: FONT.w800, color: c.textDark },
-  emptySub: { fontFamily: FONT.w400, fontSize: 13, color: c.textMuted, textAlign: "center", paddingHorizontal: 20 },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    leer: { ...TYPE.body, fontSize: 14, lineHeight: 20, color: c.textMuted, textAlign: "center" },
+    hinweis: { ...TYPE.caption, fontSize: 13, color: c.textMuted, paddingHorizontal: 4 },
+  });

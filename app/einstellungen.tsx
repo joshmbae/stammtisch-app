@@ -1,75 +1,86 @@
-import React, { useState, useCallback, useRef, useEffect } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  Alert,
-  ActivityIndicator,
-  Platform,
-  KeyboardAvoidingView,
-  Image,
-  Switch,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { router, useFocusEffect } from "expo-router";
+import React, { useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
+import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import Constants from "expo-constants";
 import * as ImagePicker from "expo-image-picker";
+
 import { showAlert } from "../utils/alert";
 import { StammtischVerordnung, Spiel, SPIEL_VORLAGEN, StrafKategorieDef } from "../types";
-import { loadVerordnung, saveVerordnung, uploadStammtischLogo, loadSpiele, loadStrafKategorien, instantiateSpielVorlage, deleteStammtisch } from "../utils/storage";
+import { loadVerordnung, saveVerordnung, uploadStammtischLogo, loadSpiele, loadStrafKategorien, deleteStammtisch, instantiateSpielVorlage } from "../utils/storage";
 import { hashStammtischPassword } from "../utils/pin";
-import { SHADOWS, ThemeColors, FONT } from "../constants/design";
-import { useColors, useThemedStyles } from "../contexts/ThemeContext";
-import { BackButton } from "../components/BackButton";
-import LoadingSpinner from "../components/LoadingSpinner";
-import InlineDateTimePicker from "../components/InlineDateTimePicker";
+import { displayName, formatGruendungMonat } from "../utils/format";
+import { useScreenLoad } from "../utils/useScreenLoad";
+import { FONT, TYPE, ThemeColors } from "../constants/design";
+import { ThemePreference, useTheme, useThemedStyles } from "../contexts/ThemeContext";
 import { useStammtisch } from "../contexts/StammtischContext";
 import { useSession } from "../contexts/SessionContext";
+import LoadingSpinner from "../components/LoadingSpinner";
+import ErrorState from "../components/ErrorState";
+import StammtischLogo from "../components/StammtischLogo";
+import { Avatar, FormSection, ListGroup, ListRow, Screen, ScreenHeader, SegmentedTabs, ToggleRow } from "../components/ui";
+import { SatzungSheet } from "../components/einstellungen/SatzungSheet";
+import {
+  FeldDef,
+  FeldSheet,
+  GruendungSheet,
+  LoeschenSheet,
+  LogoSheet,
+  RollenPills,
+  RollenSheet,
+  SpielWahlSheet,
+} from "../components/einstellungen/EinstellungenSheets";
 
-/** Parst "YYYY" oder "YYYY-MM" (legacy: nur Jahr -> Januar). */
-function parseGruendung(value?: string): Date {
-  const match = value?.match(/^(\d{4})(?:-(\d{2}))?/);
-  if (!match) return new Date();
-  const jahr = parseInt(match[1], 10);
-  const monat = match[2] ? parseInt(match[2], 10) - 1 : 0;
-  return new Date(jahr, monat, 1);
-}
+const ERSCHEINUNGSBILD: { key: ThemePreference; label: string }[] = [
+  { key: "system", label: "System" },
+  { key: "light", label: "Hell" },
+  { key: "dark", label: "Dunkel" },
+];
 
-function formatGruendungMonat(value?: string): string {
-  return parseGruendung(value).toLocaleDateString("de-DE", { month: "long", year: "numeric" });
-}
+type Offen = "name" | "treffpunkt" | "tag" | "gruendung" | "logo" | "satzung" | "rollen" | "spiel" | "loeschen" | null;
 
+/**
+ * Einstellungen als Liste: jede Zeile öffnet ein Sheet, das seinen Teil
+ * sofort speichert. So gibt es keinen ungespeicherten Zustand, der beim
+ * Zurückgehen verloren gehen könnte.
+ */
 export default function EinstellungenScreen() {
-  const c = useColors();
+  const { colors: c, preference, setPreference } = useTheme();
   const styles = useThemedStyles(makeStyles);
   const [verordnung, setVerordnung] = useState<StammtischVerordnung>({ name: "Mein Stammtisch", regeln: [] });
-  const [uploadingLogo, setUploadingLogo] = useState(false);
-  const [dirty, setDirty] = useState(false);
-  const [neueRegel, setNeueRegel] = useState("");
-  const [neueRolle, setNeueRolle] = useState("");
-  const [showGruendungPicker, setShowGruendungPicker] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [spiele, setSpiele] = useState<Spiel[]>([]);
   const [strafKategorien, setStrafKategorien] = useState<StrafKategorieDef[]>([]);
+  const [offen, setOffen] = useState<Offen>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [activatingSpiel, setActivatingSpiel] = useState<string | null>(null);
-  const [showDeleteForm, setShowDeleteForm] = useState(false);
-  const [deletePassword, setDeletePassword] = useState("");
   const [deleting, setDeleting] = useState(false);
   const { stammtischId, clearStammtisch } = useStammtisch();
-  const { clearSession } = useSession();
+  const { activeMember, clearSession } = useSession();
+
+  const { loading, error, retry } = useScreenLoad(async () => {
+    const [v, s, k] = await Promise.all([loadVerordnung(), loadSpiele(), loadStrafKategorien()]);
+    setVerordnung(v);
+    setSpiele(s);
+    setStrafKategorien(k);
+  }, []);
+
+  /** Speichert einen Teil der Verordnung; false bei Fehler (Sheet bleibt dann offen). */
+  async function speichern(partial: Partial<StammtischVerordnung>): Promise<boolean> {
+    const updated = { ...verordnung, ...partial };
+    try {
+      await saveVerordnung(updated);
+      setVerordnung(updated);
+      return true;
+    } catch (e: any) {
+      showAlert("Fehler", "Speichern fehlgeschlagen: " + (e?.message ?? "Unbekannter Fehler.") + "\n\nBitte nochmal versuchen.");
+      return false;
+    }
+  }
 
   async function handleSelectSpiel(spiel: Spiel | null) {
     setActivatingSpiel(spiel?.id ?? "none");
     try {
-      const updated = { ...verordnung, aktivesSpielId: spiel?.id };
-      await saveVerordnung(updated);
-      setVerordnung(updated);
-      setDirty(false);
-    } catch (e: any) {
-      showAlert("Fehler", "Spiel konnte nicht aktiviert werden: " + (e?.message ?? "Unbekannter Fehler."));
+      await speichern({ aktivesSpielId: spiel?.id });
     } finally {
       setActivatingSpiel(null);
     }
@@ -80,10 +91,7 @@ export default function EinstellungenScreen() {
     try {
       const spiel = await instantiateSpielVorlage(vorlage);
       setSpiele((prev) => [...prev, spiel]);
-      const updated = { ...verordnung, aktivesSpielId: spiel.id };
-      await saveVerordnung(updated);
-      setVerordnung(updated);
-      setDirty(false);
+      await speichern({ aktivesSpielId: spiel.id });
     } catch (e: any) {
       showAlert("Fehler", "Spiel-Vorlage konnte nicht angelegt werden: " + (e?.message ?? "Unbekannter Fehler."));
     } finally {
@@ -103,12 +111,11 @@ export default function EinstellungenScreen() {
       aspect: [1, 1],
       quality: 0.8,
     });
-    if (result.canceled) return;
-    if (!stammtischId) return;
+    if (result.canceled || !stammtischId) return;
     setUploadingLogo(true);
     try {
       const url = await uploadStammtischLogo(stammtischId, result.assets[0].uri);
-      update({ logoUrl: url });
+      if (await speichern({ logoUrl: url })) setOffen(null);
     } catch {
       showAlert("Fehler", "Logo konnte nicht hochgeladen werden.");
     } finally {
@@ -117,16 +124,19 @@ export default function EinstellungenScreen() {
   }
 
   function removeLogo() {
-    update({ logoUrl: undefined });
+    showAlert("Logo entfernen?", "Dann wird wieder das Standard-Logo gezeigt.", [
+      { text: "Abbrechen", style: "cancel" },
+      { text: "Entfernen", style: "destructive", onPress: async () => { if (await speichern({ logoUrl: undefined })) setOffen(null); } },
+    ]);
   }
 
-  async function handleDeleteStammtisch() {
-    if (!stammtischId || !deletePassword) {
+  function handleDeleteStammtisch(passwort: string) {
+    if (!stammtischId || !passwort) {
       showAlert("Passwort fehlt", "Bitte das Stammtisch-Passwort eingeben.");
       return;
     }
     showAlert(
-      "⚠️ Stammtisch endgültig löschen?",
+      "Stammtisch endgültig löschen?",
       "Alle Daten – Mitglieder, Termine, Kasse, Strafen, Protokolle – werden für alle unwiderruflich gelöscht. Das kann nicht rückgängig gemacht werden.",
       [
         { text: "Abbrechen", style: "cancel" },
@@ -136,20 +146,20 @@ export default function EinstellungenScreen() {
           onPress: async () => {
             setDeleting(true);
             try {
-              const passwordHash = await hashStammtischPassword(verordnung.name, deletePassword);
+              const passwordHash = await hashStammtischPassword(verordnung.name, passwort);
               const ok = await deleteStammtisch(stammtischId, passwordHash);
               if (!ok) {
                 showAlert("Falsches Passwort", "Der Stammtisch wurde nicht gelöscht.");
                 return;
               }
+              setOffen(null);
               await clearSession();
               await clearStammtisch();
               router.replace("/stammtisch-waehlen");
-            } catch (e) {
+            } catch {
               showAlert("Fehler", "Stammtisch konnte nicht gelöscht werden.");
             } finally {
               setDeleting(false);
-              setDeletePassword("");
             }
           },
         },
@@ -157,595 +167,203 @@ export default function EinstellungenScreen() {
     );
   }
 
-  const dirtyRef = useRef(false);
-  useEffect(() => { dirtyRef.current = dirty; }, [dirty]);
+  if (loading) return <LoadingSpinner />;
+  if (error) return <ErrorState message={error} onRetry={retry} />;
 
-  useFocusEffect(
-    useCallback(() => {
-      // Ungespeicherte Änderungen nie stillschweigend überschreiben (z. B. beim
-      // kurzen Wechsel auf einen anderen Tab und zurück, bevor "Speichern" gedrückt wurde).
-      if (dirtyRef.current) { setLoading(false); return; }
-      Promise.all([loadVerordnung(), loadSpiele(), loadStrafKategorien()]).then(([v, s, k]) => {
-        setVerordnung(v);
-        setSpiele(s);
-        setStrafKategorien(k);
-        setLoading(false);
-      });
-    }, [])
-  );
+  const v = verordnung;
+  const regeln = v.regeln.filter((r) => r.trim()).length;
+  const rollen = v.rollenOptionen ?? [];
+  const manuelleKategorien = strafKategorien.filter((k) => !k.spielEreignisTypId).length;
+  const aktivesSpiel = spiele.find((s) => s.id === v.aktivesSpielId);
+  const tagZeit = [v.stammtischTag, v.stammtischzeit].filter(Boolean).join(", ");
+  const version = Constants.expoConfig?.version;
 
-  function update(partial: Partial<StammtischVerordnung>) {
-    setVerordnung((v) => ({ ...v, ...partial }));
-    setDirty(true);
-  }
-
-  async function speichern() {
-    try {
-      await saveVerordnung(verordnung);
-      setDirty(false);
-      showAlert("Gespeichert", "Die Änderungen wurden gespeichert.");
-    } catch (e: any) {
-      showAlert("Fehler", "Speichern fehlgeschlagen: " + (e?.message ?? "Unbekannter Fehler.") + "\n\nDeine Eingaben bleiben erhalten, bitte nochmal versuchen.");
-    }
-  }
-
-  function regelHinzufügen() {
-    const r = neueRegel.trim();
-    if (!r) return;
-    update({ regeln: [...verordnung.regeln, r] });
-    setNeueRegel("");
-  }
-
-  function regelLöschen(index: number) {
-    update({ regeln: verordnung.regeln.filter((_, i) => i !== index) });
-  }
-
-  function rolleHinzufügen() {
-    const r = neueRolle.trim();
-    if (!r || verordnung.rollenOptionen?.includes(r)) return;
-    update({ rollenOptionen: [...(verordnung.rollenOptionen ?? []), r] });
-    setNeueRolle("");
-  }
-
-  function rolleLöschen(index: number) {
-    update({ rollenOptionen: (verordnung.rollenOptionen ?? []).filter((_, i) => i !== index) });
-  }
+  const feldSheet = (key: "name" | "treffpunkt" | "tag"): { title: string; felder: FeldDef[]; hinweis?: string } => {
+    if (key === "name") return { title: "Name", felder: [{ key: "name", label: "Name des Stammtischs", value: v.name, placeholder: "z. B. Die Hellen", pflicht: true }] };
+    if (key === "treffpunkt") return { title: "Treffpunkt", felder: [{ key: "treffpunkt", label: "Treffpunkt", value: v.treffpunkt, placeholder: "z. B. Gasthof Zum Wirt, hinten links" }] };
+    return {
+      title: "Stammtischtag",
+      felder: [
+        { key: "stammtischTag", label: "Tag", value: v.stammtischTag, placeholder: "Jeden Donnerstag" },
+        { key: "stammtischzeit", label: "Uhrzeit", value: v.stammtischzeit, placeholder: "19:30 Uhr" },
+      ],
+    };
+  };
+  const offenesFeld = offen === "name" || offen === "treffpunkt" || offen === "tag" ? feldSheet(offen) : null;
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={0}>
-    <SafeAreaView style={styles.safe} edges={["top"]}>
-      {loading ? <LoadingSpinner /> : (
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-
-        <View style={styles.header}>
-          <BackButton />
-          <View style={styles.headerTexts}>
-            <Text style={styles.headerTitle}>Einstellungen</Text>
-            <Text style={styles.headerSub}>Stammtischverordnung & Verwaltung</Text>
-          </View>
-        </View>
-
-        {/* ══════════ GRUNDDATEN ══════════ */}
-        <View style={styles.groupHeader}>
-          <Text style={styles.groupTitle}>🏠 Grunddaten</Text>
-          <Text style={styles.groupSubtitle}>Nur der Name ist Pflicht — der Rest kann jederzeit später ergänzt werden.</Text>
-        </View>
-
-        <View style={styles.card}>
-          <View style={styles.fieldLabelRow}>
-            <Text style={styles.fieldLabel}>Name des Stammtischs</Text>
-            <Text style={styles.pflichtBadge}>Pflicht</Text>
-          </View>
-          <TextInput
-            style={styles.input}
-            value={verordnung.name}
-            onChangeText={(t) => update({ name: t })}
-            placeholder="z.B. Die Hellen"
-            placeholderTextColor={c.textLight}
+    <Screen
+      header={
+        <ScreenHeader
+          back
+          title="Einstellungen"
+          subtitle={[v.name, v.gruendungsjahr ? `seit ${v.gruendungsjahr.slice(0, 4)}` : null].filter(Boolean).join(" · ")}
+        />
+      }
+      contentStyle={{ gap: 18 }}
+    >
+      <FormSection title="Stammtisch">
+        <ListGroup>
+          <ListRow title="Name" value={v.name} icon="text-outline" ton="blue" onPress={() => setOffen("name")} />
+          <ListRow
+            title="Logo"
+            icon="image-outline"
+            ton="blue"
+            onPress={() => setOffen("logo")}
+            accessibilityLabel={v.logoUrl ? "Logo ändern" : "Logo hochladen"}
+            right={
+              <View style={styles.rechts}>
+                <StammtischLogo size={32} uri={v.logoUrl} />
+                <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
+              </View>
+            }
           />
-        </View>
-
-        <Text style={styles.sectionTitle}>📜 Weitere Angaben <Text style={styles.optionalHint}>(optional)</Text></Text>
-
-        <View style={styles.card}>
-          <Text style={styles.fieldLabel}>Stammtisch-Logo</Text>
-          <View style={styles.logoRow}>
-            <View style={styles.logoPreview}>
-              {verordnung.logoUrl ? (
-                <Image source={{ uri: verordnung.logoUrl }} style={styles.logoImg} resizeMode="contain" />
-              ) : (
-                <Ionicons name="image-outline" size={26} color={c.textLight} />
-              )}
-            </View>
-            <View style={styles.logoActions}>
-              <TouchableOpacity style={styles.logoBtn} onPress={pickLogo} disabled={uploadingLogo}>
-                {uploadingLogo ? (
-                  <ActivityIndicator size="small" color={c.blue} />
-                ) : (
-                  <Text style={styles.logoBtnText}>{verordnung.logoUrl ? "Logo ändern" : "Logo hochladen"}</Text>
-                )}
-              </TouchableOpacity>
-              {verordnung.logoUrl && (
-                <TouchableOpacity onPress={removeLogo}>
-                  <Text style={styles.logoRemoveText}>Entfernen</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.fieldLabel}>Treffpunkt</Text>
-          <TextInput
-            style={styles.input}
-            value={verordnung.treffpunkt ?? ""}
-            onChangeText={(t) => update({ treffpunkt: t })}
-            placeholder="z.B. Gasthof Zum Wirt, hinten links"
-            placeholderTextColor={c.textLight}
+          <ListRow title="Treffpunkt" value={v.treffpunkt || "fehlt"} icon="location-outline" ton="blue" onPress={() => setOffen("treffpunkt")} />
+          <ListRow title="Stammtischtag" value={tagZeit || "fehlt"} icon="time-outline" ton="blue" onPress={() => setOffen("tag")} />
+          <ListRow
+            title="Gegründet"
+            value={v.gruendungsjahr ? formatGruendungMonat(v.gruendungsjahr) : "fehlt"}
+            icon="flag-outline"
+            ton="blue"
+            onPress={() => setOffen("gruendung")}
           />
-        </View>
+        </ListGroup>
+      </FormSection>
 
-        <View style={styles.cardRow}>
-          <View style={[styles.card, { flex: 1 }]}>
-            <Text style={styles.fieldLabel}>Stammtischtag</Text>
-            <TextInput
-              style={styles.input}
-              value={verordnung.stammtischTag ?? ""}
-              onChangeText={(t) => update({ stammtischTag: t })}
-              placeholder="Jeden Donnerstag"
-              placeholderTextColor={c.textLight}
-            />
-          </View>
-          <View style={[styles.card, { flex: 1 }]}>
-            <Text style={styles.fieldLabel}>Uhrzeit</Text>
-            <TextInput
-              style={styles.input}
-              value={verordnung.stammtischzeit ?? ""}
-              onChangeText={(t) => update({ stammtischzeit: t })}
-              placeholder="19:30 Uhr"
-              placeholderTextColor={c.textLight}
-            />
-          </View>
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.fieldLabel}>Gegründet</Text>
-          <TouchableOpacity style={styles.dateBtn} onPress={() => setShowGruendungPicker(true)}>
-            <Ionicons name="calendar-outline" size={18} color={c.blue} />
-            <Text style={[styles.dateBtnText, !verordnung.gruendungsjahr && { color: c.textLight }]}>
-              {verordnung.gruendungsjahr ? formatGruendungMonat(verordnung.gruendungsjahr) : "Monat & Jahr auswählen"}
-            </Text>
-          </TouchableOpacity>
-          {showGruendungPicker && (
-            <InlineDateTimePicker
-              value={parseGruendung(verordnung.gruendungsjahr)}
-              mode="date"
-              maximumDate={new Date()}
-              onChange={(date) => {
-                const jahrMonat = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-                update({ gruendungsjahr: jahrMonat });
-              }}
-              onClose={() => setShowGruendungPicker(false)}
-            />
-          )}
-        </View>
-
-        {/* ══════════ COMMUNITY ══════════ */}
-        <View style={[styles.groupHeader, styles.groupHeaderSpaced]}>
-          <Text style={styles.groupTitle}>👥 Community</Text>
-          <Text style={styles.groupSubtitle}>Optional — könnt ihr jederzeit später ergänzen.</Text>
-        </View>
-
-        {/* Regeln */}
-        <Text style={styles.sectionTitle}>📋 Regeln</Text>
-
-        <View style={styles.infoBox}>
-          <Ionicons name="information-circle-outline" size={18} color={c.blue} />
-          <Text style={styles.infoBoxText}>
-            Eure Stammtisch-Regeln, für alle sichtbar unter „Satzung“. Rein informativ — z. B.
-            wer eine Runde ausgibt oder was am Stammtischabend gilt. Strafen selbst tragt ihr
-            separat im jeweiligen Termin ein.
-          </Text>
-        </View>
-
-        {verordnung.regeln.map((regel, i) => (
-          <View key={i} style={styles.regelRow}>
-            <Text style={styles.regelNr}>{i + 1}.</Text>
-            <Text style={styles.regelText} numberOfLines={3}>{regel}</Text>
-            <TouchableOpacity onPress={() => regelLöschen(i)} style={styles.regelDelete}>
-              <Ionicons name="close-circle" size={20} color={c.danger} />
-            </TouchableOpacity>
-          </View>
-        ))}
-
-        <View style={styles.card}>
-          <Text style={styles.fieldLabel}>Neue Regel hinzufügen</Text>
-          <View style={styles.regelInputRow}>
-            <TextInput
-              style={[styles.input, { flex: 1, marginBottom: 0 }]}
-              value={neueRegel}
-              onChangeText={setNeueRegel}
-              placeholder="Wer zu spät kommt..."
-              placeholderTextColor={c.textLight}
-              multiline
-            />
-            <TouchableOpacity style={styles.regelAddBtn} onPress={regelHinzufügen}>
-              <Ionicons name="add" size={22} color={c.onAccent} />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Rollen */}
-        <Text style={styles.sectionTitle}>🎩 Rollen</Text>
-
-        <View style={styles.infoBox}>
-          <Ionicons name="information-circle-outline" size={18} color={c.blue} />
-          <Text style={styles.infoBoxText}>
-            Die Rollen, die beim Anlegen/Bearbeiten eines Mitglieds zur Auswahl stehen
-            (z. B. Kassenwart, Bierwart, ...). Rein organisatorisch, ohne Zugriffsrechte.
-          </Text>
-        </View>
-
-        <View style={styles.rollenWrap}>
-          {(verordnung.rollenOptionen ?? []).map((rolle, i) => (
-            <View key={rolle} style={styles.rolleTag}>
-              <Text style={styles.rolleTagText}>{rolle}</Text>
-              <TouchableOpacity onPress={() => rolleLöschen(i)}>
-                <Ionicons name="close-circle" size={16} color={c.danger} />
-              </TouchableOpacity>
-            </View>
-          ))}
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.fieldLabel}>Neue Rolle hinzufügen</Text>
-          <View style={styles.regelInputRow}>
-            <TextInput
-              style={[styles.input, { flex: 1, marginBottom: 0 }]}
-              value={neueRolle}
-              onChangeText={setNeueRolle}
-              placeholder="z.B. Bierwart"
-              placeholderTextColor={c.textLight}
-              onSubmitEditing={rolleHinzufügen}
-            />
-            <TouchableOpacity style={styles.regelAddBtn} onPress={rolleHinzufügen}>
-              <Ionicons name="add" size={22} color={c.onAccent} />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* ══════════ FEATURES ══════════ */}
-        <View style={[styles.groupHeader, styles.groupHeaderSpaced]}>
-          <Text style={styles.groupTitle}>🎯 Features</Text>
-          <Text style={styles.groupSubtitle}>Nur aktivieren, was ihr am Stammtisch wirklich nutzt.</Text>
-        </View>
-
-        {/* Aktives Spiel */}
-        <Text style={styles.sectionTitle}>🎲 Spiele</Text>
-
-        <View style={styles.infoBox}>
-          <Ionicons name="information-circle-outline" size={18} color={c.blue} />
-          <Text style={styles.infoBoxText}>
-            Wählt hier das Spiel, das ihr am Stammtisch spielt (z. B. Schocken). Es erscheint dann
-            als eigener Tab im Termin, wo ihr Spielereignisse protokolliert — manche davon lösen
-            automatisch eine Strafe aus. Eigene Spiele könnt ihr unter „Spiele verwalten“ anlegen.
-          </Text>
-        </View>
-
-        <View style={styles.card}>
-          <TouchableOpacity
-            style={[styles.spielRow, !verordnung.aktivesSpielId && styles.spielRowActive]}
-            onPress={() => handleSelectSpiel(null)}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.spielRowEmoji}>🚫</Text>
-            <Text style={styles.spielRowLabel}>Kein Spiel</Text>
-            {activatingSpiel === "none" ? (
-              <ActivityIndicator size="small" color={c.blue} />
-            ) : !verordnung.aktivesSpielId ? (
-              <Ionicons name="checkmark-circle" size={20} color={c.blue} />
+      <FormSection title="Regeln & Rollen">
+        <ListGroup>
+          <ListRow
+            title="Satzung bearbeiten"
+            value={regeln ? `${regeln} ${regeln === 1 ? "Regel" : "Regeln"}` : "noch leer"}
+            icon="document-text-outline"
+            ton="mustard"
+            onPress={() => setOffen("satzung")}
+          />
+          <View>
+            <ListRow title="Rollen" value={String(rollen.length)} icon="people-outline" ton="mustard" onPress={() => setOffen("rollen")} accessibilityLabel={`Rollen: ${rollen.join(", ") || "keine"}`} />
+            {rollen.length > 0 ? (
+              <View style={styles.rollen} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+                <RollenPills rollen={rollen} />
+              </View>
             ) : null}
-          </TouchableOpacity>
-
-          {spiele.map((s) => (
-            <TouchableOpacity
-              key={s.id}
-              style={[styles.spielRow, verordnung.aktivesSpielId === s.id && styles.spielRowActive]}
-              onPress={() => handleSelectSpiel(s)}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.spielRowEmoji}>{s.emoji ?? "🎮"}</Text>
-              <Text style={styles.spielRowLabel}>{s.name}</Text>
-              {activatingSpiel === s.id ? (
-                <ActivityIndicator size="small" color={c.blue} />
-              ) : verordnung.aktivesSpielId === s.id ? (
-                <Ionicons name="checkmark-circle" size={20} color={c.blue} />
-              ) : null}
-            </TouchableOpacity>
-          ))}
-
-          {SPIEL_VORLAGEN.filter((v) => !spiele.some((s) => s.name === v.name)).map((v) => (
-            <TouchableOpacity
-              key={v.name}
-              style={styles.spielRow}
-              onPress={() => handleActivateVorlage(v)}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.spielRowEmoji}>{v.emoji}</Text>
-              <Text style={styles.spielRowLabel}>{v.name}</Text>
-              {activatingSpiel === v.name ? (
-                <ActivityIndicator size="small" color={c.blue} />
-              ) : (
-                <Text style={styles.spielRowHint}>+ Vorlage</Text>
-              )}
-            </TouchableOpacity>
-          ))}
-
-          <TouchableOpacity style={styles.spielManageLink} onPress={() => router.push("/spiele")}>
-            <Text style={styles.spielManageLinkText}>Spiele verwalten →</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Strafen */}
-        <Text style={styles.sectionTitle}>💰 Strafen</Text>
-
-        <View style={styles.card}>
-          <View style={styles.switchRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.fieldLabel}>Strafen-Tab im Termin anzeigen</Text>
-              <Text style={styles.switchHint}>Aus, wenn ihr am Stammtisch keine Strafen führt.</Text>
-            </View>
-            <Switch
-              value={verordnung.tabStrafenAktiv !== false}
-              onValueChange={(v) => update({ tabStrafenAktiv: v })}
-              trackColor={{ false: c.border, true: c.blue }}
-            />
           </View>
-          {verordnung.tabStrafenAktiv !== false && (
-            <>
-              {strafKategorien.length > 0 ? (
-                <View style={styles.rollenWrap}>
-                  {strafKategorien.map((k) => (
-                    <View key={k.id} style={styles.rolleTag}>
-                      <Text style={styles.rolleTagText}>{k.emoji} {k.label}</Text>
-                      {k.betrag > 0 && <Text style={styles.strafKatPreisText}>{k.betrag.toLocaleString("de-DE")} €</Text>}
-                    </View>
-                  ))}
-                </View>
-              ) : (
-                <Text style={styles.switchHint}>Noch keine Kategorien angelegt.</Text>
-              )}
-              <TouchableOpacity style={styles.spielManageLink} onPress={() => router.push("/strafen-kategorien")}>
-                <Text style={styles.spielManageLinkText}>Strafenkategorien verwalten →</Text>
-              </TouchableOpacity>
-            </>
-          )}
-        </View>
+        </ListGroup>
+      </FormSection>
 
-        {/* ══════════ VERWALTUNG ══════════ */}
-        <View style={[styles.groupHeader, styles.groupHeaderSpaced]}>
-          <Text style={styles.groupTitle}>⚙️ Verwaltung</Text>
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.fieldLabel}>Sonstige Anmerkungen</Text>
-          <TextInput
-            style={[styles.input, { minHeight: 80 }]}
-            value={verordnung.sonstiges ?? ""}
-            onChangeText={(t) => update({ sonstiges: t })}
-            placeholder="Weitere Hinweise für den Stammtisch..."
-            placeholderTextColor={c.textLight}
-            multiline
-            textAlignVertical="top"
+      <FormSection title="Strafen & Spiele">
+        <ListGroup>
+          <ListRow
+            title="Strafenkatalog"
+            value={`${manuelleKategorien} ${manuelleKategorien === 1 ? "Kategorie" : "Kategorien"}`}
+            icon="receipt-outline"
+            ton="coral"
+            onPress={() => router.push("/strafen-kategorien")}
           />
-        </View>
+          <ListRow
+            title="Spiele"
+            value={aktivesSpiel ? `${aktivesSpiel.name} aktiv` : "kein Spiel"}
+            icon="dice-outline"
+            ton="mustard"
+            onPress={() => setOffen("spiel")}
+          />
+          <ToggleRow
+            title="Strafen am Abend erfassen"
+            subtitle="Strafen-Tab im Termin"
+            icon="create-outline"
+            ton="coral"
+            value={v.tabStrafenAktiv !== false}
+            onValueChange={(an) => { speichern({ tabStrafenAktiv: an }); }}
+          />
+        </ListGroup>
+      </FormSection>
 
-        {/* Speichern */}
-        <TouchableOpacity
-          style={[styles.saveBtn, !dirty && styles.saveBtnDisabled]}
-          onPress={speichern}
-          disabled={!dirty}
-        >
-          <Ionicons name="checkmark" size={20} color={c.onAccent} />
-          <Text style={styles.saveBtnText}>Speichern</Text>
-        </TouchableOpacity>
+      <FormSection title="Dieses Gerät">
+        <ListGroup>
+          <View style={styles.erscheinung}>
+            <ListRow title="Erscheinungsbild" value={ERSCHEINUNGSBILD.find((e) => e.key === preference)?.label} icon="contrast-outline" />
+            <SegmentedTabs variant="blue" items={ERSCHEINUNGSBILD} value={preference} onChange={setPreference} />
+          </View>
+          <ListRow
+            title="Profil wechseln"
+            icon="swap-horizontal-outline"
+            onPress={() => router.push("/mitglied-waehlen")}
+            accessibilityLabel={activeMember ? `Profil wechseln, angemeldet als ${displayName(activeMember)}` : "Profil wechseln"}
+            right={
+              <View style={styles.rechts}>
+                {activeMember ? (
+                  <>
+                    <Avatar name={displayName(activeMember)} color={activeMember.avatarColor} photoUri={activeMember.photoUri} size={26} />
+                    <Text style={styles.wert} numberOfLines={1}>{displayName(activeMember)}</Text>
+                  </>
+                ) : null}
+                <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
+              </View>
+            }
+          />
+        </ListGroup>
+      </FormSection>
 
-        {/* ── Hilfe ── */}
-        <Text style={[styles.sectionTitle, { marginTop: 32 }]}>❓ Hilfe</Text>
-        <View style={styles.card}>
-          <TouchableOpacity
-            style={[styles.devBtn, styles.devBtnPrimary]}
-            onPress={() => router.push("/onboarding-intro?replay=1")}
-            activeOpacity={0.85}
-          >
-            <Ionicons name="school-outline" size={18} color={c.onAccent} />
-            <Text style={styles.devBtnText}>Tutorial erneut ansehen</Text>
-          </TouchableOpacity>
-        </View>
+      <FormSection title="Hilfe">
+        <ListGroup>
+          <ListRow title="Tutorial erneut ansehen" icon="play-circle-outline" ton="green" onPress={() => router.push("/onboarding-intro?replay=1")} />
+        </ListGroup>
+      </FormSection>
 
-        {/* ── Gefahrenzone ── */}
-        <Text style={[styles.sectionTitle, { marginTop: 32 }]}>⚠️ Gefahrenzone</Text>
-        <View style={styles.devCard}>
-          <Text style={styles.devHint}>
-            Löscht diesen Stammtisch komplett und unwiderruflich — für alle Mitglieder. Alle
-            Termine, Kasse, Strafen, Spiele-Logs und Protokolle gehen dabei verloren.
-          </Text>
-          {!showDeleteForm ? (
-            <TouchableOpacity
-              style={[styles.devBtn, styles.devBtnDanger]}
-              onPress={() => setShowDeleteForm(true)}
-              activeOpacity={0.85}
-            >
-              <Ionicons name="trash-outline" size={18} color={c.onAccent} />
-              <Text style={styles.devBtnText}>Stammtisch löschen</Text>
-            </TouchableOpacity>
-          ) : (
-            <>
-              <TextInput
-                style={styles.input}
-                value={deletePassword}
-                onChangeText={setDeletePassword}
-                placeholder="Stammtisch-Passwort zur Bestätigung"
-                placeholderTextColor={c.textLight}
-                secureTextEntry
-                autoCapitalize="none"
-              />
-              <TouchableOpacity
-                style={[styles.devBtn, styles.devBtnDanger, deleting && styles.devBtnDisabled]}
-                onPress={handleDeleteStammtisch}
-                disabled={deleting}
-                activeOpacity={0.85}
-              >
-                {deleting ? (
-                  <ActivityIndicator color={c.onAccent} size="small" />
-                ) : (
-                  <Ionicons name="warning-outline" size={18} color={c.onAccent} />
-                )}
-                <Text style={styles.devBtnText}>
-                  {deleting ? "Wird gelöscht …" : "Endgültig löschen"}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => { setShowDeleteForm(false); setDeletePassword(""); }}>
-                <Text style={styles.logoRemoveText}>Abbrechen</Text>
-              </TouchableOpacity>
-            </>
-          )}
-        </View>
+      <FormSection>
+        <Text style={styles.gefahr} accessibilityRole="header">Gefahrenzone</Text>
+        <ListGroup>
+          <ListRow title="Stammtisch löschen" icon="trash-outline" destructive onPress={() => setOffen("loeschen")} />
+        </ListGroup>
+      </FormSection>
 
-      </ScrollView>
-      )}
-    </SafeAreaView>
-    </KeyboardAvoidingView>
+      {version ? <Text style={styles.version}>DeinStammtisch {version}</Text> : null}
+
+      <FeldSheet
+        visible={!!offenesFeld}
+        title={offenesFeld?.title ?? ""}
+        felder={offenesFeld?.felder ?? []}
+        onClose={() => setOffen(null)}
+        onSave={(w) =>
+          speichern(
+            offen === "name"
+              ? { name: w.name }
+              : offen === "treffpunkt"
+                ? { treffpunkt: w.treffpunkt || undefined }
+                : { stammtischTag: w.stammtischTag || undefined, stammtischzeit: w.stammtischzeit || undefined }
+          )
+        }
+      />
+      <GruendungSheet visible={offen === "gruendung"} value={v.gruendungsjahr} onClose={() => setOffen(null)} onSave={(g) => speichern({ gruendungsjahr: g })} />
+      <LogoSheet visible={offen === "logo"} uri={v.logoUrl} uploading={uploadingLogo} onClose={() => setOffen(null)} onPick={pickLogo} onRemove={removeLogo} />
+      <SatzungSheet
+        visible={offen === "satzung"}
+        regeln={v.regeln}
+        sonstiges={v.sonstiges}
+        onClose={() => setOffen(null)}
+        onSave={(r, s) => speichern({ regeln: r, sonstiges: s })}
+      />
+      <RollenSheet visible={offen === "rollen"} rollen={rollen} onClose={() => setOffen(null)} onSave={(r) => speichern({ rollenOptionen: r })} />
+      <SpielWahlSheet
+        visible={offen === "spiel"}
+        spiele={spiele}
+        aktivesSpielId={v.aktivesSpielId}
+        busyId={activatingSpiel}
+        onClose={() => setOffen(null)}
+        onSelect={handleSelectSpiel}
+        onVorlage={handleActivateVorlage}
+        onVerwalten={() => { setOffen(null); router.push("/spiele"); }}
+      />
+      <LoeschenSheet visible={offen === "loeschen"} busy={deleting} onClose={() => setOffen(null)} onDelete={handleDeleteStammtisch} />
+    </Screen>
   );
 }
 
-const makeStyles = (c: ThemeColors) => StyleSheet.create({
-  safe: { flex: 1, backgroundColor: c.background },
-  content: { padding: 20, paddingBottom: 48 },
-
-  header: {
-    flexDirection: "row", alignItems: "center", gap: 12,
-    backgroundColor: c.cardAlt, borderRadius: 20,
-    padding: 16, marginBottom: 16, ...SHADOWS.card,
-    borderWidth: 1, borderColor: c.border,
-  },
-  headerTexts: { flex: 1 },
-  headerTitle: { fontSize: 18, fontFamily: FONT.w800, color: c.textDark },
-  headerSub: { fontFamily: FONT.w400, fontSize: 12, color: c.textMuted, marginTop: 2 },
-
-  sectionTitle: {
-    fontSize: 15, fontFamily: FONT.w800, color: c.textDark,
-    marginBottom: 10, marginTop: 8, letterSpacing: -0.2,
-  },
-  optionalHint: { fontSize: 12, fontFamily: FONT.w600, color: c.textLight },
-
-  groupHeader: {
-    borderTopWidth: 2, borderTopColor: c.gold + "40",
-    paddingTop: 16, marginBottom: 4,
-  },
-  groupHeaderSpaced: { marginTop: 20 },
-  groupTitle: { fontSize: 19, fontFamily: FONT.w800, color: c.textDark, letterSpacing: -0.3 },
-  groupSubtitle: { fontFamily: FONT.w400, fontSize: 13, color: c.textMuted, marginTop: 3, marginBottom: 4 },
-
-  fieldLabelRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
-  pflichtBadge: {
-    fontSize: 10, fontFamily: FONT.w800, color: c.blue, backgroundColor: c.blue + "18",
-    borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2, textTransform: "uppercase", letterSpacing: 0.3,
-  },
-  strafKatPreisText: { fontSize: 12, fontFamily: FONT.w700, color: c.danger },
-
-  card: {
-    backgroundColor: c.card, borderRadius: 14, padding: 14, marginBottom: 10,
-    borderWidth: 1, borderColor: c.border,
-  },
-  cardRow: { flexDirection: "row", gap: 10 },
-
-  infoBox: {
-    flexDirection: "row", gap: 8, alignItems: "flex-start",
-    backgroundColor: c.blue + "12", borderRadius: 12, padding: 12, marginBottom: 10,
-  },
-  infoBoxText: { fontFamily: FONT.w400, flex: 1, fontSize: 12.5, color: c.textMid, lineHeight: 18 },
-
-  fieldLabel: { fontSize: 12, fontFamily: FONT.w700, color: c.textMuted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 },
-  switchRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-  switchHint: { fontFamily: FONT.w400, fontSize: 12, color: c.textLight, marginTop: -4 },
-
-  input: { fontFamily: FONT.w400, backgroundColor: c.background, borderRadius: 10, borderWidth: 1, borderColor: c.border,
-    paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: c.textDark,
-  },
-  dateBtn: {
-    flexDirection: "row", alignItems: "center", gap: 8,
-    backgroundColor: c.background, borderRadius: 10, borderWidth: 1, borderColor: c.border,
-    paddingHorizontal: 12, paddingVertical: 10,
-  },
-  dateBtnText: { fontSize: 14, color: c.textDark, fontFamily: FONT.w600 },
-
-  logoRow: { flexDirection: "row", alignItems: "center", gap: 14 },
-  logoPreview: {
-    width: 56, height: 56, borderRadius: 14, backgroundColor: c.background,
-    alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: c.border, overflow: "hidden",
-  },
-  logoImg: { width: 56, height: 56 },
-  logoActions: { gap: 6 },
-  logoBtn: {
-    backgroundColor: c.background, borderRadius: 10, borderWidth: 1, borderColor: c.border,
-    paddingHorizontal: 14, paddingVertical: 8, alignSelf: "flex-start", minWidth: 120, alignItems: "center",
-  },
-  logoBtnText: { fontSize: 13, fontFamily: FONT.w700, color: c.blue },
-  logoRemoveText: { fontSize: 12, color: c.danger, fontFamily: FONT.w600 },
-
-  regelRow: {
-    flexDirection: "row", alignItems: "flex-start", gap: 8,
-    backgroundColor: c.card, borderRadius: 12, padding: 12, marginBottom: 8,
-    borderWidth: 1, borderColor: c.border,
-  },
-  regelNr: { fontSize: 14, fontFamily: FONT.w700, color: c.gold, minWidth: 20 },
-  regelText: { fontFamily: FONT.w400, flex: 1, fontSize: 14, color: c.textDark, lineHeight: 20 },
-  regelDelete: { padding: 2 },
-
-  regelInputRow: { flexDirection: "row", gap: 8, alignItems: "flex-end" },
-  regelAddBtn: {
-    width: 42, height: 42, borderRadius: 21,
-    backgroundColor: c.blue, alignItems: "center", justifyContent: "center", flexShrink: 0,
-  },
-
-  rollenWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 },
-  rolleTag: {
-    flexDirection: "row", alignItems: "center", gap: 6,
-    backgroundColor: c.card, borderRadius: 16, paddingVertical: 6, paddingHorizontal: 10,
-    borderWidth: 1, borderColor: c.border,
-  },
-  rolleTagText: { fontSize: 13, fontFamily: FONT.w600, color: c.textDark },
-
-  spielRow: {
-    flexDirection: "row", alignItems: "center", gap: 10,
-    paddingVertical: 10, paddingHorizontal: 4, borderRadius: 10,
-  },
-  spielRowActive: { backgroundColor: c.blue + "10" },
-  spielRowEmoji: { fontFamily: FONT.w400, fontSize: 20, width: 26, textAlign: "center" },
-  spielRowLabel: { flex: 1, fontSize: 14, fontFamily: FONT.w600, color: c.textDark },
-  spielRowHint: { fontSize: 12, fontFamily: FONT.w700, color: c.blue },
-  spielManageLink: { marginTop: 6, paddingVertical: 6 },
-  spielManageLinkText: { fontSize: 13, fontFamily: FONT.w700, color: c.blue },
-
-  saveBtn: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-    backgroundColor: c.blue, borderRadius: 16, paddingVertical: 16, marginTop: 8,
-  },
-  saveBtnDisabled: { opacity: 0.4 },
-  saveBtnText: { color: c.onAccent, fontSize: 16, fontFamily: FONT.w700 },
-
-  devCard: {
-    backgroundColor: c.card, borderRadius: 16, padding: 16, marginBottom: 12,
-    borderWidth: 1.5, borderColor: c.danger + "44", gap: 10,
-  },
-  devHint: { fontFamily: FONT.w400, fontSize: 13, color: c.textMuted, lineHeight: 19 },
-  devBtn: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-    borderRadius: 14, paddingVertical: 13,
-  },
-  devBtnPrimary: { backgroundColor: c.blue },
-  devBtnDanger:  { backgroundColor: c.danger },
-  devBtnDisabled: { opacity: 0.5 },
-  devBtnText: { color: c.onAccent, fontSize: 15, fontFamily: FONT.w700 },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    rechts: { flexDirection: "row", alignItems: "center", gap: 8, maxWidth: "50%" },
+    wert: { fontFamily: FONT.w600, fontSize: 15, color: c.textMuted, flexShrink: 1 },
+    rollen: { paddingLeft: 46, paddingBottom: 14 },
+    erscheinung: { paddingBottom: 12 },
+    gefahr: { ...TYPE.label, color: c.dangerText, paddingHorizontal: 4 },
+    version: { ...TYPE.caption, fontSize: 13, color: c.textMuted, textAlign: "center" },
+  });

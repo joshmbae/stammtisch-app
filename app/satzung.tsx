@@ -1,247 +1,137 @@
-import React, { useCallback } from "react";
-import { useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { router, useFocusEffect } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { BackButton } from "../components/BackButton";
+import React, { useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
 import LoadingSpinner from "../components/LoadingSpinner";
+import ErrorState from "../components/ErrorState";
+import StammtischLogo from "../components/StammtischLogo";
 import { StammtischVerordnung } from "../types";
-import { loadVerordnung } from "../utils/storage";
-import { SHADOWS, ThemeColors, FONT } from "../constants/design";
-import { useColors, useThemedStyles } from "../contexts/ThemeContext";
+import { loadVerordnung, saveVerordnung } from "../utils/storage";
+import { showAlert } from "../utils/alert";
+import { useScreenLoad } from "../utils/useScreenLoad";
+import { FONT, TYPE, ThemeColors } from "../constants/design";
+import { useThemedStyles } from "../contexts/ThemeContext";
 import { gruendungsDauer, formatDauer, formatGruendungMonat } from "../utils/format";
+import { Button, Card, HeaderIconButton, ListGroup, ListRow, Screen, ScreenHeader, SectionLabel } from "../components/ui";
+import { SatzungSheet } from "../components/einstellungen/SatzungSheet";
 
+/** Die Satzung zum Nachlesen; Regeln und Anmerkungen lassen sich über den Stift bearbeiten. */
 export default function SatzungScreen() {
-  const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const [verordnung, setVerordnung] = useState<StammtischVerordnung>({ name: "Mein Stammtisch", regeln: [] });
-  const [loading, setLoading] = useState(true);
+  const [bearbeiten, setBearbeiten] = useState(false);
 
-  useFocusEffect(
-    useCallback(() => {
-      loadVerordnung().then((v) => { setVerordnung(v); setLoading(false); });
-    }, [])
-  );
+  const { loading, refreshing, error, onRefresh, retry } = useScreenLoad(async () => {
+    setVerordnung(await loadVerordnung());
+  }, []);
 
-  const gruendungsjahr = verordnung.gruendungsjahr ?? null;
-  const dauer = gruendungsjahr ? gruendungsDauer(gruendungsjahr) : null;
+  async function speichern(regeln: string[], sonstiges: string | undefined): Promise<boolean> {
+    try {
+      // Frisch laden, damit parallel geänderte Einstellungen nicht überschrieben werden.
+      const aktuell = await loadVerordnung();
+      const updated = { ...aktuell, regeln, sonstiges };
+      await saveVerordnung(updated);
+      setVerordnung(updated);
+      return true;
+    } catch (e: any) {
+      showAlert("Fehler", "Speichern fehlgeschlagen: " + (e?.message ?? "Unbekannter Fehler.") + "\n\nBitte nochmal versuchen.");
+      return false;
+    }
+  }
+
+  if (loading) return <LoadingSpinner />;
+  if (error) return <ErrorState message={error} onRetry={retry} />;
+
+  const v = verordnung;
+  const regeln = v.regeln.filter((r) => r.trim());
+  const dauer = v.gruendungsjahr ? gruendungsDauer(v.gruendungsjahr) : null;
+  const tagZeit = [v.stammtischTag, v.stammtischzeit ? `${v.stammtischzeit.replace(/\s*Uhr$/i, "")} Uhr` : null].filter(Boolean).join(" · ");
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
-      {loading ? <LoadingSpinner /> : (
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-
-        {/* Header */}
-        <View style={styles.header}>
-          <BackButton />
-          <View style={styles.headerTexts}>
-            <Text style={styles.headerTitle}>Satzung</Text>
-            <Text style={styles.headerSub}>Stammtischverordnung</Text>
-          </View>
-        </View>
-
-        {/* ── Titel-Banner ── */}
-        <View style={styles.banner}>
-          <Text style={styles.bannerEmoji}>📜</Text>
-          <Text style={styles.bannerTitle}>{verordnung.name}</Text>
-          <Text style={styles.bannerSub}>Stammtischverordnung</Text>
-          {gruendungsjahr && dauer && (
-            <View style={styles.bannerBadge}>
-              <Text style={styles.bannerBadgeText}>
-                Gegründet {formatGruendungMonat(gruendungsjahr)} · {formatDauer(dauer)}
+    <Screen
+      refreshing={refreshing}
+      onRefresh={onRefresh}
+      header={
+        <ScreenHeader
+          back
+          title="Satzung"
+          subtitle={`${v.name} · ${regeln.length ? `${regeln.length} ${regeln.length === 1 ? "Regel" : "Regeln"}` : "noch leer"}`}
+          right={<HeaderIconButton icon="create-outline" label="Satzung bearbeiten" onPress={() => setBearbeiten(true)} />}
+        />
+      }
+    >
+      <Card enterIndex={0}>
+        <View style={styles.kopf}>
+          <StammtischLogo size={52} uri={v.logoUrl} />
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={styles.name} numberOfLines={2}>{v.name}</Text>
+            <Text style={styles.muted}>Stammtischverordnung</Text>
+            {v.gruendungsjahr ? (
+              <Text style={styles.muted}>
+                gegründet {formatGruendungMonat(v.gruendungsjahr)}{dauer ? ` · ${formatDauer(dauer)}` : ""}
               </Text>
-            </View>
-          )}
-        </View>
-
-        {/* ── Eckdaten ── */}
-        {(verordnung.treffpunkt || verordnung.stammtischTag || verordnung.stammtischzeit) && (
-          <View style={styles.eckdatenCard}>
-            {verordnung.treffpunkt && (
-              <View style={styles.eckdatenRow}>
-                <View style={styles.eckdatenIcon}>
-                  <Text style={styles.eckdatenEmoji}>📍</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.eckdatenLabel}>Treffpunkt</Text>
-                  <Text style={styles.eckdatenValue}>{verordnung.treffpunkt}</Text>
-                </View>
-              </View>
-            )}
-            {(verordnung.stammtischTag || verordnung.stammtischzeit) && (
-              <View style={[styles.eckdatenRow, verordnung.treffpunkt && styles.eckdatenRowBorder]}>
-                <View style={styles.eckdatenIcon}>
-                  <Text style={styles.eckdatenEmoji}>🗓</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.eckdatenLabel}>Stammtischtag</Text>
-                  <Text style={styles.eckdatenValue}>
-                    {verordnung.stammtischTag ?? ""}
-                    {verordnung.stammtischTag && verordnung.stammtischzeit ? " · " : ""}
-                    {verordnung.stammtischzeit ? `${verordnung.stammtischzeit} Uhr` : ""}
-                  </Text>
-                </View>
-              </View>
-            )}
+            ) : null}
           </View>
-        )}
+        </View>
+      </Card>
 
-        {/* ── Regeln ── */}
-        {verordnung.regeln.length > 0 && (
-          <>
-            <View style={styles.sectionHeader}>
-              <View style={styles.sectionLine} />
-              <Text style={styles.sectionLabel}>Regeln</Text>
-              <View style={styles.sectionLine} />
-            </View>
-            {verordnung.regeln.map((regel, i) => (
-              <View key={i} style={styles.regelCard}>
-                <View style={styles.regelNrWrap}>
-                  <Text style={styles.regelNr}>{i + 1}</Text>
+      {v.treffpunkt || tagZeit ? (
+        <ListGroup>
+          {v.treffpunkt ? <ListRow title="Treffpunkt" subtitle={v.treffpunkt} icon="location-outline" ton="blue" /> : null}
+          {tagZeit ? <ListRow title="Stammtischtag" subtitle={tagZeit} icon="time-outline" ton="blue" /> : null}
+        </ListGroup>
+      ) : null}
+
+      {regeln.length > 0 ? (
+        <Card enterIndex={1}>
+          <SectionLabel meta={`${regeln.length}`}>Regeln</SectionLabel>
+          <View style={styles.regeln}>
+            {regeln.map((regel, i) => (
+              <View key={i} style={styles.regel} accessible accessibilityLabel={`Regel ${i + 1}: ${regel}`}>
+                <View style={styles.nr}>
+                  <Text style={styles.nrText}>{i + 1}</Text>
                 </View>
                 <Text style={styles.regelText}>{regel}</Text>
               </View>
             ))}
-          </>
-        )}
-
-        {/* ── Sonstiges ── */}
-        {verordnung.sonstiges ? (
-          <>
-            <View style={styles.sectionHeader}>
-              <View style={styles.sectionLine} />
-              <Text style={styles.sectionLabel}>Anmerkungen</Text>
-              <View style={styles.sectionLine} />
-            </View>
-            <View style={styles.sonstigesCard}>
-              <Text style={styles.sonstigesText}>{verordnung.sonstiges}</Text>
-            </View>
-          </>
-        ) : null}
-
-        {verordnung.regeln.length === 0 && !verordnung.sonstiges && (
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyText}>
-              Noch keine Regeln hinterlegt.{"\n"}In den Einstellungen kannst du die Verordnung ausfüllen.
-            </Text>
-            <TouchableOpacity
-              style={styles.emptyBtn}
-              onPress={() => router.push("/einstellungen")}
-              activeOpacity={0.85}
-            >
-              <Ionicons name="settings-outline" size={15} color={c.blue} />
-              <Text style={styles.emptyBtnText}>Zu den Einstellungen</Text>
-            </TouchableOpacity>
           </View>
-        )}
+        </Card>
+      ) : null}
 
-      </ScrollView>
-      )}
-    </SafeAreaView>
+      {v.sonstiges ? (
+        <Card enterIndex={2}>
+          <SectionLabel>Anmerkungen</SectionLabel>
+          <Text style={styles.sonstiges}>{v.sonstiges}</Text>
+        </Card>
+      ) : null}
+
+      {regeln.length === 0 && !v.sonstiges ? (
+        <Card enterIndex={1} style={styles.leer}>
+          <Text style={styles.leerText}>Noch keine Regeln hinterlegt. Schreibt auf, was bei euch am Stammtisch gilt.</Text>
+          <Button label="Regeln schreiben" icon="create-outline" variant="blue" size="sm" onPress={() => setBearbeiten(true)} />
+        </Card>
+      ) : null}
+
+      <SatzungSheet
+        visible={bearbeiten}
+        regeln={v.regeln}
+        sonstiges={v.sonstiges}
+        onClose={() => setBearbeiten(false)}
+        onSave={speichern}
+      />
+    </Screen>
   );
 }
 
-const makeStyles = (c: ThemeColors) => StyleSheet.create({
-  safe: { flex: 1, backgroundColor: c.background },
-  content: { padding: 20, paddingBottom: 60 },
-
-  header: {
-    flexDirection: "row", alignItems: "center", gap: 12,
-    backgroundColor: c.cardAlt, borderRadius: 20,
-    padding: 16, marginBottom: 16, ...SHADOWS.card,
-    borderWidth: 1, borderColor: c.border,
-  },
-  headerTexts: { flex: 1 },
-  headerTitle: { fontSize: 18, fontFamily: FONT.w800, color: c.textDark },
-  headerSub: { fontFamily: FONT.w400, fontSize: 12, color: c.textMuted, marginTop: 2 },
-
-  // ── Banner ────────────────────────────────────────────────────────────────
-  banner: {
-    backgroundColor: c.heroBlue, borderRadius: 24, padding: 28,
-    borderWidth: 1, borderColor: c.heroBlueEdge,
-    alignItems: "center", marginBottom: 16, ...SHADOWS.card,
-  },
-  bannerEmoji: { fontFamily: FONT.w400, fontSize: 40, marginBottom: 10 },
-  bannerTitle: {
-    fontSize: 30, fontFamily: FONT.w900, color: c.onHeroBlue,
-    letterSpacing: -0.5, textAlign: "center", marginBottom: 4,
-  },
-  bannerSub: {
-    fontSize: 13, fontFamily: FONT.w600,
-    color: "rgba(255,255,255,0.55)", textTransform: "uppercase", letterSpacing: 1.2,
-  },
-  bannerBadge: {
-    marginTop: 14, paddingHorizontal: 14, paddingVertical: 6,
-    backgroundColor: c.gold + "33", borderRadius: 20,
-    borderWidth: 1, borderColor: c.gold + "55",
-  },
-  bannerBadgeText: { fontSize: 12, fontFamily: FONT.w700, color: c.gold },
-
-  // ── Eckdaten ──────────────────────────────────────────────────────────────
-  eckdatenCard: {
-    backgroundColor: c.card, borderRadius: 20, padding: 4,
-    marginBottom: 20, borderWidth: 1, borderColor: c.border, ...SHADOWS.light,
-  },
-  eckdatenRow: {
-    flexDirection: "row", alignItems: "center", gap: 14,
-    paddingVertical: 14, paddingHorizontal: 16,
-  },
-  eckdatenRowBorder: { borderTopWidth: 1, borderTopColor: c.border },
-  eckdatenIcon: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: c.background, alignItems: "center", justifyContent: "center",
-  },
-  eckdatenEmoji: { fontFamily: FONT.w400, fontSize: 20 },
-  eckdatenLabel: { fontSize: 11, fontFamily: FONT.w700, color: c.textMuted, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 2 },
-  eckdatenValue: { fontSize: 15, fontFamily: FONT.w600, color: c.textDark },
-
-  // ── Section Divider ───────────────────────────────────────────────────────
-  sectionHeader: {
-    flexDirection: "row", alignItems: "center", gap: 10,
-    marginBottom: 14, marginTop: 4,
-  },
-  sectionLine: { flex: 1, height: 1, backgroundColor: c.border },
-  sectionLabel: { fontSize: 11, fontFamily: FONT.w800, color: c.textMuted, textTransform: "uppercase", letterSpacing: 0.8 },
-
-  // ── Regeln ────────────────────────────────────────────────────────────────
-  regelCard: {
-    flexDirection: "row", alignItems: "flex-start", gap: 14,
-    backgroundColor: c.card, borderRadius: 16, padding: 16, marginBottom: 8,
-    borderWidth: 1, borderColor: c.border, ...SHADOWS.light,
-  },
-  regelNrWrap: {
-    width: 32, height: 32, borderRadius: 16,
-    backgroundColor: c.heroBlue, alignItems: "center", justifyContent: "center",
-    flexShrink: 0, marginTop: 1,
-  },
-  regelNr: { fontSize: 14, fontFamily: FONT.w900, color: c.heroBlueSub },
-  regelText: { flex: 1, fontSize: 15, color: c.textDark, lineHeight: 22, fontFamily: FONT.w500 },
-
-  // ── Sonstiges ─────────────────────────────────────────────────────────────
-  sonstigesCard: {
-    backgroundColor: c.card, borderRadius: 16, padding: 16,
-    borderWidth: 1, borderColor: c.border, ...SHADOWS.light,
-  },
-  sonstigesText: { fontFamily: FONT.w400, fontSize: 14, color: c.textMid, lineHeight: 22 },
-
-  // ── Empty ─────────────────────────────────────────────────────────────────
-  emptyCard: {
-    backgroundColor: c.card, borderRadius: 20, padding: 24,
-    alignItems: "center", borderWidth: 1, borderColor: c.border,
-    borderStyle: "dashed", gap: 16,
-  },
-  emptyText: { fontFamily: FONT.w400, fontSize: 14, color: c.textMuted, textAlign: "center", lineHeight: 21 },
-  emptyBtn: {
-    flexDirection: "row", alignItems: "center", gap: 6,
-    paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12,
-    backgroundColor: c.blue + "12", borderWidth: 1, borderColor: c.blue + "33",
-  },
-  emptyBtnText: { fontSize: 14, fontFamily: FONT.w700, color: c.blue },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    kopf: { flexDirection: "row", alignItems: "center", gap: 14 },
+    name: { ...TYPE.heading, fontSize: 19, color: c.textDark },
+    muted: { ...TYPE.caption, fontSize: 13, color: c.textMuted, marginTop: 1 },
+    regeln: { marginTop: 12, gap: 14 },
+    regel: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
+    nr: { width: 26, height: 26, borderRadius: 13, backgroundColor: c.blueBg, alignItems: "center", justifyContent: "center", marginTop: 1 },
+    nrText: { fontFamily: FONT.w800, fontSize: 13, color: c.blue },
+    regelText: { flex: 1, fontFamily: FONT.w600, fontSize: 15, lineHeight: 22, color: c.textDark },
+    sonstiges: { ...TYPE.body, fontSize: 15, lineHeight: 22, color: c.textMid, marginTop: 10 },
+    leer: { alignItems: "center", gap: 14, paddingVertical: 24 },
+    leerText: { ...TYPE.body, fontSize: 14, lineHeight: 20, color: c.textMuted, textAlign: "center" },
+  });

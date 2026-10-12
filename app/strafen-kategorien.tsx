@@ -1,34 +1,46 @@
-import React, { useState, useCallback } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  KeyboardAvoidingView,
-  Platform,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useFocusEffect } from "expo-router";
+import React, { useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
+import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { showAlert } from "../utils/alert";
-import { StrafKategorieDef, STRAF_KATEGORIEN_VORLAGEN } from "../types";
+import { Spiel, SpielEreignisTyp, StrafKategorieDef, STRAF_KATEGORIEN_VORLAGEN } from "../types";
 import {
   loadStrafKategorien,
   addStrafKategorie,
   updateStrafKategorie,
   deleteStrafKategorie,
   instantiateStrafKategorieVorlage,
+  loadSpiele,
+  loadAllEreignisTypen,
 } from "../utils/storage";
-import { SHADOWS, ThemeColors, FONT } from "../constants/design";
+import { formatEuro } from "../utils/format";
+import { useScreenLoad } from "../utils/useScreenLoad";
+import { useSingleFlight } from "../utils/useSingleFlight";
+import { showAlert } from "../utils/alert";
+import { FONT, MAX_FONT_SCALE, RADIUS, TYPE, ThemeColors } from "../constants/design";
 import { useColors, useThemedStyles } from "../contexts/ThemeContext";
 import LoadingSpinner from "../components/LoadingSpinner";
-import { useSingleFlight } from "../utils/useSingleFlight";
-import { BackButton } from "../components/BackButton";
+import ErrorState from "../components/ErrorState";
+import OfflineBanner from "../components/OfflineBanner";
+import {
+  Card,
+  FormSection,
+  HeaderIconButton,
+  IconSquircle,
+  KategorieIcon,
+  ListGroup,
+  ListRow,
+  PressableScale,
+  Screen,
+  ScreenHeader,
+  StatusPill,
+} from "../components/ui";
+import { KategorieForm, KategorieSheet } from "../components/einstellungen/KategorieSheet";
 
-function leereForm() {
-  return { label: "", betrag: "", emoji: "", beschreibung: "" };
+const euro = (n: number) => `${formatEuro(n).replace(",00", "")} €`;
+
+interface SpielKategorie {
+  kat: StrafKategorieDef;
+  spiel?: Spiel;
 }
 
 export default function StrafenKategorienScreen() {
@@ -36,315 +48,186 @@ export default function StrafenKategorienScreen() {
   const styles = useThemedStyles(makeStyles);
   const guard = useSingleFlight();
   const [kategorien, setKategorien] = useState<StrafKategorieDef[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState(leereForm());
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [addForm, setAddForm] = useState(leereForm());
+  const [ausSpielen, setAusSpielen] = useState<SpielKategorie[]>([]);
+  // undefined = zu, null = neue Kategorie, sonst die bearbeitete.
+  const [sheet, setSheet] = useState<StrafKategorieDef | null | undefined>(undefined);
 
-  useFocusEffect(
-    useCallback(() => {
-      async function load() {
-        const kats = await loadStrafKategorien();
-        // Kategorien aus Spiel-Ereignissen werden beim jeweiligen Spiel verwaltet
-        // (Betrag/Label dort editieren), nicht hier.
-        setKategorien(kats.filter((k) => !k.spielEreignisTypId));
-        setLoading(false);
-      }
-      load();
-    }, [])
-  );
+  const { loading, refreshing, error, onRefresh, retry } = useScreenLoad(async () => {
+    const [kats, spiele] = await Promise.all([loadStrafKategorien(), loadSpiele()]);
+    const typen: SpielEreignisTyp[] = await loadAllEreignisTypen(spiele.map((s) => s.id));
+    // Kategorien aus Spiel-Ereignissen werden beim jeweiligen Spiel verwaltet
+    // (Betrag/Label dort), hier nur zur Übersicht mit Sprung ins Spiel.
+    setKategorien(kats.filter((k) => !k.spielEreignisTypId));
+    setAusSpielen(
+      kats
+        .filter((k) => k.spielEreignisTypId)
+        .map((k) => {
+          const typ = typen.find((t) => t.id === k.spielEreignisTypId);
+          return { kat: k, spiel: spiele.find((s) => s.id === typ?.spielId) };
+        })
+    );
+  }, []);
 
-  function openEdit(k: StrafKategorieDef) {
-    setEditingId(k.id);
-    setEditForm({
-      label: k.label,
-      betrag: String(k.betrag).replace(".", ","),
-      emoji: k.emoji,
-      beschreibung: k.beschreibung ?? "",
-    });
-  }
-
-  async function handleSaveEdit(id: string) {
-    const betrag = parseFloat(editForm.betrag.replace(",", ".")) || 0;
-    if (!editForm.label.trim()) return;
-    await updateStrafKategorie(id, {
-      label: editForm.label.trim(),
-      betrag,
-      emoji: editForm.emoji.trim() || "💰",
-      beschreibung: editForm.beschreibung.trim() || undefined,
-    });
-    setKategorien((prev) => prev.map((k) => k.id === id
-      ? { ...k, label: editForm.label.trim(), betrag, emoji: editForm.emoji.trim() || "💰", beschreibung: editForm.beschreibung.trim() || undefined }
-      : k
-    ));
-    setEditingId(null);
+  async function handleSave(form: KategorieForm) {
+    if (sheet) {
+      // Leere Beschreibung explizit mitschicken, sonst bliebe die alte stehen
+      // (undefined wird beim Update übersprungen).
+      await updateStrafKategorie(sheet.id, { ...form, beschreibung: form.beschreibung ?? "" });
+      setKategorien((prev) => prev.map((k) => (k.id === sheet.id ? { ...k, ...form } : k)));
+    } else {
+      const kat = await addStrafKategorie({ ...form, reihenfolge: kategorien.length });
+      setKategorien((prev) => [...prev, kat]);
+    }
   }
 
   async function handleDelete(k: StrafKategorieDef) {
-    showAlert("Kategorie löschen?", `„${k.label}" wird unwiderruflich gelöscht.`, [
-      { text: "Abbrechen", style: "cancel" },
-      {
-        text: "Löschen", style: "destructive", onPress: async () => {
-          await deleteStrafKategorie(k.id);
-          setKategorien((prev) => prev.filter((x) => x.id !== k.id));
-        },
-      },
-    ]);
+    await deleteStrafKategorie(k.id);
+    setKategorien((prev) => prev.filter((x) => x.id !== k.id));
   }
 
-  async function handleAdd() {
-    if (!addForm.label.trim()) return;
-    const betrag = parseFloat(addForm.betrag.replace(",", ".")) || 0;
-    const kat = await addStrafKategorie({
-      label: addForm.label.trim(),
-      betrag,
-      emoji: addForm.emoji.trim() || "💰",
-      beschreibung: addForm.beschreibung.trim() || undefined,
-      reihenfolge: kategorien.length,
-    });
-    setKategorien((prev) => [...prev, kat]);
-    setAddForm(leereForm());
-    setShowAddForm(false);
+  async function handleVorlage(vorlage: (typeof STRAF_KATEGORIEN_VORLAGEN)[number]) {
+    try {
+      const kat = await instantiateStrafKategorieVorlage(vorlage, kategorien.length);
+      setKategorien((prev) => [...prev, kat]);
+    } catch {
+      showAlert("Fehler", "Die Vorlage konnte nicht übernommen werden.");
+    }
   }
 
-  async function handleVorlageHinzufuegen(vorlage: (typeof STRAF_KATEGORIEN_VORLAGEN)[number]) {
-    const kat = await instantiateStrafKategorieVorlage(vorlage, kategorien.length);
-    setKategorien((prev) => [...prev, kat]);
-  }
+  if (loading) return <LoadingSpinner />;
+  if (error) return <ErrorState message={error} onRetry={retry} />;
 
-  const vorlagenOffen = STRAF_KATEGORIEN_VORLAGEN.filter(
-    (v) => !kategorien.some((k) => k.label === v.label)
-  );
+  const vorlagenOffen = STRAF_KATEGORIEN_VORLAGEN.filter((v) => !kategorien.some((k) => k.label === v.label));
+  const untertitel = [
+    `${kategorien.length} ${kategorien.length === 1 ? "Kategorie" : "Kategorien"}`,
+    ausSpielen.length ? `${ausSpielen.length} aus Spielen` : null,
+  ].filter(Boolean).join(" · ");
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={0}>
-      <SafeAreaView style={styles.safe} edges={["top"]}>
-        {loading ? <LoadingSpinner /> : (
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+    <Screen
+      refreshing={refreshing}
+      onRefresh={onRefresh}
+      contentStyle={{ gap: 16 }}
+      header={
+        <>
+          <OfflineBanner />
+          <ScreenHeader
+            back
+            title="Strafenkatalog"
+            subtitle={untertitel}
+            right={<HeaderIconButton icon="add" label="Neue Kategorie" onPress={() => setSheet(null)} />}
+          />
+        </>
+      }
+    >
+      <View style={styles.info}>
+        <Ionicons name="information-circle-outline" size={18} color={c.blue} />
+        <Text style={styles.infoText}>Strafen aus Spielen werden im Spiel verwaltet.</Text>
+      </View>
 
-          <View style={styles.header}>
-            <BackButton />
-            <View style={styles.headerTexts}>
-              <Text style={styles.headerTitle}>Strafenkategorien</Text>
-              <Text style={styles.headerSub}>Eigene Strafen & Beträge verwalten</Text>
-            </View>
-          </View>
-
-          <View style={styles.infoBox}>
-            <Ionicons name="information-circle-outline" size={18} color={c.blue} />
-            <Text style={styles.infoBoxText}>
-              Strafen, die bei einem Spiel-Ereignis automatisch entstehen (z. B. "Schock-Niederlage"),
-              verwaltet ihr direkt beim jeweiligen Spiel unter „Spiele verwalten" — hier nur alles Manuelle.
-            </Text>
-          </View>
-
-          {kategorien.map((k) => (
-            <View key={k.id} style={styles.card}>
-              {editingId === k.id ? (
-                <View>
-                  <View style={styles.editRow}>
-                    <TextInput
-                      style={[styles.input, { width: 48, textAlign: "center" }]}
-                      value={editForm.emoji}
-                      onChangeText={(t) => setEditForm((f) => ({ ...f, emoji: t }))}
-                      placeholder="💰"
-                    />
-                    <TextInput
-                      style={[styles.input, { flex: 1 }]}
-                      value={editForm.label}
-                      onChangeText={(t) => setEditForm((f) => ({ ...f, label: t }))}
-                      placeholder="Bezeichnung"
-                      placeholderTextColor={c.textLight}
-                    />
-                  </View>
-                  <TextInput
-                    style={styles.input}
-                    value={editForm.betrag}
-                    onChangeText={(t) => setEditForm((f) => ({ ...f, betrag: t }))}
-                    placeholder="Betrag in €"
-                    placeholderTextColor={c.textLight}
-                    keyboardType="decimal-pad"
-                  />
-                  <TextInput
-                    style={styles.input}
-                    value={editForm.beschreibung}
-                    onChangeText={(t) => setEditForm((f) => ({ ...f, beschreibung: t }))}
-                    placeholder="Beschreibung (optional)"
-                    placeholderTextColor={c.textLight}
-                  />
-                  <View style={styles.editActions}>
-                    <TouchableOpacity onPress={() => setEditingId(null)} style={styles.editCancelBtn}>
-                      <Text style={styles.editCancelText}>Abbrechen</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => guard(() => handleSaveEdit(k.id))} style={styles.editSaveBtn}>
-                      <Text style={styles.editSaveText}>Speichern</Text>
-                    </TouchableOpacity>
-                  </View>
+      <FormSection title="Kategorien">
+        {kategorien.length === 0 ? <Text style={styles.leer}>Noch keine Kategorien. Oben mit + anlegen oder eine Vorlage übernehmen.</Text> : null}
+        {kategorien.map((k, i) => {
+          const frei = k.betrag <= 0;
+          return (
+            <Card
+              key={k.id}
+              enterIndex={i}
+              onPress={() => setSheet(k)}
+              accessibilityLabel={`${k.label}, ${frei ? "Betrag frei" : euro(k.betrag)}${k.istSystem ? ", Systemkategorie" : ""}. Bearbeiten`}
+              style={styles.kat}
+            >
+              <KategorieIcon kat={k} size={48} />
+              <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+                <View style={styles.titelReihe}>
+                  <Text style={styles.katLabel} numberOfLines={2}>{k.label}</Text>
+                  {k.istSystem ? <StatusPill label="System" /> : null}
                 </View>
-              ) : (
-                <TouchableOpacity style={styles.katRow} onPress={() => openEdit(k)} activeOpacity={0.8}>
-                  <Text style={styles.katEmoji}>{k.emoji}</Text>
-                  <View style={{ flex: 1 }}>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                      <Text style={styles.katLabel}>{k.label}</Text>
-                      {k.istSystem && <Text style={styles.systemBadge}>automatisch</Text>}
-                    </View>
-                    {k.beschreibung && <Text style={styles.katBeschreibung} numberOfLines={2}>{k.beschreibung}</Text>}
-                  </View>
-                  <Text style={styles.katBetrag}>{k.betrag.toLocaleString("de-DE", { minimumFractionDigits: 2 })} €</Text>
-                  {!k.istSystem && (
-                    <TouchableOpacity onPress={() => handleDelete(k)} style={{ padding: 4 }}>
-                      <Ionicons name="trash-outline" size={18} color={c.danger} />
-                    </TouchableOpacity>
-                  )}
-                </TouchableOpacity>
-              )}
-            </View>
+                {k.beschreibung || frei ? (
+                  <Text style={styles.katSub} numberOfLines={2}>{k.beschreibung || "Betrag beim Erfassen frei wählbar"}</Text>
+                ) : null}
+              </View>
+              <Text style={[styles.betrag, frei && styles.betragFrei]} maxFontSizeMultiplier={MAX_FONT_SCALE}>
+                {frei ? "frei" : euro(k.betrag)}
+              </Text>
+            </Card>
+          );
+        })}
+      </FormSection>
+
+      {ausSpielen.length > 0 ? (
+        <FormSection title="Aus Spielen (automatisch)">
+          {ausSpielen.map(({ kat, spiel }) => (
+            <Card
+              key={kat.id}
+              onPress={spiel ? () => router.push(`/spiel/${spiel.id}`) : undefined}
+              accessibilityLabel={`${spiel ? `${spiel.name}, ` : ""}${kat.label}, ${euro(kat.betrag)}, automatisch. Im Spiel bearbeiten`}
+              style={styles.kat}
+            >
+              <IconSquircle emoji={spiel?.emoji ?? kat.emoji} ton="mustard" size={48} />
+              <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
+                <Text style={styles.katLabel} numberOfLines={2}>{spiel ? `${spiel.name} · ${kat.label}` : kat.label}</Text>
+                <View style={styles.titelReihe}>
+                  <StatusPill label="automatisch" ton="blue" />
+                  {spiel ? <Text style={styles.link}>im Spiel</Text> : null}
+                </View>
+              </View>
+              <Text style={styles.betrag} maxFontSizeMultiplier={MAX_FONT_SCALE}>{euro(kat.betrag)}</Text>
+              {spiel ? <Ionicons name="chevron-forward" size={18} color={c.textMuted} /> : null}
+            </Card>
           ))}
+        </FormSection>
+      ) : null}
 
-          {showAddForm ? (
-            <View style={styles.card}>
-              <Text style={styles.addCardTitle}>Neue Kategorie</Text>
-              <View style={styles.editRow}>
-                <TextInput
-                  style={[styles.input, { width: 48, textAlign: "center" }]}
-                  value={addForm.emoji}
-                  onChangeText={(t) => setAddForm((f) => ({ ...f, emoji: t }))}
-                  placeholder="💰"
-                />
-                <TextInput
-                  style={[styles.input, { flex: 1 }]}
-                  value={addForm.label}
-                  onChangeText={(t) => setAddForm((f) => ({ ...f, label: t }))}
-                  placeholder="Bezeichnung"
-                  placeholderTextColor={c.textLight}
-                  autoFocus
-                />
-              </View>
-              <TextInput
-                style={styles.input}
-                value={addForm.betrag}
-                onChangeText={(t) => setAddForm((f) => ({ ...f, betrag: t }))}
-                placeholder="Betrag in €"
-                placeholderTextColor={c.textLight}
-                keyboardType="decimal-pad"
-              />
-              <TextInput
-                style={styles.input}
-                value={addForm.beschreibung}
-                onChangeText={(t) => setAddForm((f) => ({ ...f, beschreibung: t }))}
-                placeholder="Beschreibung (optional)"
-                placeholderTextColor={c.textLight}
-              />
-              <View style={styles.editActions}>
-                <TouchableOpacity onPress={() => { setShowAddForm(false); setAddForm(leereForm()); }} style={styles.editCancelBtn}>
-                  <Text style={styles.editCancelText}>Abbrechen</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => guard(handleAdd)} style={styles.editSaveBtn}>
-                  <Text style={styles.editSaveText}>Anlegen</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          ) : (
-            <TouchableOpacity style={styles.addBtn} onPress={() => setShowAddForm(true)} activeOpacity={0.85}>
-              <Ionicons name="add" size={20} color={c.onAccent} />
-              <Text style={styles.addBtnText}>Neue Kategorie</Text>
-            </TouchableOpacity>
-          )}
-
-          {vorlagenOffen.length > 0 && (
-            <>
-              <Text style={styles.sectionTitle}>Vorlagen</Text>
-              <View style={styles.infoBox}>
-                <Ionicons name="information-circle-outline" size={18} color={c.blue} />
-                <Text style={styles.infoBoxText}>
-                  Gängige Regeln zum Ein-Klick-Übernehmen — passt danach jederzeit Betrag & Text an.
-                </Text>
-              </View>
-              {vorlagenOffen.map((v) => (
-                <View key={v.label} style={styles.vorlageRow}>
-                  <Text style={styles.katEmoji}>{v.emoji}</Text>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.katLabel}>{v.label}</Text>
-                    {v.beschreibung && <Text style={styles.katBeschreibung} numberOfLines={2}>{v.beschreibung}</Text>}
+      {vorlagenOffen.length > 0 ? (
+        <FormSection title="Vorlagen">
+          <ListGroup>
+            {vorlagenOffen.map((v) => (
+              <ListRow
+                key={v.label}
+                title={v.label}
+                subtitle={v.beschreibung}
+                right={
+                  <View style={styles.vorlageRechts}>
+                    <Text style={styles.vorlageBetrag}>{euro(v.betrag)}</Text>
+                    <PressableScale onPress={() => guard(() => handleVorlage(v))} style={styles.plus} accessibilityLabel={`Vorlage ${v.label} übernehmen`}>
+                      <Ionicons name="add" size={22} color={c.blue} />
+                    </PressableScale>
                   </View>
-                  <TouchableOpacity onPress={() => guard(() => handleVorlageHinzufuegen(v))} style={styles.vorlageAddBtn}>
-                    <Ionicons name="add" size={18} color={c.blue} />
-                  </TouchableOpacity>
-                </View>
-              ))}
-            </>
-          )}
+                }
+              />
+            ))}
+          </ListGroup>
+        </FormSection>
+      ) : null}
 
-        </ScrollView>
-        )}
-      </SafeAreaView>
-    </KeyboardAvoidingView>
+      <KategorieSheet
+        visible={sheet !== undefined}
+        kategorie={sheet ?? null}
+        onClose={() => setSheet(undefined)}
+        onSave={handleSave}
+        onDelete={handleDelete}
+      />
+    </Screen>
   );
 }
 
-const makeStyles = (c: ThemeColors) => StyleSheet.create({
-  safe: { flex: 1, backgroundColor: c.background },
-  content: { padding: 20, paddingBottom: 48 },
-
-  header: {
-    flexDirection: "row", alignItems: "center", gap: 12,
-    backgroundColor: c.cardAlt, borderRadius: 20,
-    padding: 16, marginBottom: 16, ...SHADOWS.card,
-    borderWidth: 1, borderColor: c.border,
-  },
-  headerTexts: { flex: 1 },
-  headerTitle: { fontSize: 18, fontFamily: FONT.w800, color: c.textDark },
-  headerSub: { fontFamily: FONT.w400, fontSize: 12, color: c.textMuted, marginTop: 2 },
-
-  sectionTitle: { fontSize: 15, fontFamily: FONT.w800, color: c.textDark, marginTop: 12, marginBottom: 8 },
-
-  infoBox: {
-    flexDirection: "row", gap: 8, backgroundColor: c.blue + "0F",
-    borderRadius: 12, padding: 12, marginBottom: 12,
-  },
-  infoBoxText: { fontFamily: FONT.w400, flex: 1, fontSize: 12, color: c.textMuted, lineHeight: 17 },
-
-  card: {
-    backgroundColor: c.card, borderRadius: 16, padding: 14, marginBottom: 10,
-    borderWidth: 1, borderColor: c.border, ...SHADOWS.light,
-  },
-  katRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-  katEmoji: { fontFamily: FONT.w400, fontSize: 22, width: 30, textAlign: "center" },
-  katLabel: { fontSize: 14, fontFamily: FONT.w700, color: c.textDark },
-  systemBadge: {
-    fontSize: 10, fontFamily: FONT.w700, color: c.textLight,
-    backgroundColor: c.border, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2,
-  },
-  katBeschreibung: { fontFamily: FONT.w400, fontSize: 12, color: c.textMuted, marginTop: 2 },
-  katBetrag: { fontSize: 14, fontFamily: FONT.w800, color: c.danger },
-
-  input: { fontFamily: FONT.w400, borderWidth: 1, borderColor: c.border, borderRadius: 10,
-    paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: c.textDark,
-    marginBottom: 8, backgroundColor: c.background,
-  },
-  editRow: { flexDirection: "row", gap: 8, marginBottom: 8 },
-  editActions: { flexDirection: "row", justifyContent: "flex-end", gap: 10, marginTop: 4 },
-  editCancelBtn: { paddingVertical: 8, paddingHorizontal: 12 },
-  editCancelText: { color: c.textMuted, fontFamily: FONT.w600, fontSize: 13 },
-  editSaveBtn: { backgroundColor: c.blue, borderRadius: 10, paddingVertical: 8, paddingHorizontal: 16 },
-  editSaveText: { color: c.onAccent, fontFamily: FONT.w700, fontSize: 13 },
-
-  addCardTitle: { fontSize: 14, fontFamily: FONT.w800, color: c.textDark, marginBottom: 10 },
-  addBtn: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-    backgroundColor: c.blue, borderRadius: 16, paddingVertical: 16, marginTop: 4, marginBottom: 8,
-  },
-  addBtnText: { color: c.onAccent, fontSize: 15, fontFamily: FONT.w700 },
-
-  vorlageRow: {
-    flexDirection: "row", alignItems: "center", gap: 12,
-    backgroundColor: c.card, borderRadius: 14, padding: 12, marginBottom: 8,
-    borderWidth: 1, borderColor: c.border,
-  },
-  vorlageAddBtn: {
-    width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center",
-    backgroundColor: c.blue + "18",
-  },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    info: {
+      flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: c.blueBg,
+      borderRadius: RADIUS.md, paddingHorizontal: 14, paddingVertical: 10,
+    },
+    infoText: { ...TYPE.caption, fontSize: 13, color: c.blue, flex: 1 },
+    leer: { ...TYPE.body, fontSize: 14, color: c.textMuted, paddingHorizontal: 4 },
+    kat: { flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 14 },
+    titelReihe: { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" },
+    katLabel: { fontFamily: FONT.w800, fontSize: 16, color: c.textDark, flexShrink: 1 },
+    katSub: { ...TYPE.caption, fontSize: 13, color: c.textMuted },
+    betrag: { ...TYPE.num, fontSize: 24, color: c.textDark },
+    betragFrei: { color: c.textMuted },
+    link: { fontFamily: FONT.w700, fontSize: 13, color: c.blue },
+    vorlageRechts: { flexDirection: "row", alignItems: "center", gap: 10 },
+    vorlageBetrag: { fontFamily: FONT.w700, fontSize: 15, color: c.textMid },
+    plus: { width: 44, height: 44, borderRadius: 22, backgroundColor: c.blueBg, alignItems: "center", justifyContent: "center" },
+  });

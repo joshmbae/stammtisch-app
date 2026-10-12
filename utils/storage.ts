@@ -524,22 +524,23 @@ export async function addEreignisTyp(
   entry: Omit<SpielEreignisTyp, "id" | "spielId" | "strafKategorie">
 ): Promise<SpielEreignisTyp> {
   const typ: SpielEreignisTyp = { ...entry, id: nextId(), spielId };
-  let strafKategorieId: string | undefined;
-  if (entry.strafBetrag !== undefined) {
-    const kat = await addSpielEreignisStrafKategorie(typ.id, typ.label, typ.emoji, entry.strafBetrag);
-    strafKategorieId = kat.id;
-  }
+  // Erst den Typ, dann die Kategorie: die Kategorie verweist per Fremdschlüssel
+  // (spiel_ereignis_typ_id) auf ihn und ließe sich vorher nicht anlegen.
   const { error } = await supabase.from("spiel_ereignis_typen").insert({
     id: typ.id,
     spiel_id: spielId,
     label: typ.label,
     emoji: typ.emoji ?? null,
     reihenfolge: typ.reihenfolge,
-    straf_kategorie: strafKategorieId ?? null,
+    straf_kategorie: null,
     straf_betrag: typ.strafBetrag ?? null,
   });
   if (error) throw error;
-  return { ...typ, strafKategorie: strafKategorieId };
+  if (entry.strafBetrag === undefined) return typ;
+  const kat = await addSpielEreignisStrafKategorie(typ.id, typ.label, typ.emoji, entry.strafBetrag);
+  const { error: linkError } = await supabase.from("spiel_ereignis_typen").update({ straf_kategorie: kat.id }).eq("id", typ.id);
+  if (linkError) throw linkError;
+  return { ...typ, strafKategorie: kat.id };
 }
 
 export async function updateEreignisTyp(id: string, partial: Partial<SpielEreignisTyp>): Promise<void> {
