@@ -61,19 +61,26 @@ export function AnwesendListe({ abend, mitglieder, start, onStrafe }: {
     { key: "abgesagt", titel: "Abgesagt", leute: mitglieder.filter((m) => status(m) === "abgesagt") },
   ];
 
-  function info(m: MemberProfile): { text: string; ton: "spaet" | "leise" } | null {
+  /** Zeile: kleine Zusatzzeile unter dem Namen und der Knopf rechts, der sagt, was Antippen tut. */
+  function zeile(m: MemberProfile): { sub?: string; knopf: { label: string; icon: "time-outline" | "checkmark"; ton: "neutral" | "spaet" | "da" } } {
     const s = status(m);
     if (s === "dabei") {
       const min = spaetMinuten(m.id);
-      if (min !== null) {
-        const g = spaetGrund(m.id);
-        return { text: `+${min} Min.${g ? ` · ${g}` : ""}`, ton: "spaet" };
-      }
-      return hatSpaetStrafe(m.id) ? { text: "zu spät", ton: "spaet" } : null;
+      if (min !== null) return { sub: spaetGrund(m.id), knopf: { label: `+${min} Min.`, icon: "time-outline", ton: "spaet" } };
+      if (hatSpaetStrafe(m.id)) return { knopf: { label: "zu spät", icon: "time-outline", ton: "spaet" } };
+      return { knopf: { label: "zu spät?", icon: "time-outline", ton: "neutral" } };
     }
-    if (s === "abgesagt") return { text: t.absageGruende?.[m.id] || "abgesagt", ton: "leise" };
-    return { text: "ohne Absage", ton: "leise" };
+    return {
+      sub: s === "abgesagt" ? t.absageGruende?.[m.id] || "abgesagt" : "ohne Absage",
+      knopf: { label: "doch da", icon: "checkmark", ton: "da" },
+    };
   }
+
+  const knopfFarben = {
+    neutral: { bg: c.cardAlt, fg: c.textMid },
+    spaet: { bg: c.coralSoft, fg: c.coralText },
+    da: { bg: c.greenSoft, fg: c.greenText },
+  };
 
   function oeffnen(m: MemberProfile) {
     haptik("leicht");
@@ -171,7 +178,9 @@ export function AnwesendListe({ abend, mitglieder, start, onStrafe }: {
           <Text style={styles.label}>{`${g.titel} · ${g.leute.length}`}</Text>
           <Card style={{ paddingVertical: 2, paddingHorizontal: 12 }}>
             {g.leute.map((m, i) => {
-              const inf = info(m);
+              const z = zeile(m);
+              const f = knopfFarben[z.knopf.ton];
+              const dabei = g.key === "dabei";
               return (
                 <PressableScale
                   key={m.id}
@@ -179,18 +188,30 @@ export function AnwesendListe({ abend, mitglieder, start, onStrafe }: {
                   scaleTo={0.98}
                   style={[styles.zeile, i > 0 && styles.trenner]}
                   accessibilityRole="button"
-                  accessibilityLabel={`${displayName(m)}${inf ? `, ${inf.text}` : ""}`}
+                  accessibilityLabel={`${displayName(m)}${z.sub ? `, ${z.sub}` : ""}`}
                   accessibilityHint="Öffnet Verspätung und Anwesenheit"
                 >
                   <Avatar
                     name={displayName(m)} color={m.avatarColor} photoUri={m.photoUri} size={30}
-                    fuehrt={g.key === "dabei" ? fuehrende.get(m.id) : undefined} absent={g.key !== "dabei"}
+                    fuehrt={dabei ? fuehrende.get(m.id) : undefined} absent={!dabei}
                   />
-                  <Text style={[styles.name, g.key !== "dabei" && { color: c.textMuted }]} numberOfLines={1}>{displayName(m)}</Text>
-                  {inf ? (
-                    <Text style={[styles.info, { color: inf.ton === "spaet" ? c.coralText : c.textMuted }]} numberOfLines={1}>{inf.text}</Text>
-                  ) : <View style={{ flex: 1 }} />}
-                  <Ionicons name="chevron-forward" size={16} color={c.textLight} />
+                  <View style={styles.text}>
+                    <Text style={[styles.name, !dabei && { color: c.textMuted }]} numberOfLines={1}>{displayName(m)}</Text>
+                    {z.sub ? <Text style={styles.sub} numberOfLines={1}>{z.sub}</Text> : null}
+                  </View>
+                  <PressableScale
+                    onPress={() => (dabei ? oeffnen(m) : anwesenheit(m, true))}
+                    scaleTo={0.94}
+                    hitSlop={8}
+                    style={[styles.knopf, { backgroundColor: f.bg }]}
+                    accessibilityRole="button"
+                    accessibilityLabel={dabei
+                      ? `${displayName(m)}: ${z.knopf.ton === "neutral" ? "Verspätung eintragen" : `Verspätung ${z.knopf.label} ändern`}`
+                      : `${displayName(m)} ist doch da`}
+                  >
+                    <Ionicons name={z.knopf.icon} size={14} color={f.fg} />
+                    <Text style={[styles.knopfText, { color: f.fg }]}>{z.knopf.label}</Text>
+                  </PressableScale>
                 </PressableScale>
               );
             })}
@@ -278,8 +299,11 @@ const makeStyles = (c: ThemeColors) =>
     label: { ...TYPE.label, color: c.textMuted },
     zeile: { flexDirection: "row", alignItems: "center", gap: 10, minHeight: 48 },
     trenner: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
-    name: { fontFamily: FONT.w600, fontSize: 15, color: c.textDark, flexShrink: 0, maxWidth: "45%" },
-    info: { flex: 1, fontFamily: FONT.w500, fontSize: 13, textAlign: "right" },
+    text: { flex: 1, minWidth: 0 },
+    name: { fontFamily: FONT.w600, fontSize: 15, color: c.textDark },
+    sub: { fontFamily: FONT.w400, fontSize: 12, color: c.textMuted, marginTop: 1 },
+    knopf: { flexDirection: "row", alignItems: "center", gap: 4, height: 30, paddingHorizontal: 10, borderRadius: RADIUS.pill },
+    knopfText: { fontFamily: FONT.w600, fontSize: 13, fontVariant: ["tabular-nums"] },
 
     gespeichert: {
       flexDirection: "row", alignItems: "center", gap: 10, minHeight: 44, paddingLeft: 14, paddingRight: 12,
