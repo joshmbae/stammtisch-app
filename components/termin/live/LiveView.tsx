@@ -10,11 +10,10 @@ import { Button, SegmentedTabs, TabItem } from "../../ui";
 import { AnwesendGrid } from "./AnwesendGrid";
 import { StrafenErfassen, euroKurz } from "./StrafenErfassen";
 import { SpielZaehler } from "./SpielZaehler";
-import { Verlauf } from "./Verlauf";
 
 type Bereich = "anwesend" | "strafen" | "spiel";
 
-/** Während des Abends: wer da ist, Strafen, Spiel – und darunter der Verlauf zum Rückgängigmachen. */
+/** Während des Abends: wer da ist, Strafen, Spiel – jeder Bereich mit eigenem Verlauf darunter. */
 export function LiveView({ abend, start, now }: { abend: TerminAbend; start: Date | null; now: Date }) {
   const t = abend.termin!;
   const [bereich, setBereich] = useState<Bereich>("anwesend");
@@ -45,7 +44,6 @@ export function LiveView({ abend, start, now }: { abend: TerminAbend; start: Dat
         /> : null}
       {aktiv === "strafen" ? <StrafenErfassen abend={abend} mitglieder={fuerStrafen} vorauswahl={strafeFuer} /> : null}
       {aktiv === "spiel" ? <SpielZaehler abend={abend} mitglieder={da} /> : null}
-      <Verlauf abend={abend} />
     </>
   );
 }

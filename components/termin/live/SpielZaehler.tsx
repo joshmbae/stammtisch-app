@@ -6,15 +6,17 @@ import { useColors, useThemedStyles } from "../../../contexts/ThemeContext";
 import { TerminAbend } from "../../../utils/useTerminAbend";
 import { displayName } from "../../../utils/format";
 import { showAlert } from "../../../utils/alert";
-import { Avatar, Card, CountBurst, PressableScale, Ton, haptik } from "../../ui";
+import { Avatar, Card, CountBurst, Emoji, PressableScale, Ton, haptik } from "../../ui";
+import { formatUhrzeit } from "../../../utils/date";
 import { euroKurz } from "./StrafenErfassen";
+import { VerlaufListe } from "./VerlaufListe";
 
 const TOENE: Ton[] = ["mustard", "coral", "green", "blue"];
 
 /**
  * Eine Zeile pro Person am Tisch, ein Zähl-Knopf pro Ereignis des Spiels
  * (meist zwei, manchmal drei oder mehr). Bei 0 blass, ab dem ersten Treffer
- * kräftig. Rückgängig über den Verlauf.
+ * kräftig. Darunter der Verlauf des Spiels, dort lässt sich zurücknehmen.
  */
 export function SpielZaehler({ abend, mitglieder }: { abend: TerminAbend; mitglieder: MemberProfile[] }) {
   const c = useColors();
@@ -56,13 +58,34 @@ export function SpielZaehler({ abend, mitglieder }: { abend: TerminAbend; mitgli
   // Bei mehr Ereignissen schmalere Knöpfe, damit Name und Zähler auf jedes Handy passen.
   const breite = typen.length <= 2 ? 72 : typen.length === 3 ? 58 : 48;
   const mitStrafe = typen.filter((t) => (t.strafBetrag ?? 0) > 0);
+  const strafen = Object.values(abend.strafMap).flat();
+  const verlauf = Object.values(abend.spielLogMap).flat()
+    .filter((l) => typen.some((t) => t.id === l.ereignisTypId))
+    .sort((a, b) => b.loggedAt.localeCompare(a.loggedAt))
+    .map((l) => {
+      const typ = typen.find((t) => t.id === l.ereignisTypId)!;
+      const m = abend.members.find((x) => x.id === l.memberId);
+      const strafe = l.strafLogId ? strafen.find((s) => s.id === l.strafLogId) : undefined;
+      return {
+        id: l.id,
+        zeit: formatUhrzeit(l.loggedAt),
+        symbol: typ.emoji ? <Emoji size={16}>{typ.emoji}</Emoji> : undefined,
+        wer: m ? displayName(m) : "?",
+        was: typ.label,
+        rechts: strafe ? euroKurz(strafe.betrag) : undefined,
+        loeschen: () => abend.spielEreignisLöschen(l.memberId, l.id),
+      };
+    });
 
   return (
     <View style={{ gap: 6 }}>
       <View style={styles.kopf} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
         <View style={{ flex: 1 }} />
         {typen.map((t) => (
-          <Text key={t.id} style={[styles.spalte, { width: breite }]} numberOfLines={2}>{t.label}</Text>
+          <View key={t.id} style={[styles.spalte, { width: breite }]}>
+            {t.emoji ? <Emoji size={16}>{t.emoji}</Emoji> : null}
+            <Text style={styles.spalteText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{t.label}</Text>
+          </View>
         ))}
       </View>
       <Card style={{ paddingVertical: 2, paddingHorizontal: 12 }}>
@@ -91,8 +114,9 @@ export function SpielZaehler({ abend, mitglieder }: { abend: TerminAbend; mitgli
       ))}
       </Card>
       {mitStrafe.length > 0 ? (
-        <Text style={styles.fuss}>{mitStrafe.map((t) => `${t.label} kostet ${euroKurz(t.strafBetrag!)}`).join(" · ")}</Text>
+        <Text style={styles.fuss}>{mitStrafe.map((t) => `${t.emoji ? `${t.emoji} ` : ""}${t.label} ${euroKurz(t.strafBetrag!)}`).join(" · ")}</Text>
       ) : null}
+      <VerlaufListe titel="Verlauf" eintraege={verlauf} />
     </View>
   );
 }
@@ -102,11 +126,12 @@ const makeStyles = (c: ThemeColors) =>
     leer: { ...TYPE.body, fontSize: 14, color: c.textMuted, paddingVertical: 8 },
     // Gleiche Einrückung wie die Karte (12), damit die Überschriften über ihren Knöpfen stehen.
     kopf: { flexDirection: "row", alignItems: "flex-end", gap: 6, paddingHorizontal: 12 },
-    spalte: { fontFamily: FONT.w600, fontSize: 11, lineHeight: 13, color: c.textMuted, textAlign: "center" },
+    spalte: { alignItems: "center", gap: 1 },
+    spalteText: { fontFamily: FONT.w500, fontSize: 10, lineHeight: 12, color: c.textMuted, textAlign: "center" },
     zeile: { flexDirection: "row", alignItems: "center", gap: 6, minHeight: 50, paddingVertical: 6 },
     trenner: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
     name: { flex: 1, fontFamily: FONT.w600, fontSize: 15, color: c.textDark, marginLeft: 4 },
     knopf: { height: 38, borderRadius: RADIUS.md, alignItems: "center", justifyContent: "center", overflow: "visible" },
     zahl: { ...TYPE.num, fontSize: 18 },
-    fuss: { ...TYPE.caption, fontSize: 13, color: c.textMuted, textAlign: "center", marginTop: 4 },
+    fuss: { ...TYPE.caption, fontSize: 12, color: c.textMuted, textAlign: "center", marginTop: 2 },
   });

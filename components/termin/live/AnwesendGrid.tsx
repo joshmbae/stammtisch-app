@@ -10,6 +10,8 @@ import { displayName } from "../../../utils/format";
 import { useFuehrende } from "../../../utils/useFuehrende";
 import { Avatar, Emoji, PressableScale, haptik } from "../../ui";
 import { SYMBOL } from "../../../constants/symbole";
+import { formatUhrzeit } from "../../../utils/date";
+import { VerlaufListe } from "./VerlaufListe";
 
 /** Ab wie vielen Minuten nach Beginn ein Eintreffen als „zu spät" gilt. */
 const SPAET_AB_MIN = 10;
@@ -27,6 +29,7 @@ type SpaetAbfrage = { memberId: string; minuten: number; grund: string; bestehen
  * Minuten und Grund – ob das eine Strafe kostet, regelt jeder Stammtisch
  * selbst, daher danach nur der Sprung zu den Strafen (`onStrafe`).
  * Wer abgesagt hat, steht nicht im Raster, sondern klein darunter.
+ * Darunter der Verlauf: wer kam wann (Ankunftszeit beim Einchecken).
  */
 export function AnwesendGrid({ abend, mitglieder, start, now, onStrafe }: {
   abend: TerminAbend; mitglieder: MemberProfile[]; start: Date | null; now: Date;
@@ -102,7 +105,27 @@ export function AnwesendGrid({ abend, mitglieder, start, now, onStrafe }: {
     if (!s.bestehend && onStrafe) setGespeichert({ memberId: s.memberId, minuten: s.minuten });
   }
 
+  async function spaetEntfernen() {
+    if (!spaet) return;
+    const s = spaet;
+    setSpaet(null);
+    haptik("leicht");
+    for (const log of abend.verspätungMap[s.memberId] ?? []) await abend.verspätungLöschen(s.memberId, log.id);
+  }
+
   const spaetMember = spaet ? mitglieder.find((m) => m.id === spaet.memberId) : undefined;
+
+  // Verlauf: wer kam wann. Ohne Uhrzeit sind, wer vorab zugesagt hat (und nicht neu eingecheckt wurde) sowie ältere Einträge.
+  const zeiten = t.ankunftZeiten ?? {};
+  const anwesende = mitglieder.filter(istDa);
+  const mitZeit = anwesende.filter((m) => zeiten[m.id]).sort((a, b) => zeiten[a.id].localeCompare(zeiten[b.id]));
+  const ohneZeit = anwesende.filter((m) => !zeiten[m.id]);
+  const spaetText = (memberId: string) => {
+    const minuten = spaetMinuten(memberId);
+    if (minuten === null) return undefined;
+    const grund = (abend.verspätungMap[memberId] ?? []).find((l) => l.grund)?.grund;
+    return `zu spät, +${minuten} Min.${grund ? ` · ${grund}` : ""}`;
+  };
   const gespeichertMember = gespeichert ? mitglieder.find((m) => m.id === gespeichert.memberId) : undefined;
 
   return (
@@ -198,6 +221,11 @@ export function AnwesendGrid({ abend, mitglieder, start, now, onStrafe }: {
             returnKeyType="done"
             accessibilityLabel="Grund für die Verspätung"
           />
+          {spaet.bestehend && spaetMinuten(spaet.memberId) !== null ? (
+            <PressableScale onPress={spaetEntfernen} style={styles.entfernen} hitSlop={6} accessibilityLabel={`Verspätung von ${displayName(spaetMember)} entfernen`}>
+              <Text style={[styles.entfernenText, { color: c.coralText }]}>Verspätung entfernen</Text>
+            </PressableScale>
+          ) : null}
         </Animated.View>
       ) : null}
 
@@ -241,6 +269,21 @@ export function AnwesendGrid({ abend, mitglieder, start, now, onStrafe }: {
       ) : null}
 
       <Text style={styles.tipp}>Lange drücken, um eine Verspätung einzutragen.</Text>
+
+      <VerlaufListe
+        titel="Verlauf"
+        eintraege={mitZeit.map((m) => ({
+          id: m.id,
+          zeit: formatUhrzeit(zeiten[m.id]),
+          wer: displayName(m),
+          was: spaetText(m.id) ?? "ist da",
+        }))}
+        fuss={ohneZeit.length > 0 ? (
+          <Text style={[styles.ohneZeit, mitZeit.length > 0 && styles.ohneZeitTrenner]}>
+            {`Ohne Ankunftszeit: ${ohneZeit.map((m) => `${displayName(m)}${spaetMinuten(m.id) !== null ? ` (+${spaetMinuten(m.id)} Min.)` : ""}`).join(", ")}`}
+          </Text>
+        ) : undefined}
+      />
     </View>
   );
 }
@@ -296,5 +339,9 @@ const makeStyles = (c: ThemeColors) =>
       borderRadius: RADIUS.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: c.hairline, backgroundColor: c.card,
     },
     abgesagtName: { fontFamily: FONT.w500, fontSize: 13, color: c.textMuted },
+    entfernen: { alignSelf: "flex-start", paddingVertical: 2 },
+    entfernenText: { fontFamily: FONT.w600, fontSize: 13 },
+    ohneZeit: { fontFamily: FONT.w400, fontSize: 13, lineHeight: 18, color: c.textMuted, paddingVertical: 10 },
+    ohneZeitTrenner: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
     tipp: { fontFamily: FONT.w400, fontSize: 12, color: c.textMuted, paddingHorizontal: 4 },
   });

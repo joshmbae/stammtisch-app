@@ -38,6 +38,7 @@ export interface StammtischTermin {
   anwesenheit?: string[];                   // memberId-Liste der Anwesenden (Zusagen)
   absagen?: string[];                        // memberId-Liste der Absagen
   absageGruende?: Record<string, string>;   // memberId -> Begründung, nur für Mitglieder in absagen
+  ankunftZeiten?: Record<string, string>;   // memberId -> ISO-Zeit, gesetzt beim Einchecken in der Live-Ansicht
   bildUrl?: string;                          // optionales Titelbild für diesen Termin
 }
 

@@ -6,13 +6,15 @@ import { FONT, RADIUS, TYPE, ThemeColors } from "../../../constants/design";
 import { useColors, useThemedStyles } from "../../../contexts/ThemeContext";
 import { TerminAbend } from "../../../utils/useTerminAbend";
 import { displayName, formatEuro } from "../../../utils/format";
-import { Button, Card, Chip, KategorieIcon, PressableScale, haptik } from "../../ui";
+import { Button, Chip, KategorieIcon, PressableScale, haptik } from "../../ui";
+import { formatUhrzeit } from "../../../utils/date";
+import { VerlaufListe } from "./VerlaufListe";
 
 export const euroKurz = (n: number) => `${formatEuro(n).replace(",00", "")} €`;
 
 /**
  * Strafe in zwei Griffen: wer, wofür, eintragen. Bei Kategorien ohne festen
- * Betrag (Sonstiges) kommt ein Betragsfeld dazu. Darunter die Strafen des Abends.
+ * Betrag (Sonstiges) kommt ein Betragsfeld dazu. Darunter der Verlauf der Strafen des Abends.
  */
 export function StrafenErfassen({ abend, mitglieder, vorauswahl }: {
   abend: TerminAbend; mitglieder: MemberProfile[];
@@ -126,27 +128,23 @@ export function StrafenErfassen({ abend, mitglieder, vorauswahl }: {
         accessibilityLabel={bereit ? `Strafe eintragen: ${knopfText}` : "Erst wählen, wer und wofür"}
       />
 
-      {heute.length > 0 ? (
-        <>
-          <Text style={[styles.label, { marginTop: 8 }]}>{`Heute · ${heute.length}`}</Text>
-          <Card style={{ paddingVertical: 4 }}>
-            {heute.map((l, i) => {
-              const k = abend.strafKategorien.find((x) => x.id === l.kategorie);
-              const m = abend.members.find((x) => x.id === l.memberId);
-              return (
-                <View key={l.id} style={[styles.zeile, i > 0 && styles.trenner]}>
-                  <KategorieIcon kat={k} size={28} />
-                  <Text style={styles.zeileText} numberOfLines={1}>
-                    <Text style={styles.zeileName}>{m ? displayName(m) : "?"}</Text>
-                    {` · ${l.notiz && k?.systemKey === "sonstiges" ? l.notiz : k?.label ?? "Strafe"}`}
-                  </Text>
-                  <Text style={[styles.zeileBetrag, l.beglichen && styles.bezahlt]}>{euroKurz(l.betrag)}</Text>
-                </View>
-              );
-            })}
-          </Card>
-        </>
-      ) : null}
+      <VerlaufListe
+        titel="Verlauf"
+        eintraege={heute.map((l) => {
+          const k = abend.strafKategorien.find((x) => x.id === l.kategorie);
+          const m = abend.members.find((x) => x.id === l.memberId);
+          const label = l.notiz && k?.systemKey === "sonstiges" ? l.notiz : k?.label ?? "Strafe";
+          return {
+            id: l.id,
+            zeit: formatUhrzeit(l.loggedAt),
+            symbol: <KategorieIcon kat={k} size={24} />,
+            wer: m ? displayName(m) : "?",
+            was: l.beglichen ? `${label} · bezahlt` : label,
+            rechts: euroKurz(l.betrag),
+            loeschen: () => abend.strafeLöschen(l.memberId, l.id),
+          };
+        })}
+      />
     </View>
   );
 }
@@ -170,10 +168,4 @@ const makeStyles = (c: ThemeColors) =>
       minHeight: 44, borderRadius: RADIUS.md, paddingHorizontal: 14, backgroundColor: c.card,
       borderWidth: StyleSheet.hairlineWidth, borderColor: c.hairline, fontFamily: FONT.w600, fontSize: 15, color: c.textDark,
     },
-    zeile: { flexDirection: "row", alignItems: "center", gap: 10, minHeight: 46 },
-    trenner: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
-    zeileText: { flex: 1, fontFamily: FONT.w400, fontSize: 14, color: c.textMid },
-    zeileName: { fontFamily: FONT.w600, color: c.textDark },
-    zeileBetrag: { ...TYPE.num, fontSize: 15, color: c.textDark },
-    bezahlt: { color: c.textMuted, textDecorationLine: "line-through" },
   });
