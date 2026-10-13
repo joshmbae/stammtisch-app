@@ -9,7 +9,7 @@ import { AbendStats, meisteBei } from "../../utils/abendStats";
 import { HomeHero, terminEnde, terminStart } from "../../utils/terminPhase";
 import { formatWochentagDatum } from "../../utils/date";
 import { displayName, formatEuro } from "../../utils/format";
-import { AvatarStack, Button, Emoji, FlipCountdown, IconSquircle, LiveTimer, PressableScale, PulseDot, Scrim } from "../ui";
+import { Avatar, AvatarStack, Button, Emoji, FlipCountdown, IconSquircle, LiveTimer, PressableScale, PulseDot, Scrim } from "../ui";
 import { SYMBOL } from "../../constants/symbole";
 
 export type RsvpStatus = "ja" | "nein" | null;
@@ -89,6 +89,13 @@ function useHeroFlaeche(art: "blau" | "live" | "senf"): ViewStyle {
   return { backgroundColor: fl.bg, borderColor: fl.edge, borderWidth: 1, ...glow(fl.glow, c, 24) };
 }
 
+/**
+ * Zuletzt gemessene Höhe der „Nächster“-Karte, damit „Letzter“ genauso hoch
+ * ist und beim Umschalten nichts springt. Startwert = gemessene Höhe bei
+ * normaler Schriftgröße, falls „Nächster“ noch nicht zu sehen war.
+ */
+let vorherHoehe = 260;
+
 const zeitText = (d: Date) => d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
 
 function Vorher({ hero, now, members, stammtischzeit, meinStatus, onRsvp, rsvpBusy, umschalter }: Props) {
@@ -104,7 +111,7 @@ function Vorher({ hero, now, members, stammtischzeit, meinStatus, onRsvp, rsvpBu
   const abgesagt = meinStatus === "nein";
 
   return (
-    <PressableScale onPress={() => oeffne(t.id)} scaleTo={0.99} style={[styles.hero, flaeche]} accessibilityLabel={`Nächster Stammtisch, ${formatWochentagDatum(new Date(`${t.datum}T00:00:00`))}, öffnen`}>
+    <PressableScale onPress={() => oeffne(t.id)} onLayout={(e) => { vorherHoehe = e.nativeEvent.layout.height; }} scaleTo={0.99} style={[styles.hero, flaeche]} accessibilityLabel={`Nächster Stammtisch, ${formatWochentagDatum(new Date(`${t.datum}T00:00:00`))}, öffnen`}>
       <View style={styles.row}>
         <View style={{ flex: 1, minWidth: 0, gap: 6 }}>
           <Text style={[styles.label, { color: c.heroBlueSub }]}>Nächster Stammtisch</Text>
@@ -204,8 +211,9 @@ function Live({ hero, now, members, stammtischzeit, spielName }: Props) {
 
 /**
  * Rückblick auf den letzten Abend. Mit Foto füllt es die Karte (dunkler
- * Verlauf für die Lesbarkeit), sonst die Senf-Fläche. Darunter: wer da war
- * und drei Kacheln – Strafen des Abends und wer beim Spiel am meisten hatte.
+ * Verlauf für die Lesbarkeit), sonst die Senf-Fläche. Wer da war, darunter
+ * ein Glas-Feld: Strafen des Abends und wer beim Spiel vorne lag. Antippen
+ * öffnet den Danach-Bereich; gleich hoch wie die „Nächster“-Karte.
  */
 function Danach({ hero, now, members, stats, spielTypen, umschalter }: Props) {
   const c = useColors();
@@ -223,70 +231,25 @@ function Danach({ hero, now, members, stats, spielTypen, umschalter }: Props) {
   const dunkel = foto || c.heroStyle === "outline";
   const text = foto ? "#FFFFFF" : c.textDark;
   const leise = foto ? "rgba(255,255,255,0.78)" : c.textMuted;
-  const kachel = foto
-    ? { backgroundColor: "rgba(20,18,16,0.42)", borderColor: "rgba(255,255,255,0.16)" }
+  const glas = foto
+    ? { backgroundColor: "rgba(20,18,16,0.45)", borderColor: "rgba(255,255,255,0.16)" }
     : { backgroundColor: c.heroStyle === "outline" ? c.card : "rgba(255,255,255,0.6)", borderColor: c.hairline };
+  const trenner = foto ? "rgba(255,255,255,0.18)" : c.border;
 
   const spiel = spielTypen
-    .slice(0, 2)
     .map((typ) => ({ typ, wer: meisteBei(stats, typ.id, members) }))
-    .filter((z) => z.wer);
-  const kacheln: { key: string; emoji: string; wert: string; label: string }[] = [
-    { key: "strafen", emoji: SYMBOL.strafe, wert: `${formatEuro(stats.strafenSumme).replace(",00", "")} €`, label: "Strafen" },
-    ...spiel.map(({ typ, wer }) => ({
-      key: typ.id,
-      emoji: typ.emoji ?? "🎲",
-      wert: wer!.members.length === 1 ? displayName(wer!.members[0]) : `${wer!.members.length} gleichauf`,
-      label: `${wer!.anzahl}× ${typ.label}`,
-    })),
-  ];
-
-  const inhalt = (
-    <>
-      <View style={styles.row}>
-        <View style={[styles.datumPill, { backgroundColor: foto ? "rgba(20,18,16,0.42)" : "transparent", paddingHorizontal: foto ? 10 : 0 }]}>
-          <Text style={[styles.label, { color: foto ? "#FFFFFF" : c.mustardText }]} numberOfLines={1}>{`${wann}${formatWochentagDatum(tag)}`}</Text>
-        </View>
-        {umschalter ? <HeroUmschalter {...umschalter} hell={dunkel} /> : null}
-      </View>
-
-      <View style={{ gap: 8 }}>
-        <Text style={[styles.titel, { color: text }, foto && styles.schatten]} maxFontSizeMultiplier={MAX_FONT_SCALE}>{`${stats.da.length} von ${stats.mitglieder.length} am Tisch`}</Text>
-        <View style={[styles.row, { justifyContent: "flex-start" }]}>
-          <AvatarStack members={stats.da.map((m) => ({ id: m.id, name: displayName(m), color: m.avatarColor, photoUri: m.photoUri }))} size={26} max={8} ringColor={foto ? "#141210" : c.mustardSoft} />
-          {stats.fehlten.length > 0 ? (
-            <Text style={[styles.small, { color: leise, flex: 1 }, foto && styles.schatten]} numberOfLines={1}>{`Gefehlt: ${stats.fehlten.map(displayName).join(", ")}`}</Text>
-          ) : null}
-        </View>
-      </View>
-
-      <View style={styles.kachelReihe}>
-        {kacheln.map((k) => (
-          <View key={k.key} style={[styles.kachel, kachel]} accessible accessibilityLabel={`${k.label}: ${k.wert}`}>
-            <View style={{ alignSelf: "flex-start" }}><Emoji size={18}>{k.emoji}</Emoji></View>
-            <Text style={[styles.kachelWert, { color: text }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} maxFontSizeMultiplier={MAX_FONT_SCALE}>{k.wert}</Text>
-            <Text style={[styles.kachelLabel, { color: leise }]} numberOfLines={1}>{k.label}</Text>
-          </View>
-        ))}
-      </View>
-
-      <View style={styles.row}>
-        <Button label="Rückblick" icon="play" variant={foto ? "primary" : "dark"} onPress={() => oeffne(t.id)} style={{ flex: 1 }} />
-        {stats.strafenOffen > 0 ? (
-          <Button label={`${formatEuro(stats.strafenOffen).replace(",00", "")} € offen`} variant="secondary" onPress={() => router.push("/kasse?tab=strafen")} style={{ flex: 1 }} />
-        ) : (
-          <Button label="Alles bezahlt" icon="checkmark" variant="secondary" onPress={() => oeffne(t.id)} style={{ flex: 1 }} />
-        )}
-      </View>
-    </>
-  );
+    .filter((z) => z.wer)
+    .slice(0, 2);
+  const bezahlt = stats.strafenSumme > 0 && stats.strafenOffen === 0;
+  const strafenSub = stats.strafenSumme === 0 ? "keine Strafen" : bezahlt ? "alles bezahlt" : `${formatEuro(stats.strafenOffen).replace(",00", "")} € offen`;
+  const schatten = foto ? styles.schatten : null;
 
   return (
     <PressableScale
       onPress={() => oeffne(t.id)}
       scaleTo={0.99}
-      style={[styles.hero, foto ? styles.heroFoto : flaeche]}
-      accessibilityLabel={`Rückblick auf den Stammtisch am ${formatWochentagDatum(tag)}, öffnen`}
+      style={[styles.hero, foto ? styles.heroFoto : flaeche, { minHeight: vorherHoehe }]}
+      accessibilityLabel={`Rückblick auf den Stammtisch am ${formatWochentagDatum(tag)}: ${stats.da.length} von ${stats.mitglieder.length} waren da, ${formatEuro(stats.strafenSumme)} Euro Strafen. Öffnen`}
     >
       {foto ? (
         <>
@@ -294,7 +257,56 @@ function Danach({ hero, now, members, stats, spielTypen, umschalter }: Props) {
           <Scrim top={0.5} bottom={0.88} />
         </>
       ) : null}
-      {inhalt}
+
+      <View style={styles.row}>
+        <View style={[styles.datumPill, foto ? { backgroundColor: "rgba(20,18,16,0.45)", paddingHorizontal: 10 } : null]}>
+          <Text style={[styles.label, { color: foto ? "#FFFFFF" : c.mustardText }]} numberOfLines={1}>{`${wann}${formatWochentagDatum(tag)}`}</Text>
+        </View>
+        {umschalter ? <HeroUmschalter {...umschalter} hell={dunkel} /> : null}
+      </View>
+
+      <View style={{ gap: 8 }}>
+        <Text style={[styles.titel, { color: text }, schatten]} maxFontSizeMultiplier={MAX_FONT_SCALE}>{`${stats.da.length} von ${stats.mitglieder.length} waren da`}</Text>
+        <View style={[styles.row, { justifyContent: "flex-start" }]}>
+          <AvatarStack members={stats.da.map((m) => ({ id: m.id, name: displayName(m), color: m.avatarColor, photoUri: m.photoUri }))} size={26} max={8} ringColor={foto ? "#141210" : c.mustardSoft} />
+          {stats.fehlten.length > 0 ? (
+            <Text style={[styles.small, { color: leise, flex: 1 }, schatten]} numberOfLines={1}>{`ohne ${stats.fehlten.map(displayName).join(", ")}`}</Text>
+          ) : null}
+        </View>
+      </View>
+
+      <View style={[styles.glas, glas]}>
+        <View style={styles.glasStrafen}>
+          <Text style={[styles.glasLabel, { color: leise }]}>{`${SYMBOL.strafe} Strafen`}</Text>
+          <Text style={[styles.glasBetrag, { color: text }]} maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1}>{`${formatEuro(stats.strafenSumme).replace(",00", "")} €`}</Text>
+          <View style={styles.glasStatus}>
+            {bezahlt ? <Ionicons name="checkmark-circle" size={13} color={foto ? "#9FE8C6" : c.greenText} /> : null}
+            <Text style={[styles.glasSub, { color: bezahlt ? (foto ? "#9FE8C6" : c.greenText) : stats.strafenOffen > 0 ? (foto ? "#FFB4A3" : c.coralText) : leise }]} numberOfLines={1}>{strafenSub}</Text>
+          </View>
+        </View>
+        {spiel.length > 0 ? (
+          <>
+            <View style={[styles.glasTrenner, { backgroundColor: trenner }]} />
+            <View style={styles.glasSpiel}>
+              {spiel.map(({ typ, wer }) => {
+                const erster = wer!.members[0];
+                return (
+                  <View key={typ.id} style={styles.glasZeile}>
+                    <Emoji size={15}>{typ.emoji ?? "🎲"}</Emoji>
+                    <Avatar name={displayName(erster)} color={erster.avatarColor} photoUri={erster.photoUri} size={22} ringColor={foto ? "#141210" : undefined} />
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <Text style={[styles.glasName, { color: text }]} numberOfLines={1}>
+                        {wer!.members.length === 1 ? displayName(erster) : `${displayName(erster)} +${wer!.members.length - 1}`}
+                      </Text>
+                      <Text style={[styles.glasSub, { color: leise }]} numberOfLines={1}>{`${wer!.anzahl}× ${typ.label}`}</Text>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          </>
+        ) : null}
+      </View>
     </PressableScale>
   );
 }
@@ -341,8 +353,14 @@ const makeStyles = (c: ThemeColors) =>
     // Text direkt auf dem Foto: leichter Schatten, damit er auch auf hellen Bildstellen lesbar bleibt.
     schatten: { textShadowColor: "rgba(0,0,0,0.55)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 6 },
     datumPill: { height: 26, borderRadius: 999, justifyContent: "center", flexShrink: 1 },
-    kachelReihe: { flexDirection: "row", gap: 8 },
-    kachel: { flex: 1, minWidth: 0, borderRadius: RADIUS.md, borderWidth: StyleSheet.hairlineWidth, paddingVertical: 10, paddingHorizontal: 10, gap: 2 },
-    kachelWert: { ...TYPE.num, fontSize: 18, marginTop: 4 },
-    kachelLabel: { ...TYPE.caption, fontSize: 11 },
+    glas: { flexDirection: "row", borderRadius: RADIUS.tile, borderWidth: StyleSheet.hairlineWidth, paddingVertical: 12, paddingHorizontal: 14, gap: 12 },
+    glasStrafen: { minWidth: 92, justifyContent: "center" },
+    glasLabel: { fontFamily: FONT.w600, fontSize: 12 },
+    glasBetrag: { ...TYPE.num, fontSize: 26, lineHeight: 30, marginTop: 2 },
+    glasStatus: { flexDirection: "row", alignItems: "center", gap: 4 },
+    glasSub: { fontFamily: FONT.w500, fontSize: 12 },
+    glasTrenner: { width: StyleSheet.hairlineWidth },
+    glasSpiel: { flex: 1, justifyContent: "center", gap: 8 },
+    glasZeile: { flexDirection: "row", alignItems: "center", gap: 8 },
+    glasName: { fontFamily: FONT.w600, fontSize: 14 },
   });
