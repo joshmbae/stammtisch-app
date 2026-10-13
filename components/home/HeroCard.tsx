@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, Text, View, ViewStyle } from "react-native";
+import { Image, StyleSheet, Text, View, ViewStyle } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { MemberProfile, SpielEreignisTyp } from "../../types";
@@ -9,7 +9,7 @@ import { AbendStats, meisteBei } from "../../utils/abendStats";
 import { HomeHero, terminEnde, terminStart } from "../../utils/terminPhase";
 import { formatWochentagDatum } from "../../utils/date";
 import { displayName, formatEuro } from "../../utils/format";
-import { AvatarStack, Button, FlipCountdown, IconSquircle, LiveTimer, PressableScale, PulseDot } from "../ui";
+import { AvatarStack, Button, Emoji, FlipCountdown, IconSquircle, LiveTimer, PressableScale, PulseDot, Scrim } from "../ui";
 import { SYMBOL } from "../../constants/symbole";
 
 export type RsvpStatus = "ja" | "nein" | null;
@@ -202,6 +202,11 @@ function Live({ hero, now, members, stammtischzeit, spielName }: Props) {
   );
 }
 
+/**
+ * Rückblick auf den letzten Abend. Mit Foto füllt es die Karte (dunkler
+ * Verlauf für die Lesbarkeit), sonst die Senf-Fläche. Darunter: wer da war
+ * und drei Kacheln – Strafen des Abends und wer beim Spiel am meisten hatte.
+ */
 function Danach({ hero, now, members, stats, spielTypen, umschalter }: Props) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
@@ -214,54 +219,82 @@ function Danach({ hero, now, members, stats, spielTypen, umschalter }: Props) {
   vortag.setDate(vortag.getDate() - 1);
   // „Heute“/„Gestern“ davor; ältere Abende nur mit Datum (der Umschalter sagt schon „Letzter“).
   const wann = ende.toDateString() === now.toDateString() ? "Heute · " : ende.toDateString() === vortag.toDateString() ? "Gestern · " : "";
-  const dunkel = c.heroStyle === "outline";
-  const zeilen = spielTypen
+  const foto = !!t.bildUrl;
+  const dunkel = foto || c.heroStyle === "outline";
+  const text = foto ? "#FFFFFF" : c.textDark;
+  const leise = foto ? "rgba(255,255,255,0.78)" : c.textMuted;
+  const kachel = foto
+    ? { backgroundColor: "rgba(20,18,16,0.42)", borderColor: "rgba(255,255,255,0.16)" }
+    : { backgroundColor: c.heroStyle === "outline" ? c.card : "rgba(255,255,255,0.6)", borderColor: c.hairline };
+
+  const spiel = spielTypen
     .slice(0, 2)
     .map((typ) => ({ typ, wer: meisteBei(stats, typ.id, members) }))
     .filter((z) => z.wer);
+  const kacheln: { key: string; emoji: string; wert: string; label: string }[] = [
+    { key: "strafen", emoji: SYMBOL.strafe, wert: `${formatEuro(stats.strafenSumme).replace(",00", "")} €`, label: "Strafen" },
+    ...spiel.map(({ typ, wer }) => ({
+      key: typ.id,
+      emoji: typ.emoji ?? "🎲",
+      wert: wer!.members.length === 1 ? displayName(wer!.members[0]) : `${wer!.members.length} gleichauf`,
+      label: `${wer!.anzahl}× ${typ.label}`,
+    })),
+  ];
 
-  return (
-    <PressableScale onPress={() => oeffne(t.id)} scaleTo={0.99} style={[styles.hero, flaeche]} accessibilityLabel={`Rückblick auf den Stammtisch am ${formatWochentagDatum(tag)}, öffnen`}>
+  const inhalt = (
+    <>
       <View style={styles.row}>
-        <Text style={[styles.label, { color: c.mustardText, flex: 1 }]} numberOfLines={1}>{`${wann}${formatWochentagDatum(tag)}`}</Text>
+        <View style={[styles.datumPill, { backgroundColor: foto ? "rgba(20,18,16,0.42)" : "transparent", paddingHorizontal: foto ? 10 : 0 }]}>
+          <Text style={[styles.label, { color: foto ? "#FFFFFF" : c.mustardText }]} numberOfLines={1}>{`${wann}${formatWochentagDatum(tag)}`}</Text>
+        </View>
         {umschalter ? <HeroUmschalter {...umschalter} hell={dunkel} /> : null}
       </View>
-      <View style={[styles.row, { justifyContent: "flex-start", gap: 10 }]}>
-        <Text style={[styles.gross, { color: c.textDark }]} maxFontSizeMultiplier={MAX_FONT_SCALE}>{`${Math.round(stats.quote * 100)} %`}</Text>
-        <View>
-          <Text style={[styles.bodyStrong, { color: c.textDark }]}>da</Text>
-          <Text style={[styles.small, { color: c.textMuted }]}>{`${stats.da.length} von ${stats.mitglieder.length}`}</Text>
-        </View>
-        <View style={styles.dots} accessibilityElementsHidden>
-          {stats.mitglieder.map((m) => {
-            const war = stats.da.some((d) => d.id === m.id);
-            return <View key={m.id} style={[styles.dot, war ? { backgroundColor: m.avatarColor } : { borderWidth: 1.5, borderColor: c.borderDark }]} />;
-          })}
-        </View>
-      </View>
+
       <View style={{ gap: 8 }}>
-        {zeilen.length > 0 ? zeilen.map(({ typ, wer }) => (
-          <View key={typ.id} style={styles.meisteRow}>
-            <IconSquircle emoji={typ.emoji ?? "🎲"} ton="mustard" size={30} />
-            <Text style={[styles.small, { flex: 1, color: c.textMid }]} numberOfLines={1}>{`Meiste ${typ.label}`}</Text>
-            <Text style={[styles.bodyStrong, { color: c.textDark }]} numberOfLines={1}>{`${wer!.members.map(displayName).join(", ")} · ${wer!.anzahl}×`}</Text>
-          </View>
-        )) : (
-          <View style={styles.meisteRow}>
-            <IconSquircle emoji={SYMBOL.kasse} ton="mustard" size={30} />
-            <Text style={[styles.small, { flex: 1, color: c.textMid }]}>Strafen des Abends</Text>
-            <Text style={[styles.bodyStrong, { color: c.textDark }]}>{`${formatEuro(stats.strafenSumme)} €`}</Text>
-          </View>
-        )}
+        <Text style={[styles.titel, { color: text }, foto && styles.schatten]} maxFontSizeMultiplier={MAX_FONT_SCALE}>{`${stats.da.length} von ${stats.mitglieder.length} am Tisch`}</Text>
+        <View style={[styles.row, { justifyContent: "flex-start" }]}>
+          <AvatarStack members={stats.da.map((m) => ({ id: m.id, name: displayName(m), color: m.avatarColor, photoUri: m.photoUri }))} size={26} max={8} ringColor={foto ? "#141210" : c.mustardSoft} />
+          {stats.fehlten.length > 0 ? (
+            <Text style={[styles.small, { color: leise, flex: 1 }, foto && styles.schatten]} numberOfLines={1}>{`Gefehlt: ${stats.fehlten.map(displayName).join(", ")}`}</Text>
+          ) : null}
+        </View>
       </View>
+
+      <View style={styles.kachelReihe}>
+        {kacheln.map((k) => (
+          <View key={k.key} style={[styles.kachel, kachel]} accessible accessibilityLabel={`${k.label}: ${k.wert}`}>
+            <View style={{ alignSelf: "flex-start" }}><Emoji size={18}>{k.emoji}</Emoji></View>
+            <Text style={[styles.kachelWert, { color: text }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} maxFontSizeMultiplier={MAX_FONT_SCALE}>{k.wert}</Text>
+            <Text style={[styles.kachelLabel, { color: leise }]} numberOfLines={1}>{k.label}</Text>
+          </View>
+        ))}
+      </View>
+
       <View style={styles.row}>
-        <Button label="Rückblick" icon="play" variant="dark" onPress={() => oeffne(t.id)} style={{ flex: 1 }} />
+        <Button label="Rückblick" icon="play" variant={foto ? "primary" : "dark"} onPress={() => oeffne(t.id)} style={{ flex: 1 }} />
         {stats.strafenOffen > 0 ? (
           <Button label={`${formatEuro(stats.strafenOffen).replace(",00", "")} € offen`} variant="secondary" onPress={() => router.push("/kasse?tab=strafen")} style={{ flex: 1 }} />
         ) : (
-          <Button label="Alles bezahlt" variant="secondary" onPress={() => oeffne(t.id)} style={{ flex: 1 }} />
+          <Button label="Alles bezahlt" icon="checkmark" variant="secondary" onPress={() => oeffne(t.id)} style={{ flex: 1 }} />
         )}
       </View>
+    </>
+  );
+
+  return (
+    <PressableScale
+      onPress={() => oeffne(t.id)}
+      scaleTo={0.99}
+      style={[styles.hero, foto ? styles.heroFoto : flaeche]}
+      accessibilityLabel={`Rückblick auf den Stammtisch am ${formatWochentagDatum(tag)}, öffnen`}
+    >
+      {foto ? (
+        <>
+          <Image source={{ uri: t.bildUrl! }} style={StyleSheet.absoluteFill} resizeMode="cover" accessibilityIgnoresInvertColors />
+          <Scrim top={0.5} bottom={0.88} />
+        </>
+      ) : null}
+      {inhalt}
     </PressableScale>
   );
 }
@@ -304,4 +337,12 @@ const makeStyles = (c: ThemeColors) =>
     dots: { flex: 1, flexDirection: "row", flexWrap: "wrap", justifyContent: "flex-end", gap: 4 },
     dot: { width: 10, height: 10, borderRadius: 5 },
     meisteRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+    heroFoto: { overflow: "hidden", backgroundColor: "#141210" },
+    // Text direkt auf dem Foto: leichter Schatten, damit er auch auf hellen Bildstellen lesbar bleibt.
+    schatten: { textShadowColor: "rgba(0,0,0,0.55)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 6 },
+    datumPill: { height: 26, borderRadius: 999, justifyContent: "center", flexShrink: 1 },
+    kachelReihe: { flexDirection: "row", gap: 8 },
+    kachel: { flex: 1, minWidth: 0, borderRadius: RADIUS.md, borderWidth: StyleSheet.hairlineWidth, paddingVertical: 10, paddingHorizontal: 10, gap: 2 },
+    kachelWert: { ...TYPE.num, fontSize: 18, marginTop: 4 },
+    kachelLabel: { ...TYPE.caption, fontSize: 11 },
   });
