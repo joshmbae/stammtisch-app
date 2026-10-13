@@ -1,5 +1,6 @@
 import React from "react";
 import { Image, StyleSheet, Text, View, ViewStyle } from "react-native";
+import { BlurView } from "expo-blur";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { MemberProfile, SpielEreignisTyp } from "../../types";
@@ -9,7 +10,7 @@ import { AbendStats, meisteBei } from "../../utils/abendStats";
 import { HomeHero, terminEnde, terminStart } from "../../utils/terminPhase";
 import { formatWochentagDatum } from "../../utils/date";
 import { displayName, formatEuro } from "../../utils/format";
-import { Avatar, AvatarStack, Button, Emoji, FlipCountdown, IconSquircle, LiveTimer, PressableScale, PulseDot, Scrim } from "../ui";
+import { AvatarStack, Button, Emoji, FlipCountdown, IconSquircle, LiveTimer, PressableScale, PulseDot, Scrim } from "../ui";
 import { SYMBOL } from "../../constants/symbole";
 
 export type RsvpStatus = "ja" | "nein" | null;
@@ -94,7 +95,7 @@ function useHeroFlaeche(art: "blau" | "live" | "senf"): ViewStyle {
  * ist und beim Umschalten nichts springt. Startwert = gemessene Höhe bei
  * normaler Schriftgröße, falls „Nächster“ noch nicht zu sehen war.
  */
-let vorherHoehe = 260;
+let vorherHoehe = 261;
 
 const zeitText = (d: Date) => d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
 
@@ -232,7 +233,7 @@ function Danach({ hero, now, members, stats, spielTypen, umschalter }: Props) {
   const text = foto ? "#FFFFFF" : c.textDark;
   const leise = foto ? "rgba(255,255,255,0.78)" : c.textMuted;
   const glas = foto
-    ? { backgroundColor: "rgba(20,18,16,0.45)", borderColor: "rgba(255,255,255,0.16)" }
+    ? { backgroundColor: "rgba(20,18,16,0.28)", borderColor: "rgba(255,255,255,0.18)" }
     : { backgroundColor: c.heroStyle === "outline" ? c.card : "rgba(255,255,255,0.6)", borderColor: c.hairline };
   const trenner = foto ? "rgba(255,255,255,0.18)" : c.border;
 
@@ -241,7 +242,25 @@ function Danach({ hero, now, members, stats, spielTypen, umschalter }: Props) {
     .filter((z) => z.wer)
     .slice(0, 2);
   const bezahlt = stats.strafenSumme > 0 && stats.strafenOffen === 0;
-  const strafenSub = stats.strafenSumme === 0 ? "keine Strafen" : bezahlt ? "alles bezahlt" : `${formatEuro(stats.strafenOffen).replace(",00", "")} € offen`;
+  // Gleich gebaute Spalten: kleines Label mit Emoji, großer Wert, Unterzeile (Status als Punkt).
+  const spalten: { key: string; emoji: string; label: string; wert: string; sub: string; punkt?: string }[] = [
+    {
+      key: "strafen",
+      emoji: SYMBOL.strafe,
+      label: "Strafen",
+      wert: `${formatEuro(stats.strafenSumme).replace(",00", "")} €`,
+      sub: stats.strafenSumme === 0 ? "keine" : bezahlt ? "bezahlt" : `${formatEuro(stats.strafenOffen).replace(",00", "")} € offen`,
+      punkt: stats.strafenSumme === 0 ? undefined : bezahlt ? c.success : c.coral,
+    },
+    ...spiel.map(({ typ, wer }) => ({
+      key: typ.id,
+      emoji: typ.emoji ?? "🎲",
+      label: typ.label,
+      wert: wer!.members.length === 1 ? displayName(wer!.members[0]) : `${displayName(wer!.members[0])} +${wer!.members.length - 1}`,
+      // Bei drei Spalten ist kein Platz für „am meisten“ – das Label sagt, wofür.
+      sub: spiel.length > 1 ? `${wer!.anzahl}×` : `${wer!.anzahl}× – am meisten`,
+    })),
+  ];
   const schatten = foto ? styles.schatten : null;
 
   return (
@@ -276,36 +295,23 @@ function Danach({ hero, now, members, stats, spielTypen, umschalter }: Props) {
       </View>
 
       <View style={[styles.glas, glas]}>
-        <View style={styles.glasStrafen}>
-          <Text style={[styles.glasLabel, { color: leise }]}>{`${SYMBOL.strafe} Strafen`}</Text>
-          <Text style={[styles.glasBetrag, { color: text }]} maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1}>{`${formatEuro(stats.strafenSumme).replace(",00", "")} €`}</Text>
-          <View style={styles.glasStatus}>
-            {bezahlt ? <Ionicons name="checkmark-circle" size={13} color={foto ? "#9FE8C6" : c.greenText} /> : null}
-            <Text style={[styles.glasSub, { color: bezahlt ? (foto ? "#9FE8C6" : c.greenText) : stats.strafenOffen > 0 ? (foto ? "#FFB4A3" : c.coralText) : leise }]} numberOfLines={1}>{strafenSub}</Text>
-          </View>
-        </View>
-        {spiel.length > 0 ? (
-          <>
-            <View style={[styles.glasTrenner, { backgroundColor: trenner }]} />
-            <View style={styles.glasSpiel}>
-              {spiel.map(({ typ, wer }) => {
-                const erster = wer!.members[0];
-                return (
-                  <View key={typ.id} style={styles.glasZeile}>
-                    <Emoji size={15}>{typ.emoji ?? "🎲"}</Emoji>
-                    <Avatar name={displayName(erster)} color={erster.avatarColor} photoUri={erster.photoUri} size={22} ringColor={foto ? "#141210" : undefined} />
-                    <View style={{ flex: 1, minWidth: 0 }}>
-                      <Text style={[styles.glasName, { color: text }]} numberOfLines={1}>
-                        {wer!.members.length === 1 ? displayName(erster) : `${displayName(erster)} +${wer!.members.length - 1}`}
-                      </Text>
-                      <Text style={[styles.glasSub, { color: leise }]} numberOfLines={1}>{`${wer!.anzahl}× ${typ.label}`}</Text>
-                    </View>
-                  </View>
-                );
-              })}
+        {foto ? <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} /> : null}
+        {spalten.map((sp, i) => (
+          <React.Fragment key={sp.key}>
+            {i > 0 ? <View style={[styles.glasTrenner, { backgroundColor: trenner }]} /> : null}
+            <View style={styles.glasSpalte} accessible accessibilityLabel={`${sp.label}: ${sp.wert}, ${sp.sub}`}>
+              <View style={styles.glasKopf}>
+                <Emoji size={12}>{sp.emoji}</Emoji>
+                <Text style={[styles.glasLabel, { color: leise }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{sp.label}</Text>
+              </View>
+              <Text style={[styles.glasWert, { color: text }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} maxFontSizeMultiplier={MAX_FONT_SCALE}>{sp.wert}</Text>
+              <View style={styles.glasKopf}>
+                {sp.punkt ? <View style={[styles.punkt, { backgroundColor: sp.punkt }]} /> : null}
+                <Text style={[styles.glasSub, { color: leise }]} numberOfLines={1}>{sp.sub}</Text>
+              </View>
             </View>
-          </>
-        ) : null}
+          </React.Fragment>
+        ))}
       </View>
     </PressableScale>
   );
@@ -353,14 +359,12 @@ const makeStyles = (c: ThemeColors) =>
     // Text direkt auf dem Foto: leichter Schatten, damit er auch auf hellen Bildstellen lesbar bleibt.
     schatten: { textShadowColor: "rgba(0,0,0,0.55)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 6 },
     datumPill: { height: 26, borderRadius: 999, justifyContent: "center", flexShrink: 1 },
-    glas: { flexDirection: "row", borderRadius: RADIUS.tile, borderWidth: StyleSheet.hairlineWidth, paddingVertical: 12, paddingHorizontal: 14, gap: 12 },
-    glasStrafen: { minWidth: 92, justifyContent: "center" },
-    glasLabel: { fontFamily: FONT.w600, fontSize: 12 },
-    glasBetrag: { ...TYPE.num, fontSize: 26, lineHeight: 30, marginTop: 2 },
-    glasStatus: { flexDirection: "row", alignItems: "center", gap: 4 },
-    glasSub: { fontFamily: FONT.w500, fontSize: 12 },
-    glasTrenner: { width: StyleSheet.hairlineWidth },
-    glasSpiel: { flex: 1, justifyContent: "center", gap: 8 },
-    glasZeile: { flexDirection: "row", alignItems: "center", gap: 8 },
-    glasName: { fontFamily: FONT.w600, fontSize: 14 },
+    glas: { flexDirection: "row", borderRadius: RADIUS.tile, borderWidth: StyleSheet.hairlineWidth, paddingVertical: 12, paddingHorizontal: 14, gap: 12, overflow: "hidden" },
+    glasSpalte: { flex: 1, minWidth: 0, gap: 3 },
+    glasKopf: { flexDirection: "row", alignItems: "center", gap: 5 },
+    glasLabel: { ...TYPE.label, fontSize: 11, letterSpacing: 0.4, flexShrink: 1 },
+    glasWert: { ...TYPE.num, fontSize: 22, lineHeight: 26 },
+    glasSub: { fontFamily: FONT.w500, fontSize: 12, flexShrink: 1 },
+    punkt: { width: 7, height: 7, borderRadius: 4 },
+    glasTrenner: { width: StyleSheet.hairlineWidth, alignSelf: "stretch" },
   });
