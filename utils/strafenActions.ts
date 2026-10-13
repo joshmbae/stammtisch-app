@@ -90,6 +90,6 @@ export async function setStrafenBeglichen(
     subjectMemberId: offen[0].memberId,
     actionType: "straf_log_beglichen",
     terminId: ctx.terminId,
-    meta: { betrag: offen.reduce((s, l) => s + l.betrag, 0), kategorie: `${offen.length} Strafen` },
+    meta: { betrag: offen.reduce((s, l) => s + l.betrag, 0), kategorie: `${offen.length} Strafen`, anzahl: offen.length },
   });
 }
