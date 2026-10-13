@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { MemberProfile, SpielEreignisTyp } from "../../../types";
 import { FONT, MAX_FONT_SCALE, RADIUS, TYPE, ThemeColors } from "../../../constants/design";
@@ -22,8 +22,20 @@ export function SpielZaehler({ abend, mitglieder }: { abend: TerminAbend; mitgli
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const typen = abend.ereignisTypen;
-  // Noch nicht bestätigte Taps, damit die Zahl sofort springt.
-  const [offen, setOffen] = useState<Record<string, number>>({});
+  // Damit die Zahl sofort springt: pro Knopf der angezeigte Zielwert und wie viele Taps noch laufen.
+  // Angezeigt wird max(gespeichert, Ziel) – so zählt ein schon gespeicherter, aber noch
+  // „laufender“ Tap nicht doppelt (vorher blitzte nach dem ersten Tap kurz eine 2 auf).
+  const [ziel, setZiel] = useState<Record<string, number>>({});
+  const [laufend, setLaufend] = useState<Record<string, number>>({});
+  // Sofort aktuelle Kopie, damit zwei Taps im selben Moment nicht vom selben Stand aus zählen.
+  const zielRef = useRef<Record<string, number>>({});
+  const laufendRef = useRef<Record<string, number>>({});
+  const gespeichert = (memberId: string, typId: string) =>
+    (abend.spielLogMap[memberId] ?? []).filter((l) => l.ereignisTypId === typId).length;
+  const anzeige = (memberId: string, typId: string) => {
+    const key = `${memberId}:${typId}`;
+    return Math.max(gespeichert(memberId, typId), laufend[key] ? ziel[key] ?? 0 : 0);
+  };
   const [bursts, setBursts] = useState<Record<string, number>>({});
 
   const voll = (ton: Ton) => ({
@@ -37,14 +49,22 @@ export function SpielZaehler({ abend, mitglieder }: { abend: TerminAbend; mitgli
   async function plus(m: MemberProfile, typ: SpielEreignisTyp) {
     const key = `${m.id}:${typ.id}`;
     haptik((typ.strafBetrag ?? 0) > 0 ? "mittel" : "leicht");
-    setOffen((o) => ({ ...o, [key]: (o[key] ?? 0) + 1 }));
+    const basis = laufendRef.current[key] ? Math.max(zielRef.current[key] ?? 0, gespeichert(m.id, typ.id)) : gespeichert(m.id, typ.id);
+    zielRef.current = { ...zielRef.current, [key]: basis + 1 };
+    laufendRef.current = { ...laufendRef.current, [key]: (laufendRef.current[key] ?? 0) + 1 };
+    setZiel(zielRef.current);
+    setLaufend(laufendRef.current);
     setBursts((b) => ({ ...b, [key]: (b[key] ?? 0) + 1 }));
     try {
       await abend.spielEreignisEintragen(m.id, typ.id);
     } catch {
+      // Ohne Speichern fällt die Anzeige auf den gespeicherten Stand zurück.
+      zielRef.current = { ...zielRef.current, [key]: Math.max(0, (zielRef.current[key] ?? 1) - 1) };
+      setZiel(zielRef.current);
       showAlert("Nicht gespeichert", `${typ.label} für ${displayName(m)} konnte nicht gespeichert werden.`);
     } finally {
-      setOffen((o) => ({ ...o, [key]: Math.max(0, (o[key] ?? 1) - 1) }));
+      laufendRef.current = { ...laufendRef.current, [key]: Math.max(0, (laufendRef.current[key] ?? 1) - 1) };
+      setLaufend(laufendRef.current);
     }
   }
 
@@ -95,7 +115,7 @@ export function SpielZaehler({ abend, mitglieder }: { abend: TerminAbend; mitgli
           <Text style={styles.name} numberOfLines={1}>{displayName(m)}</Text>
           {typen.map((t, i) => {
             const key = `${m.id}:${t.id}`;
-            const n = (abend.spielLogMap[m.id] ?? []).filter((l) => l.ereignisTypId === t.id).length + (offen[key] ?? 0);
+            const n = anzeige(m.id, t.id);
             const f = voll(TOENE[i % TOENE.length]);
             return (
               <PressableScale
