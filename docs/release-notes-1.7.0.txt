@@ -1,0 +1,30 @@
+🍻 *DeinStammtisch 1.7.0 ist da – das größte Update bisher!*
+
+Wir haben die App einmal komplett auf links gedreht: neues Design, ein eigener Modus für den Abend und eure Strafen endlich im Griff.
+
+✨ *Alles neu gestaltet*
+Neue Startseite, Leiste aus Glas, neue Schrift, Hell- und Dunkelmodus. Und schon beim Öffnen stößt die App mit euch an. 🍺
+
+🌙 *Der Abend: Vorher, Live, Danach*
+Jeder Termin begleitet euch durch den ganzen Abend:
+- *Vorher:* Wer kommt? Wer noch nicht geantwortet hat, lässt sich per Push erinnern
+- *Live:* Wer ist da, wer kam zu spät (mit Minuten und Grund), Strafen und Schocken mit einem Tipp – jeder Bereich mit eigenem Verlauf zum Rückgängigmachen
+- *Danach:* Der Abend in Zahlen, Strafen pro Kopf und wer bezahlt hat
+
+📸 *Rückblick auf der Startseite*
+Der letzte Stammtisch erscheint mit eurem Foto: wer da war, was an Strafen zusammenkam und wer beim Schocken am meisten verloren hat.
+
+💰 *Kasse & Strafen neu*
+- Kasse mit Übersicht, Strafen und Rechnungen
+- Eure eigenen offenen Strafen sind nur einen Tipp entfernt und direkt zu begleichen
+- *Neu: Mit PayPal zahlen* – die App schickt euch direkt in unseren Pool und hakt danach ab
+
+🔔 *Pushes mit Stammtisch-Charme*
+Die Benachrichtigungen klingen jetzt nach Stammtisch statt nach Amt. Hopfen und Malz, Gott erhalt's!
+
+👋 *Neues Tutorial*
+Fünf kurze Seiten entlang eines Stammtisch-Abends zeigen, wie alles zusammenspielt.
+
+💡 Kurz an den Kassenwart: Bitte einmal unter Einstellungen → Strafen & Spiele den PayPal-Link eintragen, dann klappt das Zahlen für alle.
+
+Einfach in TestFlight updaten und los geht's. Prost! 🍺
