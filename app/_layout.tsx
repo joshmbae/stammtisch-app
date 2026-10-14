@@ -1,4 +1,5 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import Animated, { useAnimatedStyle, useSharedValue } from "react-native-reanimated";
 import {
   useFonts,
   Figtree_400Regular,
@@ -19,10 +20,12 @@ import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } fro
 import { ThemeProvider, useTheme } from "../contexts/ThemeContext";
 import { SessionProvider } from "../contexts/SessionContext";
 import { StammtischProvider } from "../contexts/StammtischContext";
+import { IntroOverlay } from "../components/IntroOverlay";
+import { introZielVerwerfen } from "../utils/intro";
 
 // Der Splash bleibt stehen, bis Schrift und gespeichertes Farbschema geladen
-// sind (ThemedApp blendet ihn aus) – sonst blitzt beim Start ein leerer bzw.
-// falsch gefärbter Bildschirm auf.
+// sind und das Start-Intro (IntroOverlay) sein Logo zeigt – das Intro blendet
+// ihn aus und übernimmt nahtlos an derselben Stelle.
 SplashScreen.preventAutoHideAsync().catch(() => {});
 SplashScreen.setOptions({ duration: 200, fade: true });
 
@@ -39,6 +42,8 @@ export default function RootLayout() {
   useEffect(() => {
     const sub = Notifications.addNotificationResponseReceivedListener((response) => {
       const data = response.notification.request.content.data ?? {};
+      // Öffnet ein Push einen anderen Screen, soll das Intro-Logo nicht in den (verdeckten) Home-Kopf fliegen.
+      introZielVerwerfen();
       // Neue Pushes tragen das Ziel als url (activityRoute), ältere nur terminId.
       if (typeof data.url === "string") router.push(data.url as any);
       else if (data.terminId) router.push(`/termin/${data.terminId}`);
@@ -76,9 +81,14 @@ function ThemedApp() {
   useEffect(() => {
     SystemUI.setBackgroundColorAsync(colors.background).catch(() => {});
   }, [colors.background]);
+  // Das Intro nimmt den Splash weg; falls es nicht dazu kommt, spätestens hier.
   useEffect(() => {
-    SplashScreen.hideAsync().catch(() => {});
+    const t = setTimeout(() => SplashScreen.hideAsync().catch(() => {}), 2500);
+    return () => clearTimeout(t);
   }, []);
+  const [intro, setIntro] = useState(true);
+  const inhaltSkala = useSharedValue(1);
+  const inhaltStil = useAnimatedStyle(() => ({ transform: [{ scale: inhaltSkala.value }] }));
   const base = scheme === "dark" ? DarkTheme : DefaultTheme;
   const navigationTheme = {
     ...base,
@@ -97,6 +107,7 @@ function ThemedApp() {
       <StatusBar style={scheme === "dark" ? "light" : "dark"} />
       <StammtischProvider>
         <SessionProvider>
+          <Animated.View style={[{ flex: 1, backgroundColor: colors.background }, intro ? inhaltStil : null]}>
           <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
             <Stack.Screen name="index" />
             <Stack.Screen name="stammtisch-waehlen" />
@@ -121,6 +132,8 @@ function ThemedApp() {
             <Stack.Screen name="spiel/new" />
             <Stack.Screen name="spiel/[id]" />
           </Stack>
+          </Animated.View>
+          {intro ? <IntroOverlay inhaltSkala={inhaltSkala} onFertig={() => setIntro(false)} /> : null}
         </SessionProvider>
       </StammtischProvider>
     </NavigationThemeProvider>

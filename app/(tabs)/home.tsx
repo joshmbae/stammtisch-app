@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import { useIsFocused } from "@react-navigation/native";
@@ -36,6 +36,7 @@ import { homeHero, homeHeroMitWahl } from "../../utils/terminPhase";
 import { useAppGeoeffnet } from "../../utils/appGeoeffnet";
 import { neuigkeitenGesehen } from "../../utils/neuigkeiten";
 import { abendStats } from "../../utils/abendStats";
+import { introBereit, introNachher, introZiel, introZielVerwerfen } from "../../utils/intro";
 import { hauptEreignis } from "../../utils/spiel";
 import { monatsSalden, saldo } from "../../utils/kasse";
 import { FONT, TYPE, ThemeColors } from "../../constants/design";
@@ -98,6 +99,17 @@ export default function HomeScreen() {
 
   const { loading, refreshing, error, onRefresh, retry } = useScreenLoad(load, []);
 
+  // Start-Intro: fertig geladen melden; das Intro fliegt dann ins Logo im Kopf (siehe logoRef).
+  useEffect(() => {
+    if (!loading) introBereit();
+  }, [loading]);
+  const logoRef = useRef<View>(null);
+  const logoMessen = () => {
+    logoRef.current?.measureInWindow((x, y, w) => {
+      if (w > 0) introZiel({ x, y, size: w, uri: verordnung?.logoUrl });
+    });
+  };
+
   // Zeitgesteuert landen: Wer die App während eines Abends öffnet, ist sofort
   // im Live-Termin, am Tag danach im Rückblick. Einmal pro Öffnen; wer per
   // Push woanders gelandet ist (Home nicht im Fokus), bleibt dort.
@@ -107,11 +119,12 @@ export default function HomeScreen() {
     if (!fokus) return;
     const h = homeHero(daten.termine, new Date(), verordnung?.stammtischzeit);
     if (h.phase === "live" || h.phase === "danach") {
+      introZielVerwerfen();
       router.push(`/termin/${h.termin.id}`);
       return;
     }
     // Sonst einmalig „Was ist neu“. Neue Nutzer sind über das Tutorial schon als „gesehen“ markiert.
-    neuigkeitenGesehen().then((gesehen) => { if (!gesehen) router.push("/neuigkeiten"); }).catch(() => {});
+    neuigkeitenGesehen().then((gesehen) => { if (!gesehen) introNachher(() => router.push("/neuigkeiten")); }).catch(() => {});
   }, [appGeoeffnet, daten, fokus]);
 
   // Neue Aktivität live oben einreihen; Strafen und Spiel-Einträge ändern
@@ -192,7 +205,9 @@ export default function HomeScreen() {
   return (
     <Screen withNav refreshing={refreshing} onRefresh={onRefresh} header={<OfflineBanner />}>
       <View style={styles.kopf}>
-        <StammtischLogo size={44} uri={verordnung?.logoUrl} />
+        <View ref={logoRef} onLayout={logoMessen} collapsable={false}>
+          <StammtischLogo size={44} uri={verordnung?.logoUrl} />
+        </View>
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={styles.name} numberOfLines={1} accessibilityRole="header">{verordnung?.name || "Mein Stammtisch"}</Text>
           <Text style={styles.gruss} numberOfLines={1}>{begruessung(activeMember?.spitzname ?? activeMember?.name)}</Text>

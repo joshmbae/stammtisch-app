@@ -1,32 +1,29 @@
-import { View, ActivityIndicator, StyleSheet } from "react-native";
+import { useEffect } from "react";
+import { View } from "react-native";
 import { Redirect } from "expo-router";
 import { useSession } from "../contexts/SessionContext";
 import { useStammtisch } from "../contexts/StammtischContext";
-import { useColors, useThemedStyles } from "../contexts/ThemeContext";
-import { ThemeColors } from "../constants/design";
-import StammtischLogo from "../components/StammtischLogo";
+import { useColors } from "../contexts/ThemeContext";
+import { introBereit } from "../utils/intro";
 
+/**
+ * Startweiche. Während Stammtisch und Sitzung laden, liegt das Start-Intro
+ * darüber – hier also nur die Hintergrundfarbe, kein zweites Logo.
+ */
 export default function Index() {
   const c = useColors();
-  const styles = useThemedStyles(makeStyles);
   const { stammtischId, stammtischLoaded } = useStammtisch();
   const { activeMemberId, sessionLoaded } = useSession();
+  const geladen = stammtischLoaded && (!stammtischId || sessionLoaded);
+  const nachHome = geladen && !!stammtischId && !!activeMemberId;
 
-  if (!stammtischLoaded || (!!stammtischId && !sessionLoaded)) {
-    return (
-      <View style={styles.root} accessibilityLabel="Wird geladen">
-        <StammtischLogo size={112} />
-        <ActivityIndicator color={c.textMuted} />
-      </View>
-    );
-  }
+  // Home meldet sich selbst, sobald es geladen ist; die anderen Ziele haben nichts zu laden.
+  useEffect(() => {
+    if (geladen && !nachHome) introBereit();
+  }, [geladen, nachHome]);
 
+  if (!geladen) return <View style={{ flex: 1, backgroundColor: c.background }} />;
   if (!stammtischId) return <Redirect href="/stammtisch-waehlen" />;
   if (!activeMemberId) return <Redirect href="/mitglied-waehlen" />;
   return <Redirect href="/(tabs)/home" />;
 }
-
-const makeStyles = (c: ThemeColors) =>
-  StyleSheet.create({
-    root: { flex: 1, backgroundColor: c.background, alignItems: "center", justifyContent: "center", gap: 24 },
-  });
