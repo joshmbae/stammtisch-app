@@ -27,4 +27,4 @@ Fünf kurze Seiten entlang eines Stammtisch-Abends zeigen, wie alles zusammenspi
 
 💡 Kurz an den Kassenwart: Bitte einmal unter Einstellungen → Strafen & Spiele den PayPal-Link eintragen, dann klappt das Zahlen für alle.
 
-Einfach in TestFlight updaten und los geht's. Prost! 🍺
+Einfach in TestFlight bzw. im Play Store updaten und los geht's. Prost! 🍺
