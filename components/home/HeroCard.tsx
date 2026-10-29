@@ -99,13 +99,6 @@ let vorherHoehe = 261;
 
 const zeitText = (d: Date) => d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
 
-/** Kalendertage bis zum Start: 0 = heute, 1 = morgen. */
-function tageBis(start: Date, now: Date): number {
-  const a = new Date(now); a.setHours(0, 0, 0, 0);
-  const b = new Date(start); b.setHours(0, 0, 0, 0);
-  return Math.round((b.getTime() - a.getTime()) / 86400000);
-}
-
 function Vorher({ hero, now, members, stammtischzeit, meinStatus, onRsvp, rsvpBusy, umschalter }: Props) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
@@ -117,7 +110,6 @@ function Vorher({ hero, now, members, stammtischzeit, meinStatus, onRsvp, rsvpBu
   const halbTransparent = c.heroStyle === "outline" ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.14)";
   const dabei = meinStatus === "ja";
   const abgesagt = meinStatus === "nein";
-  const tage = tageBis(start, now);
 
   return (
     <PressableScale onPress={() => oeffne(t.id)} onLayout={(e) => { vorherHoehe = e.nativeEvent.layout.height; }} scaleTo={0.99} style={[styles.hero, flaeche]} accessibilityLabel={`Nächster Stammtisch, ${formatWochentagDatum(new Date(`${t.datum}T00:00:00`))}, öffnen`}>
@@ -131,14 +123,7 @@ function Vorher({ hero, now, members, stammtischzeit, meinStatus, onRsvp, rsvpBu
         </View>
         {umschalter ? <HeroUmschalter {...umschalter} hell /> : null}
       </View>
-      {/* Sekundengenau erst am Tag selbst; vorher reicht „in 4 Tagen“. */}
-      {tage <= 0 ? (
-        <FlipCountdown ziel={start} now={now} tileColor={c.heroBlueInner} digitColor={c.heroBlueSub} labelColor={c.onHeroBlue} />
-      ) : (
-        <Text style={[styles.bisDahin, { color: c.onHeroBlue }]} maxFontSizeMultiplier={MAX_FONT_SCALE} accessibilityRole="timer">
-          {tage === 1 ? "morgen" : `in ${tage} Tagen`}
-        </Text>
-      )}
+      <FlipCountdown ziel={start} now={now} tileColor={c.heroBlueInner} digitColor={c.heroBlueSub} labelColor={c.onHeroBlue} />
       <View style={[styles.row, { gap: 12 }]}>
         {zugesagt.length > 0 ? (
           <AvatarStack size={28} ringColor={c.heroStyle === "fill" ? c.background : c.heroBlue} members={zugesagt.map((m) => ({ id: m.id, name: displayName(m), color: m.avatarColor, photoUri: m.photoUri }))} />
@@ -368,7 +353,6 @@ const makeStyles = (c: ThemeColors) =>
     liveChip: { flex: 1, minHeight: 48, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 9, backgroundColor: "rgba(255,255,255,0.12)", flexDirection: "row", alignItems: "center", gap: 6 },
     liveChipText: { flex: 1, fontFamily: FONT.w800, fontSize: 16 },
     gross: { ...TYPE.num, fontSize: 36, lineHeight: 40, letterSpacing: -1 },
-    bisDahin: { fontFamily: FONT.w800, fontSize: 38, lineHeight: 44, letterSpacing: -1 },
     dots: { flex: 1, flexDirection: "row", flexWrap: "wrap", justifyContent: "flex-end", gap: 4 },
     dot: { width: 10, height: 10, borderRadius: 5 },
     meisteRow: { flexDirection: "row", alignItems: "center", gap: 10 },

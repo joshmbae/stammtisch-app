@@ -51,16 +51,16 @@ interface FlipProps {
   labelColor: string;
 }
 
-/** Countdown in vier Kacheln; jede Ziffer klappt beim Wechsel neu ein. */
+/** Countdown in drei Kacheln (Tage, Stunden, Minuten); jede Ziffer klappt beim Wechsel neu ein. */
 export function FlipCountdown({ ziel, now, tileColor, digitColor, labelColor }: FlipProps) {
   const styles = useThemedStyles(makeStyles);
   const reduce = useReducedMotion();
-  const rest = Math.max(0, Math.floor((ziel.getTime() - now.getTime()) / 1000));
+  // Auf die Minute aufgerundet: 19:29:30 vor 19:30 zeigt noch „1 Min“, nicht „0“.
+  const rest = Math.max(0, Math.ceil((ziel.getTime() - now.getTime()) / 60000));
   const teile = [
-    { wert: String(Math.floor(rest / 86400)), label: "Tage" },
-    { wert: zwei(Math.floor(rest / 3600) % 24), label: "Std" },
-    { wert: zwei(Math.floor(rest / 60) % 60), label: "Min" },
-    { wert: zwei(rest % 60), label: "Sek" },
+    { wert: String(Math.floor(rest / 1440)), label: "Tage" },
+    { wert: zwei(Math.floor(rest / 60) % 24), label: "Std" },
+    { wert: zwei(rest % 60), label: "Min" },
   ];
   return (
     <View style={styles.flipRow} accessibilityRole="timer" accessibilityLabel={`Noch ${teile.map((t) => `${t.wert} ${t.label}`).join(", ")}`}>
