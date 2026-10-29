@@ -7,12 +7,15 @@ interface Props {
 
 export default function StammtischLogo({ size = 58, uri }: Props) {
   return (
-    <View style={[styles.shadowWrap, { width: size, height: size }]}>
-      <Image
-        source={uri ? { uri } : require("../assets/logo.png")}
-        resizeMode="contain"
-        style={{ width: size, height: size, borderRadius: size * 0.22 }}
-      />
+    <View style={[styles.shadowWrap, { width: size, height: size, borderRadius: size * 0.22 }]}>
+      {/* Eigene Ebene mit overflow: hidden – borderRadius am Image allein rundet nicht überall (Web, manche Logos). */}
+      <View style={{ width: size, height: size, borderRadius: size * 0.22, overflow: "hidden" }}>
+        <Image
+          source={uri ? { uri } : require("../assets/logo.png")}
+          resizeMode="contain"
+          style={{ width: size, height: size }}
+        />
+      </View>
     </View>
   );
 }

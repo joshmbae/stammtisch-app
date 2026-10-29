@@ -8,7 +8,7 @@ import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { TerminPhase, terminStart } from "../../utils/terminPhase";
 import { displayName } from "../../utils/format";
 import { toLocalIsoDate } from "../../utils/date";
-import { Avatar, AvatarStack, Card, Emoji, PressableScale, PulseDot } from "../ui";
+import { Avatar, Card, Emoji, PressableScale, PulseDot } from "../ui";
 import { MONATE } from "./KalenderKarte";
 import { SYMBOL } from "../../constants/symbole";
 
@@ -20,11 +20,13 @@ export type ListenEintrag =
   | { art: "termin"; datum: string; termin: StammtischTermin }
   | { art: "geburtstag"; datum: string; member: MemberProfile; alter: number | null };
 
-/** Große Karte für den nächsten (oder laufenden) Stammtisch. */
-export function NaechsterStammtisch({ termin, phase, members, ichId, stammtischzeit, now }: {
+/**
+ * Kompakte Karte für den nächsten (oder laufenden) Stammtisch: Datumsblock,
+ * Uhrzeit und Ort, eigener Status. Wer zugesagt hat, steht im Termin selbst.
+ */
+export function NaechsterStammtisch({ termin, phase, ichId, stammtischzeit, now }: {
   termin: StammtischTermin;
   phase: TerminPhase;
-  members: MemberProfile[];
   ichId: string | null;
   stammtischzeit?: string;
   now: Date;
@@ -35,49 +37,41 @@ export function NaechsterStammtisch({ termin, phase, members, ichId, stammtischz
   const tag = new Date(`${termin.datum}T00:00:00`);
   const heute = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const tageBis = Math.round((tag.getTime() - heute.getTime()) / 86_400_000);
-  const dabei = members.filter((m) => termin.anwesenheit?.includes(m.id));
-  const offen = members.filter((m) => !termin.anwesenheit?.includes(m.id) && !termin.absagen?.includes(m.id)).length;
   const ichDabei = !!ichId && !!termin.anwesenheit?.includes(ichId);
   const live = phase === "live";
   const wann = tageBis === 0 ? "heute" : tageBis === 1 ? "morgen" : `in ${tageBis} Tagen`;
+  const text = live ? c.onLive : c.onHeroBlue;
 
   return (
     <PressableScale
       onPress={() => router.push(`/termin/${termin.id}`)}
       scaleTo={0.98}
       style={[styles.hero, { backgroundColor: live ? c.live : c.heroBlue, borderColor: live ? c.liveEdge : c.heroBlueEdge }, glow(live ? c.liveAccent : c.blue, c, 22)]}
-      accessibilityLabel={`${live ? "Stammtisch läuft gerade" : "Nächster Stammtisch"}: ${tag.toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" })}${start ? `, ${uhr(start)} Uhr` : ""}. ${dabei.length} von ${members.length} dabei. Öffnen`}
+      accessibilityLabel={`${live ? "Stammtisch läuft gerade" : "Nächster Stammtisch"}: ${tag.toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" })}${start ? `, ${uhr(start)} Uhr` : ""}${ichDabei ? ", du bist dabei" : ""}. Öffnen`}
     >
-      <View style={styles.heroKopf}>
+      <View style={[styles.heroBlock, { backgroundColor: live ? "rgba(255,255,255,0.14)" : c.heroBlueInner }]}>
+        <Text style={[styles.heroBlockWt, { color: live ? c.liveSub : c.heroBlueSub }]}>{WT[tag.getDay()]}</Text>
+        <Text style={[styles.heroBlockTag, { color: text }]} maxFontSizeMultiplier={MAX_FONT_SCALE}>{tag.getDate()}</Text>
+        <Text style={[styles.heroBlockWt, { color: live ? c.liveSub : c.heroBlueSub }]}>{MONATE[tag.getMonth()].slice(0, 3).toUpperCase()}</Text>
+      </View>
+      <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
         <View style={styles.heroLabelZeile}>
           {live ? <PulseDot color={c.liveAccent} size={8} /> : null}
-          <Text style={[styles.label, { color: live ? c.liveAccent : c.heroBlueSub }]}>{live ? "Läuft gerade" : "Nächster Stammtisch"}</Text>
+          <Text style={[styles.label, { color: live ? c.liveAccent : c.heroBlueSub }]} numberOfLines={1}>{live ? "Läuft gerade" : "Nächster Stammtisch"}</Text>
         </View>
-        {ichDabei ? (
-          <View style={[styles.dabeiPill, { backgroundColor: c.mustard }]}>
-            <Ionicons name="checkmark" size={13} color={c.onMustard} />
-            <Text style={[styles.dabeiText, { color: c.onMustard }]}>Bin dabei</Text>
-          </View>
-        ) : null}
+        <Text style={[styles.heroZeit, { color: text }]} numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE}>
+          {[start ? `${uhr(start)} Uhr` : null, live ? null : wann].filter(Boolean).join(" · ")}
+        </Text>
+        {termin.ort ? <Text style={[styles.heroKlein, { color: live ? c.liveSub : c.onHeroBlue }]} numberOfLines={1}>{termin.ort}</Text> : null}
       </View>
-      <Text style={[styles.heroDatum, { color: live ? c.onLive : c.onHeroBlue }]} maxFontSizeMultiplier={MAX_FONT_SCALE}>
-        {`${["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"][tag.getDay()]} ${tag.getDate()}.${tag.getMonth() + 1}.`}
-      </Text>
-      <Text style={[styles.heroSub, { color: live ? c.liveSub : c.onHeroBlue }]} numberOfLines={1}>
-        {[start ? `${uhr(start)} Uhr` : null, termin.ort, live ? null : wann].filter(Boolean).join(" · ")}
-      </Text>
-      <View style={styles.heroFuss}>
-        {dabei.length > 0 ? (
-          <AvatarStack size={26} ringColor={c.heroStyle === "fill" ? c.background : live ? c.live : c.heroBlue} members={dabei.map((m) => ({ id: m.id, name: displayName(m), color: m.avatarColor, photoUri: m.photoUri }))} />
-        ) : null}
-        <View style={{ flex: 1, gap: 5 }}>
-          <Text style={[styles.heroKlein, { color: live ? c.onLive : c.onHeroBlue }]}>{`${dabei.length} von ${members.length} dabei${offen ? ` · ${offen} offen` : ""}`}</Text>
-          <View style={styles.spur}><View style={[styles.fuell, { width: `${members.length ? Math.round((dabei.length / members.length) * 100) : 0}%`, backgroundColor: c.mustard }]} /></View>
+      {ichDabei ? (
+        <View style={[styles.dabeiPill, { backgroundColor: c.mustard }]} accessibilityElementsHidden>
+          <Ionicons name="checkmark" size={13} color={c.onMustard} />
+          <Text style={[styles.dabeiText, { color: c.onMustard }]}>Dabei</Text>
         </View>
-        <View style={[styles.pfeil, { backgroundColor: "rgba(255,255,255,0.16)" }]}>
-          <Ionicons name="chevron-forward" size={18} color={live ? c.onLive : c.onHeroBlue} />
-        </View>
-      </View>
+      ) : (
+        <Ionicons name="chevron-forward" size={18} color={text} />
+      )}
     </PressableScale>
   );
 }
@@ -191,19 +185,16 @@ function GeburtstagZeile({ member, datum, alter }: { member: MemberProfile; datu
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
-    hero: { borderRadius: RADIUS.hero, padding: 16, gap: 4, borderWidth: 1 },
-    heroKopf: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", minHeight: 28 },
+    hero: { borderRadius: RADIUS.hero, padding: 12, gap: 12, borderWidth: 1, flexDirection: "row", alignItems: "center" },
+    heroBlock: { width: 58, paddingVertical: 6, borderRadius: 14, alignItems: "center" },
+    heroBlockWt: { fontFamily: FONT.w700, fontSize: 11, letterSpacing: 0.6 },
+    heroBlockTag: { ...TYPE.num, fontSize: 24, lineHeight: 28 },
     heroLabelZeile: { flexDirection: "row", alignItems: "center", gap: 6 },
+    heroZeit: { fontFamily: FONT.w700, fontSize: 17 },
     label: { ...TYPE.label },
     dabeiPill: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, height: 26, borderRadius: 13 },
     dabeiText: { fontFamily: FONT.w700, fontSize: 12 },
-    heroDatum: { ...TYPE.num, fontSize: 28, lineHeight: 34, letterSpacing: -0.8 },
-    heroSub: { fontFamily: FONT.w600, fontSize: 14 },
-    heroFuss: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 10 },
     heroKlein: { fontFamily: FONT.w600, fontSize: 13 },
-    spur: { height: 6, borderRadius: 3, backgroundColor: "rgba(255,255,255,0.2)", overflow: "hidden" },
-    fuell: { height: "100%", borderRadius: 3 },
-    pfeil: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
 
     leer: { ...TYPE.body, fontSize: 14, color: c.textMuted, textAlign: "center" },
     gruppe: { ...TYPE.label, color: c.textMuted, paddingHorizontal: 4, marginTop: 4 },

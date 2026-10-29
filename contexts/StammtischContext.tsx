@@ -6,6 +6,26 @@ import { getLegacySingleStammtischId, setActiveStammtischId as cacheStammtischId
 
 const STAMMTISCH_KEY = STAMMTISCH_STORAGE_KEY;
 const STAMMTISCH_NAME_KEY = "st_active_stammtisch_name";
+/** Stammtische, in denen man auf diesem Gerät schon war – zum Wiederbetreten mit einem Tipp. */
+const MEINE_KEY = "st_meine_stammtische";
+/** Gleicher Schlüssel wie in SessionContext: das gewählte Profil. */
+const SESSION_KEY = "st_active_member";
+
+export interface GemerkterStammtisch {
+  id: string;
+  name: string;
+  /** Zuletzt gewähltes Profil in diesem Stammtisch, damit man beim Zurückkommen direkt drin ist. */
+  memberId?: string;
+}
+
+async function ladeMeine(): Promise<GemerkterStammtisch[]> {
+  try {
+    const raw = await AsyncStorage.getItem(MEINE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
 /** Nach dieser Zeit ohne Auth-Antwort startet die App mit gecachten Daten weiter. */
 const AUTH_TIMEOUT_MS = 5000;
 
@@ -15,6 +35,12 @@ interface StammtischContextType {
   stammtischLoaded: boolean;
   setActiveStammtisch: (id: string, name: string) => Promise<void>;
   clearStammtisch: () => Promise<void>;
+  /** Aus dem aktuellen Stammtisch raus, ohne ihn zu vergessen (Profil wird gemerkt). */
+  stammtischVerlassen: (name?: string) => Promise<void>;
+  /** Zurück in einen gemerkten Stammtisch; true, wenn das Profil schon feststeht. */
+  stammtischBetreten: (s: GemerkterStammtisch) => Promise<boolean>;
+  meineStammtische: GemerkterStammtisch[];
+  stammtischVergessen: (id: string) => Promise<void>;
 }
 
 const StammtischContext = createContext<StammtischContextType>({
@@ -23,14 +49,31 @@ const StammtischContext = createContext<StammtischContextType>({
   stammtischLoaded: false,
   setActiveStammtisch: async () => {},
   clearStammtisch: async () => {},
+  stammtischVerlassen: async () => {},
+  stammtischBetreten: async () => false,
+  meineStammtische: [],
+  stammtischVergessen: async () => {},
 });
 
 export function StammtischProvider({ children }: { children: React.ReactNode }) {
   const [stammtischId, setStammtischId] = useState<string | null>(null);
   const [stammtischName, setStammtischName] = useState<string | null>(null);
   const [stammtischLoaded, setStammtischLoaded] = useState(false);
+  const [meineStammtische, setMeine] = useState<GemerkterStammtisch[]>([]);
 
   useEffect(() => { resolveStammtisch(); }, []);
+
+  async function meineSpeichern(liste: GemerkterStammtisch[]) {
+    setMeine(liste);
+    await AsyncStorage.setItem(MEINE_KEY, JSON.stringify(liste)).catch(() => {});
+  }
+
+  /** Eintrag hinzufügen oder aktualisieren; zuletzt genutzter steht oben. */
+  async function merken(eintrag: GemerkterStammtisch) {
+    const alt = await ladeMeine();
+    const bisher = alt.find((x) => x.id === eintrag.id);
+    await meineSpeichern([{ ...bisher, ...eintrag }, ...alt.filter((x) => x.id !== eintrag.id)]);
+  }
 
   async function resolveStammtisch() {
     // Offline darf der Start nicht hier hängenbleiben: ohne Netz wirft
@@ -53,7 +96,10 @@ export function StammtischProvider({ children }: { children: React.ReactNode }) 
     }
     const id = await AsyncStorage.getItem(STAMMTISCH_KEY);
     const name = await AsyncStorage.getItem(STAMMTISCH_NAME_KEY);
+    setMeine(await ladeMeine());
     if (id) {
+      // Bestehende Installationen: den aktuellen Stammtisch nachträglich merken.
+      if (name) await merken({ id, name });
       cacheStammtischId(id);
       setStammtischId(id);
       setStammtischName(name);
@@ -73,6 +119,7 @@ export function StammtischProvider({ children }: { children: React.ReactNode }) 
   }
 
   async function setActiveStammtisch(id: string, name: string) {
+    await merken({ id, name });
     await AsyncStorage.setItem(STAMMTISCH_KEY, id);
     await AsyncStorage.setItem(STAMMTISCH_NAME_KEY, name);
     cacheStammtischId(id);
@@ -89,12 +136,38 @@ export function StammtischProvider({ children }: { children: React.ReactNode }) 
     clearActiveStammtischId();
     setStammtischId(null);
     setStammtischName(null);
+    // Gelöscht oder nicht mehr erreichbar: auch aus der Liste nehmen.
+    if (stammtischId) await meineSpeichern((await ladeMeine()).filter((x) => x.id !== stammtischId));
+  }
+
+  async function stammtischVerlassen(name?: string) {
+    if (stammtischId) {
+      const memberId = (await AsyncStorage.getItem(SESSION_KEY)) ?? undefined;
+      await merken({ id: stammtischId, name: name || stammtischName || "Stammtisch", memberId });
+    }
+    await clearCache();
+    await AsyncStorage.multiRemove([STAMMTISCH_KEY, STAMMTISCH_NAME_KEY, SESSION_KEY]);
+    clearActiveStammtischId();
+    setStammtischId(null);
+    setStammtischName(null);
+  }
+
+  async function stammtischBetreten(s: GemerkterStammtisch): Promise<boolean> {
+    // Profil vor dem Wechsel setzen: die Session lädt es, sobald der Stammtisch steht.
+    if (s.memberId) await AsyncStorage.setItem(SESSION_KEY, s.memberId);
+    await setActiveStammtisch(s.id, s.name);
+    return !!s.memberId;
+  }
+
+  async function stammtischVergessen(id: string) {
+    await meineSpeichern((await ladeMeine()).filter((x) => x.id !== id));
   }
 
   return (
     <StammtischContext.Provider value={{
       stammtischId, stammtischName, stammtischLoaded,
       setActiveStammtisch, clearStammtisch,
+      stammtischVerlassen, stammtischBetreten, meineStammtische, stammtischVergessen,
     }}>
       {children}
     </StammtischContext.Provider>

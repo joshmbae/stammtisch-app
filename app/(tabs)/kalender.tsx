@@ -148,7 +148,7 @@ export default function TermineScreen() {
             <>
               <SegmentedTabs variant="blue" value={tab} onChange={setTab} items={[{ key: "kommend", label: "Kommend" }, { key: "vergangen", label: "Vergangen" }]} />
               {tab === "kommend" && hero ? (
-                <NaechsterStammtisch termin={hero.termin} phase={hero.phase} members={members} ichId={activeMemberId} stammtischzeit={stammtischzeit} now={now} />
+                <NaechsterStammtisch termin={hero.termin} phase={hero.phase} ichId={activeMemberId} stammtischzeit={stammtischzeit} now={now} />
               ) : null}
               <TerminListe
                 eintraege={eintraege}

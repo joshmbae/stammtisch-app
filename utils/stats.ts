@@ -7,7 +7,7 @@ import {
   Spiel,
   SpielEreignisTyp,
 } from "../types";
-import { formatEuro } from "./format";
+import { formatBetrag } from "./format";
 import { toLocalIsoDate } from "./date";
 
 /**
@@ -31,7 +31,12 @@ export interface StatsDaten {
   spielLogs: SpielLog[];
   strafLogs: StrafLog[];
   spiele: { spiel: Spiel; ereignisTypen: SpielEreignisTyp[] }[];
+  /** Pro Ranglisten-Key: liegt viel oder wenig vorne? Fehlt ein Key, gilt „viel“. */
+  richtung?: Record<string, RanglistenRichtung>;
 }
+
+/** „viel“: wer am meisten hat, führt. „wenig“: wer am wenigsten hat, führt (auch mit 0). */
+export type RanglistenRichtung = "viel" | "wenig";
 
 export interface RangEintrag {
   member: MemberProfile;
@@ -56,6 +61,9 @@ export interface Rangliste {
   kurz: string;
   untertitel: string;
   eintraege: RangEintrag[];
+  richtung: RanglistenRichtung;
+  /** Teilnahme ist immer „viel“; die übrigen Listen lassen sich in der Tabelle umdrehen. */
+  umschaltbar: boolean;
 }
 
 /** Titel, den jemand in einem bestimmten Jahr geholt hat (Platz 1). */
@@ -128,6 +136,15 @@ export function computeRanglisten(daten: StatsDaten, jahr: JahrFilter): Ranglist
   const stammtische = stattgefunden(termine).filter((t) => t.art === "stammtisch" && imJahr(t.datum, jahr));
 
   const listen: Rangliste[] = [];
+  const richtung = (key: string): RanglistenRichtung => daten.richtung?.[key] ?? "viel";
+  // Bei „wenig“ zählen auch Nullen – aber nur bei denen, die im Zeitraum mal da waren,
+  // sonst führt, wer nie kommt.
+  const warDa = new Set(stammtische.flatMap((t) => t.anwesenheit ?? []));
+  function ordnen<T extends { member: MemberProfile; wert: number }>(key: string, alle: T[]): T[] {
+    return richtung(key) === "wenig"
+      ? alle.filter((e) => warDa.has(e.member.id)).sort((a, b) => a.wert - b.wert)
+      : alle.filter((e) => e.wert > 0).sort((a, b) => b.wert - a.wert);
+  }
 
   // Teilnahme — nur Termine ab Mitgliedsbeginn, damit später Beigetretene
   // nicht automatisch hinten liegen (gleiche Regel wie anwesenheitsQuote).
@@ -153,58 +170,62 @@ export function computeRanglisten(daten: StatsDaten, jahr: JahrFilter): Ranglist
     kurz: "Teilnahme",
     untertitel: `${stammtische.length} ${stammtische.length === 1 ? "Stammtisch" : "Stammtische"}${jahr === ALLZEIT ? " insgesamt" : ""}`,
     eintraege: mitPlatz(teilnahme),
+    richtung: "viel",
+    umschaltbar: false,
   });
 
   // Spiele — pro Spiel und Ereignistyp eine eigene Liste
   for (const { spiel, ereignisTypen } of spiele) {
     for (const et of ereignisTypen) {
-      const eintraege = members
-        .map((m) => ({
-          member: m,
-          wert: spielLogs.filter(
-            (l) => l.memberId === m.id && l.spielId === spiel.id &&
-                   l.ereignisTypId === et.id && imJahr(l.loggedAt, jahr)
-          ).length,
-        }))
-        .filter((e) => e.wert > 0)
-        .sort((a, b) => b.wert - a.wert)
-        .map((e) => ({ ...e, anzeige: String(e.wert), label: et.label }));
+      const key = `spiel_${et.id}`;
+      // Gibt es noch gar keinen Eintrag, bleibt die Liste weg – auch bei „wenig“.
+      const jemals = spielLogs.some((l) => l.spielId === spiel.id && l.ereignisTypId === et.id && imJahr(l.loggedAt, jahr));
+      if (!jemals) continue;
+      const eintraege = ordnen(key, members.map((m) => ({
+        member: m,
+        wert: spielLogs.filter(
+          (l) => l.memberId === m.id && l.spielId === spiel.id &&
+                 l.ereignisTypId === et.id && imJahr(l.loggedAt, jahr)
+        ).length,
+      }))).map((e) => ({ ...e, anzeige: String(e.wert), label: et.label }));
       if (eintraege.length === 0) continue;
       listen.push({
-        key: `spiel_${et.id}`,
+        key,
         emoji: et.emoji ?? spiel.emoji ?? "🎮",
         titel: `${spiel.name} — ${et.label}`,
         kurz: et.label,
-        untertitel: `Wer hat am meisten „${et.label}"`,
+        untertitel: `Wer hat am ${richtung(key) === "wenig" ? "wenigsten" : "meisten"} „${et.label}"`,
         eintraege: mitPlatz(eintraege),
+        richtung: richtung(key),
+        umschaltbar: true,
       });
     }
   }
 
   // Verspätungen
-  const verspaetung = members
-    .map((m) => ({
-      member: m,
-      wert: verspätungLogs
-        .filter((l) => l.memberId === m.id && imJahr(l.datum, jahr))
-        .reduce((s, l) => s + l.minutenVerspätet, 0),
-    }))
-    .filter((e) => e.wert > 0)
-    .sort((a, b) => b.wert - a.wert)
-    .map((e) => ({ ...e, anzeige: String(e.wert), label: "Min." }));
-  if (verspaetung.length > 0) {
+  const verspaetungJemals = verspätungLogs.some((l) => imJahr(l.datum, jahr));
+  const verspaetung = ordnen("verspaetung", members.map((m) => ({
+    member: m,
+    wert: verspätungLogs
+      .filter((l) => l.memberId === m.id && imJahr(l.datum, jahr))
+      .reduce((s, l) => s + l.minutenVerspätet, 0),
+  }))).map((e) => ({ ...e, anzeige: String(e.wert), label: "Min." }));
+  if (verspaetungJemals && verspaetung.length > 0) {
     listen.push({
       key: "verspaetung",
       emoji: "⏱️",
       titel: "Verspätungs-Rangliste",
       kurz: "Verspätung",
-      untertitel: "Verspätungsminuten",
+      untertitel: richtung("verspaetung") === "wenig" ? "Am pünktlichsten" : "Verspätungsminuten",
       eintraege: mitPlatz(verspaetung),
+      richtung: richtung("verspaetung"),
+      umschaltbar: true,
     });
   }
 
   // Strafen
-  const strafen = members
+  const strafenJemals = strafLogs.some((l) => imJahr(l.loggedAt, jahr));
+  const strafen = ordnen("strafen", members
     .map((m) => {
       const eigene = strafLogs.filter((l) => l.memberId === m.id && imJahr(l.loggedAt, jahr));
       const offen = eigene.filter((l) => !l.beglichen).reduce((s, l) => s + l.betrag, 0);
@@ -213,24 +234,24 @@ export function computeRanglisten(daten: StatsDaten, jahr: JahrFilter): Ranglist
         wert: eigene.reduce((s, l) => s + l.betrag, 0),
         offen,
       };
-    })
-    .filter((e) => e.wert > 0)
-    .sort((a, b) => b.wert - a.wert)
+    }))
     .map((e) => ({
       member: e.member,
       wert: e.wert,
-      anzeige: `${formatEuro(e.wert)} €`,
+      anzeige: formatBetrag(e.wert),
       label: "Gesamt",
-      sub: e.offen > 0 ? `⚠️ ${formatEuro(e.offen)} € noch offen` : "✅ alles beglichen",
+      sub: e.wert === 0 ? "keine Strafen" : e.offen > 0 ? `⚠️ ${formatBetrag(e.offen)} noch offen` : "✅ alles beglichen",
     }));
-  if (strafen.length > 0) {
+  if (strafenJemals && strafen.length > 0) {
     listen.push({
       key: "strafen",
       emoji: "💰",
       titel: "Strafen-Rangliste",
       kurz: "Strafen",
-      untertitel: "Strafbeträge",
+      untertitel: richtung("strafen") === "wenig" ? "Am wenigsten Strafen" : "Strafbeträge",
       eintraege: mitPlatz(strafen),
+      richtung: richtung("strafen"),
+      umschaltbar: true,
     });
   }
 
@@ -242,11 +263,11 @@ export function computeRanglisten(daten: StatsDaten, jahr: JahrFilter): Ranglist
 /**
  * Wer steht in dieser Liste auf Platz 1? Bei Gleichstand gewinnen alle
  * Beteiligten den Titel — am Stammtisch wird darüber ohnehin diskutiert.
- * Ein Wert von 0 zählt nicht als Sieg.
+ * Bei „viel“ zählt ein Wert von 0 nicht als Sieg, bei „wenig“ ist 0 das Beste.
  */
 export function siegerIds(liste: Rangliste): string[] {
   const best = liste.eintraege[0];
-  if (!best || best.wert <= 0) return [];
+  if (!best || (liste.richtung === "viel" && best.wert <= 0)) return [];
   return liste.eintraege.filter((e) => e.wert === best.wert).map((e) => e.member.id);
 }
 
@@ -378,7 +399,7 @@ export function computeRangVerlauf(daten: StatsDaten, jahr: JahrFilter): RangVer
 export function wertKurz(key: string, wert: number): string {
   if (key.startsWith("spiel_")) return `${wert}×`;
   if (key === "verspaetung") return `${wert}′`;
-  if (key === "strafen") return `${formatEuro(wert).replace(",00", "")} €`;
+  if (key === "strafen") return formatBetrag(wert);
   return String(wert);
 }
 

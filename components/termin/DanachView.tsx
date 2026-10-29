@@ -1,5 +1,7 @@
-import React, { useMemo, useState } from "react";
-import { ActivityIndicator, ScrollView, Share, StyleSheet, Text, View } from "react-native";
+import React, { useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Platform, ScrollView, Share, StyleSheet, Text, View } from "react-native";
+import { captureRef } from "react-native-view-shot";
+import * as Sharing from "expo-sharing";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeIn } from "react-native-reanimated";
@@ -15,6 +17,7 @@ import { showAlert } from "../../utils/alert";
 import { begleichenDialog } from "../../utils/zahlungslink";
 import { Avatar, BarList, BarRow, Button, Card, Emoji, IconSquircle, Krone, PressableScale, Ring, Ton, haptik, tonFarben } from "../ui";
 import { SYMBOL } from "../../constants/symbole";
+import { RueckblickBild, RueckblickKachel } from "./RueckblickBild";
 
 
 interface Kategorie {
@@ -34,6 +37,8 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
   const styles = useThemedStyles(makeStyles);
   const { activeMemberId } = useSession();
   const [zahltGerade, setZahltGerade] = useState(false);
+  const [teiltGerade, setTeiltGerade] = useState(false);
+  const bildRef = useRef<View>(null);
   const t = abend.termin!;
   const strafLogs = useMemo(() => Object.values(abend.strafMap).flat(), [abend.strafMap]);
   const spielLogs = useMemo(() => Object.values(abend.spielLogMap).flat(), [abend.spielLogMap]);
@@ -145,7 +150,36 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
   const strafenMitSpiel = abend.ereignisTypen.some((e) => (e.strafBetrag ?? 0) > 0);
   const vieleKacheln = kategorien.length > 3;
 
+  // Rückblick-Bild: wer bei Strafen und im Spiel vorne lag, dazu die Kasse.
+  const vorne = (k: Kategorie) => {
+    const erste = k.zeilen.filter((z) => z.value === k.zeilen[0]?.value);
+    return erste.length === 0 ? null : erste.length === 1 ? erste[0].label : `${erste[0].label} +${erste.length - 1}`;
+  };
+  const bildKacheln: RueckblickKachel[] = [];
+  for (const k of kategorien.filter((k) => k.key !== "strafen")) {
+    const wer = vorne(k);
+    if (wer) bildKacheln.push({ emoji: k.emoji ?? "🎲", wert: wer, text: `${k.label} · ${k.zeilen[0].display}` });
+  }
+  const strafenKat = kategorien.find((k) => k.key === "strafen");
+  const strafenVorne = strafenKat ? vorne(strafenKat) : null;
+  if (strafenVorne) bildKacheln.push({ emoji: "💸", wert: strafenVorne, text: `Strafenkönig · ${strafenKat!.zeilen[0].display}` });
+  if (stats.strafenSumme > 0) bildKacheln.push({ emoji: SYMBOL.kasse, wert: formatBetrag(stats.strafenSumme), text: "für die Kasse" });
+  const dauerText = dauer ? `${Math.floor(dauer / 60)}:${String(dauer % 60).padStart(2, "0")} h gesessen` : null;
+
+  /** Als Bild teilen (WhatsApp & Co.); wo das nicht geht (Web), als Text. */
   async function teilen() {
+    if (Platform.OS !== "web" && bildRef.current && (await Sharing.isAvailableAsync())) {
+      setTeiltGerade(true);
+      try {
+        const uri = await captureRef(bildRef, { format: "png", quality: 1, width: 1080, result: "tmpfile" });
+        await Sharing.shareAsync(uri, { mimeType: "image/png", UTI: "public.png", dialogTitle: "Rückblick teilen" });
+        return;
+      } catch {
+        // Bild ging nicht – unten als Text.
+      } finally {
+        setTeiltGerade(false);
+      }
+    }
     const zeilenText = [
       `${t.titel ?? "Stammtisch"} · ${formatWochentagDatum(new Date(`${t.datum}T00:00:00`), true)}`,
       `${stats.da.length} von ${stats.mitglieder.length} da (${Math.round(stats.quote * 100)}\u202F%)`,
@@ -298,13 +332,27 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
         />
       </Card>
 
-      <Button label="Abend teilen" icon="share-outline" variant="secondary" onPress={teilen} />
+      <Button label="Rückblick teilen" icon="share-outline" variant="secondary" loading={teiltGerade} onPress={teilen} />
+
+      {/* Unsichtbar außerhalb des Bildschirms, nur zum Abfotografieren. */}
+      <View style={styles.bildAblage} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+        <RueckblickBild
+          ref={bildRef}
+          datum={formatWochentagDatum(new Date(`${t.datum}T00:00:00`))}
+          titel={t.titel ?? "Stammtisch"}
+          zeile={[t.ort, `${stats.da.length} von ${stats.mitglieder.length} da`, dauerText].filter(Boolean).join(" · ")}
+          kacheln={bildKacheln}
+          fehlten={stats.fehlten.map(displayName)}
+          stammtisch={abend.verordnung.name}
+        />
+      </View>
     </>
   );
 }
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
+    bildAblage: { position: "absolute", left: -10000, top: 0 },
     anwesenheit: { flexDirection: "row", alignItems: "center", gap: 16 },
     ringZahl: { ...TYPE.num, fontSize: 26, color: c.textDark },
     ringProzent: { fontSize: 15 },

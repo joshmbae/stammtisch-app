@@ -233,4 +233,6 @@ export interface StammtischVerordnung {
   tabStrafenAktiv?: boolean;
   /** Wohin Strafen gezahlt werden, z. B. ein PayPal-Pool (nur https). Leerer Text = entfernen. */
   zahlungsLink?: string;
+  /** Pro Ranglisten-Key „viel“ oder „wenig“ (wer vorne liegt); fehlt ein Key, gilt „viel“. */
+  ranglistenRichtung?: Record<string, "viel" | "wenig">;
 }

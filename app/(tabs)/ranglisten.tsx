@@ -4,10 +4,10 @@ import { StammtischVerordnung } from "../../types";
 import { ThemeColors, TYPE } from "../../constants/design";
 import { useThemedStyles } from "../../contexts/ThemeContext";
 import { useSession } from "../../contexts/SessionContext";
-import { loadVerordnung } from "../../utils/storage";
+import { loadVerordnung, saveRanglistenRichtung } from "../../utils/storage";
 import { loadStatsDaten } from "../../utils/statsDaten";
 import { useScreenLoad } from "../../utils/useScreenLoad";
-import { hauptEreignis } from "../../utils/spiel";
+import { showAlert } from "../../utils/alert";
 import { displayName } from "../../utils/format";
 import { toLocalIsoDate } from "../../utils/date";
 import {
@@ -28,9 +28,9 @@ import { Chip, HeaderIconButton, Screen, ScreenHeader } from "../../components/u
 import { RanglisteKarte } from "../../components/tabelle/RanglisteKarte";
 
 /**
- * Alle Wertungen auf einer Seite: pro Rangliste eine Karte, zugeklappt mit
- * den ersten drei, aufgeklappt mit allen Plätzen und dem Trend seit dem letzten Abend. Gewertet
- * wird pro Kalenderjahr oder über alle Jahre.
+ * Alle Wertungen auf einer Seite: pro Rangliste eine Karte mit den ersten
+ * drei (alle auf Wunsch) und dem Trend seit dem letzten Abend. Gewertet wird
+ * pro Kalenderjahr oder über alle Jahre.
  */
 export default function TabelleScreen() {
   const styles = useThemedStyles(makeStyles);
@@ -38,7 +38,7 @@ export default function TabelleScreen() {
   const [daten, setDaten] = useState<StatsDaten | null>(null);
   const [verordnung, setVerordnung] = useState<StammtischVerordnung | null>(null);
   const [jahr, setJahr] = useState<JahrFilter>(aktuellesJahr());
-  const [offen, setOffen] = useState<Set<string> | null>(null);
+  const [alle, setAlle] = useState<Set<string>>(new Set());
 
   const screen = useScreenLoad(async () => {
     const [d, v] = await Promise.all([loadStatsDaten(), loadVerordnung()]);
@@ -50,21 +50,29 @@ export default function TabelleScreen() {
   const listen = useMemo(() => (daten ? computeRanglisten(daten, jahr) : []), [daten, jahr]);
   // Badges zeigen immer die laufende Saison, egal welches Jahr gewählt ist.
   const fuehrende = useMemo(() => (daten ? fuehrendeTitel(daten, aktuellesJahr()) : new Map()), [daten]);
-  const aktivesSpiel = daten?.spiele.find((s) => s.spiel.id === verordnung?.aktivesSpielId);
-  const haupt = aktivesSpiel ? hauptEreignis(aktivesSpiel.ereignisTypen) : null;
-  // Ohne eigene Wahl ist die Wertung des Hauptereignisses aufgeklappt.
-  const aufgeklappt = offen ?? new Set(haupt ? [`spiel_${haupt.id}`] : []);
-  const verlauf = useMemo(
-    () => (daten && aufgeklappt.size > 0 ? computeRangVerlauf(daten, jahr) : null),
-    [daten, jahr, aufgeklappt.size > 0]
-  );
+  const verlauf = useMemo(() => (daten ? computeRangVerlauf(daten, jahr) : null), [daten, jahr]);
   const abende = daten ? daten.termine.filter((t) => t.art === "stammtisch" && t.datum <= toLocalIsoDate(new Date()) && (jahr === ALLZEIT || t.datum.startsWith(jahr))).length : 0;
 
-  function umschalten(key: string) {
-    const next = new Set(aufgeklappt);
+  function alleUmschalten(key: string) {
+    const next = new Set(alle);
     if (next.has(key)) next.delete(key);
     else next.add(key);
-    setOffen(next);
+    setAlle(next);
+  }
+
+  /** Viel ↔ wenig vorne, sofort sichtbar; gespeichert für die ganze Runde. */
+  async function richtungUmschalten(key: string) {
+    if (!daten) return;
+    const vorher = daten.richtung ?? {};
+    const neu = (vorher[key] ?? "viel") === "viel" ? "wenig" : "viel";
+    setDaten({ ...daten, richtung: { ...vorher, [key]: neu } });
+    try {
+      const gespeichert = await saveRanglistenRichtung(key, neu);
+      setDaten((d) => (d ? { ...d, richtung: gespeichert } : d));
+    } catch {
+      setDaten((d) => (d ? { ...d, richtung: vorher } : d));
+      showAlert("Nicht gespeichert", "Die Rangliste konnte nicht umgestellt werden. Bitte später noch einmal.");
+    }
   }
 
   async function teilen() {
@@ -110,8 +118,9 @@ export default function TabelleScreen() {
               <RanglisteKarte
                 key={`${jahr}-${l.key}`}
                 liste={l}
-                offen={aufgeklappt.has(l.key)}
-                onToggle={() => umschalten(l.key)}
+                alle={alle.has(l.key)}
+                onAlle={() => alleUmschalten(l.key)}
+                onRichtung={l.umschaltbar ? () => richtungUmschalten(l.key) : undefined}
                 ichId={activeMemberId}
                 fuehrende={fuehrende}
                 verlauf={verlauf}

@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import { StyleSheet, Text, View, Platform, KeyboardAvoidingView } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { createStammtisch, findStammtischByName } from "../utils/storage";
 import { hashStammtischPassword } from "../utils/pin";
 import { useStammtisch } from "../contexts/StammtischContext";
-import { TYPE, ThemeColors } from "../constants/design";
-import { useThemedStyles } from "../contexts/ThemeContext";
-import { Button, Card, Field, SegmentedTabs } from "../components/ui";
+import { FONT, TYPE, ThemeColors } from "../constants/design";
+import { useColors, useThemedStyles } from "../contexts/ThemeContext";
+import { Button, Card, Field, IconSquircle, PressableScale, SectionLabel, SegmentedTabs } from "../components/ui";
 import { EinstiegHero, EinstiegScreen, Vorteil } from "../components/einstieg/Einstieg";
 import { SYMBOL } from "../constants/symbole";
 
@@ -24,6 +25,7 @@ const VORTEILE: Vorteil[] = [
 ];
 
 export default function StammtischWaehlenScreen() {
+  const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const [mode, setMode] = useState<Mode>("join");
   const [name, setName] = useState("");
@@ -31,7 +33,12 @@ export default function StammtischWaehlenScreen() {
   const [passwordRepeat, setPasswordRepeat] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const { setActiveStammtisch } = useStammtisch();
+  const { setActiveStammtisch, meineStammtische, stammtischBetreten, stammtischVergessen } = useStammtisch();
+
+  async function betreten(s: (typeof meineStammtische)[number]) {
+    const mitProfil = await stammtischBetreten(s);
+    router.replace(mitProfil ? "/(tabs)/home" : "/mitglied-waehlen");
+  }
 
   function switchMode(next: Mode) {
     setMode(next);
@@ -96,7 +103,28 @@ export default function StammtischWaehlenScreen() {
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={0}>
       <EinstiegScreen>
-        <EinstiegHero titel={"Euer Stammtisch.\nAlles an einem Ort."} text="Termine, Kasse und Tabelle – für alle am Tisch." vorteile={VORTEILE} />
+        {meineStammtische.length > 0 ? (
+          <>
+            <EinstiegHero titel={"Willkommen zurück."} text="Wähl deinen Stammtisch – oder tritt einem neuen bei." />
+            <Card style={styles.meine}>
+              <SectionLabel>Deine Stammtische</SectionLabel>
+              {meineStammtische.map((s, i) => (
+                <View key={s.id} style={[styles.meinZeile, i > 0 && styles.trenner]}>
+                  <PressableScale onPress={() => betreten(s)} style={styles.meinInfo} accessibilityLabel={`${s.name} öffnen`}>
+                    <IconSquircle emoji={SYMBOL.stammtisch} ton="mustard" size={36} />
+                    <Text style={styles.meinName} numberOfLines={1}>{s.name}</Text>
+                    <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
+                  </PressableScale>
+                  <PressableScale onPress={() => stammtischVergessen(s.id)} hitSlop={8} style={styles.vergessen} accessibilityLabel={`${s.name} aus der Liste entfernen`}>
+                    <Ionicons name="close" size={16} color={c.textMuted} />
+                  </PressableScale>
+                </View>
+              ))}
+            </Card>
+          </>
+        ) : (
+          <EinstiegHero titel={"Euer Stammtisch.\nAlles an einem Ort."} text="Termine, Kasse und Tabelle – für alle am Tisch." vorteile={VORTEILE} />
+        )}
 
         <View style={styles.modi}>
           <SegmentedTabs variant="blue" items={MODI} value={mode} onChange={switchMode} />
@@ -176,4 +204,10 @@ const makeStyles = (c: ThemeColors) =>
     zeile: { flexDirection: "row", gap: 10 },
     spalte: { flex: 1, minWidth: 0 },
     error: { ...TYPE.caption, fontSize: 14, lineHeight: 19, color: c.dangerText },
+    meine: { marginTop: 16, paddingVertical: 12, gap: 4 },
+    meinZeile: { flexDirection: "row", alignItems: "center", gap: 8 },
+    meinInfo: { flex: 1, flexDirection: "row", alignItems: "center", gap: 12, minHeight: 56 },
+    meinName: { flex: 1, fontFamily: FONT.w700, fontSize: 16, color: c.textDark },
+    vergessen: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", backgroundColor: c.cardAlt },
+    trenner: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
   });

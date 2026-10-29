@@ -38,7 +38,7 @@ import { SYMBOL } from "../../constants/symbole";
 export default function RundeScreen() {
   const { colors: c, preference, setPreference } = useTheme();
   const styles = useThemedStyles(makeStyles);
-  const { stammtischName } = useStammtisch();
+  const { stammtischName, stammtischVerlassen } = useStammtisch();
   const fuehrende = useFuehrende();
   const [members, setMembers] = useState<MemberProfile[]>([]);
   const [verordnung, setVerordnung] = useState<StammtischVerordnung | null>(null);
@@ -141,7 +141,17 @@ export default function RundeScreen() {
         </View>
       </Card>
 
-      <Button label="Profil wechseln" icon="swap-horizontal" variant="secondary" onPress={() => router.push("/mitglied-waehlen")} />
+      <View style={{ gap: 8 }}>
+        <Button label="Profil wechseln" icon="swap-horizontal" variant="secondary" onPress={() => router.push("/mitglied-waehlen")} />
+        {/* Kein Abmelden im eigentlichen Sinn: der Stammtisch bleibt gemerkt und ist mit einem Tipp wieder offen. */}
+        <Button
+          label="Stammtisch wechseln"
+          icon="exit-outline"
+          variant="ghost"
+          onPress={async () => { await stammtischVerlassen(name); router.replace("/stammtisch-waehlen"); }}
+          accessibilityLabel="Stammtisch wechseln. Dieser bleibt gemerkt"
+        />
+      </View>
     </Screen>
   );
 }

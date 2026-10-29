@@ -6,6 +6,7 @@ import {
   loadMembers,
   loadSpiele,
   loadTermine,
+  loadVerordnung,
 } from "./storage";
 import { StatsDaten } from "./stats";
 
@@ -14,7 +15,7 @@ import { StatsDaten } from "./stats";
  * Stammdaten, dann je eine Sammelabfrage pro Log-Art (nicht pro Mitglied).
  */
 export async function loadStatsDaten(): Promise<StatsDaten> {
-  const [members, termine, spiele] = await Promise.all([loadMembers(), loadTermine(), loadSpiele()]);
+  const [members, termine, spiele, verordnung] = await Promise.all([loadMembers(), loadTermine(), loadSpiele(), loadVerordnung()]);
   const typen = spiele.length ? await loadAllEreignisTypen(spiele.map((s) => s.id)) : [];
   const ids = members.map((m) => m.id);
   const [verspätungLogs, spielLogs, strafLogs] = ids.length
@@ -27,5 +28,6 @@ export async function loadStatsDaten(): Promise<StatsDaten> {
     spielLogs,
     strafLogs,
     spiele: spiele.map((spiel) => ({ spiel, ereignisTypen: typen.filter((t) => t.spielId === spiel.id) })),
+    richtung: verordnung.ranglistenRichtung,
   };
 }

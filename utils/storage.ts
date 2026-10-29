@@ -278,6 +278,7 @@ function rowToVerordnung(row: any): StammtischVerordnung {
     rollenOptionen: row.rollen_optionen ?? undefined,
     tabStrafenAktiv: row.tab_strafen_aktiv ?? true,
     zahlungsLink: row.zahlungs_link ?? undefined,
+    ranglistenRichtung: row.ranglisten_richtung ?? undefined,
   };
 }
 
@@ -315,6 +316,20 @@ export async function saveVerordnung(v: StammtischVerordnung): Promise<void> {
     ...(v.zahlungsLink !== undefined ? { zahlungs_link: v.zahlungsLink || null } : {}),
   });
   if (error) throw error;
+}
+
+/**
+ * Nur die Richtung einer Rangliste ändern (eigenes Update statt ganzer
+ * Satzung, damit gleichzeitige Änderungen an anderen Feldern nicht verloren gehen).
+ */
+export async function saveRanglistenRichtung(key: string, richtung: "viel" | "wenig"): Promise<Record<string, "viel" | "wenig">> {
+  const stammtischId = await getStammtischId();
+  const { data, error } = await supabase.from("verordnung").select("ranglisten_richtung").eq("stammtisch_id", stammtischId).maybeSingle();
+  if (error) throw error;
+  const neu = { ...(data?.ranglisten_richtung ?? {}), [key]: richtung };
+  const { error: e2 } = await supabase.from("verordnung").update({ ranglisten_richtung: neu }).eq("stammtisch_id", stammtischId);
+  if (e2) throw e2;
+  return neu;
 }
 
 // ─── Verspätungs-Logs ─────────────────────────────────────────────────────────

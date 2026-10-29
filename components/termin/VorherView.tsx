@@ -212,15 +212,21 @@ function WerKommt({ abend, start }: { abend: TerminAbend; start: Date | null }) 
       {abgesagt.length > 0 ? (
         <>
           <Text style={styles.gruppe}>{`Abgesagt · ${abgesagt.length}`}</Text>
-          {abgesagt.map((m) => (
-            <View key={m.id} style={styles.personZeile}>
-              <Avatar name={displayName(m)} color={m.avatarColor} photoUri={m.photoUri} size={34} />
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={styles.personName} numberOfLines={1}>{name(m)}</Text>
-                {t.absageGruende?.[m.id] ? <Text style={styles.personSub} numberOfLines={2}>{`„${t.absageGruende[m.id]}"`}</Text> : null}
-              </View>
-            </View>
-          ))}
+          {/* Wie „Dabei“ im Raster; der Grund steht klein unter dem Namen. */}
+          <View style={styles.raster}>
+            {abgesagt.map((m) => {
+              const grund = t.absageGruende?.[m.id];
+              return (
+                <View key={m.id} style={styles.rasterZelle} accessible accessibilityLabel={`${name(m)} hat abgesagt${grund ? `: ${grund}` : ""}`}>
+                  <Avatar name={displayName(m)} color={m.avatarColor} photoUri={m.photoUri} size={30} />
+                  <View style={{ flexShrink: 1, minWidth: 0 }}>
+                    <Text style={styles.rasterName} numberOfLines={1}>{name(m)}</Text>
+                    {grund ? <Text style={styles.rasterGrund} numberOfLines={2}>{grund}</Text> : null}
+                  </View>
+                </View>
+              );
+            })}
+          </View>
         </>
       ) : null}
 
@@ -386,6 +392,7 @@ const makeStyles = (c: ThemeColors) =>
     raster: { flexDirection: "row", flexWrap: "wrap", rowGap: 10 },
     rasterZelle: { width: "33.33%", flexDirection: "row", alignItems: "center", gap: 12, paddingRight: 8 },
     rasterName: { fontFamily: FONT.w600, fontSize: 14, color: c.textDark, flexShrink: 1 },
+    rasterGrund: { ...TYPE.caption, fontSize: 12, color: c.textMuted },
     personZeile: { flexDirection: "row", alignItems: "center", gap: 12, minHeight: 48 },
     personName: { fontFamily: FONT.w600, fontSize: 15, color: c.textDark },
     personSub: { ...TYPE.caption, fontSize: 13, color: c.textMuted },

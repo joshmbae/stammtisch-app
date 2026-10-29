@@ -54,7 +54,6 @@ export function IntroOverlay({ onFertig, inhaltSkala }: { onFertig: () => void; 
   const aufraeumen = useRef<() => void>(() => {});
 
   const skala = useSharedValue(1);
-  const rundung = useSharedValue(0);
   const drehung = useSharedValue(0);
   const tx = useSharedValue(0);
   const ty = useSharedValue(0);
@@ -89,7 +88,6 @@ export function IntroOverlay({ onFertig, inhaltSkala }: { onFertig: () => void; 
 
     farbe.value = withDelay(150, withTiming(1, { duration: 500 }));
     skala.value = withSpring(RUHE_SKALA, { damping: 11, stiffness: 140, mass: 0.8 });
-    rundung.value = withTiming(RUNDUNG, { duration: 450, easing: Easing.out(Easing.cubic) });
     // Anstoßen: einmal kippen und nachwippen.
     drehung.value = withDelay(260, withSequence(
       withTiming(-9, { duration: 140, easing: Easing.out(Easing.quad) }),
@@ -181,7 +179,6 @@ export function IntroOverlay({ onFertig, inhaltSkala }: { onFertig: () => void; 
       { rotate: `${drehung.value}deg` },
     ],
   }));
-  const rundungStil = useAnimatedStyle(() => ({ borderRadius: rundung.value }));
   const zielStil = useAnimatedStyle(() => ({ opacity: zielDeckkraft.value }));
   // Ring läuft von der Logogröße nach außen aus und wird dabei durchsichtig.
   const ring1Stil = useAnimatedStyle(() => ({
@@ -202,7 +199,8 @@ export function IntroOverlay({ onFertig, inhaltSkala }: { onFertig: () => void; 
       <Animated.View style={[styles.ring, mitte, { borderColor: c.mustard }, ring1Stil]} pointerEvents="none" />
       <Animated.View style={[styles.ring, mitte, { borderColor: c.mustard }, ring2Stil]} pointerEvents="none" />
       <Animated.View style={[styles.logo, mitte, logoStil]}>
-        <Animated.View style={[styles.logoInnen, rundungStil]}>
+        {/* Von Anfang an gerundet wie der native Splash (splash-icon.png hat runde Ecken), damit nie ein eckiges Logo aufblitzt. */}
+        <Animated.View style={[styles.logoInnen, { borderRadius: RUNDUNG }]}>
           {/* Feste Größe: mit absoluteFill zeichnet iOS das 1024-px-Bild in Originalgröße und schneidet es ab. */}
           <Image source={require("../assets/splash-icon.png")} style={styles.bild} resizeMode="cover" onLoad={logoGeladen} onError={logoGeladen} />
           <Animated.View style={[StyleSheet.absoluteFill, zielStil]}>

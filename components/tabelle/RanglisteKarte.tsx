@@ -2,11 +2,10 @@ import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import Animated, { FadeIn } from "react-native-reanimated";
-import { MemberProfile } from "../../types";
+import Animated, { LinearTransition } from "react-native-reanimated";
 import { FONT, MAX_FONT_SCALE, RADIUS, TYPE, ThemeColors } from "../../constants/design";
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
-import { FuehrenderTitel, RangVerlauf, Rangliste, trend, wertKurz } from "../../utils/stats";
+import { FuehrenderTitel, RangEintrag, RangVerlauf, Rangliste, trend, wertKurz } from "../../utils/stats";
 import { displayName } from "../../utils/format";
 import { Avatar, Card, IconSquircle, Krone, PressableScale, tonFuerRangliste } from "../ui";
 
@@ -19,96 +18,115 @@ const UNTERTITEL: Record<string, string> = {
 
 interface Props {
   liste: Rangliste;
-  offen: boolean;
-  onToggle: () => void;
+  /** Alle Plätze statt nur der ersten drei. */
+  alle: boolean;
+  onAlle: () => void;
+  /** Viel ↔ wenig vorne; fehlt bei Listen, die sich nicht umdrehen lassen. */
+  onRichtung?: () => void;
   ichId: string | null;
   fuehrende: Map<string, FuehrenderTitel[]>;
-  /** Erst da, wenn eine Karte aufgeklappt ist (teure Rechnung). */
   verlauf: RangVerlauf | null;
   hinweis?: string;
   enterIndex: number;
 }
 
+const TOP = 3;
+
 /**
- * Eine Wertung als Karte: zugeklappt die ersten drei, aufgeklappt die ganze
- * Liste mit Trend seit dem letzten Abend.
+ * Eine Wertung als Karte, immer offen: die ersten drei als Zeilen (liegst du
+ * dahinter, deine Zeile darunter), „Alle anzeigen“ für den Rest. Unten lässt
+ * sich umstellen, ob viel oder wenig vorne liegt – gilt für die ganze Runde.
  */
-export function RanglisteKarte({ liste, offen, onToggle, ichId, fuehrende, verlauf, hinweis, enterIndex }: Props) {
+export function RanglisteKarte({ liste, alle, onAlle, onRichtung, ichId, fuehrende, verlauf, hinweis, enterIndex }: Props) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const ich = ichId ? liste.eintraege.find((e) => e.member.id === ichId) : undefined;
-  const top = liste.eintraege.slice(0, 3);
-  const zuProfil = (m: MemberProfile) => router.push(`/member/${m.id}`);
+  const sichtbar = alle ? liste.eintraege : liste.eintraege.slice(0, TOP);
+  // Zugeklappt und selbst nicht unter den ersten drei: eigene Zeile abgesetzt darunter.
+  const ichExtra = !alle && ich && !sichtbar.includes(ich) ? ich : null;
+  const mehr = liste.eintraege.length > TOP;
+  const wenig = liste.richtung === "wenig";
+
+  const zeile = (e: RangEintrag) => {
+    const istIch = e.member.id === ichId;
+    const t = verlauf ? trend(verlauf, liste.key, e.member.id) : 0;
+    return (
+      <PressableScale
+        key={e.member.id}
+        onPress={() => router.push(`/member/${e.member.id}`)}
+        style={[styles.zeile, istIch && { backgroundColor: c.blueBg }]}
+        accessibilityLabel={`Platz ${e.platz}: ${displayName(e.member)}, ${wertKurz(liste.key, e.wert)}${t > 0 ? ", aufgestiegen" : t < 0 ? ", abgerutscht" : ""}`}
+      >
+        <View style={styles.rang}>{e.platz === 1 ? <Krone size={18} /> : <Text style={styles.rangText}>{`${e.platz}.`}</Text>}</View>
+        <Avatar name={displayName(e.member)} color={e.member.avatarColor} photoUri={e.member.photoUri} size={32} fuehrt={fuehrende.get(e.member.id)} ringColor={istIch ? c.blueBg : c.card} />
+        <Text style={styles.name} numberOfLines={1}>{displayName(e.member)}</Text>
+        {istIch ? <View style={[styles.du, { backgroundColor: c.card }]}><Text style={[styles.duText, { color: c.blue }]}>DU</Text></View> : null}
+        <View style={{ flex: 1 }} />
+        <Text style={styles.wert} maxFontSizeMultiplier={MAX_FONT_SCALE}>{wertKurz(liste.key, e.wert)}</Text>
+        <View style={styles.trend} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+          {t > 0 ? <Ionicons name="caret-up" size={12} color={c.successText} />
+            : t < 0 ? <Ionicons name="caret-down" size={12} color={c.coralText} />
+            : <Text style={styles.trendGleich}>–</Text>}
+        </View>
+      </PressableScale>
+    );
+  };
 
   return (
-    <Card enterIndex={enterIndex} style={{ gap: 12 }}>
-      <PressableScale onPress={onToggle} scaleTo={0.99} style={styles.kopf} accessibilityState={{ expanded: offen }} accessibilityLabel={`${liste.kurz}${ich ? `, du bist auf Platz ${ich.platz}` : ""}. ${offen ? "Zuklappen" : "Aufklappen"}`}>
+    <Card enterIndex={enterIndex} style={{ gap: 10 }}>
+      <View style={styles.kopf}>
         <IconSquircle emoji={liste.emoji} ton={tonFuerRangliste(liste.key)} size={36} />
         <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={styles.titel} numberOfLines={1}>{liste.kurz}</Text>
-          <Text style={styles.untertitel} numberOfLines={1}>{UNTERTITEL[liste.key] ?? (liste.key.startsWith("spiel_") ? `beim ${liste.titel.split(" — ")[0]}` : liste.untertitel)}</Text>
+          <Text style={styles.titel} numberOfLines={1} accessibilityRole="header">{liste.kurz}</Text>
+          <Text style={styles.untertitel} numberOfLines={1}>{untertitel(liste)}</Text>
         </View>
         {ich ? (
           <View style={[styles.platzPill, { backgroundColor: ich.platz === 1 ? c.mustard : c.blueBg }]}>
             <Text style={[styles.platzText, { color: ich.platz === 1 ? c.onMustard : c.blue }]}>{`Du: Platz ${ich.platz}`}</Text>
           </View>
         ) : null}
-        <Ionicons name={offen ? "chevron-up" : "chevron-down"} size={20} color={c.textMuted} />
-      </PressableScale>
+      </View>
 
-      {!offen ? (
-        <View style={styles.top3}>
-          {top.map((e) => {
-            const istIch = e.member.id === ichId;
-            return (
-              <PressableScale key={e.member.id} onPress={() => zuProfil(e.member)} style={styles.topZelle} accessibilityLabel={`Platz ${e.platz}: ${displayName(e.member)}, ${wertKurz(liste.key, e.wert)}`}>
-                <View>
-                  {e.platz === 1 ? <View style={styles.kroneTop}><Krone size={16} /></View> : null}
-                  <View style={istIch ? [styles.ichRing, { borderColor: c.blue }] : null}>
-                    <Avatar name={displayName(e.member)} color={e.member.avatarColor} photoUri={e.member.photoUri} size={34} />
-                  </View>
-                </View>
-                <View style={{ flexShrink: 1 }}>
-                  <Text style={[styles.topName, istIch && { color: c.blue }]} numberOfLines={1}>{displayName(e.member)}</Text>
-                  <Text style={styles.topWert} maxFontSizeMultiplier={MAX_FONT_SCALE}>{wertKurz(liste.key, e.wert)}</Text>
-                </View>
-              </PressableScale>
-            );
-          })}
+      <Animated.View layout={LinearTransition.duration(220)}>
+        {sichtbar.map(zeile)}
+        {ichExtra ? (
+          <>
+            <Text style={styles.luecke} accessibilityElementsHidden>⋯</Text>
+            {zeile(ichExtra)}
+          </>
+        ) : null}
+      </Animated.View>
+
+      {mehr || onRichtung || hinweis ? (
+        <View style={styles.fuss}>
+          {mehr ? (
+            <PressableScale onPress={onAlle} style={styles.fussKnopf} hitSlop={6} accessibilityState={{ expanded: alle }} accessibilityLabel={alle ? "Nur die ersten drei zeigen" : `Alle ${liste.eintraege.length} anzeigen`}>
+              <Text style={[styles.fussText, { color: c.blue }]}>{alle ? "Weniger" : `Alle ${liste.eintraege.length} anzeigen`}</Text>
+              <Ionicons name={alle ? "chevron-up" : "chevron-down"} size={14} color={c.blue} />
+            </PressableScale>
+          ) : hinweis ? <Text style={styles.hinweis} numberOfLines={1}>{hinweis}</Text> : <View />}
+          {onRichtung ? (
+            <PressableScale
+              onPress={onRichtung}
+              style={styles.fussKnopf}
+              hitSlop={6}
+              accessibilityRole="button"
+              accessibilityLabel={`Vorne liegt, wer am ${wenig ? "wenigsten" : "meisten"} hat. Tippen zum Umdrehen, gilt für alle`}
+            >
+              <Ionicons name="swap-vertical" size={14} color={c.textMuted} />
+              <Text style={styles.fussText}>{wenig ? "Wenig ist gut" : "Viel ist gut"}</Text>
+            </PressableScale>
+          ) : null}
         </View>
-      ) : (
-        <Animated.View entering={FadeIn.duration(200)} style={{ gap: 14 }}>
-          <View>
-            {liste.eintraege.map((e) => {
-              const istIch = e.member.id === ichId;
-              const t = verlauf ? trend(verlauf, liste.key, e.member.id) : 0;
-              return (
-                <PressableScale
-                  key={e.member.id}
-                  onPress={() => zuProfil(e.member)}
-                  style={[styles.zeile, istIch && { backgroundColor: c.blueBg }]}
-                  accessibilityLabel={`Platz ${e.platz}: ${displayName(e.member)}, ${wertKurz(liste.key, e.wert)}${t > 0 ? ", aufgestiegen" : t < 0 ? ", abgerutscht" : ""}`}
-                >
-                  <View style={styles.rang}>{e.platz === 1 ? <Krone size={18} /> : <Text style={styles.rangText}>{`${e.platz}.`}</Text>}</View>
-                  <Avatar name={displayName(e.member)} color={e.member.avatarColor} photoUri={e.member.photoUri} size={32} fuehrt={fuehrende.get(e.member.id)} ringColor={istIch ? c.blueBg : c.card} />
-                  <Text style={styles.name} numberOfLines={1}>{displayName(e.member)}</Text>
-                  {istIch ? <View style={[styles.du, { backgroundColor: c.card }]}><Text style={[styles.duText, { color: c.blue }]}>DU</Text></View> : null}
-                  <View style={{ flex: 1 }} />
-                  <Text style={styles.wert} maxFontSizeMultiplier={MAX_FONT_SCALE}>{wertKurz(liste.key, e.wert)}</Text>
-                  <View style={styles.trend} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-                    {t > 0 ? <Ionicons name="caret-up" size={12} color={c.successText} />
-                      : t < 0 ? <Ionicons name="caret-down" size={12} color={c.coralText} />
-                      : <Text style={styles.trendGleich}>–</Text>}
-                  </View>
-                </PressableScale>
-              );
-            })}
-          </View>
-          {hinweis ? <Text style={styles.hinweis}>{hinweis}</Text> : null}
-        </Animated.View>
-      )}
+      ) : null}
+      {mehr && hinweis ? <Text style={styles.hinweis}>{hinweis}</Text> : null}
     </Card>
   );
+}
+
+function untertitel(liste: Rangliste): string {
+  if (liste.richtung === "wenig") return liste.untertitel;
+  return UNTERTITEL[liste.key] ?? (liste.key.startsWith("spiel_") ? `beim ${liste.titel.split(" — ")[0]}` : liste.untertitel);
 }
 
 const makeStyles = (c: ThemeColors) =>
@@ -118,12 +136,6 @@ const makeStyles = (c: ThemeColors) =>
     untertitel: { ...TYPE.caption, fontSize: 13, color: c.textMuted },
     platzPill: { paddingHorizontal: 10, height: 28, borderRadius: RADIUS.pill, justifyContent: "center" },
     platzText: { fontFamily: FONT.w700, fontSize: 13 },
-    top3: { flexDirection: "row", gap: 8 },
-    topZelle: { flex: 1, flexDirection: "row", alignItems: "center", gap: 8, minHeight: 48, paddingTop: 10 },
-    kroneTop: { position: "absolute", top: -14, left: 9 },
-    ichRing: { borderWidth: 2, borderRadius: 20, padding: 1, margin: -3 },
-    topName: { fontFamily: FONT.w600, fontSize: 14, color: c.textDark },
-    topWert: { ...TYPE.num, fontSize: 18, color: c.textDark },
     zeile: { flexDirection: "row", alignItems: "center", gap: 10, minHeight: 44, paddingHorizontal: 8, marginHorizontal: -8, borderRadius: RADIUS.md },
     rang: { width: 26, alignItems: "center" },
     rangText: { fontFamily: FONT.w700, fontSize: 14, color: c.textMuted },
@@ -134,4 +146,8 @@ const makeStyles = (c: ThemeColors) =>
     trend: { width: 16, alignItems: "center" },
     trendGleich: { fontFamily: FONT.w600, fontSize: 14, color: c.textMuted },
     hinweis: { ...TYPE.caption, fontSize: 13, color: c.textMuted },
+    luecke: { ...TYPE.caption, color: c.textMuted, textAlign: "center", lineHeight: 14 },
+    fuss: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border, paddingTop: 8 },
+    fussKnopf: { flexDirection: "row", alignItems: "center", gap: 5, minHeight: 36 },
+    fussText: { fontFamily: FONT.w600, fontSize: 13, color: c.textMuted },
   });
