@@ -142,7 +142,7 @@ export function computeRanglisten(daten: StatsDaten, jahr: JahrFilter): Ranglist
         wert: dabei,
         anzeige: String(dabei),
         label: "Abende",
-        sub: pct !== null ? `${pct} % Anwesenheit` : undefined,
+        sub: pct !== null ? `${pct}\u202F% Anwesenheit` : undefined,
       };
     })
     .sort((a, b) => b.wert - a.wert);

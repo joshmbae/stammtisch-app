@@ -4,11 +4,10 @@ import { MemberProfile, SpielEreignisTyp } from "../../../types";
 import { FONT, MAX_FONT_SCALE, RADIUS, TYPE, ThemeColors } from "../../../constants/design";
 import { useColors, useThemedStyles } from "../../../contexts/ThemeContext";
 import { TerminAbend } from "../../../utils/useTerminAbend";
-import { displayName } from "../../../utils/format";
+import { displayName, formatBetrag } from "../../../utils/format";
 import { showAlert } from "../../../utils/alert";
 import { Avatar, Card, CountBurst, Emoji, PressableScale, Ton, haptik } from "../../ui";
 import { formatUhrzeit } from "../../../utils/date";
-import { euroKurz } from "./StrafenErfassen";
 import { VerlaufListe } from "./VerlaufListe";
 
 const TOENE: Ton[] = ["mustard", "coral", "green", "blue"];
@@ -92,7 +91,7 @@ export function SpielZaehler({ abend, mitglieder }: { abend: TerminAbend; mitgli
         symbol: typ.emoji ? <Emoji size={16}>{typ.emoji}</Emoji> : undefined,
         wer: m ? displayName(m) : "?",
         was: typ.label,
-        rechts: strafe ? euroKurz(strafe.betrag) : undefined,
+        rechts: strafe ? formatBetrag(strafe.betrag) : undefined,
         loeschen: () => abend.spielEreignisLöschen(l.memberId, l.id),
       };
     });
@@ -134,7 +133,7 @@ export function SpielZaehler({ abend, mitglieder }: { abend: TerminAbend; mitgli
       ))}
       </Card>
       {mitStrafe.length > 0 ? (
-        <Text style={styles.fuss}>{mitStrafe.map((t) => `${t.emoji ? `${t.emoji} ` : ""}${t.label} ${euroKurz(t.strafBetrag!)}`).join(" · ")}</Text>
+        <Text style={styles.fuss}>{mitStrafe.map((t) => `${t.emoji ? `${t.emoji} ` : ""}${t.label} ${formatBetrag(t.strafBetrag!)}`).join(" · ")}</Text>
       ) : null}
       <VerlaufListe titel="Verlauf" eintraege={verlauf} />
     </View>
@@ -151,7 +150,7 @@ const makeStyles = (c: ThemeColors) =>
     zeile: { flexDirection: "row", alignItems: "center", gap: 6, minHeight: 50, paddingVertical: 6 },
     trenner: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
     name: { flex: 1, fontFamily: FONT.w600, fontSize: 15, color: c.textDark, marginLeft: 4 },
-    knopf: { height: 38, borderRadius: RADIUS.md, alignItems: "center", justifyContent: "center", overflow: "visible" },
+    knopf: { height: 44, borderRadius: RADIUS.md, alignItems: "center", justifyContent: "center", overflow: "visible" },
     zahl: { ...TYPE.num, fontSize: 18 },
     fuss: { ...TYPE.caption, fontSize: 12, color: c.textMuted, textAlign: "center", marginTop: 2 },
   });

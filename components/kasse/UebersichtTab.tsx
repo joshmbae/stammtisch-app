@@ -8,13 +8,12 @@ import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { Kasse } from "../../utils/useKasse";
 import { monatsSalden, rechnungBeglichen, rechnungOffen, saldo, schuldnerVon } from "../../utils/kasse";
 import { formatWochentagDatum, tagesSchluessel } from "../../utils/date";
-import { displayName, formatEuro } from "../../utils/format";
+import { displayName, formatEuro, formatBetrag } from "../../utils/format";
 import { Card, Emoji, IconSquircle, PressableScale, SectionLabel } from "../ui";
 import { SYMBOL } from "../../constants/symbole";
 
 const MONATE = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
-const euro = (n: number) => `${formatEuro(n).replace(",00", "")} €`;
-const vorzeichen = (n: number) => `${n >= 0 ? "+" : "−"}${euro(Math.abs(n))}`;
+const vorzeichen = (n: number) => `${n >= 0 ? "+" : "−"}${formatBetrag(Math.abs(n))}`;
 
 /** Kassenstand mit Monatsverlauf, offene Posten und Verlauf nach Tagen. */
 export function UebersichtTab({ kasse, onStrafen, onRechnungen, onEintrag }: {
@@ -70,7 +69,7 @@ export function UebersichtTab({ kasse, onStrafen, onRechnungen, onEintrag }: {
           ) : null}
         </View>
         <Text style={[styles.betrag, { color: stand < 0 ? c.coralText : dunkel ? c.textDark : c.onMustard }]} maxFontSizeMultiplier={MAX_FONT_SCALE} accessibilityLabel={`Kassenstand ${formatEuro(stand)} Euro`}>
-          {formatEuro(stand).replace(",00", "")}
+          {formatEuro(stand).replace(/,00$/, "")}
           <Text style={styles.euro}> €</Text>
         </Text>
 
@@ -93,21 +92,21 @@ export function UebersichtTab({ kasse, onStrafen, onRechnungen, onEintrag }: {
             );
           })}
         </View>
-        <Text style={[styles.monatText, { color: dunkel ? c.textDark : c.onMustard }]}>{`${MONATE[m.monat.getMonth()]} · Stand ${euro(m.stand)}`}</Text>
+        <Text style={[styles.monatText, { color: dunkel ? c.textDark : c.onMustard }]}>{`${MONATE[m.monat.getMonth()]} · Stand ${formatBetrag(m.stand)}`}</Text>
         <View style={styles.zeile}>
           <View style={[styles.kachel, { backgroundColor: dunkel ? c.cardAlt : c.card }]}>
             <View style={styles.kachelKopf}>
               <Emoji size={14}>{SYMBOL.einnahme}</Emoji>
               <Text style={styles.kachelLabel}>Einnahmen</Text>
             </View>
-            <Text style={[styles.kachelWert, { color: c.successText }]} maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} adjustsFontSizeToFit>{`+${euro(ein)}`}</Text>
+            <Text style={[styles.kachelWert, { color: c.successText }]} maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} adjustsFontSizeToFit>{`+${formatBetrag(ein)}`}</Text>
           </View>
           <View style={[styles.kachel, { backgroundColor: dunkel ? c.cardAlt : c.card }]}>
             <View style={styles.kachelKopf}>
               <Emoji size={14}>{SYMBOL.ausgabe}</Emoji>
               <Text style={styles.kachelLabel}>Ausgaben</Text>
             </View>
-            <Text style={[styles.kachelWert, { color: c.coralText }]} maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} adjustsFontSizeToFit>{`−${euro(aus)}`}</Text>
+            <Text style={[styles.kachelWert, { color: c.coralText }]} maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} adjustsFontSizeToFit>{`−${formatBetrag(aus)}`}</Text>
           </View>
         </View>
       </Card>
@@ -116,13 +115,13 @@ export function UebersichtTab({ kasse, onStrafen, onRechnungen, onEintrag }: {
         <Card enterIndex={1} style={{ gap: 2 }}>
           <Text style={[styles.label, { color: c.textMuted, marginBottom: 6 }]}>Offene Posten</Text>
           {offeneStrafen.length > 0 ? (
-            <PressableScale onPress={onStrafen} style={styles.posten} accessibilityLabel={`Strafen: ${euro(offeneStrafen.reduce((s, l) => s + l.betrag, 0))} offen`}>
+            <PressableScale onPress={onStrafen} style={styles.posten} accessibilityLabel={`Strafen: ${formatBetrag(offeneStrafen.reduce((s, l) => s + l.betrag, 0))} offen`}>
               <IconSquircle emoji={SYMBOL.strafe} ton="coral" size={36} />
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={styles.postenTitel}>Strafen</Text>
                 <Text style={styles.postenSub} numberOfLines={2}>{`bei ${strafPersonen.length} ${strafPersonen.length === 1 ? "Person" : "Personen"} · ${strafPersonen.map((p) => displayName(p!)).join(", ")}`}</Text>
               </View>
-              <Text style={[styles.postenBetrag, { color: c.coralText }]}>{euro(offeneStrafen.reduce((s, l) => s + l.betrag, 0))}</Text>
+              <Text style={[styles.postenBetrag, { color: c.coralText }]}>{formatBetrag(offeneStrafen.reduce((s, l) => s + l.betrag, 0))}</Text>
               <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
             </PressableScale>
           ) : null}
@@ -132,7 +131,7 @@ export function UebersichtTab({ kasse, onStrafen, onRechnungen, onEintrag }: {
             const termin = kasse.termine.find((t) => t.id === e.terminId);
             const wann = formatWochentagDatum(new Date(termin ? `${termin.datum}T00:00:00` : e.datum));
             return (
-              <PressableScale key={e.id} onPress={onRechnungen} style={[styles.posten, styles.trenner]} accessibilityLabel={`Rechnung ${wann}: ${euro(rechnungOffen(e))} offen`}>
+              <PressableScale key={e.id} onPress={onRechnungen} style={[styles.posten, styles.trenner]} accessibilityLabel={`Rechnung ${wann}: ${formatBetrag(rechnungOffen(e))} offen`}>
                 <IconSquircle emoji={SYMBOL.rechnung} ton="blue" size={36} />
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text style={styles.postenTitel}>{`Rechnung ${wann}`}</Text>
@@ -140,7 +139,7 @@ export function UebersichtTab({ kasse, onStrafen, onRechnungen, onEintrag }: {
                     {[schuldner.length ? `${offen} von ${schuldner.length} noch offen` : "offen", name(e.bezahltVon) ? `an ${name(e.bezahltVon)}` : null].filter(Boolean).join(" · ")}
                   </Text>
                 </View>
-                <Text style={[styles.postenBetrag, { color: c.coralText }]}>{euro(rechnungOffen(e))}</Text>
+                <Text style={[styles.postenBetrag, { color: c.coralText }]}>{formatBetrag(rechnungOffen(e))}</Text>
                 <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
               </PressableScale>
             );
@@ -163,8 +162,8 @@ export function UebersichtTab({ kasse, onStrafen, onRechnungen, onEintrag }: {
                 <View style={[styles.tagKopf, ti > 0 && styles.trenner]}>
                   <Text style={styles.tagText}>{formatWochentagDatum(new Date(`${tag}T00:00:00`)).toUpperCase()}</Text>
                   <View style={{ flexDirection: "row", gap: 8 }}>
-                    {plus > 0 ? <Text style={[styles.tagSumme, { color: c.successText }]}>{`+${euro(plus)}`}</Text> : null}
-                    {minus > 0 ? <Text style={[styles.tagSumme, { color: c.coralText }]}>{`−${euro(minus)}`}</Text> : null}
+                    {plus > 0 ? <Text style={[styles.tagSumme, { color: c.successText }]}>{`+${formatBetrag(plus)}`}</Text> : null}
+                    {minus > 0 ? <Text style={[styles.tagSumme, { color: c.coralText }]}>{`−${formatBetrag(minus)}`}</Text> : null}
                   </View>
                 </View>
                 {liste.map((e) => {

@@ -3,7 +3,7 @@ import { StyleSheet, Text } from "react-native";
 import { router } from "expo-router";
 import { Spiel, SpielEreignisTyp, SPIEL_VORLAGEN, StammtischVerordnung } from "../types";
 import { instantiateSpielVorlage, loadAllEreignisTypen, loadSpiele, loadVerordnung } from "../utils/storage";
-import { formatEuro } from "../utils/format";
+import { formatBetrag } from "../utils/format";
 
 import { showAlert } from "../utils/alert";
 import { useScreenLoad } from "../utils/useScreenLoad";
@@ -15,7 +15,6 @@ import OfflineBanner from "../components/OfflineBanner";
 import { Button, Card, FormSection, HeaderIconButton, ListGroup, ListRow, Screen, ScreenHeader } from "../components/ui";
 import { WeitereSpiele } from "../components/spiele/SpielFormular";
 
-const euro = (n: number) => `${formatEuro(n).replace(",00", "")} €`;
 
 export default function SpieleScreen() {
   const styles = useThemedStyles(makeStyles);
@@ -50,7 +49,7 @@ export default function SpieleScreen() {
   const ereignisText = (spielId: string) =>
     typen
       .filter((t) => t.spielId === spielId)
-      .map((t) => (t.strafBetrag ? `${t.label} (${euro(t.strafBetrag)})` : t.label))
+      .map((t) => (t.strafBetrag ? `${t.label} (${formatBetrag(t.strafBetrag)})` : t.label))
       .join(", ");
 
   return (

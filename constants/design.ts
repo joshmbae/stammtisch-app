@@ -26,13 +26,14 @@ export const LIGHT_COLORS = {
   textDark:      "#1C1B19",      // Tinte
   textMid:       "#4F4A40",
   textMuted:     "#6E685D",
-  textLight:     "#8A8478",      // nur Platzhalter/Deko, nie für Fließtext
+  textLight:     "#7D776B",      // nur Platzhalter/Deko, nie für Fließtext (3,7:1 auf cardAlt)
   onAccent:      "#FFFFFF",      // Text/Icons auf blue und success
   onAvatar:      "#FFFFFF",      // Initialen auf Avatarfarben
 
   // Borders & Divider
   border:        "#E6E0D4",
   borderDark:    "#D9D2C4",
+  control:       "#8F887B",      // Rand antippbarer Kreise/Felder (Abhaken): 3,5:1 auf Karte
 
   // Status
   dangerBg:      "#F6DCD3",
@@ -92,7 +93,7 @@ export const DARK_COLORS: ThemeColors = {
   segmentBg:     "#1B1E27",
   hairline:      "rgba(255,255,255,0.08)",
 
-  blue:          "#4D7CFF",      // Elektroblau: Text auf Karte 4,9:1, Fläche mit dunklem Text
+  blue:          "#5A86FF",      // Elektroblau: Text auf Karte 5,4:1, auf cardAlt 5,0:1, Fläche mit dunklem Text
   blueBg:        "#121A33",
   gold:          "#FFC93C",
   goldLight:     "#FFC93C",
@@ -100,12 +101,13 @@ export const DARK_COLORS: ThemeColors = {
   textDark:      "#F4F6FB",
   textMid:       "#B5BBCB",
   textMuted:     "#8A90A2",
-  textLight:     "#5C6274",
+  textLight:     "#737A8D",
   onAccent:      "#0A0B0F",
   onAvatar:      "#FFFFFF",
 
   border:        "#232733",
   borderDark:    "#2E3340",
+  control:       "#6A7084",
 
 
   dangerBg:      "#2E1510",

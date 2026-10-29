@@ -8,7 +8,6 @@ import { useColors, useThemedStyles } from "../../../contexts/ThemeContext";
 import { TerminAbend } from "../../../utils/useTerminAbend";
 import { displayName } from "../../../utils/format";
 import { formatUhrzeit } from "../../../utils/date";
-import { useFuehrende } from "../../../utils/useFuehrende";
 import { Avatar, Button, Card, PressableScale, Sheet, haptik } from "../../ui";
 import { VerlaufListe } from "./VerlaufListe";
 
@@ -33,7 +32,6 @@ export function AnwesendListe({ abend, mitglieder, start, onStrafe }: {
 }) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
-  const fuehrende = useFuehrende();
   const t = abend.termin!;
   const [offenFuer, setOffenFuer] = useState<string | null>(null);
   const [minuten, setMinuten] = useState(0);
@@ -193,7 +191,7 @@ export function AnwesendListe({ abend, mitglieder, start, onStrafe }: {
                 >
                   <Avatar
                     name={displayName(m)} color={m.avatarColor} photoUri={m.photoUri} size={30}
-                    fuehrt={dabei ? fuehrende.get(m.id) : undefined} absent={!dabei}
+                    absent={!dabei}
                   />
                   <View style={styles.text}>
                     <Text style={[styles.name, !dabei && { color: c.textMuted }]} numberOfLines={1}>{displayName(m)}</Text>

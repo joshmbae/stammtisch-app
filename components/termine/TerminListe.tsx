@@ -56,7 +56,7 @@ export function NaechsterStammtisch({ termin, phase, members, ichId, stammtischz
         {ichDabei ? (
           <View style={[styles.dabeiPill, { backgroundColor: c.mustard }]}>
             <Ionicons name="checkmark" size={13} color={c.onMustard} />
-            <Text style={[styles.dabeiText, { color: c.onMustard }]}>Du bist dabei</Text>
+            <Text style={[styles.dabeiText, { color: c.onMustard }]}>Bin dabei</Text>
           </View>
         ) : null}
       </View>
@@ -83,9 +83,11 @@ export function NaechsterStammtisch({ termin, phase, members, ichId, stammtischz
 }
 
 /** Termine und Geburtstage nach Monat gruppiert. */
-export function TerminListe({ eintraege, vergangen, members, onGeburtstagTermin }: {
+export function TerminListe({ eintraege, vergangen, members, onGeburtstagTermin, leerText }: {
   eintraege: ListenEintrag[];
   vergangen: boolean;
+  /** Eigener Text, wenn nichts in der Liste steht (z. B. weil der nächste Termin schon darüber hervorgehoben ist). */
+  leerText?: string;
   members: MemberProfile[];
   /** Eigene Geburtstags-Termine (ohne Mitglied) haben keine Detailseite. */
   onGeburtstagTermin: (t: StammtischTermin) => void;
@@ -107,7 +109,7 @@ export function TerminListe({ eintraege, vergangen, members, onGeburtstagTermin 
   if (gruppen.length === 0) {
     return (
       <Card style={{ alignItems: "center", paddingVertical: 24 }}>
-        <Text style={styles.leer}>{vergangen ? "Noch keine vergangenen Termine." : "Nichts geplant. Mit + einen Termin anlegen."}</Text>
+        <Text style={styles.leer}>{leerText ?? (vergangen ? "Noch keine vergangenen Termine." : "Nichts geplant. Mit + einen Termin anlegen.")}</Text>
       </Card>
     );
   }
@@ -161,7 +163,7 @@ function TerminZeile({ termin, vergangen, members, onGeburtstagTermin }: {
         <Text style={[styles.titel, vergangen && { color: c.textMid }]} numberOfLines={1}>{titel}</Text>
         <Text style={styles.sub} numberOfLines={1}>{[termin.startZeit ? `${termin.startZeit}` : null, bisText, termin.ort].filter(Boolean).join(" · ") || (termin.art === "geburtstag" ? "Geburtstag" : "")}</Text>
       </View>
-      {status ? <Text style={[styles.status, status === "offen" && { color: c.textLight }]}>{status}</Text> : null}
+      {status ? <Text style={[styles.status, status === "offen" && { color: c.textMuted }]}>{status}</Text> : null}
       <Ionicons name="chevron-forward" size={16} color={c.textMuted} />
     </PressableScale>
   );

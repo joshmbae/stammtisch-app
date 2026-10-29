@@ -84,7 +84,7 @@ const makeStyles = (c: ThemeColors) =>
     thumbLive: { backgroundColor: c.heroStyle === "outline" ? c.liveAccent : c.live },
     item: { flex: 1, alignItems: "center", justifyContent: "center", minHeight: 34, paddingHorizontal: 4 },
     label: { fontFamily: FONT.w600, fontSize: 14 },
-    sub: { fontFamily: FONT.w500, fontSize: 11, opacity: 0.8, fontVariant: ["tabular-nums"] },
+    sub: { fontFamily: FONT.w500, fontSize: 11, fontVariant: ["tabular-nums"] },
     onBar: { color: c.textMid },
     onThumbLight: { color: c.textDark },
     onThumbBlue: { color: c.onAccent },

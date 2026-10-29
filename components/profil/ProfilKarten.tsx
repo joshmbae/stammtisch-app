@@ -5,12 +5,11 @@ import { MemberProfile, StrafKategorieDef, StrafLog } from "../../types";
 import { FONT, MAX_FONT_SCALE, RADIUS, TYPE, ThemeColors, glow } from "../../constants/design";
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { Jahrestitel } from "../../utils/stats";
-import { displayName, formatEuro } from "../../utils/format";
+import { displayName, formatBetrag } from "../../utils/format";
 import { formatWochentagDatum } from "../../utils/date";
 import { Avatar, Card, Emoji, IconSquircle, KategorieIcon, Krone, PressableScale, SectionLabel, tonFuerRangliste } from "../ui";
 import { SYMBOL } from "../../constants/symbole";
 
-const euro = (n: number) => `${formatEuro(n).replace(",00", "")} €`;
 
 /** Kopf: Bild, Name, Rollen und die festen Angaben zur Person. */
 export function ProfilHero({ member }: { member: MemberProfile }) {
@@ -131,12 +130,12 @@ export function StrafenKarte({ jahr, memberId, strafen, kategorien }: { jahr: st
       <SectionLabel action={{ label: "Strafen", onPress: () => router.push(`/kasse?tab=strafen&memberId=${memberId}`) }}>{`Strafen ${jahr}`}</SectionLabel>
       <View style={styles.zeile}>
         <View style={{ flex: 1 }}>
-          <Text style={[styles.strafWert, { color: offen > 0 ? c.coralText : c.successText }]} maxFontSizeMultiplier={MAX_FONT_SCALE}>{euro(offen)}</Text>
+          <Text style={[styles.strafWert, { color: offen > 0 ? c.coralText : c.successText }]} maxFontSizeMultiplier={MAX_FONT_SCALE}>{formatBetrag(offen)}</Text>
           <Text style={styles.meta}>{offen > 0 ? "offen" : "offen · alles beglichen"}</Text>
         </View>
         <View style={[styles.senkrecht, { backgroundColor: c.border }]} />
         <View style={{ flex: 1, paddingLeft: 14 }}>
-          <Text style={styles.strafWert} maxFontSizeMultiplier={MAX_FONT_SCALE}>{euro(bezahlt.reduce((s, l) => s + l.betrag, 0))}</Text>
+          <Text style={styles.strafWert} maxFontSizeMultiplier={MAX_FONT_SCALE}>{formatBetrag(bezahlt.reduce((s, l) => s + l.betrag, 0))}</Text>
           <Text style={styles.meta}>{`gezahlt · ${bezahlt.length} ${bezahlt.length === 1 ? "Strafe" : "Strafen"}`}</Text>
         </View>
       </View>
@@ -153,7 +152,7 @@ export function StrafenKarte({ jahr, memberId, strafen, kategorien }: { jahr: st
                   <Text style={styles.strafName} numberOfLines={1}>{was}</Text>
                   <Text style={styles.meta} numberOfLines={1}>{`${formatWochentagDatum(new Date(l.loggedAt))} · ${l.beglichen ? "bezahlt" : "offen"}`}</Text>
                 </View>
-                <Text style={[styles.strafBetrag, !l.beglichen && { color: c.coralText }]}>{euro(l.betrag)}</Text>
+                <Text style={[styles.strafBetrag, !l.beglichen && { color: c.coralText }]}>{formatBetrag(l.betrag)}</Text>
               </View>
             );
           })}

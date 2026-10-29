@@ -5,13 +5,12 @@ import { MemberProfile, StrafKategorieDef, StrafLog } from "../../../types";
 import { FONT, RADIUS, TYPE, ThemeColors } from "../../../constants/design";
 import { useColors, useThemedStyles } from "../../../contexts/ThemeContext";
 import { TerminAbend } from "../../../utils/useTerminAbend";
-import { displayName, formatEuro } from "../../../utils/format";
+import { displayName, formatBetrag } from "../../../utils/format";
 import { Button, KategorieIcon, PersonChip, PressableScale, haptik } from "../../ui";
 import { useSession } from "../../../contexts/SessionContext";
 import { formatUhrzeit } from "../../../utils/date";
 import { VerlaufListe } from "./VerlaufListe";
 
-export const euroKurz = (n: number) => `${formatEuro(n).replace(",00", "")} €`;
 
 /**
  * Strafe in zwei Griffen: wer, wofür, eintragen. Bei Kategorien ohne festen
@@ -55,7 +54,7 @@ export function StrafenErfassen({ abend, mitglieder, vorauswahl }: {
     }
   }
 
-  const knopfText = !person ? "Wer und wofür?" : !wofuer ? `${displayName(person)}: wofür?` : freierBetrag && !bereit ? "Betrag eingeben" : `${displayName(person)}: ${wofuer.label} · ${euroKurz(betragZahl)}`;
+  const knopfText = !person ? "Wer und wofür?" : !wofuer ? `${displayName(person)}: wofür?` : freierBetrag && !bereit ? "Betrag eingeben" : `${displayName(person)}: ${wofuer.label} · ${formatBetrag(betragZahl)}`;
 
   return (
     <View style={{ gap: 12 }}>
@@ -79,14 +78,14 @@ export function StrafenErfassen({ abend, mitglieder, vorauswahl }: {
                   onPress={() => { setWofuer(sel ? null : k); setBetrag(""); }}
                   accessibilityRole="radio"
                   accessibilityState={{ selected: sel }}
-                  accessibilityLabel={`${k.label}${k.betrag > 0 ? `, ${euroKurz(k.betrag)}` : ""}`}
+                  accessibilityLabel={`${k.label}${k.betrag > 0 ? `, ${formatBetrag(k.betrag)}` : ""}`}
                   style={[styles.kat, sel && { borderColor: c.coral, borderWidth: 2, backgroundColor: c.coralSoft }]}
                 >
                   <KategorieIcon kat={k} size={30} />
                   <View style={styles.katText}>
                     <Text style={styles.katLabel} numberOfLines={2}>{k.label}</Text>
                     <Text style={[styles.katBetrag, { color: k.betrag > 0 ? c.coralText : c.textMuted }]}>
-                      {k.betrag > 0 ? euroKurz(k.betrag) : "Betrag frei"}
+                      {k.betrag > 0 ? formatBetrag(k.betrag) : "Betrag frei"}
                     </Text>
                   </View>
                 </PressableScale>
@@ -142,7 +141,7 @@ export function StrafenErfassen({ abend, mitglieder, vorauswahl }: {
             symbol: <KategorieIcon kat={k} size={24} />,
             wer: m ? displayName(m) : "?",
             was: l.beglichen ? `${label} · bezahlt` : label,
-            rechts: euroKurz(l.betrag),
+            rechts: formatBetrag(l.betrag),
             loeschen: () => abend.strafeLöschen(l.memberId, l.id),
           };
         })}

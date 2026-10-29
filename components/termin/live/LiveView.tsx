@@ -8,7 +8,8 @@ import { hauptEreignis } from "../../../utils/spiel";
 import { showAlert } from "../../../utils/alert";
 import { Button, SegmentedTabs, TabItem } from "../../ui";
 import { AnwesendListe } from "./AnwesendListe";
-import { StrafenErfassen, euroKurz } from "./StrafenErfassen";
+import { StrafenErfassen } from "./StrafenErfassen";
+import { formatBetrag } from "../../../utils/format";
 import { SpielZaehler } from "./SpielZaehler";
 
 export type LiveBereich = "anwesend" | "strafen" | "spiel";
@@ -36,12 +37,15 @@ export function LiveView({ abend, start, now, startBereich }: { abend: TerminAbe
   const fuerStrafen = [...da, ...mitglieder.filter((m) => !t.anwesenheit?.includes(m.id))];
 
   const spielStrafen = new Set(Object.values(abend.spielLogMap).flat().map((l) => l.strafLogId).filter(Boolean));
-  const strafenSumme = Object.values(abend.strafMap).flat().filter((l) => !spielStrafen.has(l.id)).reduce((s, l) => s + l.betrag, 0);
+  // Dieselbe Summe wie Danach, Home und Kasse: Strafen inklusive Spiel, der Spielanteil extra genannt.
+  const alleStrafen = Object.values(abend.strafMap).flat();
+  const strafenSumme = alleStrafen.reduce((s, l) => s + l.betrag, 0);
+  const spielSumme = alleStrafen.filter((l) => spielStrafen.has(l.id)).reduce((s, l) => s + l.betrag, 0);
   const haupt = hauptEreignis(abend.ereignisTypen);
   const hauptAnzahl = haupt ? Object.values(abend.spielLogMap).flat().filter((l) => l.ereignisTypId === haupt.id).length : 0;
 
   const items: TabItem<Bereich>[] = [{ key: "anwesend", label: "Anwesend", sub: `${da.length} von ${mitglieder.length}` }];
-  if (abend.verordnung.tabStrafenAktiv !== false) items.push({ key: "strafen", label: "Strafen", sub: euroKurz(strafenSumme) });
+  if (abend.verordnung.tabStrafenAktiv !== false) items.push({ key: "strafen", label: "Strafen", sub: spielSumme > 0 ? `${formatBetrag(strafenSumme)} · ${formatBetrag(spielSumme)} Spiel` : formatBetrag(strafenSumme) });
   if (abend.aktivesSpiel) items.push({ key: "spiel", label: abend.aktivesSpiel.name, sub: haupt ? `${hauptAnzahl}× ${haupt.label}` : undefined });
   const aktiv = items.some((i) => i.key === bereich) ? bereich : "anwesend";
   const strafenAn = items.some((i) => i.key === "strafen");

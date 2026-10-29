@@ -6,7 +6,7 @@ import { FONT, MAX_FONT_SCALE, RADIUS, TYPE, ThemeColors } from "../../constants
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { Kasse, NeueBuchung } from "../../utils/useKasse";
 import { formatWochentagDatum, toLocalIsoDate } from "../../utils/date";
-import { displayName, formatEuro } from "../../utils/format";
+import { displayName, formatEuro, formatBetrag } from "../../utils/format";
 import { showAlert } from "../../utils/alert";
 import { Button, Chip, Emoji, KategorieIcon, PersonChip, PressableScale, Sheet, haptik } from "../ui";
 import { SYMBOL } from "../../constants/symbole";
@@ -162,7 +162,7 @@ export function BuchungSheet({ visible, kasse, onClose, start }: {
             ))}
           </View>
           <Button
-            label={fehlt ?? `${artLabel} eintragen · ${formatEuro(zahl)} €`}
+            label={fehlt ?? `${artLabel} eintragen · ${formatBetrag(zahl)}`}
             colors={fehlt ? { bg: c.cardAlt, fg: c.textMuted } : farbe}
             icon={fehlt ? undefined : "checkmark"}
             loading={busy}
@@ -199,7 +199,7 @@ export function BuchungSheet({ visible, kasse, onClose, start }: {
         <Text style={styles.betragSub}>
           {art === "einnahme" ? "Einnahme für die Kasse"
             : art === "ausgabe" ? "Ausgabe aus der Kasse"
-            : art === "abendkosten" ? (teilnehmerZahl > 0 && zahl > 0 ? `${formatEuro(zahl / teilnehmerZahl)} € pro Kopf` : "Einer zahlt für alle, die anderen zahlen ihm zurück")
+            : art === "abendkosten" ? (teilnehmerZahl > 0 && zahl > 0 ? `${formatBetrag(zahl / teilnehmerZahl)} pro Kopf` : "Einer zahlt für alle, die anderen zahlen ihm zurück")
             : "Landet erst beim Bezahlen in der Kasse"}
         </Text>
       </View>
@@ -237,7 +237,7 @@ export function BuchungSheet({ visible, kasse, onClose, start }: {
                 <PressableScale key={k.id} onPress={() => katWahl(k)} accessibilityRole="radio" accessibilityState={{ selected: sel }} accessibilityLabel={k.label} style={[styles.kat, sel && { borderColor: c.coral, backgroundColor: c.coralSoft }]}>
                   <KategorieIcon kat={k} size={28} />
                   <Text style={styles.katText} numberOfLines={1}>{k.label}</Text>
-                  {k.betrag > 0 ? <Text style={[styles.katBetrag, { color: c.coralText }]}>{`${formatEuro(k.betrag).replace(",00", "")} €`}</Text> : null}
+                  {k.betrag > 0 ? <Text style={[styles.katBetrag, { color: c.coralText }]}>{formatBetrag(k.betrag)}</Text> : null}
                 </PressableScale>
               );
             })}

@@ -9,15 +9,13 @@ import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { TerminAbend } from "../../utils/useTerminAbend";
 import { abendStats, ereignisGesamt } from "../../utils/abendStats";
 import { formatWochentagDatum } from "../../utils/date";
-import { displayName, formatEuro } from "../../utils/format";
-import { useFuehrende } from "../../utils/useFuehrende";
+import { displayName, formatBetrag } from "../../utils/format";
 import { useSession } from "../../contexts/SessionContext";
 import { showAlert } from "../../utils/alert";
 import { begleichenDialog } from "../../utils/zahlungslink";
 import { Avatar, BarList, BarRow, Button, Card, Emoji, IconSquircle, Krone, PressableScale, Ring, Ton, haptik, tonFarben } from "../ui";
 import { SYMBOL } from "../../constants/symbole";
 
-const euro = (n: number) => `${formatEuro(n).replace(",00", "")} €`;
 
 interface Kategorie {
   key: string;
@@ -34,7 +32,6 @@ interface Kategorie {
 export function DanachView({ abend, start }: { abend: TerminAbend; start: Date | null }) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
-  const fuehrende = useFuehrende();
   const { activeMemberId } = useSession();
   const [zahltGerade, setZahltGerade] = useState(false);
   const t = abend.termin!;
@@ -44,7 +41,7 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
   const byId = new Map(abend.members.map((m) => [m.id, m]));
 
   const avatar = (m: MemberProfile) => (
-    <Avatar name={displayName(m)} color={m.avatarColor} photoUri={m.photoUri} size={34} fuehrt={fuehrende.get(m.id)} />
+    <Avatar name={displayName(m)} color={m.avatarColor} photoUri={m.photoUri} size={34} />
   );
 
   function zeilen(werte: Map<string, number>, anzeige: (v: number) => string, sub?: (id: string) => string | undefined): BarRow[] {
@@ -62,7 +59,7 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
   function zahlen(offen: typeof strafLogs, betrag: number) {
     begleichenDialog({
       link: abend.verordnung.zahlungsLink,
-      betragText: euro(betrag),
+      betragText: formatBetrag(betrag),
       beschreibung: `${offen.length} ${offen.length === 1 ? "Strafe von heute wird" : "Strafen von heute werden"}`,
       onBeglichen: async () => {
         setZahltGerade(true);
@@ -107,7 +104,7 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
           hitSlop={6}
           style={[styles.zahlen, { backgroundColor: c.coral }]}
           accessibilityRole="button"
-          accessibilityLabel={`Deine Strafen von heute begleichen, ${euro(betrag)}`}
+          accessibilityLabel={`Deine Strafen von heute begleichen, ${formatBetrag(betrag)}`}
         >
           {zahltGerade ? <ActivityIndicator size="small" color={c.onCoral} /> : <Text style={[styles.zahlenText, { color: c.onCoral }]}>Zahlen</Text>}
         </PressableScale>
@@ -115,12 +112,12 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
     };
     const offenSumme = strafLogs.filter((l) => !l.beglichen).reduce((s, l) => s + l.betrag, 0);
     kategorien.push({
-      key: "strafen", label: "Strafen", wert: euro(stats.strafenSumme), ton: "blue", titel: "Strafen pro Kopf",
+      key: "strafen", label: "Strafen", wert: formatBetrag(stats.strafenSumme), ton: "blue", titel: "Strafen pro Kopf",
       summe: strafLogs.length === 0 ? "keine"
-        : offenSumme === 0 ? `${euro(stats.strafenSumme)} · alles bezahlt`
-        : offenSumme === stats.strafenSumme ? `${euro(offenSumme)} offen`
-        : `${euro(stats.strafenSumme)} · ${euro(offenSumme)} offen`,
-      zeilen: zeilen(proKopf, euro, (id) => [...new Set(gruende.get(id))].join(", ")).map((r) => ({ ...r, after: status(r.id) })),
+        : offenSumme === 0 ? `${formatBetrag(stats.strafenSumme)} · alles bezahlt`
+        : offenSumme === stats.strafenSumme ? `${formatBetrag(offenSumme)} offen`
+        : `${formatBetrag(stats.strafenSumme)} · ${formatBetrag(offenSumme)} offen`,
+      zeilen: zeilen(proKopf, formatBetrag, (id) => [...new Set(gruende.get(id))].join(", ")).map((r) => ({ ...r, after: status(r.id) })),
     });
   }
   const toene: Ton[] = ["mustard", "coral", "green", "blue"];
@@ -129,7 +126,7 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
     const mitStrafe = (typ.strafBetrag ?? 0) > 0;
     kategorien.push({
       key: typ.id, label: typ.label, wert: `${n}×`, ton: toene[i % toene.length], emoji: typ.emoji, titel: `${typ.label} pro Kopf`,
-      summe: mitStrafe && n > 0 ? `${n} × ${euro(typ.strafBetrag!)} = ${euro(n * typ.strafBetrag!)}` : `${n} insgesamt`,
+      summe: mitStrafe && n > 0 ? `${n} × ${formatBetrag(typ.strafBetrag!)} = ${formatBetrag(n * typ.strafBetrag!)}` : `${n} insgesamt`,
       zeilen: zeilen(stats.spielZaehler.get(typ.id) ?? new Map(), (v) => `${v}×`),
     });
   });
@@ -151,7 +148,7 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
   async function teilen() {
     const zeilenText = [
       `${t.titel ?? "Stammtisch"} · ${formatWochentagDatum(new Date(`${t.datum}T00:00:00`), true)}`,
-      `${stats.da.length} von ${stats.mitglieder.length} da (${Math.round(stats.quote * 100)} %)`,
+      `${stats.da.length} von ${stats.mitglieder.length} da (${Math.round(stats.quote * 100)}\u202F%)`,
       ...kategorien.filter((k) => k.zeilen.length > 0).map((k) => `${k.label}: ${k.wert} – vorne: ${k.zeilen.filter((z) => z.value === k.zeilen[0].value).map((z) => z.label).join(", ")}`),
     ];
     try { await Share.share({ message: zeilenText.join("\n") }); } catch { /* abgebrochen */ }
@@ -242,9 +239,9 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
       ) : null}
 
       {stats.strafenOffen > 0 ? (
-        <PressableScale onPress={() => router.push("/kasse?tab=strafen")} style={[styles.hinweis, { backgroundColor: c.coralSoft }]} accessibilityLabel={`${euro(stats.strafenOffen)} noch offen, in der Kasse abhaken`}>
+        <PressableScale onPress={() => router.push("/kasse?tab=strafen")} style={[styles.hinweis, { backgroundColor: c.coralSoft }]} accessibilityLabel={`${formatBetrag(stats.strafenOffen)} noch offen, in der Kasse abhaken`}>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.hinweisTitel, { color: c.coralText }]}>{`${euro(stats.strafenOffen)} noch offen`}</Text>
+            <Text style={[styles.hinweisTitel, { color: c.coralText }]}>{`${formatBetrag(stats.strafenOffen)} noch offen`}</Text>
             <Text style={[styles.hinweisSub, { color: c.coralText }]}>{`${strafenMitSpiel ? "Strafen und Niederlagen" : "Strafen"} · in der Kasse abhaken`}</Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={c.coralText} />
@@ -260,11 +257,11 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
         <PressableScale onPress={() => router.push(`/kasse?eintragId=${abend.rechnung!.id}`)} style={[styles.rechnung, styles.rechnungDa]} accessibilityLabel="Rechnung ansehen">
           <IconSquircle emoji={SYMBOL.rechnung} ton="blue" size={36} />
           <View style={{ flex: 1 }}>
-            <Text style={styles.rechnungTitel}>{`Rechnung · ${euro(abend.rechnung.betrag)}`}</Text>
+            <Text style={styles.rechnungTitel}>{`Rechnung · ${formatBetrag(abend.rechnung.betrag)}`}</Text>
             <Text style={styles.rechnungSub}>
               {[
                 zahler ? `${displayName(zahler)} hat bezahlt` : null,
-                abend.rechnung.teilnehmerIds?.length ? `${euro(abend.rechnung.betrag / abend.rechnung.teilnehmerIds.length)} p. P.` : null,
+                abend.rechnung.teilnehmerIds?.length ? `${formatBetrag(abend.rechnung.betrag / abend.rechnung.teilnehmerIds.length)} p. P.` : null,
               ].filter(Boolean).join(" · ")}
             </Text>
           </View>

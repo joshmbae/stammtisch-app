@@ -1,11 +1,7 @@
 import { ActivityLogEntry, MemberProfile, StrafKategorieDef } from "../types";
-import { formatEuro as formatEuroBase } from "./format";
+import { formatBetrag } from "./format";
 import { formatWochentagDatum } from "./date";
 import { SYMBOL } from "../constants/symbole";
-
-function formatEuro(n: number): string {
-  return formatEuroBase(n) + " €";
-}
 
 function displayName(m: MemberProfile | undefined): string {
   if (!m) return "Jemand";
@@ -84,7 +80,7 @@ export function renderActivity(
       const kat = strafKategorien.find((k) => k.id === meta.kategorie);
       return {
         emoji: kat?.emoji ?? "💰",
-        text: `${subjectName} hat eine Strafe bekommen: ${kat?.label ?? meta.kategorie} (${formatEuro(Number(meta.betrag ?? 0))})`,
+        text: `${subjectName} hat eine Strafe bekommen: ${kat?.label ?? meta.kategorie} (${formatBetrag(Number(meta.betrag ?? 0))})`,
         actorText: eingetragenVon,
         detail: meta.notiz ? `„${meta.notiz}“` : undefined,
       };
@@ -93,26 +89,26 @@ export function renderActivity(
       const kat = strafKategorien.find((k) => k.id === meta.kategorie);
       return {
         emoji: "✅",
-        text: `${subjectName} hat eine Strafe beglichen: ${kat?.label ?? meta.kategorie ?? "Sonstiges"} (${formatEuro(Number(meta.betrag ?? 0))})`,
+        text: `${subjectName} hat eine Strafe beglichen: ${kat?.label ?? meta.kategorie ?? "Sonstiges"} (${formatBetrag(Number(meta.betrag ?? 0))})`,
         actorText: eingetragenVon,
       };
     }
     case "kasse_einnahme_created":
       return {
         emoji: SYMBOL.einnahme,
-        text: `Einnahme verbucht: ${meta.beschreibung ?? "Sonstiges"} (${formatEuro(Number(meta.betrag ?? 0))})`,
+        text: `Einnahme verbucht: ${meta.beschreibung ?? "Sonstiges"} (${formatBetrag(Number(meta.betrag ?? 0))})`,
         actorText: eingetragenVon,
       };
     case "kasse_ausgabe_created":
       return {
         emoji: SYMBOL.ausgabe,
-        text: `Ausgabe verbucht: ${meta.beschreibung ?? "Sonstiges"} (${formatEuro(Number(meta.betrag ?? 0))})`,
+        text: `Ausgabe verbucht: ${meta.beschreibung ?? "Sonstiges"} (${formatBetrag(Number(meta.betrag ?? 0))})`,
         actorText: eingetragenVon,
       };
     case "abendkosten_created":
       return {
         emoji: SYMBOL.rechnung,
-        text: `${subjectName} hat den Abend bezahlt (${formatEuro(Number(meta.betrag ?? 0))})`,
+        text: `${subjectName} hat den Abend bezahlt (${formatBetrag(Number(meta.betrag ?? 0))})`,
         actorText: eingetragenVon,
       };
     case "kasse_beglichen":
@@ -121,14 +117,14 @@ export function renderActivity(
       return {
         emoji: "✅",
         text: meta.anteil
-          ? `${subjectName} hat den Anteil an der Stammtischrechnung zurückgezahlt (${formatEuro(Number(meta.betrag ?? 0))})`
-          : `Stammtischrechnung beglichen: ${subjectName} wurde zurückgezahlt (${formatEuro(Number(meta.betrag ?? 0))})`,
+          ? `${subjectName} hat den Anteil an der Stammtischrechnung zurückgezahlt (${formatBetrag(Number(meta.betrag ?? 0))})`
+          : `Stammtischrechnung beglichen: ${subjectName} wurde zurückgezahlt (${formatBetrag(Number(meta.betrag ?? 0))})`,
         actorText: eingetragenVon,
       };
     case "kasse_eintrag_deleted":
       return {
         emoji: "🗑️",
-        text: `Kassen-Eintrag gelöscht: ${meta.beschreibung ?? "Sonstiges"} (${formatEuro(Number(meta.betrag ?? 0))})`,
+        text: `Kassen-Eintrag gelöscht: ${meta.beschreibung ?? "Sonstiges"} (${formatBetrag(Number(meta.betrag ?? 0))})`,
         actorText: eingetragenVon,
       };
     case "spiel_log_created":
@@ -146,26 +142,26 @@ export function renderActivity(
     case "wette_created":
       return {
         emoji: "🤝",
-        text: `${subjectName} hat auf ${displayName(membersById.get(meta.gegenMemberId))} gewettet (${formatEuro(Number(meta.betrag ?? 0))})`,
+        text: `${subjectName} hat auf ${displayName(membersById.get(meta.gegenMemberId))} gewettet (${formatBetrag(Number(meta.betrag ?? 0))})`,
         actorText: eingetragenVon,
       };
     case "wette_resolved":
       return {
         emoji: meta.gewonnen ? "🏆" : "😔",
-        text: `Wette ${meta.gewonnen ? "gewonnen" : "verloren"}: ${subjectName} (${formatEuro(Number(meta.betrag ?? 0))})`,
+        text: `Wette ${meta.gewonnen ? "gewonnen" : "verloren"}: ${subjectName} (${formatBetrag(Number(meta.betrag ?? 0))})`,
         actorText: eingetragenVon,
       };
     case "wette_deleted":
       return {
         emoji: "🗑️",
-        text: `Wette gelöscht: ${subjectName} gegen ${displayName(membersById.get(meta.gegenMemberId))} (${formatEuro(Number(meta.betrag ?? 0))})`,
+        text: `Wette gelöscht: ${subjectName} gegen ${displayName(membersById.get(meta.gegenMemberId))} (${formatBetrag(Number(meta.betrag ?? 0))})`,
         actorText: eingetragenVon,
       };
     case "straf_log_deleted": {
       const kat = strafKategorien.find((k) => k.id === meta.kategorie);
       return {
         emoji: "🗑️",
-        text: `Strafe gelöscht: ${subjectName} – ${kat?.label ?? meta.kategorie} (${formatEuro(Number(meta.betrag ?? 0))})`,
+        text: `Strafe gelöscht: ${subjectName} – ${kat?.label ?? meta.kategorie} (${formatBetrag(Number(meta.betrag ?? 0))})`,
         actorText: eingetragenVon,
       };
     }

@@ -20,7 +20,7 @@ export function AktivitaetTimeline({ eintraege, membersById, kategorien }: {
   const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.card}>
-      <SectionLabel tone="blue" action={{ label: "Alle", onPress: () => router.push("/feed") }}>Aktivität</SectionLabel>
+      <SectionLabel tone="blue" action={{ label: "Alle", onPress: () => router.push("/feed") }}>Chronik</SectionLabel>
       {eintraege.length === 0 ? (
         <Text style={styles.leer}>Noch nichts passiert. Die erste Strafe kommt bestimmt.</Text>
       ) : (

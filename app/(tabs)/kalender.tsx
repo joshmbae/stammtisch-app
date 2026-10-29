@@ -150,7 +150,13 @@ export default function TermineScreen() {
               {tab === "kommend" && hero ? (
                 <NaechsterStammtisch termin={hero.termin} phase={hero.phase} members={members} ichId={activeMemberId} stammtischzeit={stammtischzeit} now={now} />
               ) : null}
-              <TerminListe eintraege={eintraege} vergangen={tab === "vergangen"} members={members} onGeburtstagTermin={geburtstagTermin} />
+              <TerminListe
+                eintraege={eintraege}
+                vergangen={tab === "vergangen"}
+                members={members}
+                onGeburtstagTermin={geburtstagTermin}
+                leerText={tab === "kommend" && hero ? "Danach ist noch nichts geplant. Mit + den nächsten anlegen." : undefined}
+              />
             </>
           )}
         </>

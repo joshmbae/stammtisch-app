@@ -8,13 +8,12 @@ import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { Kasse } from "../../utils/useKasse";
 import { anteilProKopf, rechnungBeglichen, rechnungOffen, schuldnerVon } from "../../utils/kasse";
 import { formatWochentagDatum } from "../../utils/date";
-import { displayName, formatEuro } from "../../utils/format";
+import { displayName, formatBetrag } from "../../utils/format";
 import { terminBezeichnung } from "../../utils/activityFeed";
 import { useSingleFlight } from "../../utils/useSingleFlight";
 import { Avatar, Button, Card, IconSquircle, PressableScale, haptik } from "../ui";
 import { SYMBOL } from "../../constants/symbole";
 
-const euro = (n: number) => `${formatEuro(n)} €`;
 
 /**
  * Stammtischrechnungen: einer hat für alle bezahlt, die anderen zahlen ihm
@@ -50,13 +49,13 @@ export function RechnungenTab({ kasse, onEintrag }: { kasse: Kasse; onEintrag: (
           {erledigtOffen ? erledigt.map((e) => {
             const zahler = kasse.members.find((m) => m.id === e.bezahltVon);
             return (
-              <PressableScale key={e.id} onPress={() => onEintrag(e)} style={[styles.erledigtZeile, styles.trenner]} accessibilityLabel={`${titel(e, kasse)}, ${euro(e.betrag)}, erledigt`}>
+              <PressableScale key={e.id} onPress={() => onEintrag(e)} style={[styles.erledigtZeile, styles.trenner]} accessibilityLabel={`${titel(e, kasse)}, ${formatBetrag(e.betrag)}, erledigt`}>
                 <Ionicons name="checkmark-circle" size={22} color={c.success} />
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text style={styles.erledigtTitel} numberOfLines={1}>{titel(e, kasse)}</Text>
                   {zahler ? <Text style={styles.sub}>{`${displayName(zahler)} hat bezahlt`}</Text> : null}
                 </View>
-                <Text style={styles.erledigtBetrag}>{euro(e.betrag)}</Text>
+                <Text style={styles.erledigtBetrag}>{formatBetrag(e.betrag)}</Text>
               </PressableScale>
             );
           }) : null}
@@ -87,7 +86,7 @@ function RechnungKarte({ e, kasse, onDetails, enterIndex }: { e: KassenEintrag; 
 
   async function erinnern() {
     const an = zahler ? displayName(zahler) : "den Zahler";
-    const text = `${titel(e, kasse)}: noch offen sind ${offenIds.map(name).join(", ")} – je ${euro(anteil)} an ${an}.`;
+    const text = `${titel(e, kasse)}: noch offen sind ${offenIds.map(name).join(", ")} – je ${formatBetrag(anteil)} an ${an}.`;
     try { await Share.share({ message: text }); } catch { /* abgebrochen */ }
   }
 
@@ -99,14 +98,14 @@ function RechnungKarte({ e, kasse, onDetails, enterIndex }: { e: KassenEintrag; 
           {ort ? <Text style={styles.sub} numberOfLines={1}>{ort}</Text> : null}
         </View>
         <Text style={styles.titel} numberOfLines={2}>{titel(e, kasse)}</Text>
-        <Text style={styles.sub}>{teilnehmer > 0 ? `${euro(e.betrag)} für ${teilnehmer} · ${euro(anteil)} pro Kopf` : euro(e.betrag)}</Text>
+        <Text style={styles.sub}>{teilnehmer > 0 ? `${formatBetrag(e.betrag)} für ${teilnehmer} · ${formatBetrag(anteil)} pro Kopf` : formatBetrag(e.betrag)}</Text>
       </PressableScale>
 
       {zahler ? (
         <View style={[styles.zahler, { backgroundColor: c.cardAlt }]}>
           <Avatar name={displayName(zahler)} color={zahler.avatarColor} photoUri={zahler.photoUri} size={28} />
           <Text style={styles.zahlerText} numberOfLines={2}>
-            {`${displayName(zahler)} hat bezahlt${schuldner.length ? ` · bekommt ${euro(anteil * schuldner.length)}` : ""}`}
+            {`${displayName(zahler)} hat bezahlt${schuldner.length ? ` · bekommt ${formatBetrag(anteil * schuldner.length)}` : ""}`}
           </Text>
         </View>
       ) : null}
@@ -115,7 +114,7 @@ function RechnungKarte({ e, kasse, onDetails, enterIndex }: { e: KassenEintrag; 
         <>
           <View style={styles.kopf}>
             <Text style={styles.fortschrittText}>{`${bezahlt.length} von ${schuldner.length} beglichen`}</Text>
-            <Text style={[styles.fortschrittText, { color: c.coralText }]}>{`${euro(rechnungOffen(e))} offen`}</Text>
+            <Text style={[styles.fortschrittText, { color: c.coralText }]}>{`${formatBetrag(rechnungOffen(e))} offen`}</Text>
           </View>
           <View style={styles.spur}><View style={[styles.fuell, { width: `${Math.round((bezahlt.length / schuldner.length) * 100)}%`, backgroundColor: c.success }]} /></View>
           <View>
@@ -129,7 +128,7 @@ function RechnungKarte({ e, kasse, onDetails, enterIndex }: { e: KassenEintrag; 
                     <Text style={styles.personName} numberOfLines={1}>{name(id)}</Text>
                     <Text style={[styles.personStatus, { color: ok ? c.successText : c.coralText }]}>{ok ? "bezahlt" : "offen"}</Text>
                   </View>
-                  <Text style={styles.personBetrag}>{euro(anteil)}</Text>
+                  <Text style={styles.personBetrag}>{formatBetrag(anteil)}</Text>
                   <PressableScale
                     onPress={() => guard(async () => { haptik(ok ? "leicht" : "erfolg"); await kasse.anteilUmschalten(e.id, id); })}
                     scaleTo={0.9}
@@ -174,7 +173,7 @@ const makeStyles = (c: ThemeColors) =>
     personName: { fontFamily: FONT.w700, fontSize: 16, color: c.textDark },
     personStatus: { fontFamily: FONT.w600, fontSize: 12 },
     personBetrag: { ...TYPE.num, fontSize: 16, color: c.textDark },
-    kreis: { width: 44, height: 44, borderRadius: 22, borderWidth: 2, borderColor: c.borderDark, alignItems: "center", justifyContent: "center" },
+    kreis: { width: 44, height: 44, borderRadius: 22, borderWidth: 2, borderColor: c.control, alignItems: "center", justifyContent: "center" },
     aufklapp: { minHeight: 56, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
     aufklappText: { fontFamily: FONT.w700, fontSize: 16, color: c.textDark },
     erledigtZeile: { flexDirection: "row", alignItems: "center", gap: 12, minHeight: 56, paddingVertical: 8 },

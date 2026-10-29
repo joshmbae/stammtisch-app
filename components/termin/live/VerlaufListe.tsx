@@ -37,7 +37,7 @@ export function VerlaufListe({ titel, eintraege, leer, fuss }: { titel: string; 
           <Animated.View key={e.id} entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)} layout={LinearTransition} style={[styles.zeile, i > 0 && styles.trenner]}>
             <Text style={styles.zeit}>{e.zeit ?? "–"}</Text>
             {e.symbol}
-            <Text style={styles.text} numberOfLines={1}>
+            <Text style={styles.text} numberOfLines={2}>
               <Text style={styles.wer}>{e.wer}</Text>
               {e.was ? ` · ${e.was}` : ""}
             </Text>
@@ -49,7 +49,7 @@ export function VerlaufListe({ titel, eintraege, leer, fuss }: { titel: string; 
                 hitSlop={8}
                 accessibilityLabel={`${e.wer}${e.was ? `: ${e.was}` : ""} zurücknehmen`}
               >
-                <Ionicons name="close" size={14} color={c.textMuted} />
+                <Ionicons name="close" size={15} color={c.textMuted} />
               </PressableScale>
             ) : null}
           </Animated.View>
@@ -64,14 +64,14 @@ const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     label: { ...TYPE.label, color: c.textMuted },
     leer: { ...TYPE.body, fontSize: 14, color: c.textMuted, paddingVertical: 12 },
-    zeile: { flexDirection: "row", alignItems: "center", gap: 8, minHeight: 44 },
+    zeile: { flexDirection: "row", alignItems: "center", gap: 8, minHeight: 44, paddingVertical: 4 },
     trenner: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
     zeit: { fontFamily: FONT.w500, fontSize: 13, color: c.textMuted, width: 40, fontVariant: ["tabular-nums"] },
     text: { flex: 1, fontFamily: FONT.w400, fontSize: 14, color: c.textMid },
     wer: { fontFamily: FONT.w600, color: c.textDark },
     rechts: { ...TYPE.num, fontSize: 14, color: c.textDark },
     x: {
-      width: 26, height: 26, borderRadius: 13, alignItems: "center", justifyContent: "center",
+      width: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center",
       backgroundColor: c.heroStyle === "outline" ? "rgba(255,255,255,0.08)" : "rgba(28,27,25,0.06)",
     },
   });

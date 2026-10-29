@@ -12,7 +12,7 @@ import {
   loadSpiele,
   loadAllEreignisTypen,
 } from "../utils/storage";
-import { formatEuro } from "../utils/format";
+import { formatBetrag } from "../utils/format";
 import { useScreenLoad } from "../utils/useScreenLoad";
 import { useSingleFlight } from "../utils/useSingleFlight";
 import { showAlert } from "../utils/alert";
@@ -36,7 +36,6 @@ import {
 } from "../components/ui";
 import { KategorieForm, KategorieSheet } from "../components/einstellungen/KategorieSheet";
 
-const euro = (n: number) => `${formatEuro(n).replace(",00", "")} €`;
 
 interface SpielKategorie {
   kat: StrafKategorieDef;
@@ -134,7 +133,7 @@ export default function StrafenKategorienScreen() {
               key={k.id}
               enterIndex={i}
               onPress={() => setSheet(k)}
-              accessibilityLabel={`${k.label}, ${frei ? "Betrag frei" : euro(k.betrag)}${k.istSystem ? ", Systemkategorie" : ""}. Bearbeiten`}
+              accessibilityLabel={`${k.label}, ${frei ? "Betrag frei" : formatBetrag(k.betrag)}${k.istSystem ? ", Systemkategorie" : ""}. Bearbeiten`}
               style={styles.kat}
             >
               <KategorieIcon kat={k} size={36} />
@@ -148,7 +147,7 @@ export default function StrafenKategorienScreen() {
                 ) : null}
               </View>
               <Text style={[styles.betrag, frei && styles.betragFrei]} maxFontSizeMultiplier={MAX_FONT_SCALE}>
-                {frei ? "frei" : euro(k.betrag)}
+                {frei ? "frei" : formatBetrag(k.betrag)}
               </Text>
             </Card>
           );
@@ -161,7 +160,7 @@ export default function StrafenKategorienScreen() {
             <Card
               key={kat.id}
               onPress={spiel ? () => router.push(`/spiel/${spiel.id}`) : undefined}
-              accessibilityLabel={`${spiel ? `${spiel.name}, ` : ""}${kat.label}, ${euro(kat.betrag)}, automatisch. Im Spiel bearbeiten`}
+              accessibilityLabel={`${spiel ? `${spiel.name}, ` : ""}${kat.label}, ${formatBetrag(kat.betrag)}, automatisch. Im Spiel bearbeiten`}
               style={styles.kat}
             >
               <IconSquircle emoji={spiel?.emoji ?? kat.emoji} ton="mustard" size={36} />
@@ -172,7 +171,7 @@ export default function StrafenKategorienScreen() {
                   {spiel ? <Text style={styles.link}>im Spiel</Text> : null}
                 </View>
               </View>
-              <Text style={styles.betrag} maxFontSizeMultiplier={MAX_FONT_SCALE}>{euro(kat.betrag)}</Text>
+              <Text style={styles.betrag} maxFontSizeMultiplier={MAX_FONT_SCALE}>{formatBetrag(kat.betrag)}</Text>
               {spiel ? <Ionicons name="chevron-forward" size={18} color={c.textMuted} /> : null}
             </Card>
           ))}
@@ -189,7 +188,7 @@ export default function StrafenKategorienScreen() {
                 subtitle={v.beschreibung}
                 right={
                   <View style={styles.vorlageRechts}>
-                    <Text style={styles.vorlageBetrag}>{euro(v.betrag)}</Text>
+                    <Text style={styles.vorlageBetrag}>{formatBetrag(v.betrag)}</Text>
                     <PressableScale onPress={() => guard(() => handleVorlage(v))} style={styles.plus} accessibilityLabel={`Vorlage ${v.label} übernehmen`}>
                       <Ionicons name="add" size={22} color={c.blue} />
                     </PressableScale>

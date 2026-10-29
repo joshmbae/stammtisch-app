@@ -7,14 +7,13 @@ import { FONT, MAX_FONT_SCALE, RADIUS, TYPE, ThemeColors } from "../../constants
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { Kasse } from "../../utils/useKasse";
 import { formatWochentagDatum } from "../../utils/date";
-import { displayName, formatEuro } from "../../utils/format";
+import { displayName, formatBetrag } from "../../utils/format";
 import { terminBezeichnung } from "../../utils/activityFeed";
 import { useSingleFlight } from "../../utils/useSingleFlight";
 import { Button, Card, Chip, KategorieIcon, PersonChip, PressableScale, haptik } from "../ui";
 import { begleichenDialog, zahlungsAnbieter } from "../../utils/zahlungslink";
 import { showAlert } from "../../utils/alert";
 
-const euro = (n: number) => `${formatEuro(n).replace(",00", "")} €`;
 
 /**
  * Alle Strafen der Runde: offene Summe mit den größten Schuldnern, Filter
@@ -80,7 +79,7 @@ export function StrafenTab({ kasse, filter, onFilter, onStrafe }: {
   function allesZahlen() {
     begleichenDialog({
       link: kasse.zahlungsLink,
-      betragText: euro(meineSumme),
+      betragText: formatBetrag(meineSumme),
       beschreibung: `${meineOffen.length} ${meineOffen.length === 1 ? "Strafe wird" : "Strafen werden"}`,
       onBeglichen: async () => {
         setZahltGerade(true);
@@ -108,7 +107,7 @@ export function StrafenTab({ kasse, filter, onFilter, onStrafe }: {
     const unter = (filter ? [zusatz] : [was, zusatz]).filter(Boolean).join(" · ");
     return (
       <View key={l.id} style={[styles.zeile, i > 0 && styles.trenner]}>
-        <PressableScale onPress={() => onStrafe(l)} style={styles.zeileInfo} accessibilityLabel={`${name(l.memberId)}: ${was}, ${euro(l.betrag)}${l.beglichen ? ", bezahlt" : ", offen"}. Details`}>
+        <PressableScale onPress={() => onStrafe(l)} style={styles.zeileInfo} accessibilityLabel={`${name(l.memberId)}: ${was}, ${formatBetrag(l.betrag)}${l.beglichen ? ", bezahlt" : ", offen"}. Details`}>
           <KategorieIcon kat={kat} size={36} />
           <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
             {/* Gefiltert ist die Person klar – dann steht die Strafe vorne statt des Namens. */}
@@ -116,14 +115,14 @@ export function StrafenTab({ kasse, filter, onFilter, onStrafe }: {
             {/* Kein „offen“-Badge: Abschnitt, Betrag in Koralle und leerer Kreis sagen das schon. */}
             {unter ? <Text style={styles.sub} numberOfLines={1}>{unter}</Text> : null}
           </View>
-          <Text style={[styles.betrag, l.beglichen ? styles.bezahlt : { color: c.coralText }]} maxFontSizeMultiplier={MAX_FONT_SCALE}>{euro(l.betrag)}</Text>
+          <Text style={[styles.betrag, l.beglichen ? styles.bezahlt : { color: c.coralText }]} maxFontSizeMultiplier={MAX_FONT_SCALE}>{formatBetrag(l.betrag)}</Text>
         </PressableScale>
         <PressableScale
           onPress={() => guard(() => abhaken(l))}
           scaleTo={0.9}
           accessibilityRole="checkbox"
           accessibilityState={{ checked: l.beglichen }}
-          accessibilityLabel={l.beglichen ? "Bezahlt. Tippen, um wieder offen zu setzen" : "Als bezahlt markieren"}
+          accessibilityLabel={`${name(l.memberId)}: ${was}, ${formatBetrag(l.betrag)}${l.beglichen ? ", bezahlt. Tippen, um wieder offen zu setzen" : ", als bezahlt markieren"}`}
           hitSlop={6}
           style={[styles.kreis, l.beglichen && { backgroundColor: c.success, borderColor: c.success }]}
         >
@@ -140,9 +139,9 @@ export function StrafenTab({ kasse, filter, onFilter, onStrafe }: {
   return (
     <>
       {!filter && meineOffen.length > 0 ? (
-        <PressableScale onPress={() => onFilter(ich!)} style={[styles.meins, { backgroundColor: c.coralSoft }]} accessibilityRole="button" accessibilityLabel={`Deine offenen Strafen: ${euro(meineSumme)}, ${meineOffen.length}. Anzeigen`}>
+        <PressableScale onPress={() => onFilter(ich!)} style={[styles.meins, { backgroundColor: c.coralSoft }]} accessibilityRole="button" accessibilityLabel={`Deine offenen Strafen: ${formatBetrag(meineSumme)}, ${meineOffen.length}. Anzeigen`}>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.meinsTitel, { color: c.coralText }]}>{`Du hast ${euro(meineSumme)} offen`}</Text>
+            <Text style={[styles.meinsTitel, { color: c.coralText }]}>{`Du hast ${formatBetrag(meineSumme)} offen`}</Text>
             <Text style={styles.meta}>{`${meineOffen.length} ${meineOffen.length === 1 ? "Strafe" : "Strafen"} – hier abhaken, wenn bezahlt`}</Text>
           </View>
           <Text style={[styles.meinsLink, { color: c.coralText }]}>Anzeigen</Text>
@@ -156,7 +155,7 @@ export function StrafenTab({ kasse, filter, onFilter, onStrafe }: {
             <Text style={[styles.label, { color: offenSumme > 0 ? c.coralText : c.successText }]}>
               {filter === ich ? (offenSumme > 0 ? "Du hast offen" : "Du hast alles bezahlt") : offenSumme > 0 ? `${name(filter)} hat offen` : `${name(filter)} hat alles bezahlt`}
             </Text>
-            <Text style={[styles.summe, { color: offenSumme > 0 ? c.coralText : c.successText }]} maxFontSizeMultiplier={MAX_FONT_SCALE}>{euro(offenSumme)}</Text>
+            <Text style={[styles.summe, { color: offenSumme > 0 ? c.coralText : c.successText }]} maxFontSizeMultiplier={MAX_FONT_SCALE}>{formatBetrag(offenSumme)}</Text>
             <Text style={styles.meta}>{`${offen.length} ${offen.length === 1 ? "Strafe" : "Strafen"} offen`}</Text>
           </View>
           {filter === ich && offenSumme > 0 ? (
@@ -173,16 +172,16 @@ export function StrafenTab({ kasse, filter, onFilter, onStrafe }: {
       <Card enterIndex={0} style={styles.oben}>
         <View style={{ flex: 1, minWidth: 110 }}>
           <Text style={[styles.label, { color: summe > 0 ? c.coralText : c.successText }]}>{summe > 0 ? "Offen gesamt" : "Alles bezahlt"}</Text>
-          <Text style={[styles.summe, { color: summe > 0 ? c.coralText : c.successText }]} maxFontSizeMultiplier={MAX_FONT_SCALE}>{euro(summe)}</Text>
+          <Text style={[styles.summe, { color: summe > 0 ? c.coralText : c.successText }]} maxFontSizeMultiplier={MAX_FONT_SCALE}>{formatBetrag(summe)}</Text>
           <Text style={styles.meta}>{`${top.length} ${top.length === 1 ? "Person" : "Personen"}`}</Text>
         </View>
         {top.length > 0 ? (
           <View style={{ flex: 1.3, gap: 10 }}>
             {top.slice(0, 3).map(([id, v]) => (
-              <View key={id} style={{ gap: 4 }} accessible accessibilityLabel={`${name(id)}: ${euro(v)} offen`}>
+              <View key={id} style={{ gap: 4 }} accessible accessibilityLabel={`${name(id)}: ${formatBetrag(v)} offen`}>
                 <View style={styles.topZeile}>
                   <Text style={styles.topName} numberOfLines={1}>{name(id)}</Text>
-                  <Text style={styles.topWert}>{euro(v)}</Text>
+                  <Text style={styles.topWert}>{formatBetrag(v)}</Text>
                 </View>
                 <View style={styles.spur}><View style={[styles.fuell, { width: `${Math.round((v / max) * 100)}%`, backgroundColor: c.coral }]} /></View>
               </View>
@@ -217,7 +216,7 @@ export function StrafenTab({ kasse, filter, onFilter, onStrafe }: {
             <Animated.View key={terminId || "ohne"} entering={FadeIn.duration(200)}>
               <View style={[styles.gruppenKopf, gi > 0 && styles.trenner]}>
                 <Text style={styles.gruppenTitel} numberOfLines={1}>{gruppenTitel(terminId).toUpperCase()}</Text>
-                <Text style={[styles.gruppenSumme, { color: c.coralText }]}>{`${euro(liste.reduce((s, l) => s + l.betrag, 0))} offen`}</Text>
+                <Text style={[styles.gruppenSumme, { color: c.coralText }]}>{`${formatBetrag(liste.reduce((s, l) => s + l.betrag, 0))} offen`}</Text>
               </View>
               {liste.map((l) => zeile(l, 1))}
             </Animated.View>
@@ -267,7 +266,7 @@ const makeStyles = (c: ThemeColors) =>
     sub: { ...TYPE.caption, fontSize: 13, color: c.textMuted, flexShrink: 1 },
     betrag: { ...TYPE.num, fontSize: 17 },
     bezahlt: { color: c.textMuted, textDecorationLine: "line-through" },
-    kreis: { width: 32, height: 32, borderRadius: 16, borderWidth: 2, borderColor: c.borderDark, alignItems: "center", justifyContent: "center" },
+    kreis: { width: 32, height: 32, borderRadius: 16, borderWidth: 2, borderColor: c.control, alignItems: "center", justifyContent: "center" },
     aufklapp: { minHeight: 56, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
     aufklappText: { fontFamily: FONT.w600, fontSize: 15, color: c.textDark },
   });

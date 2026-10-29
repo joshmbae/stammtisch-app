@@ -4,6 +4,19 @@ export function formatEuro(n: number): string {
   return n.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+/**
+ * Betrag zur Anzeige, überall gleich: glatte Beträge ohne Cent („18 €“),
+ * sonst immer zwei Stellen („74,50 €“). Nie gerundet.
+ */
+export function formatBetrag(n: number): string {
+  return `${formatEuro(n).replace(/,00$/, "")} €`;
+}
+
+/** Prozent mit schmalem Leerzeichen, wie im Deutschen üblich („83 %“). */
+export function formatProzent(n: number): string {
+  return `${n} %`;
+}
+
 export function getInitial(name: string): string {
   return name.charAt(0).toUpperCase();
 }

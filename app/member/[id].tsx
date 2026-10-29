@@ -10,7 +10,7 @@ import { loadStrafKategorien } from "../../utils/storage";
 import { loadStatsDaten } from "../../utils/statsDaten";
 import { useScreenLoad } from "../../utils/useScreenLoad";
 import { verifyPin } from "../../utils/pin";
-import { anwesenheitsQuote, formatEuro } from "../../utils/format";
+import { anwesenheitsQuote, formatBetrag } from "../../utils/format";
 import { toLocalIsoDate } from "../../utils/date";
 import { StatsDaten, aktuellesJahr, computeRanglisten, jahresTitelFuer, wertKurz } from "../../utils/stats";
 import PinPrompt from "../../components/PinPrompt";
@@ -53,7 +53,7 @@ export default function ProfilScreen() {
     const platz = (key: string) => listen.find((l) => l.key === key)?.eintraege.find((e) => e.member.id === member.id);
     const q = anwesenheitsQuote(daten.termine.filter((t) => t.datum.startsWith(jahr)), member.id, member.mitgliedSeit);
     const kacheln: BilanzKachel[] = [
-      { key: "teilnahme", emoji: "✅", wert: q.pct !== null ? `${q.pct} %` : "–", label: `dabei · ${q.count} von ${q.total}`, platz: platz("teilnahme")?.platz, farbe: c.successText },
+      { key: "teilnahme", emoji: "✅", wert: q.pct !== null ? `${q.pct}\u202F%` : "–", label: `dabei · ${q.count} von ${q.total}`, platz: platz("teilnahme")?.platz, farbe: c.successText },
       { key: "verspaetung", emoji: "⏱️", wert: wertKurz("verspaetung", platz("verspaetung")?.wert ?? 0), label: "zu spät", platz: platz("verspaetung")?.platz },
       ...listen
         .filter((l) => l.key.startsWith("spiel_"))
@@ -77,7 +77,7 @@ export default function ProfilScreen() {
         return {
           id: t.id, datum: t.datum, titel: t.titel ?? "Stammtisch",
           dabei: (t.anwesenheit ?? []).includes(member.id),
-          chips: [spaet > 0 ? `${spaet}′ spät` : null, ...spiel, strafe > 0 ? `${formatEuro(strafe).replace(",00", "")} €` : null].filter(Boolean) as string[],
+          chips: [spaet > 0 ? `${spaet}′ spät` : null, ...spiel, strafe > 0 ? formatBetrag(strafe) : null].filter(Boolean) as string[],
         };
       });
 

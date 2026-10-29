@@ -5,6 +5,7 @@ import Animated, { FadeIn, useReducedMotion } from "react-native-reanimated";
 import { FONT, MAX_FONT_SCALE, MOTION, TYPE, ThemeColors } from "../../constants/design";
 import { SYMBOL } from "../../constants/symbole";
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
+import { formatBetrag, formatProzent } from "../../utils/format";
 import { Card, IconSquircle, Krone, PressableScale, Ring, SectionLabel, tonFuerRangliste } from "../ui";
 
 export interface Platzierung {
@@ -52,7 +53,7 @@ export function BilanzRow({ werte, onPress, onOffen }: {
   }, [fokus, reduce, anzahl]);
 
   const platz = anzahl ? werte.platzierungen[index % anzahl] : null;
-  const offenText = `${werte.offen.toLocaleString("de-DE", { maximumFractionDigits: 2 })} €`;
+  const offenText = formatBetrag(werte.offen);
   const label = [
     `Deine Bilanz ${werte.jahr}`,
     werte.abende ? `${werte.dabei} von ${werte.abende} Abenden dabei, ${werte.quote ?? 0} Prozent` : "noch kein Abend",
@@ -66,7 +67,7 @@ export function BilanzRow({ werte, onPress, onOffen }: {
       <View style={styles.row}>
         <View style={styles.spalte}>
           <Ring progress={(werte.quote ?? 0) / 100} size={RING_GROESSE} stroke={5}>
-            <Text style={styles.ringText} maxFontSizeMultiplier={1}>{werte.quote === null ? "–" : `${werte.quote}%`}</Text>
+            <Text style={styles.ringText} maxFontSizeMultiplier={1}>{werte.quote === null ? "–" : formatProzent(werte.quote)}</Text>
           </Ring>
           <Text style={[styles.label, { marginTop: 4 }]} numberOfLines={1}>{werte.abende ? "dabei" : "noch kein Abend"}</Text>
         </View>

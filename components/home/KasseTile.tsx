@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { MAX_FONT_SCALE, TYPE, ThemeColors, glow } from "../../constants/design";
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
+import { formatEuro } from "../../utils/format";
 import { PressableScale } from "../ui";
 
 /**
@@ -17,7 +18,7 @@ export function KasseTile({ saldo, monate, onPress }: { saldo: number; monate: {
   const min = Math.min(...werte, 0);
   const max = Math.max(...werte, 1);
   const stapel = werte.map((v) => Math.round(2 + ((v - min) / (max - min || 1)) * 5));
-  const betrag = Math.round(saldo).toLocaleString("de-DE");
+  const betrag = formatEuro(saldo).replace(/,00$/, "");
   const dunkel = c.heroStyle === "outline";
 
   return (

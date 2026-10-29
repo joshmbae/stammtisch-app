@@ -14,7 +14,7 @@ const NEU: { emoji: string; ton: Ton; titel: string; text: string }[] = [
   { emoji: SYMBOL.navigation, ton: "blue", titel: "Neue Leiste unten", text: "Home, Termine, Kasse, Tabelle und Runde – immer nur einen Tipp entfernt." },
   { emoji: SYMBOL.live, ton: "green", titel: "Live-Abend", text: "Zur Startzeit öffnet sich direkt der laufende Abend – Strafen und Spiel mit einem Tipp." },
   { emoji: SYMBOL.kasse, ton: "mustard", titel: "Kasse an einem Ort", text: "Strafen, Rechnungen und Buchungen zusammen – offene Strafen direkt begleichen." },
-  { emoji: SYMBOL.krone, ton: "mustard", titel: "Kronen & Platzierungen", text: "Die Krone am Profilbild zeigt, wer führt. Deine Plätze stehen auf Home." },
+  { emoji: SYMBOL.pokal, ton: "mustard", titel: "Wer führt, sieht man", text: "Wer eine Wertung anführt, trägt ihr Symbol am Profilbild. Deine Plätze stehen auf Home." },
   { emoji: SYMBOL.erinnern, ton: "coral", titel: "Erinnern per Push", text: "Wer noch nicht zugesagt hat, bekommt mit einem Tipp eine Erinnerung." },
   { emoji: SYMBOL.neu, ton: "blue", titel: "Glow-Look", text: "Neben Hell gibt’s den leuchtenden Glow-Look – umschalten in der Runde." },
 ];

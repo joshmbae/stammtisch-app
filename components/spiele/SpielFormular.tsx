@@ -5,7 +5,7 @@ import { Spiel, SPIEL_VORLAGEN, StrafKategorie } from "../../types";
 import { FONT, MAX_FONT_SCALE, RADIUS, TYPE, ThemeColors } from "../../constants/design";
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { useSession } from "../../contexts/SessionContext";
-import { displayName, formatEuro } from "../../utils/format";
+import { displayName, formatBetrag } from "../../utils/format";
 import { showAlert } from "../../utils/alert";
 import { Avatar, Card, Emoji, IconSquircle, ListGroup, ListRow, PressableScale, SectionLabel, StatusPill, Ton } from "../ui";
 
@@ -34,7 +34,6 @@ export function neueZeile(): EreignisRow {
 }
 
 const zahl = (s: string) => Number(s.replace(",", ".")) || 0;
-const euro = (n: number) => `${formatEuro(n).replace(",00", "")} €`;
 
 /** Formularzustand für „Neues Spiel" und „Spiel bearbeiten". */
 export function useSpielFormular() {
@@ -181,7 +180,7 @@ export function SpielFormular({ form }: { form: SpielForm }) {
                 accessibilityLabel={`Ereignis ${i + 1}: Bezeichnung`}
               />
               <View>
-                {r.strafAktiv ? <StatusPill label={`+${euro(betrag)} Strafe`} ton="coral" /> : <StatusPill label="zählt nur" />}
+                {r.strafAktiv ? <StatusPill label={`+${formatBetrag(betrag)} Strafe`} ton="coral" /> : <StatusPill label="zählt nur" />}
               </View>
               {ereignisse.length > 1 ? (
                 <PressableScale onPress={() => removeRow(r.key)} style={styles.weg} accessibilityLabel={`Ereignis ${i + 1} entfernen`}>
@@ -282,7 +281,7 @@ function SpielVorschau({ ereignisse }: { ereignisse: EreignisRow[] }) {
       </View>
       <Text style={styles.vorschauFuss}>
         {mitStrafe.length > 0
-          ? mitStrafe.map(({ r }) => `${r.label} bucht ${euro(zahl(r.strafBetrag))}`).join(", ") + " automatisch in die Kasse"
+          ? mitStrafe.map(({ r }) => `${r.label} bucht ${formatBetrag(zahl(r.strafBetrag))}`).join(", ") + " automatisch in die Kasse"
           : "Ereignisse werden nur gezählt, ohne Strafe."}
       </Text>
     </View>

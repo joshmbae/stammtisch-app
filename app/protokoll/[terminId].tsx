@@ -180,7 +180,7 @@ export default function ProtokollScreen() {
       ? { text: "Ungespeicherte Änderungen · speichert automatisch", farbe: c.mustard }
       : protokoll
         ? { text: `Gespeichert · ${formatGespeichert(protokoll.updatedAt)}`, farbe: c.success }
-        : { text: "Noch nicht gespeichert", farbe: c.textLight };
+        : { text: "Noch nicht gespeichert", farbe: c.textMuted };
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>

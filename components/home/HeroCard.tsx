@@ -9,7 +9,7 @@ import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { AbendStats, meisteBei } from "../../utils/abendStats";
 import { HomeHero, terminEnde, terminStart } from "../../utils/terminPhase";
 import { formatWochentagDatum } from "../../utils/date";
-import { displayName, formatEuro } from "../../utils/format";
+import { displayName, formatEuro, formatBetrag } from "../../utils/format";
 import { AvatarStack, Button, Emoji, FlipCountdown, IconSquircle, LiveTimer, PressableScale, PulseDot, Scrim } from "../ui";
 import { SYMBOL } from "../../constants/symbole";
 
@@ -70,7 +70,7 @@ function HeroUmschalter({ wert, onChange, hell }: { wert: HeroWahl; onChange: (w
             accessibilityLabel={`${o.label} Stammtisch`}
             style={[styles.umschalterOption, aktiv && { backgroundColor: c.card }]}
           >
-            <Text style={[styles.umschalterText, { color: aktiv ? c.textDark : hell ? "rgba(255,255,255,0.85)" : c.textMid }]}>{o.label}</Text>
+            <Text style={[styles.umschalterText, { color: aktiv ? c.textDark : hell ? "#FFFFFF" : c.textMid }]}>{o.label}</Text>
           </PressableScale>
         );
       })}
@@ -99,6 +99,13 @@ let vorherHoehe = 261;
 
 const zeitText = (d: Date) => d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
 
+/** Kalendertage bis zum Start: 0 = heute, 1 = morgen. */
+function tageBis(start: Date, now: Date): number {
+  const a = new Date(now); a.setHours(0, 0, 0, 0);
+  const b = new Date(start); b.setHours(0, 0, 0, 0);
+  return Math.round((b.getTime() - a.getTime()) / 86400000);
+}
+
 function Vorher({ hero, now, members, stammtischzeit, meinStatus, onRsvp, rsvpBusy, umschalter }: Props) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
@@ -110,6 +117,7 @@ function Vorher({ hero, now, members, stammtischzeit, meinStatus, onRsvp, rsvpBu
   const halbTransparent = c.heroStyle === "outline" ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.14)";
   const dabei = meinStatus === "ja";
   const abgesagt = meinStatus === "nein";
+  const tage = tageBis(start, now);
 
   return (
     <PressableScale onPress={() => oeffne(t.id)} onLayout={(e) => { vorherHoehe = e.nativeEvent.layout.height; }} scaleTo={0.99} style={[styles.hero, flaeche]} accessibilityLabel={`Nächster Stammtisch, ${formatWochentagDatum(new Date(`${t.datum}T00:00:00`))}, öffnen`}>
@@ -123,7 +131,14 @@ function Vorher({ hero, now, members, stammtischzeit, meinStatus, onRsvp, rsvpBu
         </View>
         {umschalter ? <HeroUmschalter {...umschalter} hell /> : null}
       </View>
-      <FlipCountdown ziel={start} now={now} tileColor={c.heroBlueInner} digitColor={c.heroBlueSub} labelColor={c.onHeroBlue} />
+      {/* Sekundengenau erst am Tag selbst; vorher reicht „in 4 Tagen“. */}
+      {tage <= 0 ? (
+        <FlipCountdown ziel={start} now={now} tileColor={c.heroBlueInner} digitColor={c.heroBlueSub} labelColor={c.onHeroBlue} />
+      ) : (
+        <Text style={[styles.bisDahin, { color: c.onHeroBlue }]} maxFontSizeMultiplier={MAX_FONT_SCALE} accessibilityRole="timer">
+          {tage === 1 ? "morgen" : `in ${tage} Tagen`}
+        </Text>
+      )}
       <View style={[styles.row, { gap: 12 }]}>
         {zugesagt.length > 0 ? (
           <AvatarStack size={28} ringColor={c.heroStyle === "fill" ? c.background : c.heroBlue} members={zugesagt.map((m) => ({ id: m.id, name: displayName(m), color: m.avatarColor, photoUri: m.photoUri }))} />
@@ -139,7 +154,7 @@ function Vorher({ hero, now, members, stammtischzeit, meinStatus, onRsvp, rsvpBu
       </View>
       <View style={styles.row}>
         <Button
-          label={dabei ? "Du bist dabei" : "Bin dabei"}
+          label="Bin dabei"
           icon={dabei ? "checkmark" : undefined}
           variant="primary"
           colors={dabei ? undefined : { bg: c.card, fg: c.textDark }}
@@ -147,15 +162,16 @@ function Vorher({ hero, now, members, stammtischzeit, meinStatus, onRsvp, rsvpBu
           loading={rsvpBusy}
           onPress={() => onRsvp(dabei ? null : "ja")}
           style={{ flex: 1.5 }}
-          accessibilityLabel={dabei ? "Du bist dabei. Tippen zum Zurücknehmen" : "Bin dabei"}
+          accessibilityLabel={dabei ? "Bin dabei, ausgewählt. Tippen zum Zurücknehmen" : "Bin dabei"}
         />
         <Button
-          label={abgesagt ? "Abgesagt" : "Absagen"}
+          label="Kann nicht"
+          icon={abgesagt ? "close" : undefined}
           colors={{ bg: abgesagt ? c.coral : halbTransparent, fg: abgesagt ? c.onCoral : c.onHeroBlue }}
           onPress={() => onRsvp(abgesagt ? null : "nein")}
           disabled={rsvpBusy}
           style={{ flex: 1 }}
-          accessibilityLabel={abgesagt ? "Abgesagt. Tippen zum Zurücknehmen" : "Absagen"}
+          accessibilityLabel={abgesagt ? "Kann nicht, ausgewählt. Tippen zum Zurücknehmen" : "Kann nicht"}
         />
       </View>
     </PressableScale>
@@ -231,7 +247,7 @@ function Danach({ hero, now, members, stats, spielTypen, umschalter }: Props) {
   const foto = !!t.bildUrl;
   const dunkel = foto || c.heroStyle === "outline";
   const text = foto ? "#FFFFFF" : c.textDark;
-  const leise = foto ? "rgba(255,255,255,0.78)" : c.textMuted;
+  const leise = foto ? "rgba(255,255,255,0.92)" : c.textMid;
   const glas = foto
     ? { backgroundColor: "rgba(20,18,16,0.28)", borderColor: "rgba(255,255,255,0.18)" }
     : { backgroundColor: c.heroStyle === "outline" ? c.card : "rgba(255,255,255,0.6)", borderColor: c.hairline };
@@ -248,8 +264,8 @@ function Danach({ hero, now, members, stats, spielTypen, umschalter }: Props) {
       key: "strafen",
       emoji: SYMBOL.strafe,
       label: "Strafen",
-      wert: `${formatEuro(stats.strafenSumme).replace(",00", "")} €`,
-      sub: stats.strafenSumme === 0 ? "keine" : bezahlt ? "bezahlt" : `${formatEuro(stats.strafenOffen).replace(",00", "")} € offen`,
+      wert: formatBetrag(stats.strafenSumme),
+      sub: stats.strafenSumme === 0 ? "keine" : bezahlt ? "bezahlt" : `${formatBetrag(stats.strafenOffen)} offen`,
       punkt: stats.strafenSumme === 0 ? undefined : bezahlt ? c.success : c.coral,
     },
     ...spiel.map(({ typ, wer }) => ({
@@ -352,6 +368,7 @@ const makeStyles = (c: ThemeColors) =>
     liveChip: { flex: 1, minHeight: 48, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 9, backgroundColor: "rgba(255,255,255,0.12)", flexDirection: "row", alignItems: "center", gap: 6 },
     liveChipText: { flex: 1, fontFamily: FONT.w800, fontSize: 16 },
     gross: { ...TYPE.num, fontSize: 36, lineHeight: 40, letterSpacing: -1 },
+    bisDahin: { fontFamily: FONT.w800, fontSize: 38, lineHeight: 44, letterSpacing: -1 },
     dots: { flex: 1, flexDirection: "row", flexWrap: "wrap", justifyContent: "flex-end", gap: 4 },
     dot: { width: 10, height: 10, borderRadius: 5 },
     meisteRow: { flexDirection: "row", alignItems: "center", gap: 10 },

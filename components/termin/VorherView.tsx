@@ -10,7 +10,6 @@ import { abendStats } from "../../utils/abendStats";
 import { agendaPunkte, agendaText } from "../../utils/agenda";
 import { formatWochentagDatum } from "../../utils/date";
 import { displayName } from "../../utils/format";
-import { useFuehrende } from "../../utils/useFuehrende";
 import { sendErinnerungPush } from "../../utils/push";
 import { Avatar, Button, Card, FlipCountdown, PressableScale } from "../ui";
 
@@ -149,7 +148,6 @@ function Zusage({ abend }: { abend: TerminAbend }) {
 function WerKommt({ abend, start }: { abend: TerminAbend; start: Date | null }) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
-  const fuehrende = useFuehrende();
   const t = abend.termin!;
   const { mitglieder } = abendStats(t, abend.members, [], []);
   const dabei = mitglieder.filter((m) => t.anwesenheit?.includes(m.id));
@@ -203,7 +201,7 @@ function WerKommt({ abend, start }: { abend: TerminAbend; start: Date | null }) 
           <View style={styles.raster}>
             {dabei.map((m) => (
               <View key={m.id} style={styles.rasterZelle}>
-                <Avatar name={displayName(m)} color={m.avatarColor} photoUri={m.photoUri} size={30} fuehrt={fuehrende.get(m.id)} />
+                <Avatar name={displayName(m)} color={m.avatarColor} photoUri={m.photoUri} size={30} />
                 <Text style={styles.rasterName} numberOfLines={1}>{name(m)}</Text>
               </View>
             ))}
