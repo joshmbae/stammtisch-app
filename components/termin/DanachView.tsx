@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Platform, ScrollView, Share, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Image, Platform, ScrollView, Share, StyleSheet, Text, View } from "react-native";
 import { captureRef } from "react-native-view-shot";
 import * as Sharing from "expo-sharing";
 import { router } from "expo-router";
@@ -17,7 +17,7 @@ import { showAlert } from "../../utils/alert";
 import { begleichenDialog } from "../../utils/zahlungslink";
 import { Avatar, BarList, BarRow, Button, Card, Emoji, IconSquircle, Krone, PressableScale, Ring, Ton, haptik, tonFarben } from "../ui";
 import { SYMBOL } from "../../constants/symbole";
-import { RueckblickBild, RueckblickKachel } from "./RueckblickBild";
+import { RueckblickBild, RueckblickSieger } from "./RueckblickBild";
 
 
 interface Kategorie {
@@ -150,20 +150,29 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
   const strafenMitSpiel = abend.ereignisTypen.some((e) => (e.strafBetrag ?? 0) > 0);
   const vieleKacheln = kategorien.length > 3;
 
-  // Rückblick-Bild: wer bei Strafen und im Spiel vorne lag, dazu die Kasse.
-  const vorne = (k: Kategorie) => {
-    const erste = k.zeilen.filter((z) => z.value === k.zeilen[0]?.value);
-    return erste.length === 0 ? null : erste.length === 1 ? erste[0].label : `${erste[0].label} +${erste.length - 1}`;
+  // Rückblick-Bild: wer im Spiel und bei den Strafen vorne lag, mit Profilbild und großer Zahl.
+  const siegerVon = (k: Kategorie): RueckblickSieger | null => {
+    const erste = k.zeilen.filter((z) => z.value === k.zeilen[0]?.value && byId.has(z.id));
+    if (erste.length === 0) return null;
+    const strafen = k.key === "strafen";
+    return {
+      emoji: strafen ? "💸" : k.emoji ?? "🎲",
+      label: strafen ? "Strafenkönig" : k.label,
+      wert: k.zeilen[0].display,
+      personen: erste.map((z) => {
+        const m = byId.get(z.id)!;
+        return { id: m.id, name: displayName(m), color: m.avatarColor, photoUri: m.photoUri };
+      }),
+    };
   };
-  const bildKacheln: RueckblickKachel[] = [];
-  for (const k of kategorien.filter((k) => k.key !== "strafen")) {
-    const wer = vorne(k);
-    if (wer) bildKacheln.push({ emoji: k.emoji ?? "🎲", wert: wer, text: `${k.label} · ${k.zeilen[0].display}` });
-  }
-  const strafenKat = kategorien.find((k) => k.key === "strafen");
-  const strafenVorne = strafenKat ? vorne(strafenKat) : null;
-  if (strafenVorne) bildKacheln.push({ emoji: "💸", wert: strafenVorne, text: `Strafenkönig · ${strafenKat!.zeilen[0].display}` });
-  if (stats.strafenSumme > 0) bildKacheln.push({ emoji: SYMBOL.kasse, wert: formatBetrag(stats.strafenSumme), text: "für die Kasse" });
+  const bildSieger = [
+    ...kategorien.filter((k) => k.key !== "strafen"),
+    ...kategorien.filter((k) => k.key === "strafen"),
+  ].map(siegerVon).filter((x): x is RueckblickSieger => !!x);
+  const bildFuss = [
+    stats.strafenSumme > 0 ? `${formatBetrag(stats.strafenSumme)} für die Kasse` : null,
+    stats.fehlten.length === 0 ? "Alle waren da 🎉" : `${stats.fehlten.map(displayName).join(", ")} ${stats.fehlten.length === 1 ? "hat" : "haben"} gefehlt`,
+  ].filter(Boolean).join(" · ");
   const dauerText = dauer ? `${Math.floor(dauer / 60)}:${String(dauer % 60).padStart(2, "0")} h gesessen` : null;
 
   /** Als Bild teilen (WhatsApp & Co.); wo das nicht geht (Web), als Text. */
@@ -171,6 +180,9 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
     if (Platform.OS !== "web" && bildRef.current && (await Sharing.isAvailableAsync())) {
       setTeiltGerade(true);
       try {
+        // Foto und Profilbilder müssen geladen sein, sonst fehlen sie im Bild.
+        const bilder = [t.bildUrl, ...bildSieger.flatMap((s) => s.personen.map((p) => p.photoUri))].filter((u): u is string => !!u);
+        await Promise.all(bilder.map((u) => Image.prefetch(u).catch(() => false)));
         const uri = await captureRef(bildRef, { format: "png", quality: 1, width: 1080, result: "tmpfile" });
         await Sharing.shareAsync(uri, { mimeType: "image/png", UTI: "public.png", dialogTitle: "Rückblick teilen" });
         return;
@@ -342,8 +354,9 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
           datum={formatWochentagDatum(new Date(`${t.datum}T00:00:00`))}
           titel={t.titel ?? "Stammtisch"}
           zeile={[t.ort, `${stats.da.length} von ${stats.mitglieder.length} da`, dauerText].filter(Boolean).join(" · ")}
-          kacheln={bildKacheln}
-          fehlten={stats.fehlten.map(displayName)}
+          bildUrl={t.bildUrl}
+          sieger={bildSieger}
+          fuss={bildFuss}
           stammtisch={abend.verordnung.name}
         />
       </View>
