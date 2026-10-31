@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Platform, KeyboardAvoidingView } from "react-native";
 import { router, useLocalSearchParams, useNavigation } from "expo-router";
 import { showAlert } from "../../../utils/alert";
-import { loadMembers, saveMembers, uploadAvatar, loadVerordnung, deleteMember } from "../../../utils/storage";
+import { loadMembers, saveMembers, uploadAvatar, loadVerordnung, deleteMember, bilderLoeschen } from "../../../utils/storage";
 import LoadingSpinner from "../../../components/LoadingSpinner";
 import { toLocalIsoDate } from "../../../utils/date";
 import { hashPin, isValidPin } from "../../../utils/pin";
@@ -86,6 +86,7 @@ export default function EditMemberScreen() {
       const uploadedPhotoUri =
         f.photoUri && !f.photoUri.startsWith("http") ? await uploadAvatar(id, f.photoUri) : f.photoUri;
       const members = await loadMembers();
+      const altesFoto = members.find((m) => m.id === id)?.photoUri;
       const updated = members.map((m) =>
         m.id === id
           ? {
@@ -105,6 +106,8 @@ export default function EditMemberScreen() {
           : m
       );
       await saveMembers(updated);
+      // Ersetztes oder entferntes Foto nicht als Datei liegen lassen.
+      if (altesFoto && altesFoto !== uploadedPhotoUri) await bilderLoeschen([altesFoto]);
       router.back();
     } catch {
       showAlert("Fehler", "Die Änderungen konnten nicht gespeichert werden.");

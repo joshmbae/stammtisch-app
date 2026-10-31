@@ -16,7 +16,7 @@
 <body>
 
 <h1>Datenschutzerklärung — DeinStammtisch</h1>
-<p><em>Stand: 1. Oktober 2026</em></p>
+<p><em>Stand: 31. Oktober 2026 (App-Version 1.8)</em></p>
 
 <h2>1. Verantwortlicher</h2>
 <p>
@@ -32,9 +32,13 @@
   <li><strong>Stammtisch-Zugangsdaten:</strong> Name und Passwort der Gruppe (Passwort wird nur als Hash gespeichert, nie im Klartext)</li>
   <li><strong>Mitgliedsprofile:</strong> Name, optional Spitzname, Geburtsdatum, Beruf, Lieblingsgetränk, Notizen, Profilfoto, optionaler 4-stelliger PIN (nur als Hash gespeichert)</li>
   <li><strong>Termin- und Vereinsdaten:</strong> Zu-/Absagen, Anwesenheiten, Verspätungen, Strafen, Kassen-Einträge (Beträge, Beschreibungen), Protokolle, Spielergebnisse, optionale Titelbilder zu Terminen, optionale Absagegründe</li>
+  <li><strong>Gerätekennung für die Anmeldung:</strong> Die App meldet sich ohne E-Mail oder Telefonnummer an. Dafür vergibt Supabase eine zufällige, anonyme Kennung pro Gerät. Mit ihr wird gespeichert, auf welche Stammtische dieses Gerät zugreifen darf.</li>
+  <li><strong>Zahlungslink:</strong> Optional kann ein Stammtisch einen Link hinterlegen, über den Strafen bezahlt werden (z. B. ein PayPal-Pool). Die App öffnet diesen Link nur auf deinen Wunsch; die Zahlung selbst läuft vollständig beim jeweiligen Anbieter, die App erhält keine Zahlungsdaten.</li>
+  <li><strong>Schutz vor Missbrauch:</strong> Fehlgeschlagene Versuche beim Beitreten (falsches Passwort) und bei der Profil-PIN werden mit Gerätekennung, Ziel (Stammtisch-Name bzw. Profil) und Zeitpunkt gespeichert, um das Durchprobieren von Passwörtern zu verhindern. Diese Einträge werden nach einem Tag gelöscht.</li>
   <li><strong>Push-Token:</strong> eine gerätebezogene Kennung für Benachrichtigungen (z. B. neue Termine). Sie wird gemeinsam mit der Stammtisch-Zugehörigkeit gespeichert und zum Versand an den Push-Dienst von Expo (Expo Inc., USA) übermittelt, der die Nachricht an Apple bzw. Google weiterleitet. Benachrichtigungen lassen sich jederzeit in den iOS-Einstellungen abschalten.</li>
   <li><strong>Nutzungsdaten:</strong> technische Metadaten der Supabase-Infrastruktur (z. B. Zeitstempel von Datenbankzugriffen) zum Betrieb der App</li>
 </ul>
+<p><strong>Nur auf deinem Gerät</strong> bleiben: die Liste der Stammtische, in denen du warst, das gewählte Erscheinungsbild (Hell/Dunkel) und eine Zwischenspeicherung der Daten für die Nutzung ohne Netz. Das Rückblick-Bild eines Abends wird auf deinem Gerät erzeugt und nur geteilt, wenn du es selbst über das Teilen-Menü an eine andere App (z. B. WhatsApp) weitergibst; für die Verarbeitung dort gelten deren Datenschutzbestimmungen.</p>
 <p>Es werden <strong>keine</strong> Werbe-, Tracking- oder Analyse-SDKs Dritter eingebunden. Es findet keine Übermittlung von Daten zu Werbezwecken statt.</p>
 
 <h2>3. Zweck der Verarbeitung</h2>
@@ -43,25 +47,27 @@
 <h2>4. Rechtsgrundlage</h2>
 <p>Die Verarbeitung erfolgt auf Grundlage von Art. 6 Abs. 1 lit. b DSGVO (Erfüllung eines Nutzungsverhältnisses) sowie, soweit freiwillige Angaben wie Fotos oder Notizen betroffen sind, auf Grundlage von Art. 6 Abs. 1 lit. a DSGVO (Einwilligung durch aktive Eingabe).</p>
 
-<h2>5. Hosting und Auftragsverarbeitung</h2>
-<p>
-  Die Daten werden bei unserem Hosting-Dienstleister <strong>Supabase, Inc.</strong> gespeichert und verarbeitet.
-  eu-west-1 (Ireland).
-  Ein Auftragsverarbeitungsvertrag (AVV) mit Supabase liegt vor / ist abzuschließen.
-</p>
+<h2>5. Hosting, Empfänger und Übermittlung in Drittländer</h2>
+<!-- Vor Veröffentlichung prüfen: Der AVV/DPA mit Supabase muss tatsächlich abgeschlossen sein (Supabase-Dashboard → Organization → Legal Documents). -->
+<ul>
+  <li><strong>Supabase, Inc.</strong> (USA) betreibt Datenbank, Anmeldung und Dateispeicher für Fotos. Die Daten liegen in der Region eu-west-1 (Irland). Mit Supabase besteht ein Auftragsverarbeitungsvertrag nach Art. 28 DSGVO. Da Supabase ein US-Unternehmen ist, ist ein Zugriff aus den USA nicht ausgeschlossen; Grundlage dafür sind die Standardvertragsklauseln der EU-Kommission (Art. 46 Abs. 2 lit. c DSGVO), die Teil des Auftragsverarbeitungsvertrags sind.</li>
+  <li><strong>Expo (650 Industries, Inc., USA)</strong> leitet Push-Benachrichtigungen an Apple bzw. Google weiter. Übermittelt werden dafür nur der Push-Token und der Text der Benachrichtigung. Grundlage der Übermittlung in die USA sind die Standardvertragsklauseln der EU-Kommission bzw. das EU-US Data Privacy Framework, soweit der Anbieter danach zertifiziert ist.</li>
+  <li><strong>Apple</strong> stellt Benachrichtigungen über den Apple Push Notification Service zu.</li>
+</ul>
+<p>Eine Weitergabe an sonstige Dritte findet nicht statt.</p>
 
 <h2>6. Speicherdauer</h2>
-<p>Daten werden gespeichert, solange der jeweilige Stammtisch aktiv besteht. Ersteller:innen eines Stammtisches können die gesamte Gruppe inkl. aller Daten jederzeit unwiderruflich über die App löschen (Einstellungen → Gefahrenzone).</p>
+<p>Daten werden gespeichert, solange der jeweilige Stammtisch besteht. Du kannst dein eigenes Profil samt Profilfoto jederzeit in der App löschen (Profil → Bearbeiten → Entfernen). Ersteller:innen eines Stammtisches können die gesamte Gruppe inkl. aller Daten und Fotos jederzeit unwiderruflich über die App löschen (Runde → Einstellungen → Gefahrenzone). Ersetzte oder entfernte Fotos werden ebenfalls gelöscht. Protokolle fehlgeschlagener Anmeldeversuche werden nach einem Tag gelöscht.</p>
 
 <h2>7. Deine Rechte</h2>
 <p>Du hast das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit und Widerspruch gemäß Art. 15–21 DSGVO. Wende dich dazu an die oben genannte Kontaktadresse. Zudem besteht ein Beschwerderecht bei der zuständigen Datenschutzaufsichtsbehörde.</p>
 
 <h2>8. Berechtigungen der App</h2>
 <ul>
-  <li><strong>Foto-Mediathek:</strong> zum Hinzufügen eines Profilbilds</li>
-  <li><strong>Kamera:</strong> zum Aufnehmen eines Profilfotos</li>
+  <li><strong>Foto-Mediathek:</strong> zum Auswählen eines Profilbilds, eines Fotos zum Termin oder des Stammtisch-Logos</li>
+  <li><strong>Mitteilungen:</strong> für Push-Benachrichtigungen, z. B. zu neuen Terminen, Erinnerungen und Einträgen</li>
 </ul>
-<p>Diese Berechtigungen werden nur bei aktiver Nutzung der jeweiligen Funktion angefragt.</p>
+<p>Diese Berechtigungen werden nur bei Bedarf angefragt und lassen sich jederzeit in den iOS-Einstellungen widerrufen. Kamera und Mikrofon nutzt die App nicht.</p>
 
 </body>
 </html>

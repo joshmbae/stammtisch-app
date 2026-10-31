@@ -3,12 +3,12 @@
     "name": "DeinStammtisch",
     "slug": "stammtisch-app",
     "scheme": "stammtisch-app",
-    "version": "1.7.0",
+    "version": "1.8.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.diehellen.stammtischapp",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
@@ -31,8 +31,9 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Stammtisch möchte auf deine Fotos zugreifen, um ein Profilbild hinzuzufügen.",
-          "cameraPermission": "Stammtisch möchte die Kamera nutzen, um ein Profilfoto aufzunehmen."
+          "photosPermission": "DeinStammtisch braucht Zugriff auf deine Fotos, damit du ein Profilbild, ein Foto zum Termin oder das Logo eures Stammtischs auswählen kannst.",
+          "cameraPermission": false,
+          "microphonePermission": false
         }
       ],
       "@react-native-community/datetimepicker",

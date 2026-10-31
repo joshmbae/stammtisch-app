@@ -20,6 +20,7 @@ import {
   deleteSpielLog,
   deleteStrafLog,
   deleteTermin,
+  bilderLoeschen,
   deleteVerspätungLog,
   loadAgenda,
   loadAllSpielLogs,
@@ -379,9 +380,11 @@ export function useTerminAbend(id: string) {
     if (!termin) return;
     setUploadingBild(true);
     try {
+      const alt = termin.bildUrl;
       const url = await uploadTerminBild(termin.id, localUri);
       await updateTermin(termin.id, { bildUrl: url });
       setTermin((prev) => (prev ? { ...prev, bildUrl: url } : prev));
+      await bilderLoeschen([alt]);
     } finally {
       setUploadingBild(false);
     }
@@ -389,8 +392,10 @@ export function useTerminAbend(id: string) {
 
   async function bildEntfernen() {
     if (!termin) return;
+    const alt = termin.bildUrl;
     await updateTermin(termin.id, { bildUrl: undefined });
     setTermin((prev) => (prev ? { ...prev, bildUrl: undefined } : prev));
+    await bilderLoeschen([alt]);
   }
 
   async function speichern(edit: TerminEdit) {

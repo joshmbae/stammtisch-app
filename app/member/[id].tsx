@@ -9,7 +9,7 @@ import { useSession } from "../../contexts/SessionContext";
 import { loadStrafKategorien } from "../../utils/storage";
 import { loadStatsDaten } from "../../utils/statsDaten";
 import { useScreenLoad } from "../../utils/useScreenLoad";
-import { verifyPin } from "../../utils/pin";
+import { pinFehlertext, verifyPin } from "../../utils/pin";
 import { anwesenheitsQuote, formatBetrag } from "../../utils/format";
 import { toLocalIsoDate } from "../../utils/date";
 import { StatsDaten, aktuellesJahr, computeRanglisten, jahresTitelFuer, wertKurz } from "../../utils/stats";
@@ -96,8 +96,9 @@ export default function ProfilScreen() {
 
   async function pinPruefen(pin: string) {
     if (!member?.pinHash) return;
-    if (!(await verifyPin(member.id, pin))) {
-      setPinFehler("Falscher PIN.");
+    const r = await verifyPin(member.id, pin);
+    if (r !== "ok") {
+      setPinFehler(pinFehlertext(r));
       return;
     }
     setPinOffen(false);

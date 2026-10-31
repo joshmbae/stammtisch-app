@@ -7,7 +7,7 @@ import * as ImagePicker from "expo-image-picker";
 
 import { showAlert } from "../utils/alert";
 import { StammtischVerordnung, Spiel, SPIEL_VORLAGEN, StrafKategorieDef } from "../types";
-import { loadVerordnung, saveVerordnung, uploadStammtischLogo, loadSpiele, loadStrafKategorien, deleteStammtisch, instantiateSpielVorlage } from "../utils/storage";
+import { loadVerordnung, saveVerordnung, uploadStammtischLogo, loadSpiele, loadStrafKategorien, deleteStammtisch, instantiateSpielVorlage, bilderLoeschen, loadMembers, loadTermine } from "../utils/storage";
 import { hashStammtischPassword } from "../utils/pin";
 import { displayName, formatGruendungMonat } from "../utils/format";
 import { useScreenLoad } from "../utils/useScreenLoad";
@@ -111,8 +111,12 @@ export default function EinstellungenScreen() {
     if (result.canceled || !stammtischId) return;
     setUploadingLogo(true);
     try {
+      const alt = verordnung.logoUrl;
       const url = await uploadStammtischLogo(stammtischId, result.assets[0].uri);
-      if (await speichern({ logoUrl: url })) setOffen(null);
+      if (await speichern({ logoUrl: url })) {
+        setOffen(null);
+        await bilderLoeschen([alt]);
+      }
     } catch {
       showAlert("Fehler", "Logo konnte nicht hochgeladen werden.");
     } finally {
@@ -123,7 +127,13 @@ export default function EinstellungenScreen() {
   function removeLogo() {
     showAlert("Logo entfernen?", "Dann wird wieder das Standard-Logo gezeigt.", [
       { text: "Abbrechen", style: "cancel" },
-      { text: "Entfernen", style: "destructive", onPress: async () => { if (await speichern({ logoUrl: undefined })) setOffen(null); } },
+      { text: "Entfernen", style: "destructive", onPress: async () => {
+        const alt = verordnung.logoUrl;
+        if (await speichern({ logoUrl: undefined })) {
+          setOffen(null);
+          await bilderLoeschen([alt]);
+        }
+      } },
     ]);
   }
 
@@ -144,11 +154,15 @@ export default function EinstellungenScreen() {
             setDeleting(true);
             try {
               const passwordHash = await hashStammtischPassword(verordnung.name, passwort);
+              // Bilder vorher einsammeln: nach dem Löschen sind die Verweise weg.
+              const [ms, ts] = await Promise.all([loadMembers().catch(() => []), loadTermine().catch(() => [])]);
+              const bilder = [verordnung.logoUrl, ...ms.map((m) => m.photoUri), ...ts.map((t) => t.bildUrl)];
               const ok = await deleteStammtisch(stammtischId, passwordHash);
               if (!ok) {
                 showAlert("Falsches Passwort", "Der Stammtisch wurde nicht gelöscht.");
                 return;
               }
+              await bilderLoeschen(bilder);
               setOffen(null);
               await clearSession();
               await clearStammtisch();

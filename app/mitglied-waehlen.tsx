@@ -13,7 +13,7 @@ import LoadingSpinner from "../components/LoadingSpinner";
 import ErrorState from "../components/ErrorState";
 import { useScreenLoad } from "../utils/useScreenLoad";
 import { displayName } from "../utils/format";
-import { verifyPin } from "../utils/pin";
+import { pinFehlertext, verifyPin } from "../utils/pin";
 import { hasSeenAppIntro } from "../utils/onboarding";
 import { Avatar, Button, Card, PressableScale, Screen } from "../components/ui";
 import { PinSheet } from "../components/einstieg/PinSheet";
@@ -58,9 +58,9 @@ export default function MitgliedWaehlenScreen() {
 
   async function handlePinVerify(pin: string) {
     if (!pendingMember) return;
-    const ok = await verifyPin(pendingMember.id, pin);
-    if (!ok) {
-      setPinError("Falscher PIN.");
+    const r = await verifyPin(pendingMember.id, pin);
+    if (r !== "ok") {
+      setPinError(pinFehlertext(r));
       return;
     }
     await setActiveSession(pendingMember.id);

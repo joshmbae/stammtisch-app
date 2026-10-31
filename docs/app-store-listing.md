@@ -1,4 +1,4 @@
-# App Store Connect — Einreichung DeinStammtisch v1.6.0
+# App Store Connect — Einreichung DeinStammtisch v1.8.0
 
 Alles, was in App Store Connect einzutragen ist, in der Reihenfolge der Oberfläche.
 Zeichenlimits sind geprüft. Die App-ID `6789122309` (ascAppId in `eas.json`) existiert bereits.
@@ -15,56 +15,61 @@ Zeichenlimits sind geprüft. Die App-ID `6789122309` (ascAppId in `eas.json`) ex
    nennt bisher nur eine E-Mail. Empfehlung: Impressum-Abschnitt mit ladungsfähiger
    Anschrift auf `support.html` ergänzen (Entwurf, vor Veröffentlichung selbst prüfen
    bzw. rechtlich absichern lassen).
-3. **AVV mit Supabase** abschließen (Datenschutzerklärung sagt „liegt vor / ist abzuschließen“;
-   Region laut Erklärung eu-west-1, Irland).
-4. **Build hochladen:**
+3. **AVV mit Supabase** abschließen (Supabase-Dashboard → Organization → Legal Documents → DPA).
+   Die Datenschutzerklärung (Stand 31.10.2026) geht davon aus, dass er vorliegt.
+4. **Prod-Datenbank auf Stand bringen** (alle Dateien in `supabase/migrations/` seit 1.7.0):
+   - `2026-10-29-ranglisten-richtung.sql` (dev. → public.)
+   - `2026-10-31-versuche-begrenzen.sql` (dev. → public.)
+   - `2026-10-31-avatars-bucket-absichern.sql` (einmal, wie sie ist – Storage ist für dev und Prod gleich)
+   Danach in der App testen: beitreten, PIN, Profilfoto/Terminfoto/Logo hochladen, ersetzen, entfernen.
+5. **Build hochladen:**
    ```bash
    eas build --platform ios --profile production
    eas submit --platform ios --latest
    ```
    Processing dauert 15–60 Minuten; erst dann ist der Build in der Version auswählbar.
 
-## 1. Version 1.6.0 — Seite „Distribution → iOS-App → 1.6.0“
+## 1. Version 1.8.0 — Seite „Distribution → iOS-App → 1.8.0“
 
 ### Promotional Text (max. 170 Zeichen, jederzeit ohne Review änderbar)
 ```
-Termine, Kasse, Strafen und Ranglisten für eure feste Runde. Eigener Strafenkatalog, Jahreswertung mit Sieger-Badges und Serientermine – alles in einer App.
+Termine, Strafen, Kasse und Tabelle für eure feste Runde – mit Live-Modus für den Abend und dem Rückblick als Bild für eure WhatsApp-Gruppe.
 ```
-(156 Zeichen)
+(140 Zeichen)
 
 ### Description (max. 4000 Zeichen)
 ```
 DeinStammtisch ist die App für eure feste Runde – ob Kartenabend, Vereinsstammtisch oder Freundeskreis mit eigenen Regeln. Alles, was ihr sonst in Chatgruppen und Zettelwirtschaft verliert, liegt hier an einem Ort.
 
-TERMINE
-Alle Stammtische im Kalender. Mitglieder sagen zu oder ab (auf Wunsch mit Grund), tragen Anwesenheit und Verspätung direkt im Termin ein. Termine lassen sich wöchentlich, alle 2 Wochen oder monatlich wiederholen und bekommen ein eigenes Titelbild.
+DER ABEND: VORHER, LIVE, DANACH
+Vorher sagt jeder mit einem Tipp zu oder ab, wer noch nicht geantwortet hat, bekommt eine Erinnerung. Zur Startzeit öffnet die App direkt den laufenden Abend: wer da ist, wer zu spät kam, Strafen und euer Spiel mit einem Tipp. Danach seht ihr den Abend in Zahlen.
+
+RÜCKBLICK ZUM TEILEN
+Nach dem Abend macht die App ein Bild mit eurem Foto vom Abend und den Siegern des Abends – fertig für die WhatsApp-Gruppe.
 
 STRAFEN – NACH EUREN REGELN
-Jeder Stammtisch legt seinen Strafenkatalog selbst fest: Kategorien anlegen, umbenennen, Beträge ändern oder Vorlagen mit einem Tipp übernehmen. Wer absagt, zu spät kommt oder ein Spiel verliert, kassiert eine Strafe. Alle Strafen auf einen Blick, offen oder beglichen.
+Jeder Stammtisch legt seinen Strafenkatalog selbst fest. Strafen aus dem Spiel entstehen automatisch, offene Strafen sind mit einem Tipp beglichen.
 
 KASSE
-Einnahmen, Ausgaben und Abendkosten sauber dokumentiert, inklusive Kostenteilung und Übersicht, wer schon bezahlt hat.
+Kassenstand, Einnahmen, Ausgaben und Rechnungen, die einer für alle bezahlt hat – mit Übersicht, wer seinen Anteil schon beglichen hat.
 
 SPIELE
-Legt eigene Spiele mit individuellen Ereignissen an, zum Beispiel Schocken oder Skat. Pro Ereignis ein großer Button: antippen, +1, fertig. Strafen bei bestimmten Ergebnissen entstehen automatisch.
+Eigene Spiele mit eigenen Ereignissen, zum Beispiel Schocken oder Skat. Pro Ereignis ein Zähler, Strafen bei bestimmten Ergebnissen entstehen automatisch.
 
-RANGLISTEN & SIEGER-BADGES
-Die Wertungen zeigen das laufende Jahr, die ewige Tabelle gibt es unter „Allzeit“. Wer eine Wertung anführt, trägt das Badge am Profilbild. Bei Gleichstand teilt ihr euch den Platz.
+TABELLE
+Ranglisten für Teilnahme, Verspätung, Strafen und eure Spiele, fürs laufende Jahr oder „Allzeit“. Ihr legt fest, ob viel oder wenig gut ist. Wer vorne liegt, trägt das Symbol am Profilbild.
 
-MITGLIEDER & ROLLEN
-Jede Person hat ein eigenes Profil mit Rollen wie Kassenwart oder Schriftführer, optional mit PIN geschützt.
+DIE RUNDE
+Profile mit Foto und Rollen wie Kassenwart oder Schriftführer, optional mit PIN geschützt. Satzung, Protokolle und Einstellungen an einem Ort. Wer in mehreren Runden ist, wechselt mit einem Tipp.
 
-SATZUNG
-Regeln, Treffpunkt und Termine eurer Runde, für alle jederzeit einsehbar.
-
-AKTIVITÄTS-FEED & BENACHRICHTIGUNGEN
-Seht in Echtzeit, was in der Runde passiert, und lasst euch an neue Termine erinnern.
+HELL UND DUNKEL
+Ein warmes, ruhiges Design in Hell und Dunkel.
 
 AUCH OHNE NETZ DABEI
-Im Funkloch zeigt die App den letzten Stand an. Zum Aktualisieren einfach nach unten ziehen.
+Im Funkloch zeigt die App den letzten Stand an.
 
 DATENSCHUTZ
-Keine Werbung, kein Tracking, keine Analyse-Dienste von Drittanbietern. Die Daten gehören eurer Runde. Eine Registrierung mit E-Mail ist nicht nötig: Ihr legt einen Stammtisch mit Name und Passwort an, die anderen treten mit denselben Zugangsdaten bei.
+Keine Werbung, kein Tracking, keine Analyse-Dienste. Keine Registrierung mit E-Mail: Ihr legt einen Stammtisch mit Name und Passwort an, die anderen treten mit denselben Zugangsdaten bei. Eigenes Profil und ganzer Stammtisch lassen sich jederzeit in der App löschen.
 ```
 
 ### Keywords (max. 100 Zeichen, ohne Leerzeichen nach Komma)
@@ -89,23 +94,16 @@ Leer lassen (optional).
 
 ### What's New in This Version (max. 4000 Zeichen)
 ```
-Das ist neu für eure Runde:
+Das ist neu:
 
-• Eigener Strafenkatalog: Kategorien anlegen, umbenennen, Beträge ändern oder Vorlagen übernehmen (Einstellungen → Strafenkategorien verwalten)
-• Jahresranglisten: Die Wertungen zeigen das laufende Jahr, „Allzeit“ bleibt als ewige Tabelle. Bei Gleichstand teilt ihr euch den Platz
-• Sieger-Badges: Wer eine Wertung anführt, trägt das Icon am Profilbild. Im Profil seht ihr, wer in welchem Jahr vorne lag
-• Serientermine: wöchentlich, alle 2 Wochen oder monatlich, mit nur einer Benachrichtigung
-• Titelbild für Termine
-• Absage mit Grund
-• Offline-Anzeige: Ohne Netz seht ihr den letzten Stand, überall lässt sich per Ziehen aktualisieren
-• „Strafe hinzufügen“ öffnet ein eigenes Fenster, im Spiel-Tab zählt ein großer Button pro Ereignis
-• Strafen-Kachel mit Gesamtsumme und offenem Betrag, Strafen-Tab pro Stammtisch ausblendbar
-• Einstellungen übersichtlich gruppiert, Protokolle nach Termin-Datum sortiert
-• Schnelleres Laden von Startseite und Terminen
-
-Behoben: Doppeltes Antippen bucht Strafen, Kasse und Termine nicht mehr doppelt, ungespeicherte Eingaben in den Einstellungen gehen nicht mehr verloren, lange Strafen-Namen werden vollständig angezeigt.
-
-Der Wetten-Bereich ist entfallen. Bestehende Wetten-Strafen bleiben als normale Strafen erhalten.
+• Rückblick als Bild: nach dem Abend mit eurem Foto und den Siegern des Abends teilen, z. B. in die WhatsApp-Gruppe
+• Neuer Dunkel-Modus: ruhig und warm, umschaltbar in der Runde
+• Tabelle übersichtlicher: alle Wertungen auf einen Blick, je Rangliste einstellbar, ob viel oder wenig gut ist
+• Stammtisch wechseln: die App merkt sich eure Runden, zurück geht's mit einem Tipp
+• Countdown zum nächsten Abend als Klappkarten
+• Kompaktere Termin-Übersicht, Absagen mit Grund übersichtlicher
+• Mehr Sicherheit: begrenzte Fehlversuche bei Passwort und PIN, Fotos werden beim Löschen mit entfernt
+• Viele kleine Verbesserungen bei Beträgen, Texten und Kontrasten
 ```
 
 ## 2. App-Informationen (links unter „Allgemein“)
@@ -146,34 +144,30 @@ Alle erfassten Daten: **mit der Identität verknüpft = Ja**, **Tracking = Nein*
 | Apple-Kategorie → Datentyp | Quelle in der App |
 |---|---|
 | Kontaktinfo → Name | Mitgliedsname, Spitzname |
-| Nutzerinhalte → Fotos oder Videos | Profilbild, Termin-Titelbild |
+| Nutzerinhalte → Fotos oder Videos | Profilbild, Foto zum Termin, Stammtisch-Logo |
 | Nutzerinhalte → Sonstige Nutzerinhalte | Notizen, Absagegründe, Strafen- und Kassen-Einträge, Protokolle, Satzung |
+| Kennungen → Benutzer-ID | anonyme Anmelde-Kennung (Supabase), Zugriff auf Stammtische |
 | Kennungen → Geräte-ID | Push-Token (Expo Push Service) |
 | Sonstige Daten → Sonstige Datentypen | Geburtsdatum, Beruf, Lieblingsgetränk (freiwillige Profilfelder) |
 | Finanzinformationen → Sonstige Finanzinfos | Optional: Beträge in Kasse/Strafen sind interne Buchführung, keine Zahlungsdaten. Konservativ angeben ist unkritisch |
 
 **Nicht erfasst:** E-Mail, Telefon, Standort, Kontakte, Browserverlauf, Nutzungsdaten/Analytics, Diagnosedaten, Zahlungsdaten.
 
-## 5. Screenshots (fertig, liegen lokal in `store-assets/`)
+## 5. Screenshots — für 1.8.0 neu aufnehmen
 
-Die Dateien sind nicht im Repo (`.gitignore`). Aufgenommen im Simulator gegen den Demo-Stammtisch, Statusleiste auf 9:41, erfundene Namen und Beträge.
+Die alten Screenshots zeigen das Design vor 1.7.0 und sollten ersetzt werden. Aufnehmen im Simulator (iPhone 16/17 Pro Max = 6,9", 1320 × 2868) gegen den Demo-Stammtisch, Statusleiste auf 9:41, erfundene Namen und Beträge. Ablage lokal in `store-assets/iphone-6.9/` (nicht im Repo).
 
-**iPhone 6,9" (1320 × 2868), Ordner `store-assets/iphone-6.9/`**
+**iPad:** `supportsTablet` ist ab 1.8.0 aus. Es werden keine iPad-Screenshots mehr gebraucht; die App läuft auf dem iPad im iPhone-Modus.
 
-| Reihenfolge | Datei | Overlay-Text (optional) |
+| Reihenfolge | Inhalt | Overlay-Text (optional) |
 |---|---|---|
-| 1 | `01-startseite.png` | Alles für eure Runde auf einen Blick |
-| 2 | `02-kalender.png` | Termine planen, auch als Serie |
-| 3 | `03-termin.png` | Zu- und Absagen, auf Wunsch mit Grund |
-| 4 | `04-strafen.png` | Strafen nach euren Regeln |
-| 5 | `05-kasse.png` | Kasse und Abendkosten im Griff |
-| 6 | `06-ranglisten.png` | Wer führt dieses Jahr? |
-| 7 | `07-strafenkatalog.png` | Euer Strafenkatalog, euer Spiel |
-| 8 | `08-menue.png` | Alles an einem Ort |
-
-**iPad 13" (2064 × 2752), Ordner `store-assets/ipad-13/`:** `01-startseite.png`, `02-kalender.png`, `03-strafen.png`, `04-ranglisten.png`.
-
-In App Store Connect: Version 1.6.0 → „Bildschirmfotos“ → „6,9"-Display“ bzw. „13"-iPad“, Dateien per Drag-and-drop in der Reihenfolge oben.
+| 1 | Home mit Countdown und Bilanz | Alles für eure Runde auf einen Blick |
+| 2 | Termin live (Strafen oder Spiel) | Der Abend läuft – eintragen mit einem Tipp |
+| 3 | Rückblick-Bild | Der Abend als Bild für eure Gruppe |
+| 4 | Kasse Übersicht | Kasse und Strafen im Griff |
+| 5 | Tabelle | Wer führt dieses Jahr? |
+| 6 | Termin vorher (Wer kommt) | Zu- und Absagen mit einem Tipp |
+| 7 | Dunkel-Modus (Home) | Auch in Dunkel |
 
 ## 6. App-Überprüfung (App Review Information)
 
@@ -197,15 +191,17 @@ Hinweise:
 - Strafen sind reine Spaß-Buchführung innerhalb der Gruppe. Es werden keine Zahlungen abgewickelt und es gibt keine In-App-Käufe. Geldbeträge sind nur interne Anzeige.
 - Die App enthält kein Glücksspiel und keine Wetten.
 - Inhalte sind nur für Mitglieder der jeweiligen geschlossenen Gruppe sichtbar (kein öffentlicher Feed, kein Chat).
-- Der Stammtisch samt aller Daten kann unter Einstellungen → Gefahrenzone gelöscht werden.
-- Push-Benachrichtigungen erinnern an Termine. Kamera/Fotos werden nur für das optionale Profilbild genutzt.
+- Konto/Daten löschen: Das eigene Profil lässt sich unter Profil → Bearbeiten → Entfernen löschen, der ganze Stammtisch samt aller Daten unter Runde → Einstellungen → Gefahrenzone.
+- Der optionale Zahlungslink (z. B. PayPal-Pool) öffnet nur eine externe Seite, über die sich Freunde untereinander Geld schicken. Die App wickelt keine Zahlungen ab und verkauft nichts.
+- Push-Benachrichtigungen informieren über Termine, Erinnerungen und Einträge. Die Foto-Mediathek wird nur für optionale Bilder (Profil, Termin, Logo) genutzt; Kamera und Mikrofon nutzt die App nicht.
 ```
 
 **Demo-Stammtisch:** Das Seed-Skript für die Produktion liegt lokal unter `store-assets/private/seed-prod.sql`, Zugangsdaten und fertiger Prüfer-Text unter `store-assets/private/`. Das Skript einmal im Supabase-SQL-Editor gegen `public` ausführen, vor dem Einreichen.
 
 **Apple-Prüfpunkte, die hier relevant sind:**
 - 1.2 (nutzergenerierte Inhalte): Inhalte sind nur in geschlossenen Gruppen sichtbar. Falls Apple nachfragt: Löschfunktion und Kontakt über Support-Seite verweisen.
-- 5.1.1(v) (Kontolöschung): Stammtisch lässt sich in der App löschen. Einzelne Mitglieder-Profile ebenfalls.
+- 5.1.1(v) (Kontolöschung): Eigenes Profil (Profil → Bearbeiten → Entfernen) und ganzer Stammtisch (Einstellungen → Gefahrenzone) lassen sich in der App löschen, Fotos werden dabei mit gelöscht.
+- 3.1.1 (Käufe): Kein Verkauf digitaler Inhalte; der Zahlungslink ist Geld unter Freunden.
 - 5.3 (Glücksspiel): Wetten sind entfernt, Hinweis in den Notizen oben.
 
 ## 7. Export-Compliance & Content Rights
@@ -216,7 +212,7 @@ Hinweise:
 
 ## 8. Build zuordnen & einreichen
 
-1. Version 1.6.0 → „Build“ → „+“ → den hochgeladenen Build auswählen.
+1. Version 1.8.0 → „Build“ → „+“ → den hochgeladenen Build auswählen.
 2. Alle Pflichtfelder prüfen (Screenshots, Beschreibung, Support-URL, Datenschutz, Review-Kontakt).
 3. „Zur Prüfung hinzufügen“ → „Zur Prüfung einreichen“.
 4. Release-Methode: „Manuell veröffentlichen“ empfohlen, dann bestimmt ihr den Zeitpunkt nach Freigabe.

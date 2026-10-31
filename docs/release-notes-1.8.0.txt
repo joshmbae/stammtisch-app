@@ -1,0 +1,23 @@
+🍻 *DeinStammtisch 1.8.0 ist da!*
+
+📸 *Rückblick als Bild*
+Nach dem Abend macht die App ein Bild mit eurem Foto vom Abend und den Siegern: wer beim Spiel vorne lag und wer der Strafenkönig ist – mit Profilbild und großen Zahlen. Mit einem Tipp in die Gruppe teilen. Tipp: Ladet beim Stammtisch ein Foto zum Termin hoch, dann wird's richtig gut.
+
+🌙 *Neuer Dunkel-Modus*
+Ruhig, warm und gut lesbar – umschalten in der Runde unter Erscheinungsbild.
+
+🏆 *Tabelle neu*
+Alle Wertungen auf einen Blick, Top 3 sofort sichtbar, dein Platz immer dabei. Neu: Pro Rangliste stellt ihr ein, ob viel oder wenig gut ist – bei den Strafen gewinnt dann, wer am wenigsten gezahlt hat.
+
+🔄 *Stammtisch wechseln*
+Wer in mehreren Runden ist: Runde → „Stammtisch wechseln“. Die App merkt sich eure Stammtische, zurück geht's mit einem Tipp.
+
+⏳ *Countdown als Klappkarten*
+Bis zum nächsten Abend zählen jetzt Fallblatt-Karten wie am Bahnhof.
+
+✨ *Außerdem*
+- Termine-Übersicht kompakter, Absagen mit Grund übersichtlicher
+- Mehr Sicherheit bei Passwort und PIN, Fotos werden beim Löschen mit entfernt
+- Viele kleine Verbesserungen bei Beträgen, Texten und Kontrasten
+
+Einfach in TestFlight bzw. im Play Store updaten und los geht's. Prost! 🍺

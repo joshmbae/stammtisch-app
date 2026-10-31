@@ -14,7 +14,7 @@ import { useScreenLoad } from "../utils/useScreenLoad";
 import { useFuehrende } from "../utils/useFuehrende";
 import { displayName } from "../utils/format";
 import PinPrompt from "../components/PinPrompt";
-import { verifyPin } from "../utils/pin";
+import { pinFehlertext, verifyPin } from "../utils/pin";
 import {
   Avatar,
   Button,
@@ -87,9 +87,9 @@ export default function MitgliederScreen() {
 
   async function handlePinVerify(pin: string) {
     if (!pinTarget?.member.pinHash) return;
-    const ok = await verifyPin(pinTarget.member.id, pin);
-    if (!ok) {
-      setPinError("Falscher PIN.");
+    const r = await verifyPin(pinTarget.member.id, pin);
+    if (r !== "ok") {
+      setPinError(pinFehlertext(r));
       return;
     }
     const target = pinTarget;

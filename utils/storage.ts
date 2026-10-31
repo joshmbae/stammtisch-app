@@ -1,6 +1,7 @@
 import { supabase } from "./supabase";
 import { sendActivityPush } from "./push";
 import { withCache } from "./cache";
+import { ZU_VIELE_VERSUCHE, istZuVieleVersuche } from "./pin";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   MemberProfile,
@@ -78,6 +79,7 @@ export async function findStammtischByName(
     p_name: name,
     p_password_hash: passwordHash,
   });
+  if (istZuVieleVersuche(error)) throw new Error(ZU_VIELE_VERSUCHE);
   if (error || !data || data.length === 0) return null;
   return { id: data[0].id, name: data[0].name };
 }
@@ -213,8 +215,32 @@ export async function saveMembers(members: MemberProfile[]): Promise<void> {
 }
 
 export async function deleteMember(id: string): Promise<void> {
+  const { data } = await supabase.from("members").select("photo_url").eq("id", id).maybeSingle();
   const { error } = await supabase.from("members").delete().eq("id", id);
   if (error) throw error;
+  // Mit dem Profil geht auch das Profilfoto (Recht auf Löschung).
+  await bilderLoeschen([data?.photo_url]);
+}
+
+/** Pfad im Bucket aus einer öffentlichen URL („…/object/public/avatars/<pfad>“). */
+function bildPfad(url?: string | null): string | null {
+  const m = url?.match(/\/object\/public\/avatars\/([^?]+)/);
+  return m ? decodeURIComponent(m[1]) : null;
+}
+
+/**
+ * Entfernt hochgeladene Bilder, die nicht mehr gebraucht werden (ersetzt,
+ * entfernt oder mitsamt Profil/Termin/Stammtisch gelöscht). Scheitert das,
+ * bleibt die eigentliche Aktion trotzdem gültig.
+ */
+export async function bilderLoeschen(urls: (string | null | undefined)[]): Promise<void> {
+  const pfade = urls.map(bildPfad).filter((p): p is string => !!p);
+  if (pfade.length === 0) return;
+  try {
+    await supabase.storage.from("avatars").remove(pfade);
+  } catch {
+    // s. o.
+  }
 }
 
 /** Lädt ein lokales Bild hoch und gibt die öffentliche URL zurück. */
@@ -225,7 +251,7 @@ export async function uploadAvatar(memberId: string, localUri: string): Promise<
   const path = `${memberId}_${Date.now()}.${ext}`;
   const { error } = await supabase.storage.from("avatars").upload(path, arrayBuffer, {
     contentType: `image/${ext === "jpg" ? "jpeg" : ext}`,
-    upsert: true,
+    upsert: false,
   });
   if (error) throw error;
   const { data } = supabase.storage.from("avatars").getPublicUrl(path);
@@ -240,7 +266,7 @@ export async function uploadTerminBild(terminId: string, localUri: string): Prom
   const path = `termin-bild_${terminId}_${Date.now()}.${ext}`;
   const { error } = await supabase.storage.from("avatars").upload(path, arrayBuffer, {
     contentType: `image/${ext === "jpg" ? "jpeg" : ext}`,
-    upsert: true,
+    upsert: false,
   });
   if (error) throw error;
   const { data } = supabase.storage.from("avatars").getPublicUrl(path);
@@ -255,7 +281,7 @@ export async function uploadStammtischLogo(stammtischId: string, localUri: strin
   const path = `stammtisch-logo_${stammtischId}_${Date.now()}.${ext}`;
   const { error } = await supabase.storage.from("avatars").upload(path, arrayBuffer, {
     contentType: `image/${ext === "jpg" ? "jpeg" : ext}`,
-    upsert: true,
+    upsert: false,
   });
   if (error) throw error;
   const { data } = supabase.storage.from("avatars").getPublicUrl(path);
@@ -853,8 +879,10 @@ export async function updateTermin(id: string, partial: Partial<StammtischTermin
 }
 
 export async function deleteTermin(id: string): Promise<void> {
+  const { data } = await supabase.from("termine").select("bild_url").eq("id", id).maybeSingle();
   const { error } = await supabase.from("termine").delete().eq("id", id);
   if (error) throw error;
+  await bilderLoeschen([data?.bild_url]);
 }
 
 // ─── Protokolle ───────────────────────────────────────────────────────────────
