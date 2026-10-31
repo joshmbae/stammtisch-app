@@ -2,14 +2,14 @@ import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeInDown } from "react-native-reanimated";
-import { MAX_FONT_SCALE, TYPE, ThemeColors, glow } from "../../constants/design";
+import { MAX_FONT_SCALE, MINUS_AUF_SENF, TYPE, ThemeColors } from "../../constants/design";
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { formatEuro } from "../../utils/format";
 import { PressableScale } from "../ui";
 
 /**
  * Kassenstand als große Zahl, darunter Münzstapel pro Monat: je höher der
- * Stand, desto höher der Stapel; der laufende Monat ist dunkel bzw. leuchtet.
+ * Stand, desto höher der Stapel; der laufende Monat ist dunkel.
  */
 export function KasseTile({ saldo, monate, onPress }: { saldo: number; monate: { stand: number }[]; onPress: () => void }) {
   const c = useColors();
@@ -19,21 +19,20 @@ export function KasseTile({ saldo, monate, onPress }: { saldo: number; monate: {
   const max = Math.max(...werte, 1);
   const stapel = werte.map((v) => Math.round(2 + ((v - min) / (max - min || 1)) * 5));
   const betrag = formatEuro(saldo).replace(/,00$/, "");
-  const dunkel = c.heroStyle === "outline";
 
   return (
     <PressableScale
       onPress={onPress}
-      style={[styles.tile, { borderColor: c.mustardEdge }, glow(c.mustard, c, 18)]}
+      style={[styles.tile, { borderColor: c.mustardEdge }]}
       accessibilityLabel={`Kasse: ${betrag} Euro`}
     >
       <View style={styles.kopf}>
-        <Text style={[styles.label, { color: dunkel ? c.mustard : c.onMustard }]}>Kasse</Text>
-        <View style={[styles.pfeil, { backgroundColor: dunkel ? c.cardAlt : c.textDark }]}>
-          <Ionicons name="arrow-forward" size={12} color={dunkel ? c.mustard : c.mustardTile} style={{ transform: [{ rotate: "-45deg" }] }} />
+        <Text style={[styles.label, { color: c.onMustard }]}>Kasse</Text>
+        <View style={[styles.pfeil, { backgroundColor: c.onMustard }]}>
+          <Ionicons name="arrow-forward" size={12} color={c.mustardTile} style={{ transform: [{ rotate: "-45deg" }] }} />
         </View>
       </View>
-      <Text style={[styles.betrag, { color: dunkel ? c.textDark : c.onMustard }, saldo < 0 && { color: c.coralText }]} maxFontSizeMultiplier={MAX_FONT_SCALE}>
+      <Text style={[styles.betrag, { color: c.onMustard }, saldo < 0 && { color: MINUS_AUF_SENF }]} maxFontSizeMultiplier={MAX_FONT_SCALE}>
         {betrag}
         <Text style={styles.euro}> €</Text>
       </Text>
@@ -50,8 +49,8 @@ export function KasseTile({ saldo, monate, onPress }: { saldo: number; monate: {
                     styles.muenze,
                     {
                       backgroundColor: aktuell
-                        ? (dunkel ? (k % 2 ? "#FFE08A" : c.mustard) : (k % 2 ? "#3A3631" : c.textDark))
-                        : (dunkel ? "rgba(255,201,60,0.22)" : "rgba(28,27,25,0.24)"),
+                        ? (k % 2 ? "#3A3631" : c.onMustard)
+                        : "rgba(28,27,25,0.24)",
                     },
                   ]}
                 />

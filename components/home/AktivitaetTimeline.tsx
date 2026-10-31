@@ -57,10 +57,10 @@ export function AktivitaetTimeline({ eintraege, membersById, kategorien }: {
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
-    card: { borderRadius: 24, backgroundColor: c.blueBg, padding: 16, paddingBottom: 10, borderWidth: 1, borderColor: c.heroStyle === "outline" ? "rgba(77,124,255,0.25)" : "transparent" },
+    card: { borderRadius: 24, backgroundColor: c.blueBg, padding: 16, paddingBottom: 10, borderWidth: 1, borderColor: "transparent" },
     leer: { ...TYPE.caption, fontSize: 13, color: c.textMuted, marginTop: 8, marginBottom: 6 },
     zeile: { flexDirection: "row", gap: 12, paddingVertical: 7, minHeight: 52 },
-    linie: { position: "absolute", left: 13, top: 39, bottom: -7, width: 2, borderRadius: 1, backgroundColor: c.heroStyle === "outline" ? "rgba(77,124,255,0.3)" : "#C3CCE2" },
+    linie: { position: "absolute", left: 13, top: 39, bottom: -7, width: 2, borderRadius: 1, backgroundColor: c.isDark ? "rgba(138,165,240,0.25)" : "#C3CCE2" },
     punkt: { width: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center", borderWidth: 3, borderColor: c.blueBg },
     emoji: { fontSize: 12 },
     text: { fontFamily: FONT.w600, fontSize: 14, lineHeight: 19, color: c.textDark },

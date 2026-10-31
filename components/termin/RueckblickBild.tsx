@@ -24,7 +24,7 @@ export const RUECKBLICK_BREITE = 360;
 
 /**
  * Rückblick auf einen Abend als Bild für die WhatsApp-Gruppe. Bewusst feste
- * Farben (Live-Grün der App, egal ob Hell oder Glow): es ist ein Bild, das
+ * Farben (Live-Grün der App, egal ob Hell oder Dunkel): es ist ein Bild, das
  * außerhalb der App gezeigt wird. Ohne runde Ecken, sonst werden sie im Bild
  * schwarz. Wird unsichtbar gerendert und nur abfotografiert.
  */

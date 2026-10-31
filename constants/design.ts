@@ -51,9 +51,10 @@ export const LIGHT_COLORS = {
   navBorder:     "transparent",
   navActiveText: "#1C1B19",
 
-  // Akzentfamilien: Fläche · Text darauf · Nebentext darauf · Kante · Glow
-  // Hell = gefüllte Flächen ohne Glow; Dunkel = dunkle Fläche mit Leuchtkante.
-  heroStyle:     "fill" as "fill" | "outline",
+  // Akzentfamilien: Fläche · Text darauf · Nebentext darauf · Kante · Leuchten
+  // Beide Themes: gefüllte Flächen ohne Leuchten.
+  /** Dunkler Grund: für Feinheiten, die ein Token allein nicht abdeckt (z. B. weiße statt schwarze Transparenz). */
+  isDark:        false as boolean,
   heroBlue:      "#2D4F9E",
   heroBlueInner: "#1F3770",      // Flip-Kacheln, innere Flächen
   onHeroBlue:    "#FFFFFF",
@@ -76,79 +77,78 @@ export const LIGHT_COLORS = {
   coralText:     "#963F2C",
   greenSoft:     "#E1EDE5",
   greenText:     "#24553F",
-  glowOpacity:   0,              // Hell: kein Leuchten
 };
 
 export type ThemeColors = typeof LIGHT_COLORS;
 
 /**
- * Dunkel ist kein abgedunkeltes Hell: kühles Tiefschwarz, Akzente in
- * Neon-Sättigung, Karten mit Haarlinie statt Schatten, Hero-Flächen dunkel mit
- * leuchtender Kante. Auf hellen Neon-Flächen steht dunkler Text (onAccent).
+ * Dunkel: ruhig und warm statt Neon. Warmes Graphit als Grund (passend zur
+ * Creme im Hellen), Karten nur eine Stufe heller, keine Leuchtkanten. Die
+ * Hero-Flächen bleiben gefüllt wie im Hellen (Markenblau, Live-Grün, Senf),
+ * nur etwas tiefer. Texte und Akzente mind. 4,5:1 auf Karte und cardAlt.
  */
+/** Negativer Betrag auf Senf-Flächen (Kasse) – die sind in beiden Themes gleich hell. */
+export const MINUS_AUF_SENF = "#8A3422";
+
 export const DARK_COLORS: ThemeColors = {
-  background:    "#0A0B0F",
-  card:          "#14161D",
-  cardAlt:       "#1B1E27",
-  segmentBg:     "#1B1E27",
-  hairline:      "rgba(255,255,255,0.08)",
+  background:    "#121110",      // warmes Graphit
+  card:          "#1C1B19",
+  cardAlt:       "#262422",
+  segmentBg:     "#2A2825",
+  hairline:      "rgba(255,255,255,0.06)",
 
-  blue:          "#5A86FF",      // Elektroblau: Text auf Karte 5,4:1, auf cardAlt 5,0:1, Fläche mit dunklem Text
-  blueBg:        "#121A33",
-  gold:          "#FFC93C",
-  goldLight:     "#FFC93C",
+  blue:          "#8AA5F0",      // helles Markenblau: Text auf Karte 7,2:1; als Fläche mit dunklem Text (onAccent)
+  blueBg:        "#1F2434",
+  gold:          "#E9C46A",
+  goldLight:     "#E9C46A",
 
-  textDark:      "#F4F6FB",
-  textMid:       "#B5BBCB",
-  textMuted:     "#8A90A2",
-  textLight:     "#737A8D",
-  onAccent:      "#0A0B0F",
+  textDark:      "#F3F0EA",      // warmes Weiß
+  textMid:       "#CFC9BF",
+  textMuted:     "#A29C91",      // 5,7:1 auf cardAlt
+  textLight:     "#807A70",      // nur Platzhalter/Deko
+  onAccent:      "#121110",
   onAvatar:      "#FFFFFF",
 
-  border:        "#232733",
-  borderDark:    "#2E3340",
-  control:       "#6A7084",
+  border:        "#2F2D2A",
+  borderDark:    "#3B3834",
+  control:       "#8A847A",
 
+  dangerBg:      "#3A2220",
+  dangerText:    "#F4A28F",
+  success:       "#5DBB86",
+  successText:   "#8ED3AA",
 
-  dangerBg:      "#2E1510",
-  dangerText:    "#FF8A70",
-  success:       "#3DDC97",
-  successText:   "#3DDC97",
+  overlay:       "rgba(0,0,0,0.6)",
 
+  tabBarGlass:   "rgba(38,36,34,0.72)",
+  tabActive:     "#E2B347",
+  tabInactive:   "#CFC9BF",
+  navBorder:     "rgba(255,255,255,0.08)",
+  navActiveText: "#1C1B19",
 
-  overlay:       "rgba(0,0,0,0.7)",
-
-  tabBarGlass:   "rgba(20,22,29,0.55)",
-  tabActive:     "#FFC93C",
-  tabInactive:   "#B5BBCB",
-  navBorder:     "rgba(255,255,255,0.10)",
-  navActiveText: "#0A0B0F",
-
-  heroStyle:     "outline",
-  heroBlue:      "#0E1426",
-  heroBlueInner: "#0A0F1D",
-  onHeroBlue:    "#F4F6FB",
-  heroBlueSub:   "#FFC93C",
-  heroBlueEdge:  "rgba(77,124,255,0.55)",
-  live:          "#0B1712",
-  onLive:        "#F4F6FB",
-  liveSub:       "#9FE8C6",
-  liveAccent:    "#3DDC97",
-  liveEdge:      "rgba(61,220,151,0.55)",
-  mustard:       "#FFC93C",
-  onMustard:     "#0A0B0F",
-  mustardTile:   "#14161D",
-  mustardSoft:   "#2A2108",
-  mustardText:   "#FFC93C",
-  mustardEdge:   "rgba(255,201,60,0.45)",
-  coral:         "#FF6A4D",
-  onCoral:       "#0A0B0F",
-  coralSoft:     "#2E1510",
-  coralText:     "#FF8A70",
-  greenSoft:     "#0E2A1E",
-  greenText:     "#3DDC97",
-  glowOpacity:   0.6,
-
+  isDark:        true,
+  heroBlue:      "#2B4689",      // Markenblau, eine Stufe tiefer
+  heroBlueInner: "#1F3466",
+  onHeroBlue:    "#FFFFFF",
+  heroBlueSub:   "#F0D48C",
+  heroBlueEdge:  "transparent",
+  live:          "#23503C",
+  onLive:        "#FFFFFF",
+  liveSub:       "#CFE0D5",
+  liveAccent:    "#E2B347",
+  liveEdge:      "transparent",
+  mustard:       "#E2B347",
+  onMustard:     "#1C1B19",
+  mustardTile:   "#D9AA45",
+  mustardSoft:   "#352C1A",
+  mustardText:   "#EBC970",
+  mustardEdge:   "transparent",
+  coral:         "#B4503A",      // Weiß darauf 5,1:1
+  onCoral:       "#FFFFFF",
+  coralSoft:     "#3A2420",
+  coralText:     "#F4A28F",
+  greenSoft:     "#1E3127",
+  greenText:     "#8ED3AA",
 };
 
 export const SHADOWS = {
@@ -160,16 +160,6 @@ export const SHADOWS = {
     elevation: 1,
   },
 };
-
-/** Leuchten im Dunkel-Modus (im Hellen ist glowOpacity 0, also unsichtbar). */
-export function glow(color: string, c: ThemeColors, radius = 22) {
-  return {
-    shadowColor: color,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: c.glowOpacity,
-    shadowRadius: radius,
-  };
-}
 
 // ─── Form & Abstand ───────────────────────────────────────────────────────────
 

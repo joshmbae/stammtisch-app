@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { MemberProfile, StammtischTermin } from "../../types";
-import { FONT, MAX_FONT_SCALE, RADIUS, TYPE, ThemeColors, glow } from "../../constants/design";
+import { FONT, MAX_FONT_SCALE, RADIUS, TYPE, ThemeColors } from "../../constants/design";
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { TerminPhase, terminStart } from "../../utils/terminPhase";
 import { displayName } from "../../utils/format";
@@ -46,7 +46,7 @@ export function NaechsterStammtisch({ termin, phase, ichId, stammtischzeit, now 
     <PressableScale
       onPress={() => router.push(`/termin/${termin.id}`)}
       scaleTo={0.98}
-      style={[styles.hero, { backgroundColor: live ? c.live : c.heroBlue, borderColor: live ? c.liveEdge : c.heroBlueEdge }, glow(live ? c.liveAccent : c.blue, c, 22)]}
+      style={[styles.hero, { backgroundColor: live ? c.live : c.heroBlue, borderColor: live ? c.liveEdge : c.heroBlueEdge }]}
       accessibilityLabel={`${live ? "Stammtisch läuft gerade" : "Nächster Stammtisch"}: ${tag.toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" })}${start ? `, ${uhr(start)} Uhr` : ""}${ichDabei ? ", du bist dabei" : ""}. Öffnen`}
     >
       <View style={[styles.heroBlock, { backgroundColor: live ? "rgba(255,255,255,0.14)" : c.heroBlueInner }]}>

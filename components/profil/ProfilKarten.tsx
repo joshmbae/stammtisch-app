@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 import { MemberProfile, StrafKategorieDef, StrafLog } from "../../types";
-import { FONT, MAX_FONT_SCALE, RADIUS, TYPE, ThemeColors, glow } from "../../constants/design";
+import { FONT, MAX_FONT_SCALE, RADIUS, TYPE, ThemeColors } from "../../constants/design";
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { Jahrestitel } from "../../utils/stats";
 import { displayName, formatBetrag } from "../../utils/format";
@@ -15,7 +15,6 @@ import { SYMBOL } from "../../constants/symbole";
 export function ProfilHero({ member }: { member: MemberProfile }) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
-  const hell = c.heroStyle === "fill";
   const angaben = [
     member.spitzname ? { label: "Spitzname", wert: member.spitzname } : null,
     { label: "Mitglied seit", wert: new Date(member.mitgliedSeit).toLocaleDateString("de-DE", { month: "short", year: "numeric" }) },
@@ -25,7 +24,7 @@ export function ProfilHero({ member }: { member: MemberProfile }) {
   ].filter(Boolean) as { label: string; wert: string }[];
 
   return (
-    <Card enterIndex={0} style={[styles.hero, { backgroundColor: c.heroBlue, borderColor: c.heroBlueEdge, borderWidth: 1 }, glow(c.blue, c, 24)]}>
+    <Card enterIndex={0} style={[styles.hero, { backgroundColor: c.heroBlue, borderColor: c.heroBlueEdge, borderWidth: 1 }]}>
       <View style={styles.heroKopf}>
         <View style={[styles.heroRing, { borderColor: c.mustard }]}>
           <Avatar name={displayName(member)} color={member.avatarColor} photoUri={member.photoUri} size={72} />
@@ -35,12 +34,12 @@ export function ProfilHero({ member }: { member: MemberProfile }) {
           <Text style={[styles.heroRolle, { color: c.heroBlueSub }]} numberOfLines={2}>{member.rollen.join(", ")}</Text>
         </View>
       </View>
-      <View style={[styles.heroTrenner, { backgroundColor: hell ? "rgba(255,255,255,0.18)" : c.hairline }]} />
+      <View style={[styles.heroTrenner, { backgroundColor: "rgba(255,255,255,0.18)" }]} />
       <View style={styles.angaben}>
         {angaben.map((a) => (
           <View key={a.label} style={styles.angabe}>
             <Text style={[styles.angabeWert, { color: c.onHeroBlue }]} numberOfLines={1}>{a.wert}</Text>
-            <Text style={[styles.angabeLabel, { color: hell ? "rgba(255,255,255,0.75)" : c.textMuted }]}>{a.label}</Text>
+            <Text style={[styles.angabeLabel, { color: "rgba(255,255,255,0.75)" }]}>{a.label}</Text>
           </View>
         ))}
       </View>

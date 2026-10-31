@@ -16,7 +16,7 @@ const NEU: { emoji: string; ton: Ton; titel: string; text: string }[] = [
   { emoji: SYMBOL.kasse, ton: "mustard", titel: "Kasse an einem Ort", text: "Strafen, Rechnungen und Buchungen zusammen – offene Strafen direkt begleichen." },
   { emoji: SYMBOL.pokal, ton: "mustard", titel: "Wer führt, sieht man", text: "Wer eine Wertung anführt, trägt ihr Symbol am Profilbild. Deine Plätze stehen auf Home." },
   { emoji: SYMBOL.erinnern, ton: "coral", titel: "Erinnern per Push", text: "Wer noch nicht zugesagt hat, bekommt mit einem Tipp eine Erinnerung." },
-  { emoji: SYMBOL.neu, ton: "blue", titel: "Glow-Look", text: "Neben Hell gibt’s den leuchtenden Glow-Look – umschalten in der Runde." },
+  { emoji: SYMBOL.neu, ton: "blue", titel: "Dunkel-Modus", text: "Neben Hell gibt’s einen ruhigen Dunkel-Modus – umschalten in der Runde." },
 ];
 
 /**

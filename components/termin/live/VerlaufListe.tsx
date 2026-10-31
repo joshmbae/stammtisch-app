@@ -72,6 +72,6 @@ const makeStyles = (c: ThemeColors) =>
     rechts: { ...TYPE.num, fontSize: 14, color: c.textDark },
     x: {
       width: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center",
-      backgroundColor: c.heroStyle === "outline" ? "rgba(255,255,255,0.08)" : "rgba(28,27,25,0.06)",
+      backgroundColor: c.isDark ? "rgba(255,255,255,0.08)" : "rgba(28,27,25,0.06)",
     },
   });

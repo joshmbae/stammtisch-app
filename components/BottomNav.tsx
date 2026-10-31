@@ -5,7 +5,7 @@ import { BlurView } from "expo-blur";
 import Animated, { FadeIn, LinearTransition, useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
-import { FONT, MOTION, ThemeColors, glow } from "../constants/design";
+import { FONT, MOTION, ThemeColors } from "../constants/design";
 import { useColors, useThemedStyles } from "../contexts/ThemeContext";
 import { PressableScale } from "./ui";
 
@@ -68,7 +68,7 @@ export function BottomNav({ state, descriptors, navigation }: BottomTabBarProps)
         </View>
         <View style={styles.rand} pointerEvents="none" />
         {breite > 0 ? (
-          <Animated.View style={[styles.gleitPille, { width: AKTIV_BREITE }, glow(c.tabActive, c, 14), pilleStil]} pointerEvents="none" />
+          <Animated.View style={[styles.gleitPille, { width: AKTIV_BREITE }, pilleStil]} pointerEvents="none" />
         ) : null}
         <View style={styles.reihe} accessibilityRole="tablist">
           {breite > 0

@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { KassenEintrag } from "../../types";
-import { FONT, MAX_FONT_SCALE, RADIUS, TYPE, ThemeColors, glow } from "../../constants/design";
+import { FONT, MAX_FONT_SCALE, MINUS_AUF_SENF, RADIUS, TYPE, ThemeColors } from "../../constants/design";
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { Kasse } from "../../utils/useKasse";
 import { monatsSalden, rechnungBeglichen, rechnungOffen, saldo, schuldnerVon } from "../../utils/kasse";
@@ -24,7 +24,6 @@ export function UebersichtTab({ kasse, onStrafen, onRechnungen, onEintrag }: {
 }) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
-  const dunkel = c.heroStyle === "outline";
   const jetzt = new Date();
   const buchungen = useMemo(() => kasse.eintraege.filter((e) => e.typ !== "abendkosten"), [kasse.eintraege]);
   const monate = useMemo(() => monatsSalden(kasse.eintraege, 10, jetzt), [kasse.eintraege]);
@@ -59,16 +58,16 @@ export function UebersichtTab({ kasse, onStrafen, onRechnungen, onEintrag }: {
 
   return (
     <>
-      <Card enterIndex={0} style={[styles.stand, dunkel ? { backgroundColor: c.card, borderColor: c.mustardEdge, borderWidth: 1, ...glow(c.mustard, c, 18) } : { backgroundColor: c.mustardTile, borderColor: c.mustardTile }]}>
+      <Card enterIndex={0} style={[styles.stand, { backgroundColor: c.mustardTile, borderColor: c.mustardTile }]}>
         <View style={styles.zeile}>
-          <Text style={[styles.label, { color: dunkel ? c.mustard : c.onMustard }]}>Kassenstand</Text>
+          <Text style={[styles.label, { color: c.onMustard }]}>Kassenstand</Text>
           {letzte ? (
-            <View style={[styles.standChip, { backgroundColor: dunkel ? c.cardAlt : "rgba(28,27,25,0.08)" }]}>
-              <Text style={[styles.standChipText, { color: dunkel ? c.textMid : c.onMustard }]}>{`Stand ${formatWochentagDatum(new Date(letzte.datum))}`}</Text>
+            <View style={[styles.standChip, { backgroundColor: "rgba(28,27,25,0.08)" }]}>
+              <Text style={[styles.standChipText, { color: c.onMustard }]}>{`Stand ${formatWochentagDatum(new Date(letzte.datum))}`}</Text>
             </View>
           ) : null}
         </View>
-        <Text style={[styles.betrag, { color: stand < 0 ? c.coralText : dunkel ? c.textDark : c.onMustard }]} maxFontSizeMultiplier={MAX_FONT_SCALE} accessibilityLabel={`Kassenstand ${formatEuro(stand)} Euro`}>
+        <Text style={[styles.betrag, { color: stand < 0 ? MINUS_AUF_SENF : c.onMustard }]} maxFontSizeMultiplier={MAX_FONT_SCALE} accessibilityLabel={`Kassenstand ${formatEuro(stand)} Euro`}>
           {formatEuro(stand).replace(/,00$/, "")}
           <Text style={styles.euro}> €</Text>
         </Text>
@@ -86,22 +85,22 @@ export function UebersichtTab({ kasse, onStrafen, onRechnungen, onEintrag }: {
                 accessibilityLabel={`${MONATE[x.monat.getMonth()]}: Stand ${formatEuro(x.stand)} Euro`}
                 style={styles.saeuleFlaeche}
               >
-                <View style={[styles.saeule, { height: h, backgroundColor: sel ? c.blue : dunkel ? "rgba(255,201,60,0.22)" : "rgba(28,27,25,0.14)" }, sel && dunkel && glow(c.blue, c, 10)]} />
-                <Text style={[styles.monat, { color: dunkel ? c.textMuted : c.onMustard }, sel && { fontFamily: FONT.w800 }]}>{MONATE[x.monat.getMonth()][0]}</Text>
+                <View style={[styles.saeule, { height: h, backgroundColor: sel ? c.heroBlue : "rgba(28,27,25,0.14)" }]} />
+                <Text style={[styles.monat, { color: c.onMustard }, sel && { fontFamily: FONT.w800 }]}>{MONATE[x.monat.getMonth()][0]}</Text>
               </PressableScale>
             );
           })}
         </View>
-        <Text style={[styles.monatText, { color: dunkel ? c.textDark : c.onMustard }]}>{`${MONATE[m.monat.getMonth()]} · Stand ${formatBetrag(m.stand)}`}</Text>
+        <Text style={[styles.monatText, { color: c.onMustard }]}>{`${MONATE[m.monat.getMonth()]} · Stand ${formatBetrag(m.stand)}`}</Text>
         <View style={styles.zeile}>
-          <View style={[styles.kachel, { backgroundColor: dunkel ? c.cardAlt : c.card }]}>
+          <View style={[styles.kachel, { backgroundColor: c.card }]}>
             <View style={styles.kachelKopf}>
               <Emoji size={14}>{SYMBOL.einnahme}</Emoji>
               <Text style={styles.kachelLabel}>Einnahmen</Text>
             </View>
             <Text style={[styles.kachelWert, { color: c.successText }]} maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} adjustsFontSizeToFit>{`+${formatBetrag(ein)}`}</Text>
           </View>
-          <View style={[styles.kachel, { backgroundColor: dunkel ? c.cardAlt : c.card }]}>
+          <View style={[styles.kachel, { backgroundColor: c.card }]}>
             <View style={styles.kachelKopf}>
               <Emoji size={14}>{SYMBOL.ausgabe}</Emoji>
               <Text style={styles.kachelLabel}>Ausgaben</Text>
@@ -207,7 +206,7 @@ const makeStyles = (c: ThemeColors) =>
     saeuleFlaeche: { flex: 1, height: 64, justifyContent: "flex-end", alignItems: "center", paddingHorizontal: 2, gap: 4 },
     saeule: { alignSelf: "stretch", borderRadius: 6 },
     monat: { fontFamily: FONT.w600, fontSize: 12 },
-    monatText: { fontFamily: FONT.w700, fontSize: 15, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.heroStyle === "outline" ? c.hairline : "rgba(28,27,25,0.15)", paddingTop: 10 },
+    monatText: { fontFamily: FONT.w700, fontSize: 15, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: "rgba(28,27,25,0.15)", paddingTop: 10 },
     kachel: { flex: 1, borderRadius: RADIUS.tile, padding: 12, gap: 4 },
     kachelKopf: { flexDirection: "row", alignItems: "center", gap: 6 },
     kachelLabel: { ...TYPE.label, color: c.textMuted },

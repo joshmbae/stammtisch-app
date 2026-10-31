@@ -59,9 +59,9 @@ const makeStyles = (c: ThemeColors) =>
       flexDirection: "row", alignItems: "center", gap: 8,
     },
     // Hell: Tinte; dunkel: Signalgelb, damit die Auswahl leuchtet.
-    chipOn: c.heroStyle === "outline" ? { backgroundColor: c.mustard, borderColor: c.mustard } : { backgroundColor: c.textDark, borderColor: c.textDark },
+    chipOn: { backgroundColor: c.textDark, borderColor: c.textDark },
     text: { fontFamily: FONT.w600, fontSize: 14, color: c.textDark },
-    textOn: { color: c.heroStyle === "outline" ? c.onMustard : c.background },
+    textOn: { color: c.background },
     pill: { alignSelf: "flex-start", height: 24, paddingHorizontal: 9, borderRadius: 999, justifyContent: "center" },
     pillText: { fontFamily: FONT.w600, fontSize: 12 },
   });

@@ -254,7 +254,7 @@ function SpielVorschau({ ereignisse }: { ereignisse: EreignisRow[] }) {
     mustard: { bg: c.mustard, fg: c.onMustard },
     coral: { bg: c.coral, fg: c.onCoral },
     green: { bg: c.success, fg: c.onAccent },
-    blue: { bg: c.blue, fg: c.onAccent },
+    blue: { bg: c.heroBlue, fg: c.onHeroBlue },
     neutral: { bg: c.textDark, fg: c.background },
   }[ton]);
   const name = activeMember ? displayName(activeMember) : "Du";
@@ -388,18 +388,18 @@ const makeStyles = (c: ThemeColors) =>
     // Hell: Tinten-Fläche wie der Abend-Modus; dunkel: Karte mit Kante.
     vorschau: {
       borderRadius: RADIUS.card, padding: 16, gap: 12,
-      backgroundColor: c.heroStyle === "outline" ? c.cardAlt : c.textDark,
-      borderWidth: c.heroStyle === "outline" ? 1 : 0, borderColor: c.navBorder,
+      backgroundColor: c.isDark ? c.cardAlt : c.textDark,
+      borderWidth: c.isDark ? 1 : 0, borderColor: c.navBorder,
     },
-    vorschauTitel: { ...TYPE.label, color: c.heroStyle === "outline" ? c.gold : c.goldLight },
+    vorschauTitel: { ...TYPE.label, color: c.isDark ? c.gold : c.goldLight },
     vorschauReihe: { flexDirection: "row", alignItems: "center", gap: 12 },
     vorschauPerson: { alignItems: "center", gap: 4, width: 52 },
-    vorschauName: { fontFamily: FONT.w600, fontSize: 12, color: c.heroStyle === "outline" ? c.textDark : c.background, maxWidth: 52 },
+    vorschauName: { fontFamily: FONT.w600, fontSize: 12, color: c.isDark ? c.textDark : c.background, maxWidth: 52 },
     vorschauKnoepfe: { flex: 1, flexDirection: "row", flexWrap: "wrap", gap: 8 },
     vorschauKnopf: { flexGrow: 1, flexBasis: "45%", minHeight: 48, borderRadius: 16, flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 10, paddingVertical: 6 },
     vorschauLabel: { flex: 1, fontFamily: FONT.w700, fontSize: 13 },
     vorschauZahl: { ...TYPE.num, fontSize: 15 },
-    vorschauFuss: { ...TYPE.caption, fontSize: 13, color: c.heroStyle === "outline" ? c.textMid : c.background, opacity: 0.85 },
+    vorschauFuss: { ...TYPE.caption, fontSize: 13, color: c.isDark ? c.textMid : c.background, opacity: 0.85 },
     plus: { width: 44, height: 44, borderRadius: 22, backgroundColor: c.blueBg, alignItems: "center", justifyContent: "center" },
     plusText: { fontFamily: FONT.w700, fontSize: 16, color: c.blue },
   });

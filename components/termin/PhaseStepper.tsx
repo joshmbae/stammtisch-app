@@ -20,8 +20,8 @@ export function PhaseStepper({ phase, ansicht, onChange }: { phase: TerminPhase;
   const styles = useThemedStyles(makeStyles);
   // Dunkel ist die Live-Fläche fast schwarz, deshalb dort der Mint-Rand.
   const farben: Record<TerminPhase, { bg: string; rand: string; fg: string; punkt: string; punktAktiv: string }> = {
-    vorher: { bg: c.blue, rand: c.blue, fg: c.onAccent, punkt: c.blue, punktAktiv: c.mustard },
-    live: { bg: c.live, rand: c.heroStyle === "outline" ? c.liveEdge : c.live, fg: c.onLive, punkt: c.success, punktAktiv: c.liveAccent },
+    vorher: { bg: c.heroBlue, rand: c.heroBlue, fg: c.onHeroBlue, punkt: c.blue, punktAktiv: c.mustard },
+    live: { bg: c.live, rand: c.live, fg: c.onLive, punkt: c.success, punktAktiv: c.liveAccent },
     danach: { bg: c.mustard, rand: c.mustard, fg: c.onMustard, punkt: c.mustard, punktAktiv: c.onMustard },
   };
 

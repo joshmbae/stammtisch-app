@@ -11,7 +11,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
-import { FONT, RADIUS, TYPE, ThemeColors, glow } from "../../constants/design";
+import { FONT, RADIUS, TYPE, ThemeColors } from "../../constants/design";
 import { SYMBOL } from "../../constants/symbole";
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import StammtischLogo from "../StammtischLogo";
@@ -78,7 +78,7 @@ export function BuehneWillkommen({ logoUrl }: { logoUrl?: string }) {
   const c = useColors();
   const schweben = useSchweben(0, 4);
   return (
-    <Buehne bg={c.mustardSoft} ring={c.heroStyle === "outline" ? "rgba(255,201,60,0.10)" : "rgba(122,94,28,0.08)"}>
+    <Buehne bg={c.mustardSoft} ring={c.isDark ? "rgba(255,255,255,0.05)" : "rgba(122,94,28,0.08)"}>
       <Animated.View style={schweben}>
         <StammtischLogo size={104} uri={logoUrl} />
       </Animated.View>
@@ -116,8 +116,8 @@ export function BuehneZusagen() {
   const styles = useThemedStyles(makeStyles);
   const schweben = useSchweben(0, 4);
   return (
-    <Buehne bg={c.blueBg} ring={c.heroStyle === "outline" ? "rgba(77,124,255,0.10)" : "rgba(45,79,158,0.08)"}>
-      <Animated.View style={[styles.karte, { backgroundColor: c.heroBlue, borderColor: c.heroBlueEdge }, glow(c.blue, c, 18), schweben]}>
+    <Buehne bg={c.blueBg} ring={c.isDark ? "rgba(255,255,255,0.05)" : "rgba(45,79,158,0.08)"}>
+      <Animated.View style={[styles.karte, { backgroundColor: c.heroBlue, borderColor: c.heroBlueEdge }, schweben]}>
         <Text style={[styles.kartenLabel, { color: c.heroBlueSub }]}>Nächster Stammtisch</Text>
         <Text style={[styles.kartenZeile, { color: c.onHeroBlue }]}>Fr, 16.10. · 19:30</Text>
         <View style={styles.countdown}>
@@ -129,7 +129,7 @@ export function BuehneZusagen() {
           ))}
         </View>
         <View style={styles.zeile}>
-          <Stapel ring={c.heroStyle === "fill" ? c.heroBlue : c.heroBlue} />
+          <Stapel ring={c.heroBlue} />
           <Text style={[styles.klein, { color: c.onHeroBlue }]}>3 von 6 dabei</Text>
         </View>
         <View>
@@ -149,17 +149,16 @@ export function BuehneZusagen() {
 export function BuehneLive({ spielName }: { spielName: string }) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
-  const dunkel = c.heroStyle === "outline";
   const schweben = useSchweben(0, 4);
   const toast = useSchweben(500, 6);
   return (
-    <Buehne bg={c.greenSoft} ring={dunkel ? "rgba(61,220,151,0.10)" : "rgba(36,85,63,0.08)"}>
-      <Animated.View style={[styles.karte, { backgroundColor: c.live, borderColor: c.liveEdge }, glow(c.liveAccent, c, 18), schweben]}>
+    <Buehne bg={c.greenSoft} ring={c.isDark ? "rgba(255,255,255,0.05)" : "rgba(36,85,63,0.08)"}>
+      <Animated.View style={[styles.karte, { backgroundColor: c.live, borderColor: c.liveEdge }, schweben]}>
         <View style={styles.zeile}>
           <PulseDot color={c.liveAccent} size={8} />
-          <Text style={[styles.kartenLabel, { color: dunkel ? c.liveAccent : c.heroBlueSub }]}>Läuft gerade</Text>
+          <Text style={[styles.kartenLabel, { color: c.heroBlueSub }]}>Läuft gerade</Text>
         </View>
-        <Text style={[styles.timer, { color: dunkel ? c.liveAccent : c.onLive }]}>1:13:05</Text>
+        <Text style={[styles.timer, { color: c.onLive }]}>1:13:05</Text>
         <View style={styles.zeile}>
           <View style={styles.liveChip}>
             <Text style={[styles.liveChipText, { color: c.onLive }]}>Strafen</Text>
@@ -192,7 +191,7 @@ export function BuehneKasse() {
   const schweben = useSchweben(0, 4);
   const haken = useSchweben(600, 5);
   return (
-    <Buehne bg={c.mustardSoft} ring={c.heroStyle === "outline" ? "rgba(255,201,60,0.10)" : "rgba(122,94,28,0.08)"}>
+    <Buehne bg={c.mustardSoft} ring={c.isDark ? "rgba(255,255,255,0.05)" : "rgba(122,94,28,0.08)"}>
       <Animated.View style={[styles.karte, styles.karteHell, schweben]}>
         <Text style={[styles.kartenLabel, { color: c.textMuted }]}>Kassenstand</Text>
         <Text style={[styles.gross, { color: c.textDark }]}>74,50 €</Text>
@@ -236,14 +235,14 @@ export function BuehneTabelle() {
     { name: "Toni", farbe: c.coral, hoehe: 46, wert: "5", platz: 3 },
   ];
   return (
-    <Buehne bg={c.coralSoft} ring={c.heroStyle === "outline" ? "rgba(255,106,77,0.10)" : "rgba(150,63,44,0.07)"}>
+    <Buehne bg={c.coralSoft} ring={c.isDark ? "rgba(255,255,255,0.05)" : "rgba(150,63,44,0.07)"}>
       <View style={styles.podium}>
         {saeulen.map((s) => (
           <View key={s.name} style={styles.podiumSpalte}>
             {s.platz === 1 ? <Krone size={22} /> : null}
             <Avatar name={s.name} color={s.farbe} size={34} />
             <Text style={styles.podiumName}>{s.name}</Text>
-            <View style={[styles.saeule, { height: s.hoehe, backgroundColor: s.platz === 1 ? c.blue : c.card }, s.platz === 1 && glow(c.blue, c, 14)]}>
+            <View style={[styles.saeule, { height: s.hoehe, backgroundColor: s.platz === 1 ? c.blue : c.card }]}>
               <Text style={[styles.saeulenWert, { color: s.platz === 1 ? c.onAccent : c.textDark }]}>{s.wert}</Text>
             </View>
           </View>
@@ -267,7 +266,7 @@ const makeStyles = (c: ThemeColors) =>
 
     bereich: {
       position: "absolute", flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 12, height: 36,
-      borderRadius: RADIUS.pill, backgroundColor: c.card, borderWidth: StyleSheet.hairlineWidth, borderColor: c.hairline, ...glow(c.mustard, c, 10),
+      borderRadius: RADIUS.pill, backgroundColor: c.card, borderWidth: StyleSheet.hairlineWidth, borderColor: c.hairline,
     },
     bereichText: { fontFamily: FONT.w700, fontSize: 14, color: c.textDark },
 

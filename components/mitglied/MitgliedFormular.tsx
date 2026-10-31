@@ -198,7 +198,7 @@ export function MitgliedFormular({ form: f, rollenOptionen, pinVorhanden, onPinU
                 label={r}
                 selected={an}
                 onPress={() => rolleUmschalten(r)}
-                leading={an ? <Ionicons name="checkmark" size={16} color={c.heroStyle === "outline" ? c.onMustard : c.mustard} /> : undefined}
+                leading={an ? <Ionicons name="checkmark" size={16} color={c.mustard} /> : undefined}
               />
             );
           })}

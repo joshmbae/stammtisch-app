@@ -4,8 +4,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { DARK_COLORS, LIGHT_COLORS, ThemeColors } from "../constants/design";
 
 /**
- * Hell/Glow pro Gerät (nicht pro Stammtisch). Standard ist Hell; "dark" ist
- * der leuchtende Glow-Look, "system" folgt der iOS-Einstellung. Die Wahl
+ * Hell/Dunkel pro Gerät (nicht pro Stammtisch). Standard ist Hell; "system"
+ * folgt der iOS-Einstellung. Die Wahl
  * liegt in AsyncStorage, damit sie den App-Neustart überlebt.
  */
 export type ThemePreference = "system" | "light" | "dark";
@@ -16,7 +16,7 @@ export const STANDARD_ERSCHEINUNGSBILD: ThemePreference = "light";
 /** Auswahl in Runde und Einstellungen – eine Liste, damit beide gleich heißen. */
 export const ERSCHEINUNGSBILD_OPTIONEN: { key: ThemePreference; label: string }[] = [
   { key: "light", label: "Hell" },
-  { key: "dark", label: "Glow" },
+  { key: "dark", label: "Dunkel" },
   { key: "system", label: "System" },
 ];
 export type ColorScheme = "light" | "dark";

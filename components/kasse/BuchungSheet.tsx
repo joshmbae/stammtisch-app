@@ -115,7 +115,7 @@ export function BuchungSheet({ visible, kasse, onClose, start }: {
     : art === "strafe" && !wer ? "Wer bekommt die Strafe?"
     : art === "strafe" && !kat ? "Wofür?"
     : null;
-  const farbe = { einnahme: { bg: c.success, fg: c.onAccent }, ausgabe: { bg: c.coral, fg: c.onCoral }, abendkosten: { bg: c.blue, fg: c.onAccent }, strafe: { bg: c.coral, fg: c.onCoral } }[art];
+  const farbe = { einnahme: { bg: c.success, fg: c.onAccent }, ausgabe: { bg: c.coral, fg: c.onCoral }, abendkosten: { bg: c.heroBlue, fg: c.onHeroBlue }, strafe: { bg: c.coral, fg: c.onCoral } }[art];
   const artLabel = ARTEN.find((a) => a.key === art)!.label;
   const teilnehmerZahl = art === "abendkosten" ? (zahler && !dabei.includes(zahler) ? dabei.length + 1 : dabei.length) : 0;
 
@@ -183,10 +183,10 @@ export function BuchungSheet({ visible, kasse, onClose, start }: {
               accessibilityRole="radio"
               accessibilityState={{ selected: sel }}
               accessibilityLabel={a.label}
-              style={[styles.art, sel && { backgroundColor: c.blue }]}
+              style={[styles.art, sel && { backgroundColor: c.heroBlue }]}
             >
               <Emoji size={17}>{a.emoji}</Emoji>
-              <Text style={[styles.artText, sel && { color: c.onAccent }]}>{a.label}</Text>
+              <Text style={[styles.artText, sel && { color: c.onHeroBlue }]}>{a.label}</Text>
             </PressableScale>
           );
         })}

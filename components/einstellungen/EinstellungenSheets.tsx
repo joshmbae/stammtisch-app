@@ -244,7 +244,7 @@ export function RollenSheet({ visible, rollen, onClose, onSave }: {
       <View style={styles.neuReihe}>
         <Field label="Neue Rolle" value={neu} onChangeText={setNeu} placeholder="z. B. Bierwart" onSubmitEditing={hinzufuegen} containerStyle={{ flex: 1 }} />
         <PressableScale onPress={hinzufuegen} disabled={!neu.trim() || liste.includes(neu.trim())} style={styles.plus} accessibilityLabel="Rolle hinzufügen">
-          <Ionicons name="add" size={22} color={c.onAccent} />
+          <Ionicons name="add" size={22} color={c.onHeroBlue} />
         </PressableScale>
       </View>
     </Sheet>
@@ -345,9 +345,9 @@ const makeStyles = (c: ThemeColors) =>
       width: "31.5%", minHeight: 48, borderRadius: RADIUS.md, alignItems: "center", justifyContent: "center",
       backgroundColor: c.card, borderWidth: StyleSheet.hairlineWidth, borderColor: c.hairline,
     },
-    monatAn: { backgroundColor: c.blue, borderColor: c.blue },
+    monatAn: { backgroundColor: c.heroBlue, borderColor: c.heroBlue },
     monatText: { fontFamily: FONT.w600, fontSize: 15, color: c.textDark },
-    monatTextAn: { color: c.onAccent },
+    monatTextAn: { color: c.onHeroBlue },
     logoMitte: { alignItems: "center", gap: 12, paddingVertical: 8 },
     pills: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
     pill: { flexDirection: "row", alignItems: "center", minHeight: 36, paddingHorizontal: 14, borderRadius: 999 },
@@ -356,7 +356,7 @@ const makeStyles = (c: ThemeColors) =>
     pillTextKlein: { fontSize: 13 },
     pillWeg: { width: 40, height: 44, alignItems: "center", justifyContent: "center" },
     neuReihe: { flexDirection: "row", alignItems: "flex-end", gap: 10 },
-    plus: { width: 50, height: 50, borderRadius: 25, backgroundColor: c.blue, alignItems: "center", justifyContent: "center" },
+    plus: { width: 50, height: 50, borderRadius: 25, backgroundColor: c.heroBlue, alignItems: "center", justifyContent: "center" },
     wahlKarte: { paddingVertical: 2, paddingHorizontal: 14 },
     wahl: { flexDirection: "row", alignItems: "center", gap: 12, minHeight: 56, paddingVertical: 8 },
     trenner: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },

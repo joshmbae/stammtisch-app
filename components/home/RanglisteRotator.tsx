@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useIsFocused } from "@react-navigation/native";
 import Animated, { Easing, FadeIn, useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withTiming } from "react-native-reanimated";
-import { FONT, MAX_FONT_SCALE, MOTION, TYPE, ThemeColors, glow } from "../../constants/design";
+import { FONT, MAX_FONT_SCALE, MOTION, TYPE, ThemeColors } from "../../constants/design";
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { FuehrenderTitel, Rangliste, RangEintrag } from "../../utils/stats";
 import { displayName } from "../../utils/format";
@@ -135,7 +135,7 @@ function PodiumSpalte({ e, pos, maxWert, fuehrt, reduce }: {
           </Animated.View>
         ) : null}
       </Animated.View>
-      <Animated.View style={[styles.saeule, { backgroundColor: erster ? c.blue : pos === 0 ? c.blueBg : c.cardAlt }, erster && glow(c.blue, c, 16), hoch]}>
+      <Animated.View style={[styles.saeule, { backgroundColor: erster ? c.blue : pos === 0 ? c.blueBg : c.cardAlt }, hoch]}>
         {e ? (
           <Text style={[styles.wert, { color: erster ? c.onAccent : c.textDark }]} maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1}>
             {e.anzeige.replace(",00 €", " €")}

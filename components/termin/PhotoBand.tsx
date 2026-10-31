@@ -97,11 +97,11 @@ export function PhotoBand({ titel, untertitel, bildUrl, uploading, onUpload, onR
   ) : null;
 
   if (live) {
-    const dunkel = c.heroStyle === "outline";
+    const dunkel = c.isDark;
     return (
       <View style={[styles.liveBand, { paddingTop: insets.top + 8, backgroundColor: c.live, borderBottomColor: c.liveEdge }]}>
         <StatusBar style="light" />
-        <View style={[styles.liveRing, { borderColor: dunkel ? "rgba(61,220,151,0.08)" : "rgba(255,255,255,0.07)" }]} pointerEvents="none" />
+        <View style={[styles.liveRing, { borderColor: "rgba(255,255,255,0.07)" }]} pointerEvents="none" />
         <View style={styles.liveKnoepfe}>
           <PressableScale onPress={onBack} style={[styles.rund, dunkel && styles.rundDunkel]} accessibilityLabel="Zurück" hitSlop={6}>
             <Ionicons name="chevron-back" size={20} color={dunkel ? c.onLive : c.textDark} />
@@ -119,12 +119,12 @@ export function PhotoBand({ titel, untertitel, bildUrl, uploading, onUpload, onR
           <View style={{ flex: 1, minWidth: 0 }}>
             <View style={styles.liveLabelZeile}>
               <PulseDot color={c.liveAccent} size={8} />
-              <Text style={[styles.liveLabel, { color: dunkel ? c.liveAccent : c.heroBlueSub }]}>Läuft gerade</Text>
+              <Text style={[styles.liveLabel, { color: c.heroBlueSub }]}>Läuft gerade</Text>
             </View>
             <Text style={[styles.titel, { color: c.onLive }]} numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE} accessibilityRole="header">{titel}</Text>
             <Text style={[styles.unter, { color: c.liveSub }]} numberOfLines={1}>{untertitel}</Text>
           </View>
-          <LiveTimer start={live.start} now={live.now} style={[styles.liveTimer, { color: dunkel ? c.liveAccent : c.onLive }]} />
+          <LiveTimer start={live.start} now={live.now} style={[styles.liveTimer, { color: c.onLive }]} />
         </View>
         {vollbild}
       </View>
@@ -155,12 +155,12 @@ export function PhotoBand({ titel, untertitel, bildUrl, uploading, onUpload, onR
     );
   }
 
-  // Ohne Foto: Standardmotiv. Im Glow-Look dunkle Fläche mit Akzentkante, wie die Hero-Karten.
-  const dunkel = c.heroStyle === "outline";
+  // Ohne Foto: Standardmotiv in Markenblau bzw. Senf, im Dunkeln eine Stufe tiefer.
+  const dunkel = c.isDark;
   const blau = motiv.flaeche === "blau";
   const flaeche = blau
-    ? { bg: c.heroBlue, kante: c.heroBlueEdge, text: c.onHeroBlue, sub: c.heroBlueSub, ring: dunkel ? "rgba(77,124,255,0.10)" : "rgba(255,255,255,0.08)" }
-    : { bg: c.mustardSoft, kante: c.mustardEdge, text: c.textDark, sub: c.mustardText, ring: dunkel ? "rgba(255,201,60,0.08)" : "rgba(122,94,28,0.08)" };
+    ? { bg: c.heroBlue, kante: c.heroBlueEdge, text: c.onHeroBlue, sub: c.heroBlueSub, ring: "rgba(255,255,255,0.08)" }
+    : { bg: c.mustardSoft, kante: c.mustardEdge, text: c.textDark, sub: c.mustardText, ring: dunkel ? "rgba(255,255,255,0.05)" : "rgba(122,94,28,0.08)" };
   const hellerText = blau || dunkel;
   return (
     <View style={[styles.motiv, { height: MOTIV_HOEHE + insets.top, backgroundColor: flaeche.bg, borderBottomColor: flaeche.kante }]}>

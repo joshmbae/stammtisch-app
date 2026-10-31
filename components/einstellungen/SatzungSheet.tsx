@@ -91,7 +91,7 @@ export function SatzungSheet({ visible, regeln, sonstiges, onClose, onSave }: Pr
           containerStyle={{ flex: 1 }}
         />
         <PressableScale onPress={hinzufuegen} disabled={!neu.trim()} style={styles.plus} accessibilityLabel="Regel hinzufügen">
-          <Ionicons name="add" size={22} color={c.onAccent} />
+          <Ionicons name="add" size={22} color={c.onHeroBlue} />
         </PressableScale>
       </View>
 
@@ -120,5 +120,5 @@ const makeStyles = (c: ThemeColors) =>
     regelInput: { flex: 1, fontFamily: FONT.w600, fontSize: 15, color: c.textDark, paddingVertical: 12, lineHeight: 20 },
     weg: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
     neuReihe: { flexDirection: "row", alignItems: "flex-end", gap: 10 },
-    plus: { width: 50, height: 50, borderRadius: 25, backgroundColor: c.blue, alignItems: "center", justifyContent: "center" },
+    plus: { width: 50, height: 50, borderRadius: 25, backgroundColor: c.heroBlue, alignItems: "center", justifyContent: "center" },
   });

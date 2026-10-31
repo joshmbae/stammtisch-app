@@ -4,7 +4,7 @@ import { BlurView } from "expo-blur";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { MemberProfile, SpielEreignisTyp } from "../../types";
-import { FONT, MAX_FONT_SCALE, RADIUS, TYPE, ThemeColors, glow } from "../../constants/design";
+import { FONT, MAX_FONT_SCALE, RADIUS, TYPE, ThemeColors } from "../../constants/design";
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { AbendStats, meisteBei } from "../../utils/abendStats";
 import { HomeHero, terminEnde, terminStart } from "../../utils/terminPhase";
@@ -68,9 +68,9 @@ function HeroUmschalter({ wert, onChange, hell }: { wert: HeroWahl; onChange: (w
             accessibilityRole="tab"
             accessibilityState={{ selected: aktiv }}
             accessibilityLabel={`${o.label} Stammtisch`}
-            style={[styles.umschalterOption, aktiv && { backgroundColor: c.card }]}
+            style={[styles.umschalterOption, aktiv && { backgroundColor: hell ? "#FFFFFF" : c.card }]}
           >
-            <Text style={[styles.umschalterText, { color: aktiv ? c.textDark : hell ? "#FFFFFF" : c.textMid }]}>{o.label}</Text>
+            <Text style={[styles.umschalterText, { color: aktiv ? (hell ? "#1C1B19" : c.textDark) : hell ? "#FFFFFF" : c.textMid }]}>{o.label}</Text>
           </PressableScale>
         );
       })}
@@ -83,11 +83,11 @@ const oeffne = (id: string, bereich?: "strafen" | "spiel") => router.push(bereic
 function useHeroFlaeche(art: "blau" | "live" | "senf"): ViewStyle {
   const c = useColors();
   const fl = {
-    blau: { bg: c.heroBlue, edge: c.heroBlueEdge, glow: c.blue },
-    live: { bg: c.live, edge: c.liveEdge, glow: c.liveAccent },
-    senf: { bg: c.mustardSoft, edge: c.mustardEdge, glow: c.mustard },
+    blau: { bg: c.heroBlue, edge: c.heroBlueEdge },
+    live: { bg: c.live, edge: c.liveEdge },
+    senf: { bg: c.mustardSoft, edge: c.mustardEdge },
   }[art];
-  return { backgroundColor: fl.bg, borderColor: fl.edge, borderWidth: 1, ...glow(fl.glow, c, 24) };
+  return { backgroundColor: fl.bg, borderColor: fl.edge, borderWidth: 1 };
 }
 
 /**
@@ -107,7 +107,7 @@ function Vorher({ hero, now, members, stammtischzeit, meinStatus, onRsvp, rsvpBu
   const t = hero.termin;
   const start = terminStart(t, stammtischzeit) ?? (() => { const d = new Date(`${t.datum}T00:00:00`); d.setHours(19, 0, 0, 0); return d; })();
   const zugesagt = members.filter((m) => t.anwesenheit?.includes(m.id));
-  const halbTransparent = c.heroStyle === "outline" ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.14)";
+  const halbTransparent = "rgba(255,255,255,0.14)";
   const dabei = meinStatus === "ja";
   const abgesagt = meinStatus === "nein";
 
@@ -126,7 +126,7 @@ function Vorher({ hero, now, members, stammtischzeit, meinStatus, onRsvp, rsvpBu
       <FlipCountdown ziel={start} now={now} tileColor={c.heroBlueInner} digitColor={c.heroBlueSub} labelColor={c.onHeroBlue} />
       <View style={[styles.row, { gap: 12 }]}>
         {zugesagt.length > 0 ? (
-          <AvatarStack size={28} ringColor={c.heroStyle === "fill" ? c.background : c.heroBlue} members={zugesagt.map((m) => ({ id: m.id, name: displayName(m), color: m.avatarColor, photoUri: m.photoUri }))} />
+          <AvatarStack size={28} ringColor={c.isDark ? c.heroBlue : c.background} members={zugesagt.map((m) => ({ id: m.id, name: displayName(m), color: m.avatarColor, photoUri: m.photoUri }))} />
         ) : null}
         <View style={{ flex: 1, gap: 5 }}>
           <Text style={[styles.small, { color: c.onHeroBlue }]} numberOfLines={1}>
@@ -171,7 +171,7 @@ function Live({ hero, now, members, stammtischzeit, spielName }: Props) {
   const t = hero.termin;
   const start = terminStart(t, stammtischzeit) ?? now;
   const amTisch = members.filter((m) => t.anwesenheit?.includes(m.id));
-  const akzent = c.heroStyle === "outline" ? c.liveAccent : c.heroBlueSub;
+  const akzent = c.heroBlueSub;
 
   return (
     <PressableScale onPress={() => oeffne(t.id)} scaleTo={0.98} style={[styles.hero, flaeche]} accessibilityLabel="Stammtisch läuft gerade, öffnen">
@@ -185,12 +185,12 @@ function Live({ hero, now, members, stammtischzeit, spielName }: Props) {
         </View>
       </View>
       <View>
-        <LiveTimer start={start} now={now} style={{ fontSize: 44, lineHeight: 48, letterSpacing: -1.2, color: c.heroStyle === "outline" ? c.liveAccent : c.onLive }} />
+        <LiveTimer start={start} now={now} style={{ fontSize: 44, lineHeight: 48, letterSpacing: -1.2, color: c.onLive }} />
         <Text style={[styles.small, { color: c.liveSub }]}>{`seit ${zeitText(start)}${t.ort ? ` · ${t.ort}` : ""}`}</Text>
       </View>
       <View style={[styles.row, { justifyContent: "flex-start", gap: 12 }]}>
         {amTisch.length > 0 ? (
-          <AvatarStack size={30} ringColor={c.heroStyle === "fill" ? c.background : c.live} members={amTisch.map((m) => ({ id: m.id, name: displayName(m), color: m.avatarColor, photoUri: m.photoUri }))} />
+          <AvatarStack size={30} ringColor={c.isDark ? c.live : c.background} members={amTisch.map((m) => ({ id: m.id, name: displayName(m), color: m.avatarColor, photoUri: m.photoUri }))} />
         ) : null}
         <Text style={[styles.bodyStrong, { color: c.onLive }]}>{`${amTisch.length} am Tisch`}</Text>
       </View>
@@ -230,12 +230,12 @@ function Danach({ hero, now, members, stats, spielTypen, umschalter }: Props) {
   // „Heute“/„Gestern“ davor; ältere Abende nur mit Datum (der Umschalter sagt schon „Letzter“).
   const wann = ende.toDateString() === now.toDateString() ? "Heute · " : ende.toDateString() === vortag.toDateString() ? "Gestern · " : "";
   const foto = !!t.bildUrl;
-  const dunkel = foto || c.heroStyle === "outline";
+  const dunkel = foto || c.isDark;
   const text = foto ? "#FFFFFF" : c.textDark;
   const leise = foto ? "rgba(255,255,255,0.92)" : c.textMid;
   const glas = foto
     ? { backgroundColor: "rgba(20,18,16,0.28)", borderColor: "rgba(255,255,255,0.18)" }
-    : { backgroundColor: c.heroStyle === "outline" ? c.card : "rgba(255,255,255,0.6)", borderColor: c.hairline };
+    : { backgroundColor: c.isDark ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.6)", borderColor: c.hairline };
   const trenner = foto ? "rgba(255,255,255,0.18)" : c.border;
 
   const spiel = spielTypen

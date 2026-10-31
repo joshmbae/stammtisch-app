@@ -140,7 +140,7 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
   const [gewaehlt, setGewaehlt] = useState<string>("strafen");
   const kat = kategorien.find((k) => k.key === gewaehlt) ?? kategorien[0] as Kategorie | undefined;
   const volleFarbe = (ton: Ton) => ({
-    blue: { bg: c.blue, fg: c.onAccent }, mustard: { bg: c.mustard, fg: c.onMustard },
+    blue: { bg: c.heroBlue, fg: c.onHeroBlue }, mustard: { bg: c.mustard, fg: c.onMustard },
     coral: { bg: c.coral, fg: c.onCoral }, green: { bg: c.success, fg: c.onAccent }, neutral: { bg: c.textDark, fg: c.background },
   }[ton]);
 
@@ -262,8 +262,9 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
             <Text style={styles.meta}>{kat.summe}</Text>
           </View>
           <Animated.View key={kat.key} entering={FadeIn.duration(220)}>
+            {/* Blaue Balken in der hellen Akzentfarbe: im Dunkeln wäre das tiefe Blau auf der Karte kaum zu sehen. */}
             {kat.zeilen.length > 0 ? (
-              <BarList rows={kat.zeilen} color={volleFarbe(kat.ton).bg} />
+              <BarList rows={kat.zeilen} color={kat.ton === "blue" ? c.blue : volleFarbe(kat.ton).bg} />
             ) : (
               <Text style={styles.leer}>{kat.key === "strafen" ? "Keine Strafen – ein sauberer Abend." : "Heute niemand."}</Text>
             )}

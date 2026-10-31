@@ -29,9 +29,9 @@ export function Button({ label, onPress, variant = "primary", icon, size = "md",
   const farben: Record<Variant, { bg: string; fg: string; border?: string }> = {
     primary: { bg: c.mustard, fg: c.onMustard },
     // Hell: Tinten-Pille. Dunkel: dunkle Fläche mit Kante statt einer weißen Pille.
-    dark: c.heroStyle === "outline" ? { bg: c.cardAlt, fg: c.textDark, border: c.navBorder } : { bg: c.textDark, fg: c.background },
+    dark: { bg: c.textDark, fg: c.background },
     secondary: { bg: c.card, fg: c.textDark, border: c.hairline },
-    blue: { bg: c.blue, fg: c.onAccent },
+    blue: { bg: c.heroBlue, fg: c.onHeroBlue },
     danger: { bg: c.coral, fg: c.onCoral },
     ghost: { bg: "transparent", fg: c.blue },
   };

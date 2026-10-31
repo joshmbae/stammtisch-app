@@ -3,7 +3,7 @@ import { Linking, Platform, Share, StyleSheet, Text, TextInput, View } from "rea
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeIn, FadeOut, LinearTransition } from "react-native-reanimated";
 import { MemberProfile } from "../../types";
-import { FONT, MAX_FONT_SCALE, RADIUS, TYPE, ThemeColors, glow } from "../../constants/design";
+import { FONT, MAX_FONT_SCALE, RADIUS, TYPE, ThemeColors } from "../../constants/design";
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { TerminAbend } from "../../utils/useTerminAbend";
 import { abendStats } from "../../utils/abendStats";
@@ -35,8 +35,7 @@ function WannWo({ abend, now, start }: { abend: TerminAbend; now: Date; start: D
   const t = abend.termin!;
   const tag = new Date(`${t.datum}T00:00:00`);
   const ort = t.ort || abend.verordnung.treffpunkt;
-  const hell = c.heroStyle === "fill";
-  const flaeche = { backgroundColor: c.heroBlue, borderColor: c.heroBlueEdge, borderWidth: 1, ...glow(c.blue, c, 24) };
+  const flaeche = { backgroundColor: c.heroBlue, borderColor: c.heroBlueEdge, borderWidth: 1 };
 
   function route() {
     if (!ort) return;
@@ -62,10 +61,10 @@ function WannWo({ abend, now, start }: { abend: TerminAbend; now: Date; start: D
             {start ? `${uhr(start)} Uhr` : "Uhrzeit offen"}
           </Text>
           {ort ? <Text style={[styles.ort, { color: c.onHeroBlue }]} numberOfLines={2}>{ort}</Text> : null}
-          {t.notizen ? <Text style={[styles.notiz, { color: hell ? "rgba(255,255,255,0.78)" : c.textMuted }]} numberOfLines={2}>{t.notizen}</Text> : null}
+          {t.notizen ? <Text style={[styles.notiz, { color: "rgba(255,255,255,0.78)" }]} numberOfLines={2}>{t.notizen}</Text> : null}
         </View>
         {ort ? (
-          <PressableScale onPress={route} style={[styles.routeKnopf, { backgroundColor: hell ? "rgba(255,255,255,0.16)" : "rgba(255,255,255,0.08)" }]} accessibilityLabel={`Route zu ${ort}`}>
+          <PressableScale onPress={route} style={[styles.routeKnopf, { backgroundColor: "rgba(255,255,255,0.16)" }]} accessibilityLabel={`Route zu ${ort}`}>
             <Ionicons name="navigate-outline" size={20} color={c.onHeroBlue} />
           </PressableScale>
         ) : null}
@@ -217,7 +216,7 @@ function WerKommt({ abend, start }: { abend: TerminAbend; start: Date | null }) 
             {abgesagt.map((m) => {
               const grund = t.absageGruende?.[m.id];
               return (
-                <View key={m.id} style={styles.rasterZelle} accessible accessibilityLabel={`${name(m)} hat abgesagt${grund ? `: ${grund}` : ""}`}>
+                <View key={m.id} style={[styles.rasterZelle, styles.rasterZelleBreit]} accessible accessibilityLabel={`${name(m)} hat abgesagt${grund ? `: ${grund}` : ""}`}>
                   <Avatar name={displayName(m)} color={m.avatarColor} photoUri={m.photoUri} size={30} />
                   <View style={{ flexShrink: 1, minWidth: 0 }}>
                     <Text style={styles.rasterName} numberOfLines={1}>{name(m)}</Text>
@@ -391,6 +390,8 @@ const makeStyles = (c: ThemeColors) =>
     gruppe: { ...TYPE.label, color: c.textMuted, marginTop: 6 },
     raster: { flexDirection: "row", flexWrap: "wrap", rowGap: 10 },
     rasterZelle: { width: "33.33%", flexDirection: "row", alignItems: "center", gap: 12, paddingRight: 8 },
+    // Absagen mit Grund brauchen mehr Platz: zwei pro Reihe.
+    rasterZelleBreit: { width: "50%" },
     rasterName: { fontFamily: FONT.w600, fontSize: 14, color: c.textDark, flexShrink: 1 },
     rasterGrund: { ...TYPE.caption, fontSize: 12, color: c.textMuted },
     personZeile: { flexDirection: "row", alignItems: "center", gap: 12, minHeight: 48 },
@@ -419,10 +420,10 @@ const makeStyles = (c: ThemeColors) =>
     leiste: { paddingHorizontal: 16, paddingTop: 10 },
     startKnopf: {
       height: 56, borderRadius: RADIUS.pill, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10,
-      backgroundColor: c.heroStyle === "fill" ? c.textDark : c.cardAlt,
-      borderWidth: 1, borderColor: c.heroStyle === "fill" ? c.textDark : c.navBorder,
+      backgroundColor: c.textDark,
+      borderWidth: 1, borderColor: c.textDark,
     },
     startPunkt: { width: 10, height: 10, borderRadius: 5 },
-    startText: { fontFamily: FONT.w700, fontSize: 17, color: c.heroStyle === "fill" ? c.background : c.textDark },
-    startSub: { fontFamily: FONT.w600, fontSize: 13, color: c.heroStyle === "fill" ? c.background : c.textMuted, opacity: 0.75 },
+    startText: { fontFamily: FONT.w700, fontSize: 17, color: c.background },
+    startSub: { fontFamily: FONT.w600, fontSize: 13, color: c.background, opacity: 0.75 },
   });
