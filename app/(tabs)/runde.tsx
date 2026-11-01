@@ -110,11 +110,11 @@ export default function RundeScreen() {
                 key={m.id}
                 onPress={() => router.push(`/member/${m.id}`)}
                 style={styles.member}
-                accessibilityLabel={`${displayName(m)}, ${m.rollen.join(", ")}`}
+                accessibilityLabel={`${displayName(m)}, ${[m.istAdmin ? "Admin" : null, ...m.rollen].filter(Boolean).join(", ")}`}
               >
                 <Avatar name={displayName(m)} color={m.avatarColor} photoUri={m.photoUri} size={44} fuehrt={fuehrende.get(m.id)} />
                 <Text style={styles.memberName} numberOfLines={1}>{displayName(m)}</Text>
-                <Text style={styles.memberRolle} numberOfLines={1}>{m.rollen[0]}</Text>
+                <Text style={styles.memberRolle} numberOfLines={1}>{m.istAdmin ? "Admin" : m.rollen[0]}</Text>
               </PressableScale>
             ))}
           </View>

@@ -8,6 +8,7 @@ import { loadVerordnung, saveRanglistenRichtung } from "../../utils/storage";
 import { loadStatsDaten } from "../../utils/statsDaten";
 import { useScreenLoad } from "../../utils/useScreenLoad";
 import { showAlert } from "../../utils/alert";
+import { useAdmin } from "../../utils/useAdmin";
 import { displayName } from "../../utils/format";
 import { toLocalIsoDate } from "../../utils/date";
 import {
@@ -35,6 +36,7 @@ import { RanglisteKarte } from "../../components/tabelle/RanglisteKarte";
 export default function TabelleScreen() {
   const styles = useThemedStyles(makeStyles);
   const { activeMemberId } = useSession();
+  const { nurAdmin } = useAdmin();
   const [daten, setDaten] = useState<StatsDaten | null>(null);
   const [verordnung, setVerordnung] = useState<StammtischVerordnung | null>(null);
   const [jahr, setJahr] = useState<JahrFilter>(aktuellesJahr());
@@ -120,7 +122,7 @@ export default function TabelleScreen() {
                 liste={l}
                 alle={alle.has(l.key)}
                 onAlle={() => alleUmschalten(l.key)}
-                onRichtung={l.umschaltbar ? () => richtungUmschalten(l.key) : undefined}
+                onRichtung={l.umschaltbar ? () => nurAdmin(() => richtungUmschalten(l.key)) : undefined}
                 ichId={activeMemberId}
                 fuehrende={fuehrende}
                 verlauf={verlauf}

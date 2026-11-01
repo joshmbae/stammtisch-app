@@ -15,6 +15,8 @@ export interface MemberProfile {
   notizen?: string;
   createdAt: string;
   pinHash?: string;                          // gehashter 4-stelliger PIN zum Schutz des Profils vor fremden Änderungen/Löschen
+  /** Admin dieses Stammtischs (utils/useAdmin.ts). Fehlt die Spalte in der DB, bleibt es undefined. */
+  istAdmin?: boolean;
 }
 
 // ─── Stammtisch-Termin ────────────────────────────────────────────────────────

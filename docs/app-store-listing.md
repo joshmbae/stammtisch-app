@@ -20,7 +20,8 @@ Zeichenlimits sind geprüft. Die App-ID `6789122309` (ascAppId in `eas.json`) ex
 4. **Prod-Datenbank auf Stand bringen** (alle Dateien in `supabase/migrations/` seit 1.7.0):
    - `2026-10-29-ranglisten-richtung.sql` (dev. → public.)
    - `2026-10-31-versuche-begrenzen.sql` (dev. → public.)
-   - `2026-10-31-avatars-bucket-absichern.sql` (einmal, wie sie ist – Storage ist für dev und Prod gleich)
+   - `2026-11-01-admins.sql` (dev. → public.) – vor dem Ausliefern, sonst scheitert das Speichern, wenn jemand „Admin“ einschaltet
+   - `2026-10-31-avatars-bucket-absichern.sql` (einmal, wie sie ist – Storage ist für dev und Prod gleich; erst wenn alle 1.8.0 haben)
    Danach in der App testen: beitreten, PIN, Profilfoto/Terminfoto/Logo hochladen, ersetzen, entfernen.
 5. **Build hochladen:**
    ```bash
@@ -100,6 +101,7 @@ Das ist neu:
 • Neuer Dunkel-Modus: ruhig und warm, umschaltbar in der Runde
 • Tabelle übersichtlicher: alle Wertungen auf einen Blick, je Rangliste einstellbar, ob viel oder wenig gut ist
 • Stammtisch wechseln: die App merkt sich eure Runden, zurück geht's mit einem Tipp
+• Admins: Einstellungen, Ranglisten und das Löschen fremder Profile sind für Admins, alles andere bleibt für alle
 • Countdown zum nächsten Abend als Klappkarten
 • Kompaktere Termin-Übersicht, Absagen mit Grund übersichtlicher
 • Mehr Sicherheit: begrenzte Fehlversuche bei Passwort und PIN, Fotos werden beim Löschen mit entfernt

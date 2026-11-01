@@ -12,6 +12,8 @@ import ErrorState from "../components/ErrorState";
 import OfflineBanner from "../components/OfflineBanner";
 import { useScreenLoad } from "../utils/useScreenLoad";
 import { useFuehrende } from "../utils/useFuehrende";
+import { nurAdminText, useAdmin } from "../utils/useAdmin";
+import { useSession } from "../contexts/SessionContext";
 import { displayName } from "../utils/format";
 import PinPrompt from "../components/PinPrompt";
 import { pinFehlertext, verifyPin } from "../utils/pin";
@@ -38,6 +40,8 @@ export default function MitgliederScreen() {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const fuehrende = useFuehrende();
+  const admin = useAdmin();
+  const { activeMemberId } = useSession();
   const [members, setMembers] = useState<MemberProfile[]>([]);
   const [auswahl, setAuswahl] = useState<MemberProfile | null>(null);
   const [pinTarget, setPinTarget] = useState<{ member: MemberProfile; aktion: Aktion } | null>(null);
@@ -49,6 +53,10 @@ export default function MitgliederScreen() {
   }, []);
 
   function confirmAndDelete(m: MemberProfile) {
+    if (m.id !== activeMemberId && !admin.darf) {
+      showAlert("Nur für Admins", `Fremde Profile löschen: ${nurAdminText(admin.admins)}`);
+      return;
+    }
     showAlert(
       `${m.name} entfernen?`,
       "Alle Daten dieses Mitglieds werden gelöscht. Das kann nicht rückgängig gemacht werden.",
@@ -142,7 +150,7 @@ export default function MitgliederScreen() {
                     {m.pinHash ? <Ionicons name="lock-closed" size={13} color={c.textMuted} /> : null}
                   </View>
                   <Text style={styles.muted} numberOfLines={1}>
-                    {m.rollen.join(", ")}{m.lieblingsgetraenk ? ` · ${m.lieblingsgetraenk}` : ""}
+                    {[m.istAdmin ? "Admin" : null, ...m.rollen].filter(Boolean).join(", ")}{m.lieblingsgetraenk ? ` · ${m.lieblingsgetraenk}` : ""}
                   </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color={c.textMuted} />

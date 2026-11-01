@@ -12,6 +12,9 @@ Alle Wertungen auf einen Blick, Top 3 sofort sichtbar, dein Platz immer dabei. N
 🔄 *Stammtisch wechseln*
 Wer in mehreren Runden ist: Runde → „Stammtisch wechseln“. Die App merkt sich eure Stammtische, zurück geht's mit einem Tipp.
 
+👑 *Admins*
+Ein paar Dinge darf jetzt nur noch ein Admin: Einstellungen ändern, Ranglisten umdrehen und fremde Profile löschen. Alles andere bleibt für alle. Admin wird man im eigenen Profil unter „Bearbeiten“ (mit PIN). Solange niemand Admin ist, darf jede:r alles – also am besten gleich festlegen, wer's macht.
+
 ⏳ *Countdown als Klappkarten*
 Bis zum nächsten Abend zählen jetzt Fallblatt-Karten wie am Bahnhof.
 

@@ -5,6 +5,7 @@ import { showAlert } from "../../utils/alert";
 import { MemberProfile } from "../../types";
 import { loadMembers, saveMembers, uploadAvatar, loadVerordnung } from "../../utils/storage";
 import { useSession } from "../../contexts/SessionContext";
+import { nurAdminText, useAdmin } from "../../utils/useAdmin";
 import { toLocalIsoDate } from "../../utils/date";
 import { hashPin, isValidPin } from "../../utils/pin";
 import { Screen } from "../../components/ui";
@@ -13,6 +14,7 @@ import { FormularKopf, MitgliedFormular, useMitgliedFormular } from "../../compo
 export default function NewMemberScreen() {
   const { activeMemberId, setActiveSession } = useSession();
   const f = useMitgliedFormular();
+  const admin = useAdmin();
   const [rollenOptionen, setRollenOptionen] = useState<string[]>(["Mitglied"]);
   const [speichert, setSpeichert] = useState(false);
 
@@ -31,6 +33,10 @@ export default function NewMemberScreen() {
   }
 
   async function save() {
+    if (f.istAdmin && !f.pinAn) {
+      showAlert("Admins brauchen eine PIN", "Bitte eine PIN vergeben oder „Admin“ ausschalten.");
+      return;
+    }
     if (!f.name.trim()) {
       showAlert("Name fehlt", "Bitte einen Namen eingeben.");
       return;
@@ -60,6 +66,7 @@ export default function NewMemberScreen() {
         notizen: f.notizen.trim() || undefined,
         createdAt: new Date().toISOString(),
         pinHash: f.pin ? await hashPin(id, f.pin) : undefined,
+        ...(admin.darf && f.istAdmin ? { istAdmin: true } : {}),
       };
       const existing = await loadMembers();
       await saveMembers([...existing, newMember]);
@@ -80,7 +87,7 @@ export default function NewMemberScreen() {
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={0}>
       <Screen header={<FormularKopf title="Neues Mitglied" subtitle="Nur der Name ist Pflicht" onSpeichern={save} speichert={speichert} />}>
-        <MitgliedFormular form={f} rollenOptionen={rollenOptionen} onPinUmschalten={pinUmschalten} />
+        <MitgliedFormular form={f} rollenOptionen={rollenOptionen} onPinUmschalten={pinUmschalten} adminAenderbar={admin.darf} adminHinweis={nurAdminText(admin.admins)} />
       </Screen>
     </KeyboardAvoidingView>
   );

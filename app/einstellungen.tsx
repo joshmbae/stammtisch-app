@@ -11,6 +11,7 @@ import { loadVerordnung, saveVerordnung, uploadStammtischLogo, loadSpiele, loadS
 import { hashStammtischPassword } from "../utils/pin";
 import { displayName, formatGruendungMonat } from "../utils/format";
 import { useScreenLoad } from "../utils/useScreenLoad";
+import { nurAdminText, useAdmin } from "../utils/useAdmin";
 import { FONT, TYPE, ThemeColors } from "../constants/design";
 import { ERSCHEINUNGSBILD_OPTIONEN, useTheme, useThemedStyles } from "../contexts/ThemeContext";
 import { useStammtisch } from "../contexts/StammtischContext";
@@ -52,6 +53,8 @@ export default function EinstellungenScreen() {
   const [activatingSpiel, setActivatingSpiel] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const { stammtischId, clearStammtisch } = useStammtisch();
+  const admin = useAdmin();
+  const { nurAdmin } = admin;
   const { activeMember, clearSession } = useSession();
 
   const { loading, error, retry } = useScreenLoad(async () => {
@@ -218,14 +221,26 @@ export default function EinstellungenScreen() {
       }
       contentStyle={{ gap: 18 }}
     >
+      {/* Wer hier was ändern darf: ohne Admin alle, sonst nur Admins (utils/useAdmin.ts). */}
+      {!admin.gibtAdmins ? (
+        <View style={[styles.adminHinweis, { backgroundColor: c.mustardSoft }]}>
+          <Text style={[styles.adminHinweisText, { color: c.textDark }]}>
+            Noch kein Admin: Gerade darf jede:r alles ändern. Ein Admin wird im Profil festgelegt (Profil → Bearbeiten), braucht eine PIN und darf danach als Einzige:r Einstellungen ändern.
+          </Text>
+        </View>
+      ) : !admin.istAdmin ? (
+        <View style={[styles.adminHinweis, { backgroundColor: c.cardAlt }]}>
+          <Text style={[styles.adminHinweisText, { color: c.textMid }]}>{`Ansehen ja, ändern nein. ${nurAdminText(admin.admins)}`}</Text>
+        </View>
+      ) : null}
       <FormSection title="Stammtisch">
         <ListGroup>
-          <ListRow title="Name" value={v.name} emoji={SYMBOL.name} ton="blue" onPress={() => setOffen("name")} />
+          <ListRow title="Name" value={v.name} emoji={SYMBOL.name} ton="blue" onPress={() => nurAdmin(() => setOffen("name"))} />
           <ListRow
             title="Logo"
             emoji={SYMBOL.logo}
             ton="blue"
-            onPress={() => setOffen("logo")}
+            onPress={() => nurAdmin(() => setOffen("logo"))}
             accessibilityLabel={v.logoUrl ? "Logo ändern" : "Logo hochladen"}
             right={
               <View style={styles.rechts}>
@@ -234,14 +249,14 @@ export default function EinstellungenScreen() {
               </View>
             }
           />
-          <ListRow title="Treffpunkt" value={v.treffpunkt || "fehlt"} emoji={SYMBOL.treffpunkt} ton="blue" onPress={() => setOffen("treffpunkt")} />
-          <ListRow title="Stammtischtag" value={tagZeit || "fehlt"} emoji={SYMBOL.stammtischtag} ton="blue" onPress={() => setOffen("tag")} />
+          <ListRow title="Treffpunkt" value={v.treffpunkt || "fehlt"} emoji={SYMBOL.treffpunkt} ton="blue" onPress={() => nurAdmin(() => setOffen("treffpunkt"))} />
+          <ListRow title="Stammtischtag" value={tagZeit || "fehlt"} emoji={SYMBOL.stammtischtag} ton="blue" onPress={() => nurAdmin(() => setOffen("tag"))} />
           <ListRow
             title="Gegründet"
             value={v.gruendungsjahr ? formatGruendungMonat(v.gruendungsjahr) : "fehlt"}
             emoji={SYMBOL.gegruendet}
             ton="blue"
-            onPress={() => setOffen("gruendung")}
+            onPress={() => nurAdmin(() => setOffen("gruendung"))}
           />
         </ListGroup>
       </FormSection>
@@ -253,10 +268,10 @@ export default function EinstellungenScreen() {
             value={regeln ? `${regeln} ${regeln === 1 ? "Regel" : "Regeln"}` : "noch leer"}
             emoji={SYMBOL.satzung}
             ton="mustard"
-            onPress={() => setOffen("satzung")}
+            onPress={() => nurAdmin(() => setOffen("satzung"))}
           />
           <View>
-            <ListRow title="Rollen" value={String(rollen.length)} emoji={SYMBOL.rollen} ton="mustard" onPress={() => setOffen("rollen")} accessibilityLabel={`Rollen: ${rollen.join(", ") || "keine"}`} />
+            <ListRow title="Rollen" value={String(rollen.length)} emoji={SYMBOL.rollen} ton="mustard" onPress={() => nurAdmin(() => setOffen("rollen"))} accessibilityLabel={`Rollen: ${rollen.join(", ") || "keine"}`} />
             {rollen.length > 0 ? (
               <View style={styles.rollen} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
                 <RollenPills rollen={rollen} />
@@ -273,21 +288,21 @@ export default function EinstellungenScreen() {
             value={`${manuelleKategorien} ${manuelleKategorien === 1 ? "Kategorie" : "Kategorien"}`}
             emoji={SYMBOL.strafenkatalog}
             ton="coral"
-            onPress={() => router.push("/strafen-kategorien")}
+            onPress={() => nurAdmin(() => router.push("/strafen-kategorien"))}
           />
           <ListRow
             title="Zahlungslink"
             value={v.zahlungsLink ? zahlungsAnbieter(v.zahlungsLink) : "keiner"}
             emoji={SYMBOL.einnahme}
             ton="green"
-            onPress={() => setOffen("zahlung")}
+            onPress={() => nurAdmin(() => setOffen("zahlung"))}
           />
           <ListRow
             title="Spiele"
             value={aktivesSpiel ? `${aktivesSpiel.name} aktiv` : "kein Spiel"}
             emoji={SYMBOL.spiele}
             ton="mustard"
-            onPress={() => setOffen("spiel")}
+            onPress={() => nurAdmin(() => setOffen("spiel"))}
           />
           <ToggleRow
             title="Strafen am Abend erfassen"
@@ -295,7 +310,7 @@ export default function EinstellungenScreen() {
             emoji={SYMBOL.liveErfassen}
             ton="coral"
             value={v.tabStrafenAktiv !== false}
-            onValueChange={(an) => { speichern({ tabStrafenAktiv: an }); }}
+            onValueChange={(an) => nurAdmin(() => { speichern({ tabStrafenAktiv: an }); })}
           />
         </ListGroup>
       </FormSection>
@@ -335,7 +350,7 @@ export default function EinstellungenScreen() {
       <FormSection>
         <Text style={styles.gefahr} accessibilityRole="header">Gefahrenzone</Text>
         <ListGroup>
-          <ListRow title="Stammtisch löschen" emoji={SYMBOL.loeschen} destructive onPress={() => setOffen("loeschen")} />
+          <ListRow title="Stammtisch löschen" emoji={SYMBOL.loeschen} destructive onPress={() => nurAdmin(() => setOffen("loeschen"))} />
         </ListGroup>
       </FormSection>
 
@@ -397,5 +412,7 @@ const makeStyles = (c: ThemeColors) =>
     rollen: { paddingLeft: 46, paddingBottom: 14 },
     erscheinung: { paddingBottom: 12 },
     gefahr: { ...TYPE.label, color: c.dangerText, paddingHorizontal: 4 },
+    adminHinweis: { borderRadius: 14, padding: 12 },
+    adminHinweisText: { ...TYPE.caption, fontSize: 14, lineHeight: 19 },
     version: { ...TYPE.caption, fontSize: 13, color: c.textMuted, textAlign: "center" },
   });

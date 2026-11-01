@@ -161,6 +161,7 @@ function rowToMember(row: any): MemberProfile {
     notizen: row.notizen ?? undefined,
     createdAt: row.created_at,
     pinHash: row.pin_hash ?? undefined,
+    istAdmin: row.ist_admin ?? undefined,
   };
 }
 
@@ -181,6 +182,8 @@ function memberToRow(m: MemberProfile, stammtischId: string) {
     notizen: m.notizen ?? null,
     created_at: m.createdAt,
     pin_hash: m.pinHash ?? null,
+    // Nur mitschicken, wenn bekannt: so speichert die App auch gegen ein Schema ohne die Spalte.
+    ...(m.istAdmin !== undefined ? { ist_admin: m.istAdmin } : {}),
   };
 }
 

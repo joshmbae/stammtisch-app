@@ -26,6 +26,7 @@ export function useMitgliedFormular() {
   const [pinAn, setPinAn] = useState(false);
   const [pin, setPin] = useState("");
   const [pinConfirm, setPinConfirm] = useState("");
+  const [istAdmin, setIstAdmin] = useState(false);
 
   function uebernehmen(m: MemberProfile) {
     setName(m.name);
@@ -39,6 +40,7 @@ export function useMitgliedFormular() {
     setPhotoUri(m.photoUri);
     setNotizen(m.notizen ?? "");
     setPinAn(!!m.pinHash);
+    setIstAdmin(!!m.istAdmin);
   }
 
   return {
@@ -47,6 +49,7 @@ export function useMitgliedFormular() {
     mitgliedSeit, setMitgliedSeit, geburtsdatum, setGeburtsdatum,
     avatarColor, setAvatarColor, photoUri, setPhotoUri, notizen, setNotizen,
     pinAn, setPinAn, pin, setPin, pinConfirm, setPinConfirm,
+    istAdmin, setIstAdmin,
     uebernehmen,
   };
 }
@@ -91,10 +94,13 @@ interface Props {
   onPinUmschalten: (an: boolean) => void;
   /** Nur beim Bearbeiten: zeigt die Gefahrenzone. */
   onEntfernen?: () => void;
+  /** Darf der Admin-Schalter umgelegt werden? Sonst nur Anzeige mit Hinweis, wer es darf. */
+  adminAenderbar: boolean;
+  adminHinweis?: string;
 }
 
 /** Formular für „Neues Mitglied" und „Mitglied bearbeiten". */
-export function MitgliedFormular({ form: f, rollenOptionen, pinVorhanden, onPinUmschalten, onEntfernen }: Props) {
+export function MitgliedFormular({ form: f, rollenOptionen, pinVorhanden, onPinUmschalten, onEntfernen, adminAenderbar, adminHinweis }: Props) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const [picker, setPicker] = useState<"seit" | "geburtstag" | null>(null);
@@ -276,6 +282,20 @@ export function MitgliedFormular({ form: f, rollenOptionen, pinVorhanden, onPinU
             {pinVorhanden ? <Text style={styles.pinSub}>Leer lassen, um den bisherigen PIN zu behalten.</Text> : null}
           </View>
         ) : null}
+        <ToggleRow
+          title="Admin"
+          subtitle={f.istAdmin ? "Darf Einstellungen ändern, Ranglisten umdrehen und Profile löschen" : "Admins ändern Einstellungen, Ranglisten und Profile anderer"}
+          emoji={SYMBOL.krone}
+          ton="mustard"
+          value={f.istAdmin}
+          disabled={!adminAenderbar}
+          onValueChange={(an) => {
+            f.setIstAdmin(an);
+            // Admin ohne PIN könnte sich jede:r auswählen – also gleich mit einschalten.
+            if (an && !f.pinAn) onPinUmschalten(true);
+          }}
+        />
+        {!adminAenderbar && adminHinweis ? <Text style={styles.pinSub}>{adminHinweis}</Text> : null}
       </Card>
 
       {onEntfernen ? (

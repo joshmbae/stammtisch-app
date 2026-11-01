@@ -31,7 +31,7 @@ export function ProfilHero({ member }: { member: MemberProfile }) {
         </View>
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={[styles.heroName, { color: c.onHeroBlue }]} numberOfLines={2} maxFontSizeMultiplier={MAX_FONT_SCALE} accessibilityRole="header">{member.name}</Text>
-          <Text style={[styles.heroRolle, { color: c.heroBlueSub }]} numberOfLines={2}>{member.rollen.join(", ")}</Text>
+          <Text style={[styles.heroRolle, { color: c.heroBlueSub }]} numberOfLines={2}>{[member.istAdmin ? "Admin" : null, ...member.rollen].filter(Boolean).join(", ")}</Text>
         </View>
       </View>
       <View style={[styles.heroTrenner, { backgroundColor: "rgba(255,255,255,0.18)" }]} />

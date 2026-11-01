@@ -108,7 +108,7 @@ export default function MitgliedWaehlenScreen() {
                   ) : null}
                 </View>
                 <Text style={styles.name} numberOfLines={1}>{displayName(m)}</Text>
-                <Text style={styles.rolle} numberOfLines={1}>{m.rollen[0]}</Text>
+                <Text style={styles.rolle} numberOfLines={1}>{m.istAdmin ? "Admin" : m.rollen[0]}</Text>
               </Card>
             </View>
           ))}

@@ -7,12 +7,16 @@ import LoadingSpinner from "../../../components/LoadingSpinner";
 import { toLocalIsoDate } from "../../../utils/date";
 import { hashPin, isValidPin } from "../../../utils/pin";
 import { Screen } from "../../../components/ui";
+import { useSession } from "../../../contexts/SessionContext";
+import { nurAdminText, useAdmin } from "../../../utils/useAdmin";
 import { FormularKopf, MitgliedFormular, useMitgliedFormular } from "../../../components/mitglied/MitgliedFormular";
 
 export default function EditMemberScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const navigation = useNavigation();
   const f = useMitgliedFormular();
+  const admin = useAdmin();
+  const { activeMemberId } = useSession();
   const [pinHash, setPinHash] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [speichert, setSpeichert] = useState(false);
@@ -59,6 +63,10 @@ export default function EditMemberScreen() {
       f.setPinAn(true);
       return;
     }
+    if (f.istAdmin) {
+      showAlert("Admins brauchen eine PIN", "Sonst könnte sich jede:r als Admin auswählen. Erst „Admin“ ausschalten, dann lässt sich die PIN entfernen.");
+      return;
+    }
     if (pinHash) {
       removePin();
       return;
@@ -68,6 +76,10 @@ export default function EditMemberScreen() {
   }
 
   async function save() {
+    if (f.istAdmin && !f.pinAn) {
+      showAlert("Admins brauchen eine PIN", "Bitte eine PIN vergeben oder „Admin“ ausschalten.");
+      return;
+    }
     if (!f.name.trim()) {
       showAlert("Name fehlt", "Bitte einen Namen eingeben.");
       return;
@@ -102,6 +114,8 @@ export default function EditMemberScreen() {
               photoUri: uploadedPhotoUri,
               notizen: f.notizen.trim() || undefined,
               pinHash: finalPinHash,
+              // Nur Admins (oder ohne Admin jede:r) dürfen das ändern; sonst bleibt der alte Stand.
+              istAdmin: admin.darf && f.istAdmin !== !!m.istAdmin ? f.istAdmin : m.istAdmin,
             }
           : m
       );
@@ -117,6 +131,10 @@ export default function EditMemberScreen() {
   }
 
   function entfernen() {
+    if (id !== activeMemberId && !admin.darf) {
+      showAlert("Nur für Admins", `Fremde Profile löschen: ${nurAdminText(admin.admins)}`);
+      return;
+    }
     // Hierher kommt man nur über das Profil, dort wurde ein gesetzter PIN schon geprüft.
     showAlert(
       `${f.name.trim() || "Mitglied"} entfernen?`,
@@ -153,6 +171,8 @@ export default function EditMemberScreen() {
           pinVorhanden={!!pinHash}
           onPinUmschalten={pinUmschalten}
           onEntfernen={entfernen}
+          adminAenderbar={admin.darf}
+          adminHinweis={nurAdminText(admin.admins)}
         />
       </Screen>
     </KeyboardAvoidingView>
