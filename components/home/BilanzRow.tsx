@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useIsFocused } from "@react-navigation/native";
+import { router } from "expo-router";
 import Animated, { FadeIn, useReducedMotion } from "react-native-reanimated";
 import { FONT, MAX_FONT_SCALE, MOTION, TYPE, ThemeColors } from "../../constants/design";
 import { SYMBOL } from "../../constants/symbole";
@@ -90,14 +91,17 @@ export function BilanzRow({ werte, onPress, onOffen }: {
         <View style={styles.trenner} />
 
         {platz ? (
-          <Animated.View key={platz.key} entering={reduce ? undefined : FadeIn.duration(300)} style={styles.spalte}>
-            <IconSquircle emoji={platz.emoji} ton={tonFuerRangliste(platz.key)} size={SYMBOL_GROESSE} />
-            <View style={styles.wertZeile}>
-              {platz.platz === 1 ? <Krone size={12} /> : null}
-              <Text style={[styles.wert, { marginTop: 0 }]} numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE}>{`Platz ${platz.platz}`}</Text>
-            </View>
-            <Text style={styles.label} numberOfLines={1}>{platz.kurz}</Text>
-          </Animated.View>
+          // Platzierung führt in die Tabelle, nicht wie der Rest der Karte ins Profil.
+          <PressableScale onPress={() => router.push("/ranglisten")} scaleTo={0.96} style={styles.spalte} accessibilityRole="link" accessibilityLabel={`${platz.kurz}: Platz ${platz.platz}. Tabelle öffnen`}>
+            <Animated.View key={platz.key} entering={reduce ? undefined : FadeIn.duration(300)} style={{ alignItems: "center", gap: 1 }}>
+              <IconSquircle emoji={platz.emoji} ton={tonFuerRangliste(platz.key)} size={SYMBOL_GROESSE} />
+              <View style={styles.wertZeile}>
+                {platz.platz === 1 ? <Krone size={12} /> : null}
+                <Text style={[styles.wert, { marginTop: 0 }]} numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE}>{`Platz ${platz.platz}`}</Text>
+              </View>
+              <Text style={styles.label} numberOfLines={1}>{platz.kurz}</Text>
+            </Animated.View>
+          </PressableScale>
         ) : (
           <View style={styles.spalte}>
             <IconSquircle emoji={SYMBOL.pokal} size={SYMBOL_GROESSE} />

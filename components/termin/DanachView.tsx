@@ -276,7 +276,13 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
           <Animated.View key={kat.key} entering={FadeIn.duration(220)}>
             {/* Blaue Balken in der hellen Akzentfarbe: im Dunkeln wäre das tiefe Blau auf der Karte kaum zu sehen. */}
             {kat.zeilen.length > 0 ? (
-              <BarList rows={kat.zeilen} color={kat.ton === "blue" ? c.blue : volleFarbe(kat.ton).bg} />
+              <BarList
+                rows={kat.zeilen}
+                color={kat.ton === "blue" ? c.blue : volleFarbe(kat.ton).bg}
+                // Strafen: offene Strafen dieser Person in der Kasse; Spiel: ihr Profil.
+                onRow={(id) => router.push(kat.key === "strafen" ? `/kasse?tab=strafen&memberId=${id}` : `/member/${id}`)}
+                rowHint={kat.key === "strafen" ? "Strafen in der Kasse zeigen" : "Profil öffnen"}
+              />
             ) : (
               <Text style={styles.leer}>{kat.key === "strafen" ? "Keine Strafen – ein sauberer Abend." : "Heute niemand."}</Text>
             )}
@@ -286,7 +292,10 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
       ) : null}
 
       {stats.strafenOffen > 0 ? (
-        <PressableScale onPress={() => router.push("/kasse?tab=strafen")} style={[styles.hinweis, { backgroundColor: c.coralSoft }]} accessibilityLabel={`${formatBetrag(stats.strafenOffen)} noch offen, in der Kasse abhaken`}>
+        <PressableScale
+          // Hast du selbst von heute etwas offen, gleich deine Strafen; sonst alle offenen.
+          onPress={() => router.push(activeMemberId && strafLogs.some((l) => l.memberId === activeMemberId && !l.beglichen) ? `/kasse?tab=strafen&memberId=${activeMemberId}` : "/kasse?tab=strafen")}
+          style={[styles.hinweis, { backgroundColor: c.coralSoft }]} accessibilityLabel={`${formatBetrag(stats.strafenOffen)} noch offen, in der Kasse abhaken`}>
           <View style={{ flex: 1 }}>
             <Text style={[styles.hinweisTitel, { color: c.coralText }]}>{`${formatBetrag(stats.strafenOffen)} noch offen`}</Text>
             <Text style={[styles.hinweisSub, { color: c.coralText }]}>{`${strafenMitSpiel ? "Strafen und Niederlagen" : "Strafen"} · in der Kasse abhaken`}</Text>

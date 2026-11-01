@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import Animated, { FadeIn, ZoomIn } from "react-native-reanimated";
 import { StrafLog } from "../../types";
 import { FONT, MAX_FONT_SCALE, RADIUS, TYPE, ThemeColors } from "../../constants/design";
@@ -178,13 +179,14 @@ export function StrafenTab({ kasse, filter, onFilter, onStrafe }: {
         {top.length > 0 ? (
           <View style={{ flex: 1.3, gap: 10 }}>
             {top.slice(0, 3).map(([id, v]) => (
-              <View key={id} style={{ gap: 4 }} accessible accessibilityLabel={`${name(id)}: ${formatBetrag(v)} offen`}>
+              // Tippen filtert die Liste auf diese Person, wie der Chip darunter.
+              <PressableScale key={id} onPress={() => onFilter(filter === id ? null : id)} scaleTo={0.98} style={{ gap: 4 }} accessibilityLabel={`${name(id)}: ${formatBetrag(v)} offen. Nur diese Strafen zeigen`}>
                 <View style={styles.topZeile}>
                   <Text style={styles.topName} numberOfLines={1}>{name(id)}</Text>
                   <Text style={styles.topWert}>{formatBetrag(v)}</Text>
                 </View>
                 <View style={styles.spur}><View style={[styles.fuell, { width: `${Math.round((v / max) * 100)}%`, backgroundColor: c.coral }]} /></View>
-              </View>
+              </PressableScale>
             ))}
           </View>
         ) : null}
@@ -214,10 +216,27 @@ export function StrafenTab({ kasse, filter, onFilter, onStrafe }: {
         <Card enterIndex={1} style={{ paddingVertical: 4 }}>
           {gruppenListe.map(([terminId, liste], gi) => (
             <Animated.View key={terminId || "ohne"} entering={FadeIn.duration(200)}>
-              <View style={[styles.gruppenKopf, gi > 0 && styles.trenner]}>
-                <Text style={styles.gruppenTitel} numberOfLines={1}>{gruppenTitel(terminId).toUpperCase()}</Text>
-                <Text style={[styles.gruppenSumme, { color: c.coralText }]}>{`${formatBetrag(liste.reduce((s, l) => s + l.betrag, 0))} offen`}</Text>
-              </View>
+              {/* Kopf öffnet den Abend – außer bei „Ohne Termin“ oder wenn der Termin gelöscht ist. */}
+              {terminId && kasse.termine.some((t) => t.id === terminId) ? (
+                <PressableScale
+                  onPress={() => router.push(`/termin/${terminId}`)}
+                  scaleTo={0.99}
+                  style={[styles.gruppenKopf, gi > 0 && styles.trenner]}
+                  accessibilityRole="link"
+                  accessibilityLabel={`${gruppenTitel(terminId)}, ${formatBetrag(liste.reduce((s, l) => s + l.betrag, 0))} offen. Termin öffnen`}
+                >
+                  <Text style={styles.gruppenTitel} numberOfLines={1}>{gruppenTitel(terminId).toUpperCase()}</Text>
+                  <Ionicons name="chevron-forward" size={12} color={c.textMuted} />
+                  <View style={{ flex: 1 }} />
+                  <Text style={[styles.gruppenSumme, { color: c.coralText }]}>{`${formatBetrag(liste.reduce((s, l) => s + l.betrag, 0))} offen`}</Text>
+                </PressableScale>
+              ) : (
+                <View style={[styles.gruppenKopf, gi > 0 && styles.trenner]}>
+                  <Text style={styles.gruppenTitel} numberOfLines={1}>{gruppenTitel(terminId).toUpperCase()}</Text>
+                  <View style={{ flex: 1 }} />
+                  <Text style={[styles.gruppenSumme, { color: c.coralText }]}>{`${formatBetrag(liste.reduce((s, l) => s + l.betrag, 0))} offen`}</Text>
+                </View>
+              )}
               {liste.map((l) => zeile(l, 1))}
             </Animated.View>
           ))}
@@ -256,7 +275,7 @@ const makeStyles = (c: ThemeColors) =>
     filter: { gap: 8, paddingHorizontal: 16 },
     abschnitt: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 4, marginTop: 4 },
     leer: { ...TYPE.body, fontSize: 14, color: c.textMuted },
-    gruppenKopf: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 8, paddingTop: 14, paddingBottom: 6 },
+    gruppenKopf: { flexDirection: "row", alignItems: "center", gap: 4, paddingTop: 14, paddingBottom: 6 },
     gruppenTitel: { ...TYPE.label, color: c.textMuted, flexShrink: 1 },
     gruppenSumme: { fontFamily: FONT.w700, fontSize: 13 },
     zeile: { flexDirection: "row", alignItems: "center", gap: 10, minHeight: 56, paddingVertical: 6 },

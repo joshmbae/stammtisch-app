@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Share, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import Animated, { ZoomIn } from "react-native-reanimated";
 import { KassenEintrag } from "../../types";
 import { FONT, RADIUS, TYPE, ThemeColors } from "../../constants/design";
@@ -102,12 +103,12 @@ function RechnungKarte({ e, kasse, onDetails, enterIndex }: { e: KassenEintrag; 
       </PressableScale>
 
       {zahler ? (
-        <View style={[styles.zahler, { backgroundColor: c.cardAlt }]}>
+        <PressableScale onPress={() => router.push(`/member/${zahler.id}`)} scaleTo={0.98} style={[styles.zahler, { backgroundColor: c.cardAlt }]} accessibilityRole="link" accessibilityLabel={`${displayName(zahler)} hat bezahlt. Profil öffnen`}>
           <Avatar name={displayName(zahler)} color={zahler.avatarColor} photoUri={zahler.photoUri} size={28} />
           <Text style={styles.zahlerText} numberOfLines={2}>
             {`${displayName(zahler)} hat bezahlt${schuldner.length ? ` · bekommt ${formatBetrag(anteil * schuldner.length)}` : ""}`}
           </Text>
-        </View>
+        </PressableScale>
       ) : null}
 
       {schuldner.length > 0 ? (
@@ -123,12 +124,15 @@ function RechnungKarte({ e, kasse, onDetails, enterIndex }: { e: KassenEintrag; 
               const ok = bezahlt.includes(id);
               return (
                 <View key={id} style={[styles.person, i > 0 && styles.trenner]}>
-                  {m ? <Avatar name={displayName(m)} color={m.avatarColor} photoUri={m.photoUri} size={36} /> : null}
-                  <View style={{ flex: 1, minWidth: 0 }}>
-                    <Text style={styles.personName} numberOfLines={1}>{name(id)}</Text>
-                    <Text style={[styles.personStatus, { color: ok ? c.successText : c.coralText }]}>{ok ? "bezahlt" : "offen"}</Text>
-                  </View>
-                  <Text style={styles.personBetrag}>{formatBetrag(anteil)}</Text>
+                  {/* Person öffnet das Profil, der Kreis rechts hakt ab. */}
+                  <PressableScale onPress={() => m && router.push(`/member/${id}`)} scaleTo={0.98} style={styles.personInfo} accessibilityRole="link" accessibilityLabel={`${name(id)}, ${ok ? "bezahlt" : "offen"}, ${formatBetrag(anteil)}. Profil öffnen`}>
+                    {m ? <Avatar name={displayName(m)} color={m.avatarColor} photoUri={m.photoUri} size={36} /> : null}
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <Text style={styles.personName} numberOfLines={1}>{name(id)}</Text>
+                      <Text style={[styles.personStatus, { color: ok ? c.successText : c.coralText }]}>{ok ? "bezahlt" : "offen"}</Text>
+                    </View>
+                    <Text style={styles.personBetrag}>{formatBetrag(anteil)}</Text>
+                  </PressableScale>
                   <PressableScale
                     onPress={() => guard(async () => { haptik(ok ? "leicht" : "erfolg"); await kasse.anteilUmschalten(e.id, id); })}
                     scaleTo={0.9}
@@ -169,6 +173,7 @@ const makeStyles = (c: ThemeColors) =>
     spur: { height: 8, borderRadius: 4, backgroundColor: c.cardAlt, overflow: "hidden", marginTop: -4 },
     fuell: { height: "100%", borderRadius: 4 },
     person: { flexDirection: "row", alignItems: "center", gap: 12, minHeight: 60, paddingVertical: 6 },
+    personInfo: { flex: 1, minWidth: 0, flexDirection: "row", alignItems: "center", gap: 12 },
     trenner: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
     personName: { fontFamily: FONT.w700, fontSize: 16, color: c.textDark },
     personStatus: { fontFamily: FONT.w600, fontSize: 12 },

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { KassenEintrag, StrafLog } from "../../types";
+import { KassenEintrag, MemberProfile, StrafLog } from "../../types";
 import { FONT, MAX_FONT_SCALE, RADIUS, TYPE, ThemeColors } from "../../constants/design";
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { Kasse } from "../../utils/useKasse";
@@ -11,7 +11,7 @@ import { formatUhrzeit, formatWochentagDatum } from "../../utils/date";
 import { displayName, formatEuro } from "../../utils/format";
 import { terminBezeichnung } from "../../utils/activityFeed";
 import { showAlert } from "../../utils/alert";
-import { Button, KategorieIcon, PressableScale, Sheet } from "../ui";
+import { Button, KategorieIcon, PersonChip, PressableScale, Sheet } from "../ui";
 
 const wann = (iso: string) => `${formatWochentagDatum(new Date(iso), true)} · ${formatUhrzeit(iso)} Uhr`;
 
@@ -31,6 +31,20 @@ function Zeile({ label, wert, onPress }: { label: string; wert: string; onPress?
     <PressableScale onPress={onPress} style={styles.zeile} accessibilityLabel={`${label}: ${wert}`}>{inhalt}</PressableScale>
   ) : (
     <View style={styles.zeile}>{inhalt}</View>
+  );
+}
+
+/** Zeile mit mehreren Personen: Text darüber, darunter je Person ein Chip, der das Profil öffnet. */
+function PersonenZeile({ label, wert, personen, onPerson }: { label: string; wert?: string; personen: MemberProfile[]; onPerson: (m: MemberProfile) => void }) {
+  const styles = useThemedStyles(makeStyles);
+  return (
+    <View style={styles.zeile}>
+      <Text style={styles.zeileLabel}>{label}</Text>
+      {wert ? <Text style={styles.zeileWert}>{wert}</Text> : null}
+      <View style={styles.personen}>
+        {personen.map((p) => <PersonChip key={p.id} member={p} onPress={() => onPerson(p)} />)}
+      </View>
+    </View>
   );
 }
 
@@ -85,10 +99,23 @@ export function EintragSheet({ eintrag, kasse, onClose }: { eintrag: KassenEintr
         <Zeile label="Datum" wert={wann(e.datum)} />
         {zahler ? <Zeile label="Bezahlt von" wert={zahler.name} onPress={() => geheZu(`/member/${zahler.id}`)} /> : null}
         {teilnehmer.length > 0 ? (
-          <Zeile label="Dabei" wert={`${teilnehmer.length} Personen · ${formatEuro(anteilProKopf(e))} € pro Kopf\n${teilnehmer.map((x) => displayName(x!)).join(", ")}`} />
+          <PersonenZeile
+            label="Dabei"
+            wert={`${teilnehmer.length} Personen · ${formatEuro(anteilProKopf(e))} € pro Kopf`}
+            personen={teilnehmer.filter((x): x is MemberProfile => !!x)}
+            onPerson={(p) => geheZu(`/member/${p.id}`)}
+          />
         ) : null}
         {rechnung ? (
-          <Zeile label="Status" wert={rechnungBeglichen(e) ? "Alle haben bezahlt" : offen.length ? `Offen: ${offen.map((id) => (m(id) ? displayName(m(id)!) : "?")).join(", ")}` : "Offen"} />
+          rechnungBeglichen(e) || offen.length === 0 ? (
+            <Zeile label="Status" wert={rechnungBeglichen(e) ? "Alle haben bezahlt" : "Offen"} />
+          ) : (
+            <PersonenZeile
+              label="Noch offen"
+              personen={offen.map(m).filter((x): x is MemberProfile => !!x)}
+              onPerson={(p) => geheZu(`/member/${p.id}`)}
+            />
+          )
         ) : null}
         {actor ? <Zeile label="Eingetragen von" wert={actor.name} onPress={() => geheZu(`/member/${actor.id}`)} /> : null}
         {e.terminId ? (
@@ -174,6 +201,7 @@ const makeStyles = (c: ThemeColors) =>
     zeileLabel: { ...TYPE.label, color: c.textMuted },
     zeileWertReihe: { flexDirection: "row", alignItems: "center", gap: 4 },
     zeileWert: { flex: 1, fontFamily: FONT.w600, fontSize: 15, color: c.textDark, lineHeight: 21 },
+    personen: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 6 },
     strafKopf: { flexDirection: "row", alignItems: "center", gap: 14 },
     strafWas: { fontFamily: FONT.w700, fontSize: 18, color: c.textDark },
     strafStatus: { fontFamily: FONT.w600, fontSize: 13 },

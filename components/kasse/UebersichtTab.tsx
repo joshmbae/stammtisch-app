@@ -130,7 +130,7 @@ export function UebersichtTab({ kasse, onStrafen, onRechnungen, onEintrag }: {
             const termin = kasse.termine.find((t) => t.id === e.terminId);
             const wann = formatWochentagDatum(new Date(termin ? `${termin.datum}T00:00:00` : e.datum));
             return (
-              <PressableScale key={e.id} onPress={onRechnungen} style={[styles.posten, styles.trenner]} accessibilityLabel={`Rechnung ${wann}: ${formatBetrag(rechnungOffen(e))} offen`}>
+              <PressableScale key={e.id} onPress={() => { onRechnungen(); onEintrag(e); }} style={[styles.posten, styles.trenner]} accessibilityLabel={`Rechnung ${wann}: ${formatBetrag(rechnungOffen(e))} offen`}>
                 <IconSquircle emoji={SYMBOL.rechnung} ton="blue" size={36} />
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text style={styles.postenTitel}>{`Rechnung ${wann}`}</Text>

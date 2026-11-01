@@ -20,6 +20,7 @@ Bis zum nächsten Abend zählen jetzt Fallblatt-Karten wie am Bahnhof.
 
 ✨ *Außerdem*
 - Termine-Übersicht kompakter, Absagen mit Grund übersichtlicher
+- Mehr zum Antippen: Personen öffnen ihr Profil, Strafen ihren Abend, Platzierungen die Tabelle
 - Mehr Sicherheit bei Passwort und PIN, Fotos werden beim Löschen mit entfernt
 - Viele kleine Verbesserungen bei Beträgen, Texten und Kontrasten
 

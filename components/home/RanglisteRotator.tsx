@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useIsFocused } from "@react-navigation/native";
+import { router } from "expo-router";
 import Animated, { Easing, FadeIn, useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withTiming } from "react-native-reanimated";
 import { FONT, MAX_FONT_SCALE, MOTION, TYPE, ThemeColors } from "../../constants/design";
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
@@ -128,10 +129,12 @@ function PodiumSpalte({ e, pos, maxWert, fuehrt, reduce }: {
     <View style={styles.spalte}>
       <Animated.View style={[styles.kopfBox, hoch]}>
         {e ? (
-          <Animated.View key={e.member.id} entering={reduce ? undefined : FadeIn.duration(250)} style={styles.kopfInhalt}>
-            {erster ? <Krone size={24} /> : null}
-            <Avatar name={displayName(e.member)} color={e.member.avatarColor} photoUri={e.member.photoUri} size={38} fuehrt={fuehrt} />
-            <Text style={styles.name} numberOfLines={1}>{displayName(e.member)}</Text>
+          <Animated.View key={e.member.id} entering={reduce ? undefined : FadeIn.duration(250)}>
+            <PressableScale onPress={() => router.push(`/member/${e.member.id}`)} scaleTo={0.94} style={styles.kopfInhalt} accessibilityRole="link" accessibilityLabel={`Platz ${e.platz}: ${displayName(e.member)}, ${e.anzeige}. Profil öffnen`}>
+              {erster ? <Krone size={24} /> : null}
+              <Avatar name={displayName(e.member)} color={e.member.avatarColor} photoUri={e.member.photoUri} size={38} fuehrt={fuehrt} />
+              <Text style={styles.name} numberOfLines={1}>{displayName(e.member)}</Text>
+            </PressableScale>
           </Animated.View>
         ) : null}
       </Animated.View>

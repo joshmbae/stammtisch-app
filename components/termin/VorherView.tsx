@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Linking, Platform, Share, StyleSheet, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import Animated, { FadeIn, FadeOut, LinearTransition } from "react-native-reanimated";
 import { MemberProfile } from "../../types";
 import { FONT, MAX_FONT_SCALE, RADIUS, TYPE, ThemeColors } from "../../constants/design";
@@ -155,6 +156,7 @@ function WerKommt({ abend, start }: { abend: TerminAbend; start: Date | null }) 
   const n = Math.max(1, mitglieder.length);
   const name = (m: MemberProfile) => (m.id === abend.activeMemberId ? "Du" : displayName(m));
   const [erinnert, setErinnert] = useState<string[]>([]);
+  const zuProfil = (m: MemberProfile) => router.push(`/member/${m.id}`);
   const [sendet, setSendet] = useState<string | null>(null);
 
   /** Erst per Push direkt an die Person; ohne registriertes Gerät über das Teilen-Menü. */
@@ -199,10 +201,10 @@ function WerKommt({ abend, start }: { abend: TerminAbend; start: Date | null }) 
           <Text style={[styles.gruppe, { color: c.successText }]}>{`Dabei · ${dabei.length}`}</Text>
           <View style={styles.raster}>
             {dabei.map((m) => (
-              <View key={m.id} style={styles.rasterZelle}>
+              <PressableScale key={m.id} onPress={() => zuProfil(m)} scaleTo={0.96} style={styles.rasterZelle} accessibilityRole="link" accessibilityLabel={`${name(m)} ist dabei. Profil öffnen`}>
                 <Avatar name={displayName(m)} color={m.avatarColor} photoUri={m.photoUri} size={30} />
                 <Text style={styles.rasterName} numberOfLines={1}>{name(m)}</Text>
-              </View>
+              </PressableScale>
             ))}
           </View>
         </>
@@ -216,13 +218,13 @@ function WerKommt({ abend, start }: { abend: TerminAbend; start: Date | null }) 
             {abgesagt.map((m) => {
               const grund = t.absageGruende?.[m.id];
               return (
-                <View key={m.id} style={[styles.rasterZelle, styles.rasterZelleBreit]} accessible accessibilityLabel={`${name(m)} hat abgesagt${grund ? `: ${grund}` : ""}`}>
+                <PressableScale key={m.id} onPress={() => zuProfil(m)} scaleTo={0.97} style={[styles.rasterZelle, styles.rasterZelleBreit]} accessibilityRole="link" accessibilityLabel={`${name(m)} hat abgesagt${grund ? `: ${grund}` : ""}. Profil öffnen`}>
                   <Avatar name={displayName(m)} color={m.avatarColor} photoUri={m.photoUri} size={30} />
                   <View style={{ flexShrink: 1, minWidth: 0 }}>
                     <Text style={styles.rasterName} numberOfLines={1}>{name(m)}</Text>
                     {grund ? <Text style={styles.rasterGrund} numberOfLines={2}>{grund}</Text> : null}
                   </View>
-                </View>
+                </PressableScale>
               );
             })}
           </View>
@@ -237,11 +239,14 @@ function WerKommt({ abend, start }: { abend: TerminAbend; start: Date | null }) 
             const ich = m.id === abend.activeMemberId;
             return (
               <View key={m.id} style={styles.personZeile}>
-                <Avatar name={displayName(m)} color={m.avatarColor} size={34} absent />
-                <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={styles.personName} numberOfLines={1}>{name(m)}</Text>
-                  <Text style={styles.personSub}>{schon ? "erinnert" : "noch keine Antwort"}</Text>
-                </View>
+                {/* Person öffnet das Profil, „Erinnern“ rechts bleibt ein eigener Knopf. */}
+                <PressableScale onPress={() => zuProfil(m)} scaleTo={0.98} style={styles.personInfo} accessibilityRole="link" accessibilityLabel={`${name(m)}, ${schon ? "erinnert" : "noch keine Antwort"}. Profil öffnen`}>
+                  <Avatar name={displayName(m)} color={m.avatarColor} size={34} absent />
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={styles.personName} numberOfLines={1}>{name(m)}</Text>
+                    <Text style={styles.personSub}>{schon ? "erinnert" : "noch keine Antwort"}</Text>
+                  </View>
+                </PressableScale>
                 {ich ? null : (
                   <PressableScale onPress={() => erinnern(m)} disabled={sendet === m.id} style={[styles.erinnern, schon && { backgroundColor: c.greenSoft }]} accessibilityLabel={`${displayName(m)} erinnern`}>
                     <Ionicons name={schon ? "checkmark" : "notifications-outline"} size={16} color={schon ? c.greenText : c.blue} />
@@ -395,6 +400,7 @@ const makeStyles = (c: ThemeColors) =>
     rasterName: { fontFamily: FONT.w600, fontSize: 14, color: c.textDark, flexShrink: 1 },
     rasterGrund: { ...TYPE.caption, fontSize: 12, color: c.textMuted },
     personZeile: { flexDirection: "row", alignItems: "center", gap: 12, minHeight: 48 },
+    personInfo: { flex: 1, minWidth: 0, flexDirection: "row", alignItems: "center", gap: 12, alignSelf: "stretch" },
     personName: { fontFamily: FONT.w600, fontSize: 15, color: c.textDark },
     personSub: { ...TYPE.caption, fontSize: 13, color: c.textMuted },
     erinnern: {

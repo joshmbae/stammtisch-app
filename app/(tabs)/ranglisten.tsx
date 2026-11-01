@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { router, useLocalSearchParams } from "expo-router";
 import { ScrollView, Share, StyleSheet, Text, View } from "react-native";
 import { StammtischVerordnung } from "../../types";
 import { ThemeColors, TYPE } from "../../constants/design";
@@ -40,6 +41,13 @@ export default function TabelleScreen() {
   const [daten, setDaten] = useState<StatsDaten | null>(null);
   const [verordnung, setVerordnung] = useState<StammtischVerordnung | null>(null);
   const [jahr, setJahr] = useState<JahrFilter>(aktuellesJahr());
+  // Deep-Link ?jahr=2025 (z. B. von einem Titel im Profil): Saison wählen, Parameter wieder leeren.
+  const params = useLocalSearchParams<{ jahr?: string }>();
+  useEffect(() => {
+    if (!params.jahr) return;
+    setJahr(params.jahr);
+    router.setParams({ jahr: undefined });
+  }, [params.jahr]);
   const [alle, setAlle] = useState<Set<string>>(new Set());
 
   const screen = useScreenLoad(async () => {

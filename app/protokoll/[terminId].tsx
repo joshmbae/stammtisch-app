@@ -14,7 +14,7 @@ import { displayName } from "../../utils/format";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import ErrorState from "../../components/ErrorState";
 import OfflineBanner from "../../components/OfflineBanner";
-import { AvatarStack, Button, Card, Field, IconSquircle, PressableScale, Screen, ScreenHeader, SegmentedTabs } from "../../components/ui";
+import { AvatarStack, Button, Card, Field, IconSquircle, PersonChip, PressableScale, Screen, ScreenHeader, SegmentedTabs } from "../../components/ui";
 import { ProtokollText, zerlegeProtokoll } from "../../components/protokoll/ProtokollText";
 import { SYMBOL } from "../../constants/symbole";
 
@@ -225,6 +225,12 @@ export default function ProtokollScreen() {
                     <Ionicons name="checkmark-circle" size={16} color={c.success} />
                     <Text style={styles.meta}>{`Gespeichert ${formatGespeichert(protokoll.updatedAt)}`}</Text>
                   </View>
+                  {termin ? (
+                    <PressableScale onPress={() => router.push(`/termin/${termin.id}`)} style={styles.zumTermin} hitSlop={6} accessibilityRole="link" accessibilityLabel={`${terminName} öffnen`}>
+                      <Text style={[styles.zumTerminText, { color: c.blue }]}>Zum Abend</Text>
+                      <Ionicons name="chevron-forward" size={14} color={c.blue} />
+                    </PressableScale>
+                  ) : null}
 
                   {anwesend.length > 0 || abgesagt.length > 0 ? (
                     <View style={styles.abschnitt}>
@@ -239,11 +245,19 @@ export default function ProtokollScreen() {
                             />
                             <Text style={styles.anzahl}>{`${anwesend.length} da`}</Text>
                           </View>
-                          <Text style={styles.namen}>{anwesend.map(displayName).join(", ")}</Text>
+                          {/* Jede Person öffnet ihr Profil. */}
+                          <View style={styles.personen}>
+                            {anwesend.map((m) => <PersonChip key={m.id} member={m} ich={activeMemberId} onPress={() => router.push(`/member/${m.id}`)} />)}
+                          </View>
                         </>
                       ) : null}
                       {abgesagt.length > 0 ? (
-                        <Text style={styles.abgesagt}>{`Abgesagt: ${abgesagt.map(displayName).join(", ")}`}</Text>
+                        <>
+                          <Text style={styles.abgesagt}>Abgesagt</Text>
+                          <View style={styles.personen}>
+                            {abgesagt.map((m) => <PersonChip key={m.id} member={m} ich={activeMemberId} onPress={() => router.push(`/member/${m.id}`)} />)}
+                          </View>
+                        </>
                       ) : null}
                     </View>
                   ) : null}
@@ -336,8 +350,10 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   kopf: { ...TYPE.label, color: c.textMuted, marginBottom: 8 },
   stackZeile: { flexDirection: "row", alignItems: "center", gap: 10 },
   anzahl: { fontFamily: FONT.w700, fontSize: 13, color: c.greenText },
-  namen: { fontFamily: FONT.w600, fontSize: 14, lineHeight: 20, color: c.textDark, marginTop: 8 },
-  abgesagt: { fontFamily: FONT.w600, fontSize: 14, lineHeight: 20, color: c.textMuted, marginTop: 4 },
+  abgesagt: { fontFamily: FONT.w600, fontSize: 14, lineHeight: 20, color: c.textMuted, marginTop: 10 },
+  personen: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 },
+  zumTermin: { flexDirection: "row", alignItems: "center", gap: 2, alignSelf: "flex-start", minHeight: 32, marginTop: 4 },
+  zumTerminText: { fontFamily: FONT.w600, fontSize: 14 },
 
   leer: { alignItems: "center", gap: 8, paddingVertical: 28 },
   leerTitel: { ...TYPE.heading, color: c.textDark, marginTop: 4 },

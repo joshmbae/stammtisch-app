@@ -62,13 +62,14 @@ export function TitelKarte({ titel }: { titel: Jahrestitel[] }) {
       <View style={styles.titelRaster}>
         {titel.map((t, i) => (
           <View key={`${t.jahr}-${t.ranglisteKey}`} style={styles.titelZelle}>
-            <View style={[styles.titelKachel, { backgroundColor: c.cardAlt }]} accessible accessibilityLabel={`${t.titel} ${t.jahr}`}>
+            {/* Öffnet die Tabelle in genau dieser Saison. */}
+            <PressableScale onPress={() => router.push(`/ranglisten?jahr=${t.jahr}`)} scaleTo={0.97} style={[styles.titelKachel, { backgroundColor: c.cardAlt }]} accessibilityRole="link" accessibilityLabel={`${t.titel} ${t.jahr}. Tabelle ${t.jahr} öffnen`}>
               <View style={[styles.pokal, { backgroundColor: i === 0 ? c.mustard : c.mustardSoft }]}>
                 <Emoji size={18}>{SYMBOL.pokal}</Emoji>
               </View>
               <Text style={styles.titelJahr}>{t.jahr}</Text>
               <Text style={styles.titelName} numberOfLines={1}>{`${t.emoji} ${t.titel}`}</Text>
-            </View>
+            </PressableScale>
           </View>
         ))}
       </View>
@@ -96,7 +97,7 @@ export function BilanzKarte({ jahr, kacheln }: { jahr: string; kacheln: BilanzKa
       <View style={styles.bilanzRaster}>
         {kacheln.map((k) => (
           <View key={k.key} style={styles.bilanzZelle}>
-            <View style={[styles.bilanzKachel, { backgroundColor: c.cardAlt }]} accessible accessibilityLabel={`${k.label}: ${k.wert}${k.platz ? `, Platz ${k.platz}` : ""}`}>
+            <PressableScale onPress={() => router.push(`/ranglisten?jahr=${jahr}`)} scaleTo={0.97} style={[styles.bilanzKachel, { backgroundColor: c.cardAlt }]} accessibilityRole="link" accessibilityLabel={`${k.label}: ${k.wert}${k.platz ? `, Platz ${k.platz}` : ""}. Tabelle öffnen`}>
               <View style={styles.zeile}>
                 <IconSquircle emoji={k.emoji} ton={tonFuerRangliste(k.key)} size={34} />
                 <View style={{ flex: 1 }} />
@@ -109,7 +110,7 @@ export function BilanzKarte({ jahr, kacheln }: { jahr: string; kacheln: BilanzKa
               </View>
               <Text style={[styles.bilanzWert, { color: k.farbe ?? c.textDark }]} maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} adjustsFontSizeToFit>{k.wert}</Text>
               <Text style={styles.bilanzLabel} numberOfLines={1}>{k.label}</Text>
-            </View>
+            </PressableScale>
           </View>
         ))}
       </View>
@@ -145,14 +146,22 @@ export function StrafenKarte({ jahr, memberId, strafen, kategorien }: { jahr: st
             const kat = kategorien.find((k) => k.id === l.kategorie);
             const was = kat?.systemKey === "sonstiges" && l.notiz ? l.notiz : kat?.label ?? "Strafe";
             return (
-              <View key={l.id} style={[styles.strafZeile, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border }]}>
+              // Strafe mit Abend öffnet den Abend, sonst die eigenen Strafen in der Kasse.
+              <PressableScale
+                key={l.id}
+                onPress={() => router.push(l.terminId ? `/termin/${l.terminId}` : `/kasse?tab=strafen&memberId=${memberId}`)}
+                scaleTo={0.98}
+                style={[styles.strafZeile, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border }]}
+                accessibilityRole="link"
+                accessibilityLabel={`${was}, ${formatBetrag(l.betrag)}, ${l.beglichen ? "bezahlt" : "offen"}. ${l.terminId ? "Termin öffnen" : "In der Kasse zeigen"}`}
+              >
                 <KategorieIcon kat={kat} size={36} />
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text style={styles.strafName} numberOfLines={1}>{was}</Text>
                   <Text style={styles.meta} numberOfLines={1}>{`${formatWochentagDatum(new Date(l.loggedAt))} · ${l.beglichen ? "bezahlt" : "offen"}`}</Text>
                 </View>
                 <Text style={[styles.strafBetrag, !l.beglichen && { color: c.coralText }]}>{formatBetrag(l.betrag)}</Text>
-              </View>
+              </PressableScale>
             );
           })}
         </View>
