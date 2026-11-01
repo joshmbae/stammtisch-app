@@ -15,8 +15,9 @@ Zeichenlimits sind geprüft. Die App-ID `6789122309` (ascAppId in `eas.json`) ex
    nennt bisher nur eine E-Mail. Empfehlung: Impressum-Abschnitt mit ladungsfähiger
    Anschrift auf `support.html` ergänzen (Entwurf, vor Veröffentlichung selbst prüfen
    bzw. rechtlich absichern lassen).
-3. **AVV mit Supabase** abschließen (Supabase-Dashboard → Organization → Legal Documents → DPA).
-   Die Datenschutzerklärung (Stand 31.10.2026) geht davon aus, dass er vorliegt.
+3. **AVV mit Supabase:** Gilt automatisch als Teil der Nutzungsbedingungen, nichts zu unterschreiben
+   (https://supabase.com/legal/dpa, Vertragspartner Supabase Pte. Ltd., Singapur; SCCs in Schedule 2).
+   Eine Kopie mit Datum für die eigenen Unterlagen speichern (z. B. als PDF).
 4. **Prod-Datenbank auf Stand bringen** (alle Dateien in `supabase/migrations/` seit 1.7.0):
    - `2026-10-29-ranglisten-richtung.sql` (dev. → public.)
    - `2026-10-31-versuche-begrenzen.sql` (dev. → public.)
