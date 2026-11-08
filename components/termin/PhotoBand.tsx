@@ -7,7 +7,7 @@ import * as ImagePicker from "expo-image-picker";
 import { FONT, MAX_FONT_SCALE, RADIUS, TYPE, ThemeColors } from "../../constants/design";
 import { useColors, useTheme, useThemedStyles } from "../../contexts/ThemeContext";
 import { showAlert } from "../../utils/alert";
-import { Button, LiveTimer, PressableScale, Scrim } from "../ui";
+import { Button, LiveTimer, PressableScale, PulseDot, Scrim } from "../ui";
 import { PhasenZeile, Phasen } from "./PhasenZeile";
 
 interface Props {
@@ -27,9 +27,9 @@ interface Props {
   phasen: Phasen;
 }
 
-const FOTO_HOEHE = 216;
-/** Ohne Foto deutlich flacher: nur Knöpfe oben, Phasen und Titel unten. */
-const MOTIV_HOEHE = 166;
+const FOTO_HOEHE = 200;
+/** Ohne Foto deutlich flacher: Knöpfe und Phasen oben, Titel unten. */
+const MOTIV_HOEHE = 124;
 
 /**
  * Kopf des Termins: mit Foto füllt es das Band (Tippen = groß ansehen), ohne
@@ -71,6 +71,7 @@ export function PhotoBand({ titel, untertitel, bildUrl, uploading, onUpload, onR
       <PressableScale onPress={onBack} style={styles.rund} accessibilityLabel="Zurück" hitSlop={6}>
         <Ionicons name="chevron-back" size={20} color={c.textDark} />
       </PressableScale>
+      <PhasenZeile {...phasen} farbe="#FFFFFF" punkt={c.mustard} aktivText="#1C1B19" grund="foto" />
       {/* Foto ändern/entfernen geht über Antippen des Fotos (Vollbild), daher hier kein eigener Knopf. */}
       <PressableScale onPress={onEdit} style={styles.rund} accessibilityLabel="Termin bearbeiten" hitSlop={6}>
         <Ionicons name="pencil" size={18} color={c.textDark} />
@@ -118,13 +119,17 @@ export function PhotoBand({ titel, untertitel, bildUrl, uploading, onUpload, onR
           <PressableScale onPress={onBack} style={[styles.rund, styles.rundGlasFoto]} accessibilityLabel="Zurück" hitSlop={6}>
             <Ionicons name="chevron-back" size={20} color="#FFFFFF" />
           </PressableScale>
+          <PhasenZeile {...phasen} farbe="#FFFFFF" punkt={c.liveAccent} aktivText={c.live} grund="foto" />
           <PressableScale onPress={onEdit} style={[styles.rund, styles.rundGlasFoto]} accessibilityLabel="Termin bearbeiten" hitSlop={6}>
             <Ionicons name="pencil" size={18} color="#FFFFFF" />
           </PressableScale>
         </View>
-        <View style={[styles.liveFuss, styles.liveFussFoto]} pointerEvents="box-none">
-          <View style={{ flex: 1, minWidth: 0 }} pointerEvents="box-none">
-            <PhasenZeile {...phasen} farbe="#FFFFFF" punkt={c.liveAccent} aktivText={c.live} grund="foto" />
+        <View style={[styles.liveFuss, styles.liveFussFoto]} pointerEvents="none">
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <View style={styles.liveLabelZeile}>
+              <PulseDot color={c.liveAccent} size={8} />
+              <Text style={[styles.liveLabel, { color: "rgba(255,255,255,0.9)" }]}>Läuft gerade</Text>
+            </View>
             <Text style={[styles.titel, { color: "#FFFFFF" }]} numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE} accessibilityRole="header">{titel}</Text>
             <Text style={[styles.unter, { color: "rgba(255,255,255,0.88)" }]} numberOfLines={1}>{untertitel}</Text>
           </View>
@@ -145,6 +150,7 @@ export function PhotoBand({ titel, untertitel, bildUrl, uploading, onUpload, onR
           <PressableScale onPress={onBack} style={[styles.rund, dunkel && styles.rundDunkel]} accessibilityLabel="Zurück" hitSlop={6}>
             <Ionicons name="chevron-back" size={20} color={dunkel ? c.onLive : c.textDark} />
           </PressableScale>
+          <PhasenZeile {...phasen} farbe={c.onLive} punkt={c.liveAccent} aktivText={c.live} grund="farbe" />
           <PressableScale
             onPress={() => (bildUrl ? setGross(true) : waehlen())}
             style={[styles.rund, styles.rundGlas]}
@@ -156,7 +162,10 @@ export function PhotoBand({ titel, untertitel, bildUrl, uploading, onUpload, onR
         </View>
         <View style={styles.liveFuss}>
           <View style={{ flex: 1, minWidth: 0 }}>
-            <PhasenZeile {...phasen} farbe={c.onLive} punkt={c.liveAccent} aktivText={c.live} grund="farbe" />
+            <View style={styles.liveLabelZeile}>
+              <PulseDot color={c.liveAccent} size={8} />
+              <Text style={[styles.liveLabel, { color: c.heroBlueSub }]}>Läuft gerade</Text>
+            </View>
             <Text style={[styles.titel, { color: c.onLive }]} numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE} accessibilityRole="header">{titel}</Text>
             <Text style={[styles.unter, { color: c.liveSub }]} numberOfLines={1}>{untertitel}</Text>
           </View>
@@ -181,8 +190,7 @@ export function PhotoBand({ titel, untertitel, bildUrl, uploading, onUpload, onR
           </View>
         ) : null}
         {knoepfe}
-        <View style={styles.titelAufFoto} pointerEvents="box-none">
-          <PhasenZeile {...phasen} farbe="#FFFFFF" punkt={c.mustard} aktivText="#1C1B19" grund="foto" />
+        <View style={styles.titelAufFoto} pointerEvents="none">
           <Text style={[styles.titel, { color: "#FFFFFF" }]} numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE} accessibilityRole="header">{titel}</Text>
           <Text style={[styles.unter, { color: "rgba(255,255,255,0.88)" }]} numberOfLines={1}>{untertitel}</Text>
         </View>
@@ -207,17 +215,16 @@ export function PhotoBand({ titel, untertitel, bildUrl, uploading, onUpload, onR
         <PressableScale onPress={onBack} style={[styles.rund, styles.rundGlasMotiv]} accessibilityLabel="Zurück" hitSlop={6}>
           <Ionicons name="chevron-back" size={20} color={flaeche.text} />
         </PressableScale>
-        <View style={{ flexDirection: "row", gap: 8 }}>
-          <PressableScale onPress={waehlen} style={[styles.rund, styles.rundGlasMotiv]} disabled={uploading} accessibilityLabel="Foto zum Termin hinzufügen" hitSlop={6}>
-            {uploading ? <ActivityIndicator size="small" color={flaeche.text} /> : <Ionicons name="camera-outline" size={19} color={flaeche.text} />}
-          </PressableScale>
-          <PressableScale onPress={onEdit} style={[styles.rund, styles.rundGlasMotiv]} accessibilityLabel="Termin bearbeiten" hitSlop={6}>
-            <Ionicons name="pencil" size={18} color={flaeche.text} />
-          </PressableScale>
-        </View>
-      </View>
-      <View style={styles.titelAufFoto}>
         <PhasenZeile {...phasen} farbe={flaeche.text} punkt={blau ? c.mustard : flaeche.text} aktivText={blau ? c.heroBlue : "#1C1B19"} grund={blau ? "farbe" : "hell"} />
+        <PressableScale onPress={onEdit} style={[styles.rund, styles.rundGlasMotiv]} accessibilityLabel="Termin bearbeiten" hitSlop={6}>
+          <Ionicons name="pencil" size={18} color={flaeche.text} />
+        </PressableScale>
+      </View>
+      {/* Foto hinzufügen unten rechts neben dem Titel, damit oben Platz für die Phasen bleibt. */}
+      <PressableScale onPress={waehlen} style={[styles.kameraUnten, styles.rundGlasMotiv]} disabled={uploading} accessibilityLabel="Foto zum Termin hinzufügen" hitSlop={6}>
+        {uploading ? <ActivityIndicator size="small" color={flaeche.text} /> : <Ionicons name="camera-outline" size={19} color={flaeche.text} />}
+      </PressableScale>
+      <View style={[styles.titelAufFoto, { right: 72 }]}>
         <Text style={[styles.titel, { color: flaeche.text }]} numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE} accessibilityRole="header">{titel}</Text>
         <Text style={[styles.unter, { color: flaeche.sub }]} numberOfLines={1}>{untertitel}</Text>
       </View>
@@ -240,12 +247,18 @@ const makeStyles = (c: ThemeColors) =>
     },
     liveBand: { overflow: "hidden", paddingBottom: 16, borderBottomWidth: 1 },
     liveRing: { position: "absolute", width: 300, height: 300, borderRadius: 150, borderWidth: 44, right: -90, top: -70 },
-    liveKnoepfe: { flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 16, height: 44 },
-    liveFuss: { flexDirection: "row", alignItems: "flex-end", gap: 12, paddingHorizontal: 20, marginTop: 40 },
+    liveKnoepfe: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 16, height: 44 },
+    liveFuss: { flexDirection: "row", alignItems: "flex-end", gap: 12, paddingHorizontal: 20, marginTop: 52 },
+    liveLabelZeile: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 2 },
+    liveLabel: { ...TYPE.label },
     liveTimer: { fontSize: 36, lineHeight: 40, letterSpacing: -1 },
     // Live mit Foto: unten eine Kante in Live-Grün, damit der Abend als „läuft" erkennbar bleibt.
     liveFoto: { backgroundColor: c.textDark, borderBottomWidth: 4 },
     liveFussFoto: { position: "absolute", left: 0, right: 0, bottom: 14, marginTop: 0 },
+    kameraUnten: {
+      position: "absolute", right: 16, bottom: 14, width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center",
+      borderWidth: StyleSheet.hairlineWidth,
+    },
     rundGlasFoto: { backgroundColor: "rgba(20,18,16,0.38)", borderColor: "rgba(255,255,255,0.22)" },
     rundDunkel: { backgroundColor: "rgba(255,255,255,0.08)", borderColor: "rgba(255,255,255,0.12)" },
     rundGlas: { backgroundColor: "rgba(255,255,255,0.12)", borderColor: "transparent" },

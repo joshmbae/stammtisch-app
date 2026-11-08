@@ -19,7 +19,8 @@ export interface Phasen {
 }
 
 /**
- * Vorher · Live · Danach als Kapsel im Kopf des Termins. Die offene Ansicht
+ * Vorher · Live · Danach als Kapsel in der oberen Knopfleiste des Termins
+ * (zwischen Zurück und Bearbeiten, wie ein Umschalter in einer iOS-Navigationsleiste). Die offene Ansicht
  * sitzt als heller Chip in der Kapsel, die anderen stehen daneben. Der Punkt
  * markiert, wo der Abend gerade steht (live pulsierend). Antippen öffnet die
  * jeweilige Ansicht, z. B. während des Abends kurz die Zusagen oder danach
@@ -57,7 +58,7 @@ export function PhasenZeile({ phase, ansicht, onChange, farbe, punkt, aktivText,
             accessibilityLabel={`${p.label}${jetzt ? (p.key === "live" ? ", läuft gerade" : ", aktuell") : ""}`}
           >
             {jetzt ? (p.key === "live" ? <PulseDot color={punktFarbe} size={8} /> : <View style={[styles.punkt, { backgroundColor: punktFarbe }]} />) : null}
-            <Text style={[styles.label, { color: offen ? aktivText : farbe }, !offen && styles.labelZu]} maxFontSizeMultiplier={1.3}>{p.label}</Text>
+            <Text style={[styles.label, { color: offen ? aktivText : farbe }, !offen && styles.labelZu]} maxFontSizeMultiplier={1.15}>{p.label}</Text>
           </PressableScale>
         );
       })}
@@ -66,16 +67,16 @@ export function PhasenZeile({ phase, ansicht, onChange, farbe, punkt, aktivText,
 }
 
 const styles = StyleSheet.create({
-  kapsel: { flexDirection: "row", alignSelf: "flex-start", alignItems: "center", padding: 3, borderRadius: 999, marginBottom: 8, borderWidth: StyleSheet.hairlineWidth },
+  kapsel: { flexDirection: "row", alignItems: "center", padding: 3, borderRadius: 999, borderWidth: StyleSheet.hairlineWidth },
   kapselGlas: { backgroundColor: "rgba(255,255,255,0.14)", borderColor: "rgba(255,255,255,0.22)" },
   kapselFoto: { backgroundColor: "rgba(20,18,16,0.45)", borderColor: "rgba(255,255,255,0.22)" },
   kapselHell: { backgroundColor: "rgba(60,40,0,0.08)", borderColor: "rgba(60,40,0,0.10)" },
-  segment: { flexDirection: "row", alignItems: "center", gap: 6, height: 32, paddingHorizontal: 14, borderRadius: 999 },
+  segment: { flexDirection: "row", alignItems: "center", gap: 5, height: 36, paddingHorizontal: 12, borderRadius: 999 },
   segmentOffen: {
     backgroundColor: "#FFFFFF",
     shadowColor: "#000", shadowOpacity: 0.12, shadowRadius: 4, shadowOffset: { width: 0, height: 1 }, elevation: 2,
   },
   punkt: { width: 8, height: 8, borderRadius: 4 },
-  label: { fontFamily: FONT.w700, fontSize: 14 },
+  label: { fontFamily: FONT.w700, fontSize: 13 },
   labelZu: { opacity: 0.85 },
 });
