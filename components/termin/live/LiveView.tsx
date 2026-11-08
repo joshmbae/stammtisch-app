@@ -38,8 +38,8 @@ export function LiveView({ abend, start, now, startBereich, onZusagen }: {
   const [strafeFuer, setStrafeFuer] = useState<string | null>(null);
   const { mitglieder } = abendStats(t, abend.members, [], []);
   const da = mitglieder.filter((m) => t.anwesenheit?.includes(m.id));
-  // Für Strafen alle (auch „unentschuldigt fehlen"), wer da ist zuerst.
-  const fuerStrafen = [...da, ...mitglieder.filter((m) => !t.anwesenheit?.includes(m.id))];
+  // Für Strafen auch, wer nicht da ist (z. B. „unentschuldigt fehlen“).
+  const nichtDa = mitglieder.filter((m) => !t.anwesenheit?.includes(m.id));
 
   const spielStrafen = new Set(Object.values(abend.spielLogMap).flat().map((l) => l.strafLogId).filter(Boolean));
   // Dieselbe Summe wie Danach, Home und Kasse: Strafen inklusive Spiel, der Spielanteil extra genannt.
@@ -63,7 +63,7 @@ export function LiveView({ abend, start, now, startBereich, onZusagen }: {
           abend={abend} dabei={da} start={start} onZusagen={onZusagen}
           onStrafe={strafenAn ? (id) => { setStrafeFuer(id); setBereich("strafen"); } : undefined}
         /> : null}
-      {aktiv === "strafen" ? <StrafenErfassen abend={abend} mitglieder={fuerStrafen} vorauswahl={strafeFuer} /> : null}
+      {aktiv === "strafen" ? <StrafenErfassen abend={abend} dabei={da} andere={nichtDa} vorauswahl={strafeFuer} /> : null}
       {aktiv === "spiel" ? <SpielZaehler abend={abend} mitglieder={da} /> : null}
     </>
   );

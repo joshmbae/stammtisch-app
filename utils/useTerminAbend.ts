@@ -314,8 +314,9 @@ export function useTerminAbend(id: string) {
 
   // ── Strafen ───────────────────────────────────────────────────────────────
 
-  async function strafeEintragen(memberId: string, kategorie: StrafKategorieDef, betrag: number, notiz?: string) {
-    if (!termin) return;
+  /** Trägt eine Strafe ein und gibt den neuen Eintrag zurück (z. B. für „Rückgängig"). */
+  async function strafeEintragen(memberId: string, kategorie: StrafKategorieDef, betrag: number, notiz?: string): Promise<StrafLog | undefined> {
+    if (!termin) return undefined;
     const log = await addStrafLog(memberId, {
       kategorie: kategorie.id,
       betrag,
@@ -333,6 +334,7 @@ export function useTerminAbend(id: string) {
       refId: log.id,
       meta: { kategorie: log.kategorie, betrag: log.betrag, notiz: log.notiz },
     });
+    return log;
   }
 
   async function strafeBeglichenUmschalten(memberId: string, logId: string) {
