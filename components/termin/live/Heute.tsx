@@ -9,30 +9,31 @@ import { TerminAbend } from "../../../utils/useTerminAbend";
 import { displayName } from "../../../utils/format";
 import { formatUhrzeit } from "../../../utils/date";
 import { Avatar, Button, Card, PressableScale, Sheet, haptik } from "../../ui";
+import { Agenda } from "../Agenda";
 import { VerlaufListe } from "./VerlaufListe";
 
 /** Vorschlag, wenn noch keine Verspätung eingetragen ist. */
 const SPAET_VORSCHLAG_MIN = 15;
 const SPAET_MAX_MIN = 999;
 
-type Status = "dabei" | "nichtDa" | "abgesagt";
-
 /**
- * Wer ist dabei? Zusagen gelten am Abend als „dabei“; eingetragen werden nur
- * Ausnahmen – Verspätung (Minuten + Grund, auch nachträglich), doch nicht
- * gekommen, doch gekommen. Antippen öffnet dafür ein Menü, damit nichts aus
- * Versehen umspringt. Ob eine Verspätung etwas kostet, regelt jeder Stammtisch
- * selbst; nach dem Speichern führt „Strafe eintragen“ zu den Strafen (`onStrafe`).
- * Darunter die Verspätungen des Abends mit errechneter Ankunft (Beginn + Minuten).
+ * Erster Bereich am Abend: die Agenda (eingeklappt), wer heute dabei ist und
+ * die Verspätungen. Ob jemand da ist, kommt aus den Zusagen (Vorher) und wird
+ * hier nicht noch einmal abgefragt; eingetragen wird nur, wer zu spät kam.
+ * Antippen einer Person öffnet Minuten und Grund. Ob eine Verspätung etwas
+ * kostet, regelt jeder Stammtisch selbst; nach dem Speichern führt
+ * „Strafe eintragen“ zu den Strafen (`onStrafe`).
  */
-export function AnwesendListe({ abend, mitglieder, start, onStrafe }: {
-  abend: TerminAbend; mitglieder: MemberProfile[]; start: Date | null;
+export function Heute({ abend, dabei, start, onStrafe }: {
+  abend: TerminAbend;
+  /** Wer heute dabei ist (Zusagen bzw. Anwesenheit). */
+  dabei: MemberProfile[];
+  start: Date | null;
   /** Zu den Strafen springen, Person vorausgewählt. Fehlt, wenn der Strafen-Tab aus ist. */
   onStrafe?: (memberId: string) => void;
 }) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
-  const t = abend.termin!;
   const [offenFuer, setOffenFuer] = useState<string | null>(null);
   const [minuten, setMinuten] = useState(0);
   const [grund, setGrund] = useState("");
@@ -41,44 +42,12 @@ export function AnwesendListe({ abend, mitglieder, start, onStrafe }: {
   const [gespeichert, setGespeichert] = useState<{ memberId: string; minuten: number } | null>(null);
   const minutenRef = useRef<TextInput>(null);
 
-  const status = (m: MemberProfile): Status =>
-    t.anwesenheit?.includes(m.id) ? "dabei" : t.absagen?.includes(m.id) ? "abgesagt" : "nichtDa";
   const spaetLogs = (memberId: string) => abend.verspätungMap[memberId] ?? [];
   const spaetMinuten = (memberId: string): number | null => {
     const logs = spaetLogs(memberId);
     return logs.length > 0 ? Math.max(...logs.map((l) => l.minutenVerspätet)) : null;
   };
   const spaetGrund = (memberId: string) => spaetLogs(memberId).find((l) => l.grund)?.grund;
-  /** Schon eine Verspätungs-Strafe im Verlauf (auch ohne eingetragene Minuten)? */
-  const hatSpaetStrafe = (memberId: string) =>
-    (abend.strafMap[memberId] ?? []).some((l) => /spät|spaet|verspät/i.test(abend.strafKategorien.find((k) => k.id === l.kategorie)?.label ?? ""));
-
-  const gruppen: { key: Status; titel: string; leute: MemberProfile[] }[] = [
-    { key: "dabei", titel: "Dabei", leute: mitglieder.filter((m) => status(m) === "dabei") },
-    { key: "nichtDa", titel: "Nicht da", leute: mitglieder.filter((m) => status(m) === "nichtDa") },
-    { key: "abgesagt", titel: "Abgesagt", leute: mitglieder.filter((m) => status(m) === "abgesagt") },
-  ];
-
-  /** Zeile: kleine Zusatzzeile unter dem Namen und der Knopf rechts, der sagt, was Antippen tut. */
-  function zeile(m: MemberProfile): { sub?: string; knopf: { label: string; icon: "time-outline" | "checkmark"; ton: "neutral" | "spaet" | "da" } } {
-    const s = status(m);
-    if (s === "dabei") {
-      const min = spaetMinuten(m.id);
-      if (min !== null) return { sub: spaetGrund(m.id), knopf: { label: `+${min} Min.`, icon: "time-outline", ton: "spaet" } };
-      if (hatSpaetStrafe(m.id)) return { knopf: { label: "zu spät", icon: "time-outline", ton: "spaet" } };
-      return { knopf: { label: "zu spät?", icon: "time-outline", ton: "neutral" } };
-    }
-    return {
-      sub: s === "abgesagt" ? t.absageGruende?.[m.id] || "abgesagt" : "ohne Absage",
-      knopf: { label: "doch da", icon: "checkmark", ton: "da" },
-    };
-  }
-
-  const knopfFarben = {
-    neutral: { bg: c.cardAlt, fg: c.textMid },
-    spaet: { bg: c.coralSoft, fg: c.coralText },
-    da: { bg: c.greenSoft, fg: c.greenText },
-  };
 
   function oeffnen(m: MemberProfile) {
     haptik("leicht");
@@ -86,19 +55,6 @@ export function AnwesendListe({ abend, mitglieder, start, onStrafe }: {
     setMinuten(spaetMinuten(m.id) ?? SPAET_VORSCHLAG_MIN);
     setGrund(spaetGrund(m.id) ?? "");
     setOffenFuer(m.id);
-  }
-
-  async function anwesenheit(m: MemberProfile, da: boolean) {
-    setBusy(true);
-    try {
-      haptik(da ? "erfolg" : "leicht");
-      await abend.anwesenheitSetzen(m.id, da);
-      // Wer doch nicht kam, hat auch keine Verspätung.
-      if (!da) for (const log of spaetLogs(m.id)) await abend.verspätungLöschen(m.id, log.id);
-      if (!da) setOffenFuer(null);
-    } finally {
-      setBusy(false);
-    }
   }
 
   async function spaetSpeichern(m: MemberProfile) {
@@ -133,14 +89,13 @@ export function AnwesendListe({ abend, mitglieder, start, onStrafe }: {
   };
   const minutenAendern = (delta: number) => setMinuten((n) => Math.min(SPAET_MAX_MIN, Math.max(1, (n || 0) + delta)));
 
-  const person = offenFuer ? mitglieder.find((m) => m.id === offenFuer) : undefined;
-  const personStatus = person ? status(person) : null;
+  const person = offenFuer ? dabei.find((m) => m.id === offenFuer) : undefined;
   const personSpaet = person ? spaetMinuten(person.id) : null;
-  const gespeichertMember = gespeichert ? mitglieder.find((m) => m.id === gespeichert.memberId) : undefined;
+  const gespeichertMember = gespeichert ? dabei.find((m) => m.id === gespeichert.memberId) : undefined;
 
   // Verspätungen des Abends, früheste Ankunft zuerst.
-  const verspaetungen = mitglieder
-    .filter((m) => status(m) === "dabei" && spaetMinuten(m.id) !== null)
+  const verspaetungen = dabei
+    .filter((m) => spaetMinuten(m.id) !== null)
     .map((m) => ({ m, min: spaetMinuten(m.id)! }))
     .sort((a, b) => a.min - b.min)
     .map(({ m, min }) => ({
@@ -153,6 +108,8 @@ export function AnwesendListe({ abend, mitglieder, start, onStrafe }: {
 
   return (
     <View style={{ gap: 12 }}>
+      <Agenda abend={abend} einklappbar />
+
       {gespeichert && gespeichertMember && onStrafe ? (
         <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)} style={styles.gespeichert} accessibilityLiveRegion="polite">
           <Text style={styles.gespeichertText} numberOfLines={1}>{`${displayName(gespeichertMember)}: +${gespeichert.minuten} Min. gespeichert`}</Text>
@@ -171,67 +128,45 @@ export function AnwesendListe({ abend, mitglieder, start, onStrafe }: {
         </Animated.View>
       ) : null}
 
-      {gruppen.filter((g) => g.leute.length > 0).map((g) => (
-        <View key={g.key} style={{ gap: 6 }}>
-          <Text style={styles.label}>{`${g.titel} · ${g.leute.length}`}</Text>
-          <Card style={{ paddingVertical: 2, paddingHorizontal: 12 }}>
-            {g.leute.map((m, i) => {
-              const z = zeile(m);
-              const f = knopfFarben[z.knopf.ton];
-              const dabei = g.key === "dabei";
+      <Card style={{ gap: 12 }}>
+        <View style={styles.kopf}>
+          <Text style={styles.kartenTitel} accessibilityRole="header">{`Dabei · ${dabei.length}`}</Text>
+          {dabei.length > 0 ? <Text style={styles.meta}>Antippen bei Verspätung</Text> : null}
+        </View>
+        {dabei.length === 0 ? (
+          <Text style={styles.leer}>Noch niemand eingetragen. Wer dabei ist, ergibt sich aus den Zusagen unter „Vorher“.</Text>
+        ) : (
+          <View style={styles.raster}>
+            {dabei.map((m) => {
+              const min = spaetMinuten(m.id);
               return (
                 <PressableScale
                   key={m.id}
                   onPress={() => oeffnen(m)}
-                  scaleTo={0.98}
-                  style={[styles.zeile, i > 0 && styles.trenner]}
+                  style={styles.person}
                   accessibilityRole="button"
-                  accessibilityLabel={`${displayName(m)}${z.sub ? `, ${z.sub}` : ""}`}
-                  accessibilityHint="Öffnet Verspätung und Anwesenheit"
+                  accessibilityLabel={min !== null ? `${displayName(m)}, ${min} Minuten zu spät` : displayName(m)}
+                  accessibilityHint={min !== null ? "Verspätung ändern" : "Verspätung eintragen"}
                 >
-                  <Avatar
-                    name={displayName(m)} color={m.avatarColor} photoUri={m.photoUri} size={30}
-                    absent={!dabei}
-                  />
-                  <View style={styles.text}>
-                    <Text style={[styles.name, !dabei && { color: c.textMuted }]} numberOfLines={1}>{displayName(m)}</Text>
-                    {z.sub ? <Text style={styles.sub} numberOfLines={1}>{z.sub}</Text> : null}
-                  </View>
-                  <PressableScale
-                    onPress={() => (dabei ? oeffnen(m) : anwesenheit(m, true))}
-                    scaleTo={0.94}
-                    hitSlop={8}
-                    style={[styles.knopf, { backgroundColor: f.bg }]}
-                    accessibilityRole="button"
-                    accessibilityLabel={dabei
-                      ? `${displayName(m)}: ${z.knopf.ton === "neutral" ? "Verspätung eintragen" : `Verspätung ${z.knopf.label} ändern`}`
-                      : `${displayName(m)} ist doch da`}
-                  >
-                    <Ionicons name={z.knopf.icon} size={14} color={f.fg} />
-                    <Text style={[styles.knopfText, { color: f.fg }]}>{z.knopf.label}</Text>
-                  </PressableScale>
+                  <Avatar name={displayName(m)} color={m.avatarColor} photoUri={m.photoUri} size={44} />
+                  <Text style={styles.personName} numberOfLines={1}>{displayName(m)}</Text>
+                  {min !== null ? (
+                    <View style={[styles.spaetPille, { backgroundColor: c.coralSoft }]}>
+                      <Ionicons name="time-outline" size={11} color={c.coralText} />
+                      <Text style={[styles.spaetText, { color: c.coralText }]}>{`+${min}`}</Text>
+                    </View>
+                  ) : null}
                 </PressableScale>
               );
             })}
-          </Card>
-        </View>
-      ))}
+          </View>
+        )}
+      </Card>
 
       <VerlaufListe titel="Verspätungen" eintraege={verspaetungen} />
 
       <Sheet visible={!!person} onClose={() => setOffenFuer(null)} title={person ? displayName(person) : ""}>
-        {person && personStatus !== "dabei" ? (
-          <>
-            <Text style={styles.sheetText}>
-              {personStatus === "abgesagt"
-                ? `Hat abgesagt${t.absageGruende?.[person.id] ? `: „${t.absageGruende[person.id]}“` : "."}`
-                : "Ist nicht als dabei eingetragen."}
-            </Text>
-            <Button label="Ist doch da" icon="checkmark" variant="blue" loading={busy} onPress={() => anwesenheit(person, true)} />
-          </>
-        ) : null}
-
-        {person && personStatus === "dabei" ? (
+        {person ? (
           <>
             <Text style={styles.abschnitt}>{personSpaet !== null ? "Verspätung ändern" : "Verspätung"}</Text>
             <View style={styles.stepper}>
@@ -282,9 +217,6 @@ export function AnwesendListe({ abend, mitglieder, start, onStrafe }: {
                 <Text style={[styles.textKnopfText, { color: c.coralText }]}>Verspätung entfernen</Text>
               </PressableScale>
             ) : null}
-
-            <View style={styles.sheetTrenner} />
-            <Button label="Doch nicht gekommen" variant="secondary" loading={busy} onPress={() => anwesenheit(person, false)} />
           </>
         ) : null}
       </Sheet>
@@ -294,14 +226,15 @@ export function AnwesendListe({ abend, mitglieder, start, onStrafe }: {
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
-    label: { ...TYPE.label, color: c.textMuted },
-    zeile: { flexDirection: "row", alignItems: "center", gap: 10, minHeight: 48 },
-    trenner: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
-    text: { flex: 1, minWidth: 0 },
-    name: { fontFamily: FONT.w600, fontSize: 15, color: c.textDark },
-    sub: { fontFamily: FONT.w400, fontSize: 12, color: c.textMuted, marginTop: 1 },
-    knopf: { flexDirection: "row", alignItems: "center", gap: 4, height: 30, paddingHorizontal: 10, borderRadius: RADIUS.pill },
-    knopfText: { fontFamily: FONT.w600, fontSize: 13, fontVariant: ["tabular-nums"] },
+    kopf: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 8 },
+    kartenTitel: { ...TYPE.heading, color: c.textDark },
+    meta: { ...TYPE.caption, fontSize: 13, color: c.textMuted },
+    leer: { ...TYPE.body, fontSize: 14, color: c.textMuted },
+    raster: { flexDirection: "row", flexWrap: "wrap", rowGap: 14 },
+    person: { width: "25%", alignItems: "center", gap: 4 },
+    personName: { fontFamily: FONT.w600, fontSize: 13, color: c.textDark, maxWidth: "92%" },
+    spaetPille: { flexDirection: "row", alignItems: "center", gap: 2, height: 20, paddingHorizontal: 7, borderRadius: RADIUS.pill },
+    spaetText: { fontFamily: FONT.w700, fontSize: 12, fontVariant: ["tabular-nums"] },
 
     gespeichert: {
       flexDirection: "row", alignItems: "center", gap: 10, minHeight: 44, paddingLeft: 14, paddingRight: 12,
@@ -311,7 +244,6 @@ const makeStyles = (c: ThemeColors) =>
     gespeichertKnopf: { flexDirection: "row", alignItems: "center", gap: 2, height: 32 },
     gespeichertKnopfText: { fontFamily: FONT.w600, fontSize: 14 },
 
-    sheetText: { ...TYPE.body, color: c.textMid },
     abschnitt: { ...TYPE.label, color: c.textMuted },
     stepper: { flexDirection: "row", alignItems: "center", gap: 8 },
     stepKnopf: { width: 40, height: 40, borderRadius: 20, backgroundColor: c.card, alignItems: "center", justifyContent: "center" },
@@ -328,5 +260,4 @@ const makeStyles = (c: ThemeColors) =>
     },
     textKnopf: { alignSelf: "center", paddingVertical: 4 },
     textKnopfText: { fontFamily: FONT.w600, fontSize: 14 },
-    sheetTrenner: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border, marginVertical: 4 },
   });

@@ -46,6 +46,7 @@ import LoadingSpinner from "../../components/LoadingSpinner";
 import ErrorState from "../../components/ErrorState";
 import OfflineBanner from "../../components/OfflineBanner";
 import { Avatar, Button, Card, HeaderIconButton, IconSquircle, PressableScale, Screen } from "../../components/ui";
+import { IchSheet } from "../../components/home/IchSheet";
 import { HeroCard, HeroWahl, RsvpStatus } from "../../components/home/HeroCard";
 import { BilanzRow, BilanzWerte, Platzierung } from "../../components/home/BilanzRow";
 import { KasseTile } from "../../components/home/KasseTile";
@@ -71,7 +72,7 @@ function begruessung(name?: string): string {
 export default function HomeScreen() {
   const styles = useThemedStyles(makeStyles);
   const { activeMemberId, activeMember } = useSession();
-  const { stammtischId } = useStammtisch();
+  const { stammtischId, stammtischName } = useStammtisch();
   const now = useNow(1000);
   const jahr = aktuellesJahr();
 
@@ -82,6 +83,7 @@ export default function HomeScreen() {
   const [aktivitaet, setAktivitaet] = useState<ActivityLogEntry[]>([]);
   const [rsvpBusy, setRsvpBusy] = useState(false);
   const [heroWahl, setHeroWahl] = useState<HeroWahl | null>(null);
+  const [ichOffen, setIchOffen] = useState(false);
   const feedGesehen = useFeedSeen();
   const fokus = useIsFocused();
   const [appGeoeffnet, landungErledigt] = useAppGeoeffnet();
@@ -214,7 +216,7 @@ export default function HomeScreen() {
         </View>
         <HeaderIconButton icon="notifications-outline" label={ungelesen ? "Chronik, neue Einträge" : "Chronik"} dot={ungelesen} onPress={() => router.push("/feed")} />
         {activeMember ? (
-          <PressableScale onPress={() => router.push(`/member/${activeMember.id}`)} hitSlop={6} accessibilityLabel="Mein Profil">
+          <PressableScale onPress={() => setIchOffen(true)} hitSlop={6} accessibilityLabel="Du: Profil, Erscheinungsbild, wechseln">
             <Avatar name={activeMember.name} color={activeMember.avatarColor} photoUri={activeMember.photoUri} size={44} />
           </PressableScale>
         ) : null}
@@ -269,6 +271,14 @@ export default function HomeScreen() {
           <RanglisteRotator listen={listen} jahr={jahr} fuehrende={fuehrende} onAlle={() => router.push("/ranglisten")} />
         </>
       )}
+      {activeMember ? (
+        <IchSheet
+          visible={ichOffen}
+          onClose={() => setIchOffen(false)}
+          member={activeMember}
+          stammtischName={verordnung?.name || stammtischName || "Unser Stammtisch"}
+        />
+      ) : null}
     </Screen>
   );
 }

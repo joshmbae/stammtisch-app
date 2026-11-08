@@ -11,17 +11,18 @@ import { displayName } from "../../utils/format";
 import { Avatar, Button, Card, PressableScale } from "../ui";
 
 /**
- * Worüber an dem Abend geredet werden soll. Vorher und live dieselbe Karte;
- * live ohne leeren Hinweistext, damit sie nicht unnötig Platz nimmt. Unter
- * jedem Punkt steht, wer ihn eingetragen hat.
+ * Worüber an dem Abend geredet werden soll. Vorher offen; live einklappbar
+ * (zu Beginn zu), damit sie Verspätungen und Strafen nicht nach unten
+ * schiebt. Unter jedem Punkt steht, wer ihn eingetragen hat.
  */
-export function Agenda({ abend, live, enterIndex }: { abend: TerminAbend; live?: boolean; enterIndex?: number }) {
+export function Agenda({ abend, einklappbar, enterIndex }: { abend: TerminAbend; einklappbar?: boolean; enterIndex?: number }) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const { activeMemberId } = useSession();
   const punkte = agendaPunkte(abend.agendaText);
   const [offen, setOffen] = useState(false);
   const [neu, setNeu] = useState("");
+  const [aufgeklappt, setAufgeklappt] = useState(!einklappbar);
 
   function hinzufuegen() {
     const text = neu.trim();
@@ -36,20 +37,30 @@ export function Agenda({ abend, live, enterIndex }: { abend: TerminAbend; live?:
   }
 
   const leer = punkte.length === 0;
+  const anzahl = leer ? "" : punkte.length === 1 ? "1 Punkt" : `${punkte.length} Punkte`;
 
   return (
-    <Card enterIndex={enterIndex} style={{ gap: 10 }}>
+    <Card enterIndex={enterIndex} style={{ gap: 10, paddingVertical: einklappbar && !aufgeklappt ? 6 : undefined }}>
       <View style={styles.kopf}>
-        <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8, flex: 1 }}>
+        <PressableScale
+          onPress={einklappbar ? () => { setAufgeklappt((v) => !v); setOffen(false); } : undefined}
+          disabled={!einklappbar}
+          scaleTo={0.99}
+          style={styles.titelZeile}
+          accessibilityRole={einklappbar ? "button" : undefined}
+          accessibilityLabel={einklappbar ? `Agenda, ${anzahl || "nichts geplant"}` : undefined}
+          accessibilityState={einklappbar ? { expanded: aufgeklappt } : undefined}
+        >
           <Text style={styles.kartenTitel} accessibilityRole="header">Agenda</Text>
-          <Text style={styles.meta}>
-            {leer ? (live ? "nichts geplant" : "") : punkte.length === 1 ? "1 Punkt" : `${punkte.length} Punkte`}
-          </Text>
-        </View>
-        <PressableScale onPress={() => setOffen((v) => !v)} style={styles.plusKnopf} accessibilityLabel="Agenda-Punkt hinzufügen" accessibilityState={{ expanded: offen }}>
-          <Ionicons name={offen ? "close" : "add"} size={18} color={c.blue} />
-          <Text style={styles.plusText}>{offen ? "Abbrechen" : "Punkt"}</Text>
+          <Text style={styles.meta} numberOfLines={1}>{anzahl || (einklappbar ? "nichts geplant" : "")}</Text>
+          {einklappbar ? <Ionicons name={aufgeklappt ? "chevron-up" : "chevron-down"} size={16} color={c.textMuted} style={{ marginLeft: 2 }} /> : null}
         </PressableScale>
+        {aufgeklappt ? (
+          <PressableScale onPress={() => setOffen((v) => !v)} style={styles.plusKnopf} accessibilityLabel="Agenda-Punkt hinzufügen" accessibilityState={{ expanded: offen }}>
+            <Ionicons name={offen ? "close" : "add"} size={18} color={c.blue} />
+            <Text style={styles.plusText}>{offen ? "Abbrechen" : "Punkt"}</Text>
+          </PressableScale>
+        ) : null}
       </View>
 
       {offen ? (
@@ -69,9 +80,9 @@ export function Agenda({ abend, live, enterIndex }: { abend: TerminAbend; live?:
         </Animated.View>
       ) : null}
 
-      {leer && !offen && !live ? <Text style={styles.leer}>Noch nichts geplant. Was steht an?</Text> : null}
+      {leer && !offen && !einklappbar ? <Text style={styles.leer}>Noch nichts geplant. Was steht an?</Text> : null}
 
-      {punkte.map((p, i) => {
+      {aufgeklappt && punkte.map((p, i) => {
         const autor = p.von ? abend.members.find((m) => m.id === p.von) : undefined;
         return (
           <Animated.View key={`${i}-${p.text}`} layout={LinearTransition} style={[styles.punktZeile, i > 0 && styles.trenner]}>
@@ -97,7 +108,8 @@ export function Agenda({ abend, live, enterIndex }: { abend: TerminAbend; live?:
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
-    kopf: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
+    kopf: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, minHeight: 44 },
+    titelZeile: { flex: 1, flexDirection: "row", alignItems: "center", gap: 8, minHeight: 44 },
     kartenTitel: { ...TYPE.heading, color: c.textDark },
     meta: { ...TYPE.caption, fontSize: 13, color: c.textMuted },
     plusKnopf: {

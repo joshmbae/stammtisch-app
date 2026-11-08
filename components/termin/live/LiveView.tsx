@@ -7,11 +7,10 @@ import { abendStats } from "../../../utils/abendStats";
 import { hauptEreignis } from "../../../utils/spiel";
 import { showAlert } from "../../../utils/alert";
 import { Button, SegmentedTabs, TabItem } from "../../ui";
-import { AnwesendListe } from "./AnwesendListe";
+import { Heute } from "./Heute";
 import { StrafenErfassen } from "./StrafenErfassen";
 import { formatBetrag } from "../../../utils/format";
 import { SpielZaehler } from "./SpielZaehler";
-import { Agenda } from "../Agenda";
 
 export type LiveBereich = "anwesend" | "strafen" | "spiel";
 type Bereich = LiveBereich;
@@ -20,8 +19,9 @@ type Bereich = LiveBereich;
 const zuletzt = new Map<string, Bereich>();
 
 /**
- * Während des Abends: oben die Agenda, darunter wer da ist, Strafen, Spiel –
- * jeder Bereich mit eigenem Verlauf darunter. startBereich kommt aus dem Link (z. B. Home → „Schocken“).
+ * Während des Abends: Heute (Agenda, wer dabei ist, Verspätungen), Strafen,
+ * Spiel – jeder Bereich mit eigenem Verlauf darunter. Der Schlüssel
+ * „anwesend" bleibt für bestehende Links. startBereich kommt aus dem Link (z. B. Home → „Schocken“).
  */
 export function LiveView({ abend, start, now, startBereich }: { abend: TerminAbend; start: Date | null; now: Date; startBereich?: Bereich }) {
   const t = abend.termin!;
@@ -45,7 +45,7 @@ export function LiveView({ abend, start, now, startBereich }: { abend: TerminAbe
   const haupt = hauptEreignis(abend.ereignisTypen);
   const hauptAnzahl = haupt ? Object.values(abend.spielLogMap).flat().filter((l) => l.ereignisTypId === haupt.id).length : 0;
 
-  const items: TabItem<Bereich>[] = [{ key: "anwesend", label: "Anwesend", sub: `${da.length} von ${mitglieder.length}` }];
+  const items: TabItem<Bereich>[] = [{ key: "anwesend", label: "Heute", sub: `${da.length} dabei` }];
   if (abend.verordnung.tabStrafenAktiv !== false) items.push({ key: "strafen", label: "Strafen", sub: spielSumme > 0 ? `${formatBetrag(strafenSumme)} · ${formatBetrag(spielSumme)} Spiel` : formatBetrag(strafenSumme) });
   if (abend.aktivesSpiel) items.push({ key: "spiel", label: abend.aktivesSpiel.name, sub: haupt ? `${hauptAnzahl}× ${haupt.label}` : undefined });
   const aktiv = items.some((i) => i.key === bereich) ? bereich : "anwesend";
@@ -54,10 +54,9 @@ export function LiveView({ abend, start, now, startBereich }: { abend: TerminAbe
 
   return (
     <>
-      <Agenda abend={abend} live />
       <SegmentedTabs variant="live" items={items} value={aktiv} onChange={wechseln} />
-      {aktiv === "anwesend" ? <AnwesendListe
-          abend={abend} mitglieder={mitglieder} start={start}
+      {aktiv === "anwesend" ? <Heute
+          abend={abend} dabei={da} start={start}
           onStrafe={strafenAn ? (id) => { setStrafeFuer(id); setBereich("strafen"); } : undefined}
         /> : null}
       {aktiv === "strafen" ? <StrafenErfassen abend={abend} mitglieder={fuerStrafen} vorauswahl={strafeFuer} /> : null}

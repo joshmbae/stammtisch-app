@@ -8,7 +8,7 @@ import { formatDauer, formatGruendungMonat, gruendungsDauer, displayName } from 
 import { useScreenLoad } from "../../utils/useScreenLoad";
 import { useFuehrende } from "../../utils/useFuehrende";
 import { TYPE, FONT, ThemeColors } from "../../constants/design";
-import { ERSCHEINUNGSBILD_OPTIONEN, useTheme, useThemedStyles } from "../../contexts/ThemeContext";
+import { useTheme, useThemedStyles } from "../../contexts/ThemeContext";
 import { useStammtisch } from "../../contexts/StammtischContext";
 import StammtischLogo from "../../components/StammtischLogo";
 import LoadingSpinner from "../../components/LoadingSpinner";
@@ -24,7 +24,6 @@ import {
   Screen,
   ScreenHeader,
   SectionLabel,
-  SegmentedTabs,
   Ton,
 } from "../../components/ui";
 import { SYMBOL } from "../../constants/symbole";
@@ -32,13 +31,15 @@ import { SYMBOL } from "../../constants/symbole";
 
 
 /**
- * „Die Runde": wer dazugehört, was uns ausmacht, Satzung, Protokolle und der
- * Weg in die Einstellungen (dort liegen auch Strafenkatalog und Spiele).
+ * „Die Runde": wer dazugehört, was uns ausmacht, Satzung und Protokolle. Die
+ * Stammtisch-Einstellungen (auch Strafenkatalog und Spiele) über das Zahnrad
+ * oben; Persönliches (Profil, Erscheinungsbild, wechseln) liegt hinter dem
+ * eigenen Profilbild auf Home.
  */
 export default function RundeScreen() {
-  const { colors: c, preference, setPreference } = useTheme();
+  const { colors: c } = useTheme();
   const styles = useThemedStyles(makeStyles);
-  const { stammtischName, stammtischVerlassen } = useStammtisch();
+  const { stammtischName } = useStammtisch();
   const fuehrende = useFuehrende();
   const [members, setMembers] = useState<MemberProfile[]>([]);
   const [verordnung, setVerordnung] = useState<StammtischVerordnung | null>(null);
@@ -62,8 +63,6 @@ export default function RundeScreen() {
   const mehr: { label: string; info: string; emoji: string; ton: Ton; route: string }[] = [
     { label: "Satzung", info: regeln ? `${regeln} ${regeln === 1 ? "Regel" : "Regeln"}` : "noch leer", emoji: SYMBOL.satzung, ton: "blue", route: "/satzung" },
     { label: "Protokolle", info: "pro Termin", emoji: SYMBOL.protokoll, ton: "green", route: "/protokolle" },
-    // Strafenkatalog und Spiele gibt es nur in den Einstellungen (Strafen & Spiele).
-    { label: "Einstellungen", info: "Grunddaten, Strafenkatalog, Spiele", emoji: SYMBOL.einstellungen, ton: "neutral", route: "/einstellungen" },
   ];
 
   return (
@@ -77,7 +76,13 @@ export default function RundeScreen() {
           <ScreenHeader
             title="Die Runde"
             subtitle={`${members.length} ${members.length === 1 ? "Mitglied" : "Mitglieder"}${dauer ? ` · seit ${verordnung?.gruendungsjahr?.slice(0, 4)}` : ""}`}
-            right={<HeaderIconButton icon="person-add-outline" label="Mitglied hinzufügen" onPress={() => router.push("/member/new")} />}
+            right={
+              <View style={styles.kopfKnoepfe}>
+                <HeaderIconButton icon="person-add-outline" label="Mitglied hinzufügen" onPress={() => router.push("/member/new")} />
+                {/* Strafenkatalog und Spiele gibt es nur in den Einstellungen (Strafen & Spiele). */}
+                <HeaderIconButton icon="settings-outline" label="Einstellungen: Grunddaten, Strafenkatalog, Spiele" onPress={() => router.push("/einstellungen")} />
+              </View>
+            }
           />
         </>
       }
@@ -134,30 +139,13 @@ export default function RundeScreen() {
         ))}
       </Card>
 
-      <Card enterIndex={3}>
-        <SectionLabel>Erscheinungsbild</SectionLabel>
-        <View style={{ marginTop: 10 }}>
-          <SegmentedTabs variant="light" items={ERSCHEINUNGSBILD_OPTIONEN} value={preference} onChange={setPreference} />
-        </View>
-      </Card>
-
-      <View style={{ gap: 8 }}>
-        <Button label="Profil wechseln" icon="swap-horizontal" variant="secondary" onPress={() => router.push("/mitglied-waehlen")} />
-        {/* Kein Abmelden im eigentlichen Sinn: der Stammtisch bleibt gemerkt und ist mit einem Tipp wieder offen. */}
-        <Button
-          label="Stammtisch wechseln"
-          icon="exit-outline"
-          variant="ghost"
-          onPress={async () => { await stammtischVerlassen(name); router.replace("/stammtisch-waehlen"); }}
-          accessibilityLabel="Stammtisch wechseln. Dieser bleibt gemerkt"
-        />
-      </View>
     </Screen>
   );
 }
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
+    kopfKnoepfe: { flexDirection: "row", gap: 8 },
     stammtischRow: { flexDirection: "row", alignItems: "center", gap: 14, marginTop: 12 },
     stammtischName: { ...TYPE.heading, color: c.textDark },
     muted: { ...TYPE.caption, fontSize: 13, color: c.textMuted, marginTop: 1 },
