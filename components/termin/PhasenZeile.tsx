@@ -1,7 +1,6 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { TYPE } from "../../constants/design";
+import { FONT } from "../../constants/design";
 import { TerminPhase } from "../../utils/terminPhase";
 import { PressableScale, PulseDot } from "../ui";
 
@@ -20,39 +19,46 @@ export interface Phasen {
 }
 
 /**
- * Vorher › Live › Danach als ruhige Zeile im Kopf des Termins. Der Punkt
- * markiert, wo der Abend gerade steht (live pulsierend, immer voll sichtbar);
- * hell ist die offene Ansicht, die anderen sind ausgegraut. Antippen öffnet die jeweilige
- * Ansicht, z. B. während des Abends kurz die Zusagen oder danach Live
- * korrigieren.
+ * Vorher · Live · Danach als Kapsel im Kopf des Termins. Die offene Ansicht
+ * sitzt als heller Chip in der Kapsel, die anderen stehen daneben. Der Punkt
+ * markiert, wo der Abend gerade steht (live pulsierend). Antippen öffnet die
+ * jeweilige Ansicht, z. B. während des Abends kurz die Zusagen oder danach
+ * Live korrigieren.
  */
-export function PhasenZeile({ phase, ansicht, onChange, farbe, punkt }: Phasen & {
-  /** Textfarbe auf der jeweiligen Fläche. */
+export function PhasenZeile({ phase, ansicht, onChange, farbe, punkt, aktivText, grund }: Phasen & {
+  /** Textfarbe der nicht gewählten Phasen auf der jeweiligen Fläche. */
   farbe: string;
-  /** Farbe des Punkts an der aktuellen Phase. */
+  /** Farbe des Punkts an der aktuellen Phase, wenn sie nicht gewählt ist. */
   punkt: string;
+  /** Text- und Punktfarbe im hellen Chip der gewählten Phase. */
+  aktivText: string;
+  /** Untergrund: Foto (dunkles Glas), Farbfläche (helles Glas) oder helle Fläche (Senf, dunkel getönt). */
+  grund: "foto" | "farbe" | "hell";
 }) {
   return (
-    <View style={styles.zeile} accessibilityRole="tablist" accessibilityLabel="Phase des Abends">
-      {PHASEN.map((p, i) => {
+    <View
+      style={[styles.kapsel, grund === "foto" ? styles.kapselFoto : grund === "hell" ? styles.kapselHell : styles.kapselGlas]}
+      accessibilityRole="tablist"
+      accessibilityLabel="Phase des Abends"
+    >
+      {PHASEN.map((p) => {
         const offen = p.key === ansicht;
         const jetzt = p.key === phase;
+        const punktFarbe = offen ? aktivText : punkt;
         return (
-          <React.Fragment key={p.key}>
-            {i > 0 ? <Ionicons name="chevron-forward" size={11} color={farbe} style={styles.pfeil} /> : null}
-            <PressableScale
-              onPress={() => onChange(p.key)}
-              haptic="leicht"
-              hitSlop={{ top: 10, bottom: 10, left: 4, right: 4 }}
-              style={styles.phase}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: offen }}
-              accessibilityLabel={`${p.label}${jetzt ? (p.key === "live" ? ", läuft gerade" : ", aktuell") : ""}`}
-            >
-              {jetzt ? (p.key === "live" ? <PulseDot color={punkt} size={8} /> : <View style={[styles.punkt, { backgroundColor: punkt }]} />) : null}
-              <Text style={[styles.label, { color: farbe, opacity: offen ? 1 : 0.5 }]}>{p.label}</Text>
-            </PressableScale>
-          </React.Fragment>
+          <PressableScale
+            key={p.key}
+            onPress={() => onChange(p.key)}
+            haptic="leicht"
+            hitSlop={{ top: 6, bottom: 6 }}
+            style={[styles.segment, offen && styles.segmentOffen]}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: offen }}
+            accessibilityLabel={`${p.label}${jetzt ? (p.key === "live" ? ", läuft gerade" : ", aktuell") : ""}`}
+          >
+            {jetzt ? (p.key === "live" ? <PulseDot color={punktFarbe} size={8} /> : <View style={[styles.punkt, { backgroundColor: punktFarbe }]} />) : null}
+            <Text style={[styles.label, { color: offen ? aktivText : farbe }, !offen && styles.labelZu]} maxFontSizeMultiplier={1.3}>{p.label}</Text>
+          </PressableScale>
         );
       })}
     </View>
@@ -60,9 +66,16 @@ export function PhasenZeile({ phase, ansicht, onChange, farbe, punkt }: Phasen &
 }
 
 const styles = StyleSheet.create({
-  zeile: { flexDirection: "row", alignItems: "center", marginBottom: 2 },
-  phase: { flexDirection: "row", alignItems: "center", gap: 6, height: 24 },
-  pfeil: { marginHorizontal: 6, opacity: 0.45 },
+  kapsel: { flexDirection: "row", alignSelf: "flex-start", alignItems: "center", padding: 3, borderRadius: 999, marginBottom: 8, borderWidth: StyleSheet.hairlineWidth },
+  kapselGlas: { backgroundColor: "rgba(255,255,255,0.14)", borderColor: "rgba(255,255,255,0.22)" },
+  kapselFoto: { backgroundColor: "rgba(20,18,16,0.45)", borderColor: "rgba(255,255,255,0.22)" },
+  kapselHell: { backgroundColor: "rgba(60,40,0,0.08)", borderColor: "rgba(60,40,0,0.10)" },
+  segment: { flexDirection: "row", alignItems: "center", gap: 6, height: 32, paddingHorizontal: 14, borderRadius: 999 },
+  segmentOffen: {
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#000", shadowOpacity: 0.12, shadowRadius: 4, shadowOffset: { width: 0, height: 1 }, elevation: 2,
+  },
   punkt: { width: 8, height: 8, borderRadius: 4 },
-  label: { ...TYPE.label },
+  label: { fontFamily: FONT.w700, fontSize: 14 },
+  labelZu: { opacity: 0.85 },
 });

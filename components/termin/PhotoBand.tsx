@@ -27,9 +27,9 @@ interface Props {
   phasen: Phasen;
 }
 
-const FOTO_HOEHE = 200;
+const FOTO_HOEHE = 216;
 /** Ohne Foto deutlich flacher: nur Knöpfe oben, Phasen und Titel unten. */
-const MOTIV_HOEHE = 148;
+const MOTIV_HOEHE = 166;
 
 /**
  * Kopf des Termins: mit Foto füllt es das Band (Tippen = groß ansehen), ohne
@@ -124,7 +124,7 @@ export function PhotoBand({ titel, untertitel, bildUrl, uploading, onUpload, onR
         </View>
         <View style={[styles.liveFuss, styles.liveFussFoto]} pointerEvents="box-none">
           <View style={{ flex: 1, minWidth: 0 }} pointerEvents="box-none">
-            <PhasenZeile {...phasen} farbe="#FFFFFF" punkt={c.liveAccent} />
+            <PhasenZeile {...phasen} farbe="#FFFFFF" punkt={c.liveAccent} aktivText={c.live} grund="foto" />
             <Text style={[styles.titel, { color: "#FFFFFF" }]} numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE} accessibilityRole="header">{titel}</Text>
             <Text style={[styles.unter, { color: "rgba(255,255,255,0.88)" }]} numberOfLines={1}>{untertitel}</Text>
           </View>
@@ -156,7 +156,7 @@ export function PhotoBand({ titel, untertitel, bildUrl, uploading, onUpload, onR
         </View>
         <View style={styles.liveFuss}>
           <View style={{ flex: 1, minWidth: 0 }}>
-            <PhasenZeile {...phasen} farbe={c.onLive} punkt={c.liveAccent} />
+            <PhasenZeile {...phasen} farbe={c.onLive} punkt={c.liveAccent} aktivText={c.live} grund="farbe" />
             <Text style={[styles.titel, { color: c.onLive }]} numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE} accessibilityRole="header">{titel}</Text>
             <Text style={[styles.unter, { color: c.liveSub }]} numberOfLines={1}>{untertitel}</Text>
           </View>
@@ -182,7 +182,7 @@ export function PhotoBand({ titel, untertitel, bildUrl, uploading, onUpload, onR
         ) : null}
         {knoepfe}
         <View style={styles.titelAufFoto} pointerEvents="box-none">
-          <PhasenZeile {...phasen} farbe="#FFFFFF" punkt={c.mustard} />
+          <PhasenZeile {...phasen} farbe="#FFFFFF" punkt={c.mustard} aktivText="#1C1B19" grund="foto" />
           <Text style={[styles.titel, { color: "#FFFFFF" }]} numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE} accessibilityRole="header">{titel}</Text>
           <Text style={[styles.unter, { color: "rgba(255,255,255,0.88)" }]} numberOfLines={1}>{untertitel}</Text>
         </View>
@@ -217,7 +217,7 @@ export function PhotoBand({ titel, untertitel, bildUrl, uploading, onUpload, onR
         </View>
       </View>
       <View style={styles.titelAufFoto}>
-        <PhasenZeile {...phasen} farbe={flaeche.text} punkt={blau ? c.mustard : flaeche.text} />
+        <PhasenZeile {...phasen} farbe={flaeche.text} punkt={blau ? c.mustard : flaeche.text} aktivText={blau ? c.heroBlue : "#1C1B19"} grund={blau ? "farbe" : "hell"} />
         <Text style={[styles.titel, { color: flaeche.text }]} numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE} accessibilityRole="header">{titel}</Text>
         <Text style={[styles.unter, { color: flaeche.sub }]} numberOfLines={1}>{untertitel}</Text>
       </View>
@@ -241,7 +241,7 @@ const makeStyles = (c: ThemeColors) =>
     liveBand: { overflow: "hidden", paddingBottom: 16, borderBottomWidth: 1 },
     liveRing: { position: "absolute", width: 300, height: 300, borderRadius: 150, borderWidth: 44, right: -90, top: -70 },
     liveKnoepfe: { flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 16, height: 44 },
-    liveFuss: { flexDirection: "row", alignItems: "flex-end", gap: 12, paddingHorizontal: 20, marginTop: 52 },
+    liveFuss: { flexDirection: "row", alignItems: "flex-end", gap: 12, paddingHorizontal: 20, marginTop: 40 },
     liveTimer: { fontSize: 36, lineHeight: 40, letterSpacing: -1 },
     // Live mit Foto: unten eine Kante in Live-Grün, damit der Abend als „läuft" erkennbar bleibt.
     liveFoto: { backgroundColor: c.textDark, borderBottomWidth: 4 },
