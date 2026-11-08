@@ -11,6 +11,7 @@ import { AnwesendListe } from "./AnwesendListe";
 import { StrafenErfassen } from "./StrafenErfassen";
 import { formatBetrag } from "../../../utils/format";
 import { SpielZaehler } from "./SpielZaehler";
+import { Agenda } from "../Agenda";
 
 export type LiveBereich = "anwesend" | "strafen" | "spiel";
 type Bereich = LiveBereich;
@@ -19,8 +20,8 @@ type Bereich = LiveBereich;
 const zuletzt = new Map<string, Bereich>();
 
 /**
- * Während des Abends: wer da ist, Strafen, Spiel – jeder Bereich mit eigenem
- * Verlauf darunter. startBereich kommt aus dem Link (z. B. Home → „Schocken“).
+ * Während des Abends: oben die Agenda, darunter wer da ist, Strafen, Spiel –
+ * jeder Bereich mit eigenem Verlauf darunter. startBereich kommt aus dem Link (z. B. Home → „Schocken“).
  */
 export function LiveView({ abend, start, now, startBereich }: { abend: TerminAbend; start: Date | null; now: Date; startBereich?: Bereich }) {
   const t = abend.termin!;
@@ -53,6 +54,7 @@ export function LiveView({ abend, start, now, startBereich }: { abend: TerminAbe
 
   return (
     <>
+      <Agenda abend={abend} live />
       <SegmentedTabs variant="live" items={items} value={aktiv} onChange={wechseln} />
       {aktiv === "anwesend" ? <AnwesendListe
           abend={abend} mitglieder={mitglieder} start={start}

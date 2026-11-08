@@ -15,7 +15,7 @@ const ICONS: Record<string, { aktiv: IconName; inaktiv: IconName }> = {
   home: { aktiv: "home", inaktiv: "home-outline" },
   kalender: { aktiv: "calendar", inaktiv: "calendar-outline" },
   kasse: { aktiv: "wallet", inaktiv: "wallet-outline" },
-  ranglisten: { aktiv: "trending-up", inaktiv: "trending-up-outline" },
+  ranglisten: { aktiv: "podium", inaktiv: "podium-outline" },
   runde: { aktiv: "people", inaktiv: "people-outline" },
 };
 

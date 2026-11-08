@@ -53,7 +53,8 @@ export interface TerminChangeHandlers {
   onStrafLogDelete: (id: string) => void;
   onVerspätungInsert: (log: VerspätungLog) => void;
   onVerspätungDelete: (id: string) => void;
-  onTerminUpdate: (t: StammtischTermin) => void;
+  /** `agenda` ist der Rohtext aus der Zeile (liegt nicht im Termin-Objekt). */
+  onTerminUpdate: (t: StammtischTermin, agenda?: string) => void;
 }
 
 export function subscribeToTerminChanges(
@@ -103,7 +104,7 @@ export function subscribeToTerminChanges(
     .on(
       "postgres_changes",
       { event: "UPDATE", schema: supabaseSchema, table: "termine", filter: `id=eq.${terminId}` },
-      (payload) => handlers.onTerminUpdate(rowToTermin(payload.new))
+      (payload) => handlers.onTerminUpdate(rowToTermin(payload.new), typeof payload.new.agenda === "string" ? payload.new.agenda : undefined)
     )
     .subscribe((status) => onStatusChange?.(status));
 

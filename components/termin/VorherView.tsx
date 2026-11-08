@@ -2,13 +2,13 @@ import React, { useEffect, useState } from "react";
 import { Linking, Platform, Share, StyleSheet, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import Animated, { FadeIn, FadeOut, LinearTransition } from "react-native-reanimated";
+import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { MemberProfile } from "../../types";
 import { FONT, MAX_FONT_SCALE, RADIUS, TYPE, ThemeColors } from "../../constants/design";
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { TerminAbend } from "../../utils/useTerminAbend";
 import { abendStats } from "../../utils/abendStats";
-import { agendaPunkte, agendaText } from "../../utils/agenda";
+import { Agenda } from "./Agenda";
 import { formatWochentagDatum } from "../../utils/date";
 import { displayName } from "../../utils/format";
 import { sendErinnerungPush } from "../../utils/push";
@@ -25,7 +25,7 @@ export function VorherView({ abend, now, start }: { abend: TerminAbend; now: Dat
       <WannWo abend={abend} now={now} start={start} />
       <Zusage abend={abend} />
       <WerKommt abend={abend} start={start} />
-      <Agenda abend={abend} />
+      <Agenda abend={abend} enterIndex={3} />
     </>
   );
 }
@@ -262,72 +262,6 @@ function WerKommt({ abend, start }: { abend: TerminAbend; start: Date | null }) 
   );
 }
 
-function Agenda({ abend }: { abend: TerminAbend }) {
-  const c = useColors();
-  const styles = useThemedStyles(makeStyles);
-  const punkte = agendaPunkte(abend.agendaText);
-  const [offen, setOffen] = useState(false);
-  const [neu, setNeu] = useState("");
-
-  function hinzufuegen() {
-    const p = neu.trim();
-    if (!p) return;
-    abend.agendaSpeichern(agendaText([...punkte, p])).catch(() => {});
-    setNeu("");
-    setOffen(false);
-  }
-
-  function entfernen(i: number) {
-    abend.agendaSpeichern(agendaText(punkte.filter((_, k) => k !== i))).catch(() => {});
-  }
-
-  return (
-    <Card enterIndex={3} style={{ gap: 10 }}>
-      <View style={styles.kopf}>
-        <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8, flex: 1 }}>
-          <Text style={styles.kartenTitel} accessibilityRole="header">Agenda</Text>
-          {punkte.length > 0 ? <Text style={styles.meta}>{punkte.length === 1 ? "1 Punkt" : `${punkte.length} Punkte`}</Text> : null}
-        </View>
-        <PressableScale onPress={() => setOffen((v) => !v)} style={styles.plusKnopf} accessibilityLabel="Agenda-Punkt hinzufügen" accessibilityState={{ expanded: offen }}>
-          <Ionicons name={offen ? "close" : "add"} size={18} color={c.blue} />
-          <Text style={styles.plusText}>{offen ? "Abbrechen" : "Punkt"}</Text>
-        </PressableScale>
-      </View>
-
-      {offen ? (
-        <Animated.View entering={FadeIn.duration(200)} style={styles.neuZeile}>
-          <TextInput
-            style={[styles.input, { flex: 1 }]}
-            value={neu}
-            onChangeText={setNeu}
-            onSubmitEditing={hinzufuegen}
-            returnKeyType="done"
-            autoFocus
-            placeholder="Worüber wollt ihr reden?"
-            placeholderTextColor={c.textLight}
-            accessibilityLabel="Neuer Agenda-Punkt"
-          />
-          <Button label="Hinzufügen" size="sm" variant="blue" onPress={hinzufuegen} disabled={!neu.trim()} />
-        </Animated.View>
-      ) : null}
-
-      {punkte.length === 0 && !offen ? (
-        <Text style={styles.leer}>Noch nichts geplant. Was steht an?</Text>
-      ) : (
-        punkte.map((p, i) => (
-          <Animated.View key={`${i}-${p}`} layout={LinearTransition} style={[styles.punktZeile, i > 0 && styles.trenner]}>
-            <View style={styles.nummer}><Text style={styles.nummerText}>{i + 1}</Text></View>
-            <Text style={styles.punktText}>{p}</Text>
-            <PressableScale onPress={() => entfernen(i)} style={styles.entfernen} accessibilityLabel={`Punkt „${p}" entfernen`} hitSlop={4}>
-              <Ionicons name="close" size={16} color={c.textMuted} />
-            </PressableScale>
-          </Animated.View>
-        ))
-      )}
-    </Card>
-  );
-}
-
 /**
  * Feste Leiste unten: Abend vorzeitig starten. Ab 30 Minuten vor Beginn bzw.
  * am Termintag, wenn keine Uhrzeit hinterlegt ist; zur Startzeit wird der
@@ -409,19 +343,6 @@ const makeStyles = (c: ThemeColors) =>
     },
     erinnernText: { fontFamily: FONT.w600, fontSize: 14, color: c.blue },
 
-    plusKnopf: {
-      height: 44, paddingHorizontal: 14, borderRadius: RADIUS.pill, flexDirection: "row", alignItems: "center", gap: 4,
-      backgroundColor: c.blueBg,
-    },
-    plusText: { fontFamily: FONT.w600, fontSize: 14, color: c.blue },
-    neuZeile: { flexDirection: "row", alignItems: "center", gap: 8 },
-    leer: { ...TYPE.body, fontSize: 14, color: c.textMuted },
-    punktZeile: { flexDirection: "row", alignItems: "center", gap: 12, minHeight: 48 },
-    trenner: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
-    nummer: { width: 28, height: 28, borderRadius: 14, backgroundColor: c.blueBg, alignItems: "center", justifyContent: "center" },
-    nummerText: { fontFamily: FONT.w700, fontSize: 13, color: c.blue },
-    punktText: { flex: 1, fontFamily: FONT.w600, fontSize: 15, color: c.textDark },
-    entfernen: { width: 44, height: 44, marginRight: -10, alignItems: "center", justifyContent: "center" },
 
     leiste: { paddingHorizontal: 16, paddingTop: 10 },
     startKnopf: {

@@ -150,7 +150,10 @@ export function useTerminAbend(id: string) {
           onStrafLogDelete: (logId) => setStrafMap((prev) => removeByIdEverywhere(prev, logId)),
           onVerspätungInsert: (log) => setVerspätungMap((prev) => dedupeInsert(prev, log, log.memberId)),
           onVerspätungDelete: (logId) => setVerspätungMap((prev) => removeByIdEverywhere(prev, logId)),
-          onTerminUpdate: (t) => setTermin((prev) => (prev ? { ...prev, ...t } : t)),
+          onTerminUpdate: (t, agenda) => {
+            setTermin((prev) => (prev ? { ...prev, ...t } : t));
+            if (agenda !== undefined) setAgendaText(agenda);
+          },
         },
         (status) => {
           if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {

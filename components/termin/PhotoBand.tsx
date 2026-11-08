@@ -96,6 +96,45 @@ export function PhotoBand({ titel, untertitel, bildUrl, uploading, onUpload, onR
     </Modal>
   ) : null;
 
+  // Live mit Foto: das Foto füllt das Band, Live-Kennung und Timer liegen darauf.
+  // Sonst sähe man ein hochgeladenes Foto erst, wenn der Abend vorbei ist.
+  if (live && bildUrl) {
+    return (
+      <View style={[styles.liveFoto, { height: FOTO_HOEHE + insets.top, borderBottomColor: c.live }]}>
+        <StatusBar style="light" />
+        <PressableScale onPress={() => setGross(true)} scaleTo={1} style={StyleSheet.absoluteFill} accessibilityLabel="Foto groß ansehen">
+          <Image source={{ uri: bildUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+          <Scrim top={0.45} bottom={0.85} />
+        </PressableScale>
+        {uploading ? (
+          <View style={styles.ladenAufFoto} pointerEvents="none">
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          </View>
+        ) : null}
+        <View style={[styles.knopfZeile, { top: insets.top + 8 }]} pointerEvents="box-none">
+          <PressableScale onPress={onBack} style={[styles.rund, styles.rundGlasFoto]} accessibilityLabel="Zurück" hitSlop={6}>
+            <Ionicons name="chevron-back" size={20} color="#FFFFFF" />
+          </PressableScale>
+          <PressableScale onPress={onEdit} style={[styles.rund, styles.rundGlasFoto]} accessibilityLabel="Termin bearbeiten" hitSlop={6}>
+            <Ionicons name="pencil" size={18} color="#FFFFFF" />
+          </PressableScale>
+        </View>
+        <View style={[styles.liveFuss, styles.liveFussFoto]} pointerEvents="none">
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <View style={styles.liveLabelZeile}>
+              <PulseDot color={c.liveAccent} size={8} />
+              <Text style={[styles.liveLabel, { color: "rgba(255,255,255,0.9)" }]}>Läuft gerade</Text>
+            </View>
+            <Text style={[styles.titel, { color: "#FFFFFF" }]} numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE} accessibilityRole="header">{titel}</Text>
+            <Text style={[styles.unter, { color: "rgba(255,255,255,0.88)" }]} numberOfLines={1}>{untertitel}</Text>
+          </View>
+          <LiveTimer start={live.start} now={live.now} style={[styles.liveTimer, { color: "#FFFFFF" }]} />
+        </View>
+        {vollbild}
+      </View>
+    );
+  }
+
   if (live) {
     const dunkel = c.isDark;
     return (
@@ -207,6 +246,10 @@ const makeStyles = (c: ThemeColors) =>
     liveLabelZeile: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 2 },
     liveLabel: { ...TYPE.label },
     liveTimer: { fontSize: 36, lineHeight: 40, letterSpacing: -1 },
+    // Live mit Foto: unten eine Kante in Live-Grün, damit der Abend als „läuft" erkennbar bleibt.
+    liveFoto: { backgroundColor: c.textDark, borderBottomWidth: 4 },
+    liveFussFoto: { position: "absolute", left: 0, right: 0, bottom: 14, marginTop: 0 },
+    rundGlasFoto: { backgroundColor: "rgba(20,18,16,0.38)", borderColor: "rgba(255,255,255,0.22)" },
     rundDunkel: { backgroundColor: "rgba(255,255,255,0.08)", borderColor: "rgba(255,255,255,0.12)" },
     rundGlas: { backgroundColor: "rgba(255,255,255,0.12)", borderColor: "transparent" },
     titelAufFoto: { position: "absolute", left: 20, right: 20, bottom: 14 },
