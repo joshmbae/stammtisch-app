@@ -23,7 +23,11 @@ const zuletzt = new Map<string, Bereich>();
  * Spiel – jeder Bereich mit eigenem Verlauf darunter. Der Schlüssel
  * „anwesend" bleibt für bestehende Links. startBereich kommt aus dem Link (z. B. Home → „Schocken“).
  */
-export function LiveView({ abend, start, now, startBereich }: { abend: TerminAbend; start: Date | null; now: Date; startBereich?: Bereich }) {
+export function LiveView({ abend, start, now, startBereich, onZusagen }: {
+  abend: TerminAbend; start: Date | null; now: Date; startBereich?: Bereich;
+  /** Zur Vorher-Ansicht (Zusagen), dort wird geregelt, wer dabei ist. */
+  onZusagen: () => void;
+}) {
   const t = abend.termin!;
   const [bereich, setBereichState] = useState<Bereich>(() => {
     const b = startBereich ?? zuletzt.get(t.id) ?? "anwesend";
@@ -56,7 +60,7 @@ export function LiveView({ abend, start, now, startBereich }: { abend: TerminAbe
     <>
       <SegmentedTabs variant="live" items={items} value={aktiv} onChange={wechseln} />
       {aktiv === "anwesend" ? <Heute
-          abend={abend} dabei={da} start={start}
+          abend={abend} dabei={da} start={start} onZusagen={onZusagen}
           onStrafe={strafenAn ? (id) => { setStrafeFuer(id); setBereich("strafen"); } : undefined}
         /> : null}
       {aktiv === "strafen" ? <StrafenErfassen abend={abend} mitglieder={fuerStrafen} vorauswahl={strafeFuer} /> : null}

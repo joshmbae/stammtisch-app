@@ -24,8 +24,10 @@ const SPAET_MAX_MIN = 999;
  * kostet, regelt jeder Stammtisch selbst; nach dem Speichern führt
  * „Strafe eintragen“ zu den Strafen (`onStrafe`).
  */
-export function Heute({ abend, dabei, start, onStrafe }: {
+export function Heute({ abend, dabei, start, onStrafe, onZusagen }: {
   abend: TerminAbend;
+  /** Zur Vorher-Ansicht: wer dabei ist, regeln die Zusagen. */
+  onZusagen: () => void;
   /** Wer heute dabei ist (Zusagen bzw. Anwesenheit). */
   dabei: MemberProfile[];
   start: Date | null;
@@ -130,8 +132,14 @@ export function Heute({ abend, dabei, start, onStrafe }: {
 
       <Card style={{ gap: 12 }}>
         <View style={styles.kopf}>
-          <Text style={styles.kartenTitel} accessibilityRole="header">{`Dabei · ${dabei.length}`}</Text>
-          {dabei.length > 0 ? <Text style={styles.meta}>Antippen bei Verspätung</Text> : null}
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={styles.kartenTitel} accessibilityRole="header">{`Dabei · ${dabei.length}`}</Text>
+            {dabei.length > 0 ? <Text style={styles.meta}>Wer zu spät kam: antippen</Text> : null}
+          </View>
+          <PressableScale onPress={onZusagen} style={styles.zusagenLink} hitSlop={6} accessibilityLabel="Zusagen ändern, öffnet Vorher">
+            <Text style={styles.zusagenText}>Zusagen</Text>
+            <Ionicons name="chevron-forward" size={14} color={c.blue} />
+          </PressableScale>
         </View>
         {dabei.length === 0 ? (
           <Text style={styles.leer}>Noch niemand eingetragen. Wer dabei ist, ergibt sich aus den Zusagen unter „Vorher“.</Text>
@@ -226,9 +234,11 @@ export function Heute({ abend, dabei, start, onStrafe }: {
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
-    kopf: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 8 },
+    kopf: { flexDirection: "row", alignItems: "center", gap: 8 },
+    zusagenLink: { flexDirection: "row", alignItems: "center", gap: 2, minHeight: 44, paddingLeft: 8 },
+    zusagenText: { fontFamily: FONT.w600, fontSize: 14, color: c.blue },
     kartenTitel: { ...TYPE.heading, color: c.textDark },
-    meta: { ...TYPE.caption, fontSize: 13, color: c.textMuted },
+    meta: { ...TYPE.caption, fontSize: 13, color: c.textMuted, marginTop: 1 },
     leer: { ...TYPE.body, fontSize: 14, color: c.textMuted },
     raster: { flexDirection: "row", flexWrap: "wrap", rowGap: 14 },
     person: { width: "25%", alignItems: "center", gap: 4 },

@@ -14,7 +14,6 @@ import ErrorState from "../../components/ErrorState";
 import OfflineBanner from "../../components/OfflineBanner";
 import { Button } from "../../components/ui";
 import { PhotoBand } from "../../components/termin/PhotoBand";
-import { PhaseStepper } from "../../components/termin/PhaseStepper";
 import { StartLeiste, VorherView } from "../../components/termin/VorherView";
 import { DanachView } from "../../components/termin/DanachView";
 import { BeendenLeiste, LiveView, LiveBereich } from "../../components/termin/live/LiveView";
@@ -29,8 +28,8 @@ function zurueck() {
 
 /**
  * Ein Termin in drei Phasen: Vorher, Live, Danach. Die Phase ergibt sich aus
- * der Uhrzeit (utils/terminPhase); über die Leiste lässt sich jede Ansicht
- * öffnen. Daten und Aktionen kommen aus useTerminAbend, die Ansichten sind
+ * der Uhrzeit (utils/terminPhase); über die Phasenzeile im Kopf lässt sich
+ * jede Ansicht öffnen. Daten und Aktionen kommen aus useTerminAbend, die Ansichten sind
  * reine Darstellung.
  */
 export default function TerminScreen() {
@@ -99,12 +98,12 @@ export default function TerminScreen() {
             onEdit={() => setBearbeiten(true)}
             live={phase === "live" && zeige === "live" ? { start: start ?? now, now } : undefined}
             motiv={{ flaeche: zeige === "danach" ? "senf" : "blau" }}
+            phasen={{ phase, ansicht: zeige, onChange: setAnsicht }}
           />
           <OfflineBanner />
-          <PhaseStepper phase={phase} ansicht={zeige} onChange={setAnsicht} />
           <View style={styles.inhalt}>
             {zeige === "vorher" ? <VorherView abend={abend} now={now} start={start} /> : null}
-            {zeige === "live" ? <LiveView abend={abend} start={start} now={now} startBereich={startBereich} /> : null}
+            {zeige === "live" ? <LiveView abend={abend} start={start} now={now} startBereich={startBereich} onZusagen={() => setAnsicht("vorher")} /> : null}
             {zeige === "danach" ? <DanachView abend={abend} start={start} /> : null}
           </View>
         </ScrollView>
@@ -138,7 +137,7 @@ export default function TerminScreen() {
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     root: { flex: 1, backgroundColor: c.background },
-    inhalt: { paddingHorizontal: 16, gap: 12 },
+    inhalt: { paddingHorizontal: 16, paddingTop: 16, gap: 12 },
     nichtGefunden: { flex: 1, alignItems: "center", justifyContent: "center", gap: 16, padding: 24 },
     nichtGefundenText: { ...TYPE.body, color: c.textMid, textAlign: "center" },
   });
