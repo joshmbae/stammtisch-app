@@ -64,6 +64,7 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
   function zahlen(offen: typeof strafLogs, betrag: number) {
     begleichenDialog({
       link: abend.verordnung.zahlungsLink,
+      betrag,
       betragText: formatBetrag(betrag),
       beschreibung: `${offen.length} ${offen.length === 1 ? "Strafe von heute wird" : "Strafen von heute werden"}`,
       onBeglichen: async () => {

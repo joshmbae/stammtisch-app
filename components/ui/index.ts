@@ -20,5 +20,6 @@ export { PulseDot, LiveTimer, FlipCountdown, CountBurst } from "./Live";
 export { tonFarben, tonFuer, tonFuerRangliste } from "./ton";
 export type { Ton } from "./ton";
 export { Sheet } from "./Sheet";
+export { BildVollbild } from "./BildVollbild";
 export { KategorieIcon } from "./KategorieIcon";
 export { Field, FieldButton, FormSection, ListGroup, ListRow, ToggleRow } from "./Form";

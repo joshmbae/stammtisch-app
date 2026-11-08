@@ -7,7 +7,7 @@ import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { Jahrestitel } from "../../utils/stats";
 import { displayName, formatBetrag } from "../../utils/format";
 import { formatWochentagDatum } from "../../utils/date";
-import { Avatar, Card, Emoji, IconSquircle, KategorieIcon, Krone, PressableScale, SectionLabel, tonFuerRangliste } from "../ui";
+import { Avatar, BildVollbild, Card, Emoji, IconSquircle, KategorieIcon, Krone, PressableScale, SectionLabel, tonFuerRangliste } from "../ui";
 import { SYMBOL } from "../../constants/symbole";
 
 
@@ -15,6 +15,7 @@ import { SYMBOL } from "../../constants/symbole";
 export function ProfilHero({ member }: { member: MemberProfile }) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
+  const [gross, setGross] = useState(false);
   const angaben = [
     member.spitzname ? { label: "Spitzname", wert: member.spitzname } : null,
     { label: "Mitglied seit", wert: new Date(member.mitgliedSeit).toLocaleDateString("de-DE", { month: "short", year: "numeric" }) },
@@ -26,9 +27,17 @@ export function ProfilHero({ member }: { member: MemberProfile }) {
   return (
     <Card enterIndex={0} style={[styles.hero, { backgroundColor: c.heroBlue, borderColor: c.heroBlueEdge, borderWidth: 1 }]}>
       <View style={styles.heroKopf}>
-        <View style={[styles.heroRing, { borderColor: c.mustard }]}>
+        {/* Mit Profilbild: Antippen zeigt es groß. */}
+        <PressableScale
+          onPress={member.photoUri ? () => setGross(true) : undefined}
+          disabled={!member.photoUri}
+          scaleTo={0.96}
+          style={[styles.heroRing, { borderColor: c.mustard }]}
+          accessibilityRole={member.photoUri ? "imagebutton" : undefined}
+          accessibilityLabel={member.photoUri ? `Profilbild von ${displayName(member)} groß ansehen` : undefined}
+        >
           <Avatar name={displayName(member)} color={member.avatarColor} photoUri={member.photoUri} size={72} />
-        </View>
+        </PressableScale>
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={[styles.heroName, { color: c.onHeroBlue }]} numberOfLines={2} maxFontSizeMultiplier={MAX_FONT_SCALE} accessibilityRole="header">{member.name}</Text>
           <Text style={[styles.heroRolle, { color: c.heroBlueSub }]} numberOfLines={2}>{[member.istAdmin ? "Admin" : null, ...member.rollen].filter(Boolean).join(", ")}</Text>
@@ -44,6 +53,7 @@ export function ProfilHero({ member }: { member: MemberProfile }) {
         ))}
       </View>
       {member.notizen ? <Text style={[styles.notiz, { color: c.onHeroBlue }]}>{member.notizen}</Text> : null}
+      {member.photoUri ? <BildVollbild uri={member.photoUri} titel={displayName(member)} visible={gross} onClose={() => setGross(false)} /> : null}
     </Card>
   );
 }

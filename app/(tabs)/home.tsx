@@ -47,6 +47,7 @@ import ErrorState from "../../components/ErrorState";
 import OfflineBanner from "../../components/OfflineBanner";
 import { Avatar, Button, Card, HeaderIconButton, IconSquircle, PressableScale, Screen } from "../../components/ui";
 import { IchSheet } from "../../components/home/IchSheet";
+import { useHomeArten } from "../../utils/homeArten";
 import { HeroCard, HeroWahl, RsvpStatus } from "../../components/home/HeroCard";
 import { BilanzRow, BilanzWerte, Platzierung } from "../../components/home/BilanzRow";
 import { KasseTile } from "../../components/home/KasseTile";
@@ -84,6 +85,7 @@ export default function HomeScreen() {
   const [rsvpBusy, setRsvpBusy] = useState(false);
   const [heroWahl, setHeroWahl] = useState<HeroWahl | null>(null);
   const [ichOffen, setIchOffen] = useState(false);
+  const [homeArten, setHomeArten] = useHomeArten();
   const feedGesehen = useFeedSeen();
   const fokus = useIsFocused();
   const [appGeoeffnet, landungErledigt] = useAppGeoeffnet();
@@ -119,7 +121,7 @@ export default function HomeScreen() {
     if (!appGeoeffnet || !daten) return;
     landungErledigt();
     if (!fokus) return;
-    const h = homeHero(daten.termine, new Date(), verordnung?.stammtischzeit);
+    const h = homeHero(daten.termine, new Date(), verordnung?.stammtischzeit, homeArten);
     if (h.phase === "live" || h.phase === "danach") {
       introZielVerwerfen();
       router.push(`/termin/${h.termin.id}`);
@@ -171,7 +173,7 @@ export default function HomeScreen() {
 
   const { members, rangl, fuehrende, spielTypen, spielName, listen } = abgeleitet;
   const membersById = new Map(members.map((m) => [m.id, m]));
-  const { hero, umschaltbar } = homeHeroMitWahl(daten.termine, now, verordnung?.stammtischzeit, heroWahl);
+  const { hero, umschaltbar } = homeHeroMitWahl(daten.termine, now, verordnung?.stammtischzeit, heroWahl, homeArten);
   const heroStats = hero.phase === "leer" ? null : abendStats(hero.termin, members, daten.strafLogs, daten.spielLogs);
   const meinStatus: RsvpStatus =
     hero.phase === "vorher" && activeMemberId
@@ -244,6 +246,7 @@ export default function HomeScreen() {
             meinStatus={meinStatus}
             onRsvp={handleRsvp}
             rsvpBusy={rsvpBusy}
+            alleArten={homeArten === "alle"}
             umschalter={umschaltbar ? { wert: hero.phase === "danach" ? "letzter" : "naechster", onChange: setHeroWahl } : undefined}
           />
 
@@ -277,6 +280,8 @@ export default function HomeScreen() {
           onClose={() => setIchOffen(false)}
           member={activeMember}
           stammtischName={verordnung?.name || stammtischName || "Unser Stammtisch"}
+          homeArten={homeArten}
+          onHomeArten={setHomeArten}
         />
       ) : null}
     </Screen>

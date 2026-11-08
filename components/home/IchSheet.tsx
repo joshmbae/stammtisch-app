@@ -7,18 +7,28 @@ import { FONT, TYPE, ThemeColors } from "../../constants/design";
 import { ERSCHEINUNGSBILD_OPTIONEN, useTheme, useThemedStyles } from "../../contexts/ThemeContext";
 import { useStammtisch } from "../../contexts/StammtischContext";
 import { displayName } from "../../utils/format";
+import { HomeArten } from "../../utils/terminPhase";
 import { Avatar, Button, PressableScale, SegmentedTabs, Sheet } from "../ui";
 
 /**
  * Alles, was nur dich betrifft, hinter deinem Profilbild auf Home: eigenes
- * Profil, Erscheinungsbild, Profil oder Stammtisch wechseln. Die Runde zeigt
+ * Profil, was oben auf Home steht, Erscheinungsbild, Profil oder Stammtisch
+ * wechseln. Die Runde zeigt
  * damit nur noch den Stammtisch selbst.
  */
-export function IchSheet({ visible, onClose, member, stammtischName }: {
+const HOME_OPTIONEN: { key: HomeArten; label: string }[] = [
+  { key: "stammtische", label: "Nur Stammtische" },
+  { key: "alle", label: "Auch Veranstaltungen" },
+];
+
+export function IchSheet({ visible, onClose, member, stammtischName, homeArten, onHomeArten }: {
   visible: boolean;
   onClose: () => void;
   member: MemberProfile;
   stammtischName: string;
+  /** Was oben auf Home als nächster/letzter Termin steht. */
+  homeArten: HomeArten;
+  onHomeArten: (a: HomeArten) => void;
 }) {
   const { colors: c, preference, setPreference } = useTheme();
   const styles = useThemedStyles(makeStyles);
@@ -39,6 +49,11 @@ export function IchSheet({ visible, onClose, member, stammtischName }: {
         </View>
         <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
       </PressableScale>
+
+      <View style={{ gap: 8 }}>
+        <Text style={styles.label}>Oben auf Home</Text>
+        <SegmentedTabs variant="light" items={HOME_OPTIONEN} value={homeArten} onChange={onHomeArten} />
+      </View>
 
       <View style={{ gap: 8 }}>
         <Text style={styles.label}>Erscheinungsbild</Text>

@@ -14,6 +14,7 @@ import { useSingleFlight } from "../../utils/useSingleFlight";
 import { Button, Card, Chip, KategorieIcon, PersonChip, PressableScale, haptik } from "../ui";
 import { begleichenDialog, zahlungsAnbieter } from "../../utils/zahlungslink";
 import { showAlert } from "../../utils/alert";
+import { useAdmin } from "../../utils/useAdmin";
 
 
 /**
@@ -32,6 +33,7 @@ export function StrafenTab({ kasse, filter, onFilter, onStrafe }: {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const guard = useSingleFlight();
+  const admin = useAdmin();
   const [beglicheneOffen, setBeglicheneOffen] = useState(false);
   const [zahltGerade, setZahltGerade] = useState(false);
   // Gewählte Person sichtbar halten, z. B. nach einem Link aus dem Profil.
@@ -80,6 +82,7 @@ export function StrafenTab({ kasse, filter, onFilter, onStrafe }: {
   function allesZahlen() {
     begleichenDialog({
       link: kasse.zahlungsLink,
+      betrag: meineSumme,
       betragText: formatBetrag(meineSumme),
       beschreibung: `${meineOffen.length} ${meineOffen.length === 1 ? "Strafe wird" : "Strafen werden"}`,
       onBeglichen: async () => {
@@ -140,14 +143,25 @@ export function StrafenTab({ kasse, filter, onFilter, onStrafe }: {
   return (
     <>
       {!filter && meineOffen.length > 0 ? (
-        <PressableScale onPress={() => onFilter(ich!)} style={[styles.meins, { backgroundColor: c.coralSoft }]} accessibilityRole="button" accessibilityLabel={`Deine offenen Strafen: ${formatBetrag(meineSumme)}, ${meineOffen.length}. Anzeigen`}>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.meinsTitel, { color: c.coralText }]}>{`Du hast ${formatBetrag(meineSumme)} offen`}</Text>
-            <Text style={styles.meta}>{`${meineOffen.length} ${meineOffen.length === 1 ? "Strafe" : "Strafen"} – hier abhaken, wenn bezahlt`}</Text>
-          </View>
-          <Text style={[styles.meinsLink, { color: c.coralText }]}>Anzeigen</Text>
-          <Ionicons name="chevron-forward" size={14} color={c.coralText} />
-        </PressableScale>
+        <View style={[styles.meins, { backgroundColor: c.coralSoft }]}>
+          <PressableScale onPress={() => onFilter(ich!)} scaleTo={0.98} style={{ flex: 1, minWidth: 0 }} accessibilityRole="button" accessibilityLabel={`Deine offenen Strafen: ${formatBetrag(meineSumme)}, ${meineOffen.length}. Anzeigen`}>
+            <View style={styles.meinsKopf}>
+              <Text style={[styles.meinsTitel, { color: c.coralText }]} numberOfLines={1}>{`Du hast ${formatBetrag(meineSumme)} offen`}</Text>
+              <Ionicons name="chevron-forward" size={14} color={c.coralText} />
+            </View>
+            <Text style={styles.meta} numberOfLines={1}>{`${meineOffen.length} ${meineOffen.length === 1 ? "Strafe" : "Strafen"} · antippen zum Anzeigen`}</Text>
+          </PressableScale>
+          {/* Direkt bezahlen, ohne erst die Liste zu filtern. */}
+          <Button
+            label={kasse.zahlungsLink ? "Zahlen" : "Begleichen"}
+            icon={kasse.zahlungsLink && zahlungsAnbieter(kasse.zahlungsLink) === "PayPal" ? "logo-paypal" : undefined}
+            size="sm"
+            variant="danger"
+            loading={zahltGerade}
+            onPress={allesZahlen}
+            accessibilityLabel={kasse.zahlungsLink ? `${formatBetrag(meineSumme)} mit ${zahlungsAnbieter(kasse.zahlungsLink)} zahlen` : `${formatBetrag(meineSumme)} begleichen`}
+          />
+        </View>
       ) : null}
 
       {filter ? (
@@ -162,6 +176,7 @@ export function StrafenTab({ kasse, filter, onFilter, onStrafe }: {
           {filter === ich && offenSumme > 0 ? (
             <Button
               label={kasse.zahlungsLink ? `Mit ${zahlungsAnbieter(kasse.zahlungsLink)} zahlen` : "Alles begleichen"}
+              icon={kasse.zahlungsLink && zahlungsAnbieter(kasse.zahlungsLink) === "PayPal" ? "logo-paypal" : undefined}
               size="sm"
               variant="danger"
               loading={zahltGerade}
@@ -196,6 +211,14 @@ export function StrafenTab({ kasse, filter, onFilter, onStrafe }: {
         <Ionicons name="information-circle-outline" size={16} color={c.textMuted} />
         <Text style={styles.hinweisText}>Bezahlte Strafen landen automatisch als Einnahme in der Kasse.</Text>
       </View>
+      {/* Ohne Zahlungslink wird nur abgehakt; Admins bekommen den Weg zum Eintragen. */}
+      {!kasse.zahlungsLink && admin.istAdmin ? (
+        <PressableScale onPress={() => router.push("/einstellungen")} style={styles.hinweis} accessibilityRole="link" accessibilityLabel="Zahlungslink, zum Beispiel PayPal, in den Einstellungen hinterlegen">
+          <Ionicons name="link-outline" size={16} color={c.blue} />
+          <Text style={[styles.hinweisText, { color: c.blue }]}>PayPal-Link hinterlegen, dann kann man direkt bezahlen</Text>
+          <Ionicons name="chevron-forward" size={14} color={c.blue} />
+        </PressableScale>
+      ) : null}
 
       <ScrollView ref={chipLeiste} horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -16 }} contentContainerStyle={styles.filter}>
         <Chip label="Alle" selected={!filter} onPress={() => onFilter(null)} />
@@ -267,9 +290,9 @@ const makeStyles = (c: ThemeColors) =>
     topWert: { fontFamily: FONT.w700, fontSize: 14, color: c.textDark },
     spur: { height: 8, borderRadius: 4, backgroundColor: c.coralSoft, overflow: "hidden" },
     fuell: { height: "100%", borderRadius: 4 },
-    meins: { flexDirection: "row", alignItems: "center", gap: 8, borderRadius: RADIUS.md, paddingVertical: 10, paddingLeft: 14, paddingRight: 12 },
+    meins: { flexDirection: "row", alignItems: "center", gap: 10, borderRadius: RADIUS.md, paddingVertical: 10, paddingLeft: 14, paddingRight: 10 },
     meinsTitel: { fontFamily: FONT.w600, fontSize: 15 },
-    meinsLink: { fontFamily: FONT.w600, fontSize: 14 },
+    meinsKopf: { flexDirection: "row", alignItems: "center", gap: 4 },
     hinweis: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 6, marginTop: -4 },
     hinweisText: { ...TYPE.caption, fontSize: 13, color: c.textMuted, flex: 1 },
     filter: { gap: 8, paddingHorizontal: 16 },

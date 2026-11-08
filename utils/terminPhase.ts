@@ -50,12 +50,18 @@ export type HomeHero =
   | { phase: "vorher"; termin: StammtischTermin }
   | { phase: "leer" };
 
+/** Welche Terminarten oben auf Home stehen. Standard: nur Stammtische. */
+export type HomeArten = "stammtische" | "alle";
+const zaehltFuerHome = (t: StammtischTermin, arten: HomeArten) =>
+  t.art === "stammtisch" || (arten === "alle" && t.art === "veranstaltung");
+
 /**
  * Welcher Termin oben auf Home steht: ein laufender Abend hat Vorrang, dann
  * der gerade vergangene (bis zum Ende des Folgetags), sonst der nächste.
+ * Mit `arten = "alle"` zählen auch Veranstaltungen (keine Geburtstage).
  */
-export function homeHero(termine: StammtischTermin[], now: Date, stammtischzeit?: string): HomeHero {
-  const stammtische = termine.filter((t) => t.art === "stammtisch");
+export function homeHero(termine: StammtischTermin[], now: Date, stammtischzeit?: string, arten: HomeArten = "stammtische"): HomeHero {
+  const stammtische = termine.filter((t) => zaehltFuerHome(t, arten));
   const live = stammtische.find((t) => terminPhase(t, now, stammtischzeit) === "live");
   if (live) return { phase: "live", termin: live };
 
@@ -77,10 +83,10 @@ export function homeHero(termine: StammtischTermin[], now: Date, stammtischzeit?
   return naechster ? { phase: "vorher", termin: naechster } : { phase: "leer" };
 }
 
-/** Zuletzt vergangener Stammtisch ohne Zeitfenster – für „Letzter“ auf Home. */
-export function letzterStammtisch(termine: StammtischTermin[], now: Date, stammtischzeit?: string): StammtischTermin | null {
+/** Zuletzt vergangener Stammtisch (bzw. Termin) ohne Zeitfenster – für „Letzter“ auf Home. */
+export function letzterStammtisch(termine: StammtischTermin[], now: Date, stammtischzeit?: string, arten: HomeArten = "stammtische"): StammtischTermin | null {
   return termine
-    .filter((t) => t.art === "stammtisch" && terminPhase(t, now, stammtischzeit) === "danach")
+    .filter((t) => zaehltFuerHome(t, arten) && terminPhase(t, now, stammtischzeit) === "danach")
     .sort((a, b) => terminEnde(b).getTime() - terminEnde(a).getTime())[0] ?? null;
 }
 
@@ -92,15 +98,16 @@ export function homeHeroMitWahl(
   termine: StammtischTermin[],
   now: Date,
   stammtischzeit: string | undefined,
-  wahl: "naechster" | "letzter" | null
+  wahl: "naechster" | "letzter" | null,
+  arten: HomeArten = "stammtische"
 ): { hero: HomeHero; umschaltbar: boolean } {
-  const standard = homeHero(termine, now, stammtischzeit);
+  const standard = homeHero(termine, now, stammtischzeit, arten);
   if (standard.phase === "live") return { hero: standard, umschaltbar: false };
-  const letzter = letzterStammtisch(termine, now, stammtischzeit);
+  const letzter = letzterStammtisch(termine, now, stammtischzeit, arten);
   if (!letzter) return { hero: standard, umschaltbar: false };
   if (wahl === "letzter") return { hero: { phase: "danach", termin: letzter }, umschaltbar: true };
   if (wahl === "naechster") {
-    const naechster = homeHero(termine.filter((t) => terminPhase(t, now, stammtischzeit) !== "danach"), now, stammtischzeit);
+    const naechster = homeHero(termine.filter((t) => terminPhase(t, now, stammtischzeit) !== "danach"), now, stammtischzeit, arten);
     return { hero: naechster, umschaltbar: true };
   }
   return { hero: standard, umschaltbar: true };

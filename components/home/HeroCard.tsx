@@ -28,6 +28,8 @@ interface Props {
   meinStatus: RsvpStatus;
   onRsvp: (s: RsvpStatus) => void;
   rsvpBusy?: boolean;
+  /** Oben auf Home stehen auch Veranstaltungen (persönliche Einstellung). */
+  alleArten?: boolean;
   /** Umschalten zwischen nächstem und letztem Stammtisch (nicht während ein Abend läuft). */
   umschalter?: { wert: HeroWahl; onChange: (w: HeroWahl) => void };
 }
@@ -46,7 +48,7 @@ export function HeroCard(props: Props) {
     case "vorher": return <Vorher {...props} />;
     case "live": return <Live {...props} />;
     case "danach": return <Danach {...props} />;
-    default: return <Leer umschalter={props.umschalter} />;
+    default: return <Leer umschalter={props.umschalter} alleArten={props.alleArten} />;
   }
 }
 
@@ -110,12 +112,13 @@ function Vorher({ hero, now, members, stammtischzeit, meinStatus, onRsvp, rsvpBu
   const halbTransparent = "rgba(255,255,255,0.14)";
   const dabei = meinStatus === "ja";
   const abgesagt = meinStatus === "nein";
+  const was = t.art === "stammtisch" ? "Nächster Stammtisch" : `Nächste Veranstaltung${t.titel ? ` · ${t.titel}` : ""}`;
 
   return (
-    <PressableScale onPress={() => oeffne(t.id)} onLayout={(e) => { vorherHoehe = e.nativeEvent.layout.height; }} scaleTo={0.99} style={[styles.hero, flaeche]} accessibilityLabel={`Nächster Stammtisch, ${formatWochentagDatum(new Date(`${t.datum}T00:00:00`))}, öffnen`}>
+    <PressableScale onPress={() => oeffne(t.id)} onLayout={(e) => { vorherHoehe = e.nativeEvent.layout.height; }} scaleTo={0.99} style={[styles.hero, flaeche]} accessibilityLabel={`${was}, ${formatWochentagDatum(new Date(`${t.datum}T00:00:00`))}, öffnen`}>
       <View style={styles.row}>
         <View style={{ flex: 1, minWidth: 0, gap: 6 }}>
-          <Text style={[styles.label, { color: c.heroBlueSub }]}>Nächster Stammtisch</Text>
+          <Text style={[styles.label, { color: c.heroBlueSub }]} numberOfLines={1}>{was}</Text>
           <View style={styles.datumZeile}>
             <Text style={[styles.chipText, { color: c.onHeroBlue }]} numberOfLines={1}>{`${formatWochentagDatum(new Date(`${t.datum}T00:00:00`))} · ${zeitText(start)}`}</Text>
             <Ionicons name="chevron-forward" size={14} color={c.onHeroBlue} />
@@ -163,7 +166,13 @@ function Vorher({ hero, now, members, stammtischzeit, meinStatus, onRsvp, rsvpBu
   );
 }
 
-function Live({ hero, now, members, stammtischzeit, spielName }: Props) {
+/**
+ * Der laufende Abend: großer Timer, wer am Tisch sitzt, darunter ein
+ * Glas-Feld mit dem Stand des Abends (Strafen, wer beim Spiel vorne liegt)
+ * und die Knöpfe direkt zum Eintragen. Mit Foto füllt es die Karte wie beim
+ * Rückblick, sonst die Live-Fläche.
+ */
+function Live({ hero, now, members, stats, stammtischzeit, spielTypen, spielName }: Props) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const flaeche = useHeroFlaeche("live");
@@ -171,39 +180,105 @@ function Live({ hero, now, members, stammtischzeit, spielName }: Props) {
   const t = hero.termin;
   const start = terminStart(t, stammtischzeit) ?? now;
   const amTisch = members.filter((m) => t.anwesenheit?.includes(m.id));
-  const akzent = c.heroBlueSub;
+  const foto = !!t.bildUrl;
+  const leise = foto ? "rgba(255,255,255,0.9)" : c.liveSub;
+  const glas = foto
+    ? { backgroundColor: "rgba(20,18,16,0.3)", borderColor: "rgba(255,255,255,0.18)" }
+    : { backgroundColor: "rgba(255,255,255,0.08)", borderColor: "rgba(255,255,255,0.14)" };
+  const trenner = "rgba(255,255,255,0.18)";
+  const schatten = foto ? styles.schatten : null;
+  const was = t.art === "stammtisch" ? "Stammtisch" : t.titel ?? "Veranstaltung";
+
+  // Stand des Abends: Strafen bisher und wer beim Spiel vorne liegt (bis zu zwei Ereignisse).
+  const spiel = stats
+    ? spielTypen.map((typ) => ({ typ, wer: meisteBei(stats, typ.id, members) })).filter((z) => z.wer).slice(0, 2)
+    : [];
+  const spalten: { key: string; emoji: string; label: string; wert: string; sub: string }[] = [
+    {
+      key: "strafen",
+      emoji: SYMBOL.strafe,
+      label: "Strafen",
+      wert: formatBetrag(stats?.strafenSumme ?? 0),
+      sub: !stats || stats.strafenSumme === 0 ? "noch keine" : stats.strafenOffen > 0 ? `${formatBetrag(stats.strafenOffen)} offen` : "bezahlt",
+    },
+    ...(spiel.length > 0
+      ? spiel.map(({ typ, wer }) => ({
+          key: typ.id,
+          emoji: typ.emoji ?? "🎲",
+          label: typ.label,
+          wert: wer!.members.length === 1 ? displayName(wer!.members[0]) : `${displayName(wer!.members[0])} +${wer!.members.length - 1}`,
+          sub: `${wer!.anzahl}×${spiel.length > 1 ? "" : " – vorne"}`,
+        }))
+      : spielName
+        ? [{ key: "spiel", emoji: spielTypen[0]?.emoji ?? "🎲", label: spielName, wert: "–", sub: "noch nichts" }]
+        : []),
+  ];
 
   return (
-    <PressableScale onPress={() => oeffne(t.id)} scaleTo={0.98} style={[styles.hero, flaeche]} accessibilityLabel="Stammtisch läuft gerade, öffnen">
+    <PressableScale
+      onPress={() => oeffne(t.id)}
+      scaleTo={0.99}
+      style={[styles.hero, foto ? styles.heroFoto : [flaeche, { overflow: "hidden" }]]}
+      accessibilityLabel={`${was} läuft gerade seit ${zeitText(start)}, ${amTisch.length} am Tisch, ${formatEuro(stats?.strafenSumme ?? 0)} Euro Strafen. Öffnen`}
+    >
+      {foto ? (
+        <>
+          <Image source={{ uri: t.bildUrl! }} style={StyleSheet.absoluteFill} resizeMode="cover" accessibilityIgnoresInvertColors />
+          <Scrim top={0.55} bottom={0.9} />
+        </>
+      ) : (
+        <View style={[styles.liveRing, { borderColor: "rgba(255,255,255,0.06)" }]} pointerEvents="none" />
+      )}
+
       <View style={styles.row}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <PulseDot color={c.liveAccent} />
-          <Text style={[styles.label, { color: akzent }]}>Läuft gerade</Text>
+        <View style={[styles.livePill, { backgroundColor: foto ? "rgba(20,18,16,0.45)" : "rgba(255,255,255,0.12)" }]}>
+          <PulseDot color={c.liveAccent} size={8} />
+          <Text style={[styles.label, { color: "#FFFFFF" }]} numberOfLines={1}>{`Live · ${was}`}</Text>
         </View>
-        <View style={styles.round}>
-          <Ionicons name="chevron-forward" size={16} color={c.onLive} />
+        <View style={[styles.round, foto && { backgroundColor: "rgba(20,18,16,0.45)" }]}>
+          <Ionicons name="chevron-forward" size={16} color="#FFFFFF" />
         </View>
       </View>
-      <View>
-        <LiveTimer start={start} now={now} style={{ fontSize: 44, lineHeight: 48, letterSpacing: -1.2, color: c.onLive }} />
-        <Text style={[styles.small, { color: c.liveSub }]}>{`seit ${zeitText(start)}${t.ort ? ` · ${t.ort}` : ""}`}</Text>
-      </View>
-      <View style={[styles.row, { justifyContent: "flex-start", gap: 12 }]}>
+
+      <View style={[styles.row, { alignItems: "flex-end" }]}>
+        <View style={{ flexShrink: 1 }}>
+          <LiveTimer start={start} now={now} style={[styles.liveTimer, { color: c.onLive }, schatten]} />
+          <Text style={[styles.small, { color: leise }, schatten]} numberOfLines={1}>{`seit ${zeitText(start)} · ${amTisch.length} am Tisch`}</Text>
+        </View>
         {amTisch.length > 0 ? (
-          <AvatarStack size={30} ringColor={c.isDark ? c.live : c.background} members={amTisch.map((m) => ({ id: m.id, name: displayName(m), color: m.avatarColor, photoUri: m.photoUri }))} />
+          <View style={{ paddingBottom: 4 }}>
+            <AvatarStack size={30} max={5} ringColor={foto ? "#141210" : c.live} members={amTisch.map((m) => ({ id: m.id, name: displayName(m), color: m.avatarColor, photoUri: m.photoUri }))} />
+          </View>
         ) : null}
-        <Text style={[styles.bodyStrong, { color: c.onLive }]}>{`${amTisch.length} am Tisch`}</Text>
       </View>
+
+      <View style={[styles.glas, glas]}>
+        {foto ? <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} /> : null}
+        {spalten.map((sp, i) => (
+          <React.Fragment key={sp.key}>
+            {i > 0 ? <View style={[styles.glasTrenner, { backgroundColor: trenner }]} /> : null}
+            <View style={styles.glasSpalte} accessible accessibilityLabel={`${sp.label}: ${sp.wert}, ${sp.sub}`}>
+              <View style={styles.glasKopf}>
+                <Emoji size={12}>{sp.emoji}</Emoji>
+                <Text style={[styles.glasLabel, { color: leise }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{sp.label}</Text>
+              </View>
+              <Text style={[styles.glasWert, { color: "#FFFFFF" }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} maxFontSizeMultiplier={MAX_FONT_SCALE}>{sp.wert}</Text>
+              <Text style={[styles.glasSub, { color: leise }]} numberOfLines={1}>{sp.sub}</Text>
+            </View>
+          </React.Fragment>
+        ))}
+      </View>
+
       <View style={styles.row}>
         {/* Direkt in den passenden Bereich des Live-Termins: ein Tipp bis zum Eintragen. */}
-        <PressableScale onPress={() => oeffne(t.id, "strafen")} scaleTo={0.96} style={styles.liveChip} accessibilityLabel="Strafe eintragen">
-          <Text style={[styles.liveChipText, { color: c.onLive }]} numberOfLines={1}>Strafen</Text>
-          <Ionicons name="add" size={20} color={c.onLive} />
+        <PressableScale onPress={() => oeffne(t.id, "strafen")} scaleTo={0.96} style={[styles.liveChip, styles.liveChipHell]} accessibilityLabel="Strafe eintragen">
+          <Ionicons name="add" size={20} color={c.live} />
+          <Text style={[styles.liveChipText, { color: c.live }]} numberOfLines={1}>Strafe</Text>
         </PressableScale>
         {spielName ? (
-          <PressableScale onPress={() => oeffne(t.id, "spiel")} scaleTo={0.96} style={styles.liveChip} accessibilityLabel={`${spielName} eintragen`}>
-            <Text style={[styles.liveChipText, { color: c.onLive }]} numberOfLines={1}>{spielName}</Text>
-            <Ionicons name="add" size={20} color={c.onLive} />
+          <PressableScale onPress={() => oeffne(t.id, "spiel")} scaleTo={0.96} style={[styles.liveChip, foto && { backgroundColor: "rgba(20,18,16,0.45)" }]} accessibilityLabel={`${spielName} eintragen`}>
+            <Ionicons name="add" size={20} color="#FFFFFF" />
+            <Text style={[styles.liveChipText, { color: "#FFFFFF" }]} numberOfLines={1}>{spielName}</Text>
           </PressableScale>
         ) : null}
       </View>
@@ -318,14 +393,14 @@ function Danach({ hero, now, members, stats, spielTypen, umschalter }: Props) {
   );
 }
 
-function Leer({ umschalter }: { umschalter?: Props["umschalter"] }) {
+function Leer({ umschalter, alleArten }: { umschalter?: Props["umschalter"]; alleArten?: boolean }) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const flaeche = useHeroFlaeche("blau");
   return (
     <View style={[styles.hero, flaeche, { minHeight: 0 }]}>
       <View style={styles.row}>
-        <Text style={[styles.label, { color: c.heroBlueSub, flex: 1 }]}>Nächster Stammtisch</Text>
+        <Text style={[styles.label, { color: c.heroBlueSub, flex: 1 }]}>{alleArten ? "Nächster Termin" : "Nächster Stammtisch"}</Text>
         {umschalter ? <HeroUmschalter {...umschalter} hell /> : null}
       </View>
       <Text style={[styles.titel, { color: c.onHeroBlue }]}>Noch nichts geplant.</Text>
@@ -350,8 +425,12 @@ const makeStyles = (c: ThemeColors) =>
     track: { height: 6, borderRadius: 999, backgroundColor: "rgba(255,255,255,0.2)", overflow: "hidden" },
     fill: { height: "100%", borderRadius: 999 },
     round: { width: 36, height: 36, borderRadius: 18, backgroundColor: "rgba(255,255,255,0.14)", alignItems: "center", justifyContent: "center" },
-    liveChip: { flex: 1, minHeight: 48, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 9, backgroundColor: "rgba(255,255,255,0.12)", flexDirection: "row", alignItems: "center", gap: 6 },
-    liveChipText: { flex: 1, fontFamily: FONT.w800, fontSize: 16 },
+    liveChip: { flex: 1, minHeight: 48, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 9, backgroundColor: "rgba(255,255,255,0.14)", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 },
+    liveChipHell: { backgroundColor: "#FFFFFF" },
+    liveChipText: { fontFamily: FONT.w800, fontSize: 16, flexShrink: 1 },
+    livePill: { flexDirection: "row", alignItems: "center", gap: 7, height: 30, paddingHorizontal: 11, borderRadius: 999, flexShrink: 1 },
+    liveTimer: { fontSize: 44, lineHeight: 48, letterSpacing: -1.2 },
+    liveRing: { position: "absolute", width: 280, height: 280, borderRadius: 140, borderWidth: 40, right: -100, top: -110 },
     gross: { ...TYPE.num, fontSize: 36, lineHeight: 40, letterSpacing: -1 },
     dots: { flex: 1, flexDirection: "row", flexWrap: "wrap", justifyContent: "flex-end", gap: 4 },
     dot: { width: 10, height: 10, borderRadius: 5 },
