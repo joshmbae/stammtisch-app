@@ -33,6 +33,7 @@ import {
 } from "../components/einstellungen/EinstellungenSheets";
 import { SYMBOL } from "../constants/symbole";
 import { normalisiereZahlungsLink, zahlungsAnbieter } from "../utils/zahlungslink";
+import { useHomeArten } from "../utils/homeArten";
 
 
 type Offen = "name" | "treffpunkt" | "tag" | "zahlung" | "gruendung" | "logo" | "satzung" | "rollen" | "spiel" | "loeschen" | null;
@@ -52,7 +53,8 @@ export default function EinstellungenScreen() {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [activatingSpiel, setActivatingSpiel] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const { stammtischId, clearStammtisch } = useStammtisch();
+  const { stammtischId, clearStammtisch, stammtischName, stammtischVerlassen } = useStammtisch();
+  const [homeArten, setHomeArten] = useHomeArten();
   const admin = useAdmin();
   const { nurAdmin } = admin;
   const { activeMember, clearSession } = useSession();
@@ -337,6 +339,21 @@ export default function EinstellungenScreen() {
                 <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
               </View>
             }
+          />
+          <ToggleRow
+            title="Veranstaltungen auf Home"
+            subtitle="Als „Nächster“ oben auf Home, nicht nur Stammtische"
+            emoji={SYMBOL.veranstaltung}
+            ton="mustard"
+            value={homeArten === "alle"}
+            onValueChange={(an) => setHomeArten(an ? "alle" : "stammtische")}
+          />
+          {/* Kein Abmelden im eigentlichen Sinn: der Stammtisch bleibt gemerkt und ist mit einem Tipp wieder offen. */}
+          <ListRow
+            title="Stammtisch wechseln"
+            subtitle="Dieser bleibt gemerkt"
+            emoji={SYMBOL.stammtisch}
+            onPress={async () => { await stammtischVerlassen(v.name || stammtischName || "Unser Stammtisch"); router.replace("/stammtisch-waehlen"); }}
           />
         </ListGroup>
       </FormSection>

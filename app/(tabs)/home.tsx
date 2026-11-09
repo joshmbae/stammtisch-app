@@ -73,7 +73,7 @@ function begruessung(name?: string): string {
 export default function HomeScreen() {
   const styles = useThemedStyles(makeStyles);
   const { activeMemberId, activeMember } = useSession();
-  const { stammtischId, stammtischName } = useStammtisch();
+  const { stammtischId } = useStammtisch();
   const now = useNow(1000);
   const jahr = aktuellesJahr();
 
@@ -85,7 +85,7 @@ export default function HomeScreen() {
   const [rsvpBusy, setRsvpBusy] = useState(false);
   const [heroWahl, setHeroWahl] = useState<HeroWahl | null>(null);
   const [ichOffen, setIchOffen] = useState(false);
-  const [homeArten, setHomeArten] = useHomeArten();
+  const [homeArten] = useHomeArten();
   const feedGesehen = useFeedSeen();
   const fokus = useIsFocused();
   const [appGeoeffnet, landungErledigt] = useAppGeoeffnet();
@@ -279,9 +279,7 @@ export default function HomeScreen() {
           visible={ichOffen}
           onClose={() => setIchOffen(false)}
           member={activeMember}
-          stammtischName={verordnung?.name || stammtischName || "Unser Stammtisch"}
-          homeArten={homeArten}
-          onHomeArten={setHomeArten}
+          offen={bilanz?.offen ?? 0}
         />
       ) : null}
     </Screen>
