@@ -1,28 +1,27 @@
 import React, { useMemo, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { StrafKategorieDef } from "../../types";
 import { FONT, RADIUS, ThemeColors } from "../../constants/design";
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { useSession } from "../../contexts/SessionContext";
-import { loadStrafKategorien } from "../../utils/storage";
 import { loadStatsDaten } from "../../utils/statsDaten";
 import { useScreenLoad } from "../../utils/useScreenLoad";
 import { pinFehlertext, verifyPin } from "../../utils/pin";
 import { anwesenheitsQuote, formatBetrag } from "../../utils/format";
 import { toLocalIsoDate } from "../../utils/date";
-import { StatsDaten, aktuellesJahr, computeRanglisten, jahresTitelFuer, wertKurz } from "../../utils/stats";
+import { ALLZEIT, StatsDaten, aktuellesJahr, computeRanglisten, jahresTitelFuer, wertKurz } from "../../utils/stats";
 import PinPrompt from "../../components/PinPrompt";
 import LoadingSpinner from "../../components/LoadingSpinner";
 import ErrorState from "../../components/ErrorState";
 import OfflineBanner from "../../components/OfflineBanner";
 import { PressableScale, Screen, ScreenHeader } from "../../components/ui";
-import { AbendZeile, AbendeKarte, BilanzKachel, BilanzKarte, ProfilHero, StrafenKarte, TitelKarte } from "../../components/profil/ProfilKarten";
+import { AbendZeile, AbendeKarte, BilanzKachel, BilanzKarte, ProfilHero, TitelKarte } from "../../components/profil/ProfilKarten";
 
 /**
  * Profil einer Person: wer sie ist, ihre Titel aus früheren Jahren, die
- * Bilanz der Saison, Strafen und die letzten Abende. Bearbeiten ist durch den
+ * Bilanz (Saison oder Allzeit, Strafen als eine der Kacheln) und die letzten
+ * Abende. Bearbeiten ist durch den
  * PIN geschützt, falls einer gesetzt ist.
  */
 export default function ProfilScreen() {
@@ -31,14 +30,13 @@ export default function ProfilScreen() {
   const styles = useThemedStyles(makeStyles);
   const { activeMemberId } = useSession();
   const [daten, setDaten] = useState<StatsDaten | null>(null);
-  const [kategorien, setKategorien] = useState<StrafKategorieDef[]>([]);
+  /** Zeitraum der Bilanz: laufendes Jahr oder ALLZEIT. */
+  const [zeitraum, setZeitraum] = useState<string>(aktuellesJahr());
   const [pinOffen, setPinOffen] = useState(false);
   const [pinFehler, setPinFehler] = useState<string | undefined>(undefined);
 
   const screen = useScreenLoad(async () => {
-    const [d, k] = await Promise.all([loadStatsDaten(), loadStrafKategorien()]);
-    setDaten(d);
-    setKategorien(k);
+    setDaten(await loadStatsDaten());
   }, [id]);
 
   const jahr = aktuellesJahr();
@@ -46,21 +44,29 @@ export default function ProfilScreen() {
 
   const auswertung = useMemo(() => {
     if (!daten || !member) return null;
-    const listen = computeRanglisten(daten, jahr);
+    const listen = computeRanglisten(daten, zeitraum);
     const titel = jahresTitelFuer(daten, member.id).filter((t) => t.jahr !== jahr);
 
     // Bilanz: dieselben Zahlen wie Home (anwesenheitsQuote) und Tabelle (computeRanglisten).
     const platz = (key: string) => listen.find((l) => l.key === key)?.eintraege.find((e) => e.member.id === member.id);
-    const q = anwesenheitsQuote(daten.termine.filter((t) => t.datum.startsWith(jahr)), member.id, member.mitgliedSeit);
+    const q = anwesenheitsQuote(zeitraum === ALLZEIT ? daten.termine : daten.termine.filter((t) => t.datum.startsWith(zeitraum)), member.id, member.mitgliedSeit);
+    // Strafen im Zeitraum; offen zählt über alle Jahre (ein Kontostand, wie auf Home).
+    const eigeneStrafen = daten.strafLogs.filter((l) => l.memberId === member.id);
+    const strafenSumme = eigeneStrafen.filter((l) => zeitraum === ALLZEIT || l.loggedAt.startsWith(zeitraum)).reduce((s, l) => s + l.betrag, 0);
+    const offen = eigeneStrafen.filter((l) => !l.beglichen).reduce((s, l) => s + l.betrag, 0);
     const kacheln: BilanzKachel[] = [
       { key: "teilnahme", emoji: "✅", wert: q.pct !== null ? `${q.pct}\u202F%` : "–", label: `dabei · ${q.count} von ${q.total}`, platz: platz("teilnahme")?.platz, farbe: c.successText },
       { key: "verspaetung", emoji: "⏱️", wert: wertKurz("verspaetung", platz("verspaetung")?.wert ?? 0), label: "zu spät", platz: platz("verspaetung")?.platz },
       ...listen
         .filter((l) => l.key.startsWith("spiel_"))
         .map((l) => ({ key: l.key, emoji: l.emoji, wert: wertKurz(l.key, platz(l.key)?.wert ?? 0), label: l.kurz, platz: platz(l.key)?.platz })),
+      {
+        key: "strafen", emoji: "💰", wert: formatBetrag(strafenSumme),
+        label: offen > 0 ? `Strafen · ${formatBetrag(offen)} offen` : "Strafen · alles bezahlt",
+        platz: platz("strafen")?.platz, farbe: offen > 0 ? c.coralText : undefined,
+        ziel: `/kasse?tab=strafen&memberId=${member.id}`,
+      },
     ];
-
-    const strafenJahr = daten.strafLogs.filter((l) => l.memberId === member.id && l.loggedAt.startsWith(jahr));
 
     const heute = toLocalIsoDate(new Date());
     const typen = daten.spiele.flatMap((s) => s.ereignisTypen);
@@ -81,8 +87,8 @@ export default function ProfilScreen() {
         };
       });
 
-    return { titel, kacheln, strafenJahr, abende };
-  }, [daten, member, jahr, c]);
+    return { titel, kacheln, abende };
+  }, [daten, member, jahr, zeitraum, c]);
 
   function bearbeiten() {
     if (!member) return;
@@ -136,8 +142,7 @@ export default function ProfilScreen() {
         <>
           <ProfilHero member={member} />
           <TitelKarte titel={auswertung.titel} />
-          <BilanzKarte jahr={jahr} kacheln={auswertung.kacheln} />
-          <StrafenKarte jahr={jahr} memberId={member.id} strafen={auswertung.strafenJahr} kategorien={kategorien} />
+          <BilanzKarte jahr={jahr} zeitraum={zeitraum} onZeitraum={setZeitraum} kacheln={auswertung.kacheln} />
           <AbendeKarte abende={auswertung.abende} />
         </>
       )}

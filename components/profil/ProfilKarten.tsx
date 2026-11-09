@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
-import { MemberProfile, StrafKategorieDef, StrafLog } from "../../types";
+import { MemberProfile } from "../../types";
 import { FONT, MAX_FONT_SCALE, RADIUS, TYPE, ThemeColors } from "../../constants/design";
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
-import { Jahrestitel } from "../../utils/stats";
-import { displayName, formatBetrag } from "../../utils/format";
+import { ALLZEIT, Jahrestitel } from "../../utils/stats";
+import { displayName } from "../../utils/format";
 import { formatWochentagDatum } from "../../utils/date";
-import { Avatar, BildVollbild, Card, Emoji, IconSquircle, KategorieIcon, Krone, PressableScale, SectionLabel, tonFuerRangliste } from "../ui";
+import { Avatar, BildVollbild, Card, Emoji, IconSquircle, Krone, PressableScale, SectionLabel, tonFuerRangliste } from "../ui";
 import { SYMBOL } from "../../constants/symbole";
 
 
@@ -27,17 +27,22 @@ export function ProfilHero({ member }: { member: MemberProfile }) {
   return (
     <Card enterIndex={0} style={[styles.hero, { backgroundColor: c.heroBlue, borderColor: c.heroBlueEdge, borderWidth: 1 }]}>
       <View style={styles.heroKopf}>
-        {/* Mit Profilbild: Antippen zeigt es groß. */}
-        <PressableScale
-          onPress={member.photoUri ? () => setGross(true) : undefined}
-          disabled={!member.photoUri}
-          scaleTo={0.96}
-          style={[styles.heroRing, { borderColor: c.mustard }]}
-          accessibilityRole={member.photoUri ? "imagebutton" : undefined}
-          accessibilityLabel={member.photoUri ? `Profilbild von ${displayName(member)} groß ansehen` : undefined}
-        >
-          <Avatar name={displayName(member)} color={member.avatarColor} photoUri={member.photoUri} size={72} />
-        </PressableScale>
+        {/* Mit Profilbild: Antippen zeigt es groß. Ohne Foto ein schlichter Rahmen (kein deaktivierter Knopf, der wäre blass). */}
+        {member.photoUri ? (
+          <PressableScale
+            onPress={() => setGross(true)}
+            scaleTo={0.96}
+            style={[styles.heroRing, { borderColor: c.mustard }]}
+            accessibilityRole="imagebutton"
+            accessibilityLabel={`Profilbild von ${displayName(member)} groß ansehen`}
+          >
+            <Avatar name={displayName(member)} color={member.avatarColor} photoUri={member.photoUri} size={72} />
+          </PressableScale>
+        ) : (
+          <View style={[styles.heroRing, { borderColor: c.mustard }]}>
+            <Avatar name={displayName(member)} color={member.avatarColor} size={72} />
+          </View>
+        )}
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={[styles.heroName, { color: c.onHeroBlue }]} numberOfLines={2} maxFontSizeMultiplier={MAX_FONT_SCALE} accessibilityRole="header">{member.name}</Text>
           <Text style={[styles.heroRolle, { color: c.heroBlueSub }]} numberOfLines={2}>{[member.istAdmin ? "Admin" : null, ...member.rollen].filter(Boolean).join(", ")}</Text>
@@ -94,20 +99,50 @@ export interface BilanzKachel {
   platz?: number;
   emoji: string;
   farbe?: string;
+  /** Wohin Antippen führt; ohne Angabe die Tabelle im gewählten Zeitraum. */
+  ziel?: string;
 }
 
-/** Bilanz der Saison als Kacheln, jede mit dem Platz in der Wertung. */
-export function BilanzKarte({ jahr, kacheln }: { jahr: string; kacheln: BilanzKachel[] }) {
+/**
+ * Bilanz als Kacheln, jede mit dem Platz in der Wertung. Oben rechts der
+ * Zeitraum: laufende Saison oder Allzeit (`zeitraum` ist das Jahr oder ALLZEIT).
+ */
+export function BilanzKarte({ jahr, zeitraum, onZeitraum, kacheln }: {
+  jahr: string;
+  zeitraum: string;
+  onZeitraum: (z: string) => void;
+  kacheln: BilanzKachel[];
+}) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
   if (kacheln.length === 0) return null;
+  const allzeit = zeitraum !== jahr;
   return (
     <Card enterIndex={3} style={{ gap: 12 }}>
-      <SectionLabel action={{ label: "Tabelle", onPress: () => router.push("/ranglisten") }}>{`Bilanz ${jahr}`}</SectionLabel>
+      <View style={styles.zeile}>
+        <Text style={[styles.label, { flex: 1 }]} accessibilityRole="header">{allzeit ? "Bilanz Allzeit" : `Bilanz ${jahr}`}</Text>
+        <View style={[styles.zeitraum, { backgroundColor: c.cardAlt }]} accessibilityRole="tablist">
+          {[{ key: jahr, label: jahr }, { key: ALLZEIT, label: "Allzeit" }].map((o) => {
+            const aktiv = o.key === zeitraum;
+            return (
+              <PressableScale
+                key={o.key}
+                onPress={() => onZeitraum(o.key)}
+                haptic="leicht"
+                style={[styles.zeitraumOption, aktiv && { backgroundColor: c.card }]}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: aktiv }}
+              >
+                <Text style={[styles.zeitraumText, { color: aktiv ? c.textDark : c.textMuted }]}>{o.label}</Text>
+              </PressableScale>
+            );
+          })}
+        </View>
+      </View>
       <View style={styles.bilanzRaster}>
         {kacheln.map((k) => (
           <View key={k.key} style={styles.bilanzZelle}>
-            <PressableScale onPress={() => router.push(`/ranglisten?jahr=${jahr}`)} scaleTo={0.97} style={[styles.bilanzKachel, { backgroundColor: c.cardAlt }]} accessibilityRole="link" accessibilityLabel={`${k.label}: ${k.wert}${k.platz ? `, Platz ${k.platz}` : ""}. Tabelle öffnen`}>
+            <PressableScale onPress={() => router.push((k.ziel ?? `/ranglisten?jahr=${zeitraum}`) as never)} scaleTo={0.97} style={[styles.bilanzKachel, { backgroundColor: c.cardAlt }]} accessibilityRole="link" accessibilityLabel={`${k.label}: ${k.wert}${k.platz ? `, Platz ${k.platz}` : ""}. ${k.ziel ? "Öffnen" : "Tabelle öffnen"}`}>
               <View style={styles.zeile}>
                 <IconSquircle emoji={k.emoji} ton={tonFuerRangliste(k.key)} size={34} />
                 <View style={{ flex: 1 }} />
@@ -124,60 +159,6 @@ export function BilanzKarte({ jahr, kacheln }: { jahr: string; kacheln: BilanzKa
           </View>
         ))}
       </View>
-    </Card>
-  );
-}
-
-/** Strafen der Saison: offen, bezahlt, die letzten drei. */
-export function StrafenKarte({ jahr, memberId, strafen, kategorien }: { jahr: string; memberId: string; strafen: StrafLog[]; kategorien: StrafKategorieDef[] }) {
-  const c = useColors();
-  const styles = useThemedStyles(makeStyles);
-  const offen = strafen.filter((l) => !l.beglichen).reduce((s, l) => s + l.betrag, 0);
-  const bezahlt = strafen.filter((l) => l.beglichen);
-  const zuletzt = [...strafen].sort((a, b) => b.loggedAt.localeCompare(a.loggedAt)).slice(0, 3);
-  return (
-    <Card enterIndex={4} style={{ gap: 12 }}>
-      <SectionLabel action={{ label: "Strafen", onPress: () => router.push(`/kasse?tab=strafen&memberId=${memberId}`) }}>{`Strafen ${jahr}`}</SectionLabel>
-      <View style={styles.zeile}>
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.strafWert, { color: offen > 0 ? c.coralText : c.successText }]} maxFontSizeMultiplier={MAX_FONT_SCALE}>{formatBetrag(offen)}</Text>
-          <Text style={styles.meta}>{offen > 0 ? "offen" : "offen · alles beglichen"}</Text>
-        </View>
-        <View style={[styles.senkrecht, { backgroundColor: c.border }]} />
-        <View style={{ flex: 1, paddingLeft: 14 }}>
-          <Text style={styles.strafWert} maxFontSizeMultiplier={MAX_FONT_SCALE}>{formatBetrag(bezahlt.reduce((s, l) => s + l.betrag, 0))}</Text>
-          <Text style={styles.meta}>{`gezahlt · ${bezahlt.length} ${bezahlt.length === 1 ? "Strafe" : "Strafen"}`}</Text>
-        </View>
-      </View>
-      {zuletzt.length > 0 ? (
-        <View style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border, paddingTop: 10 }}>
-          <Text style={styles.label}>Zuletzt</Text>
-          {zuletzt.map((l, i) => {
-            const kat = kategorien.find((k) => k.id === l.kategorie);
-            const was = kat?.systemKey === "sonstiges" && l.notiz ? l.notiz : kat?.label ?? "Strafe";
-            return (
-              // Strafe mit Abend öffnet den Abend, sonst die eigenen Strafen in der Kasse.
-              <PressableScale
-                key={l.id}
-                onPress={() => router.push(l.terminId ? `/termin/${l.terminId}` : `/kasse?tab=strafen&memberId=${memberId}`)}
-                scaleTo={0.98}
-                style={[styles.strafZeile, i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border }]}
-                accessibilityRole="link"
-                accessibilityLabel={`${was}, ${formatBetrag(l.betrag)}, ${l.beglichen ? "bezahlt" : "offen"}. ${l.terminId ? "Termin öffnen" : "In der Kasse zeigen"}`}
-              >
-                <KategorieIcon kat={kat} size={36} />
-                <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={styles.strafName} numberOfLines={1}>{was}</Text>
-                  <Text style={styles.meta} numberOfLines={1}>{`${formatWochentagDatum(new Date(l.loggedAt))} · ${l.beglichen ? "bezahlt" : "offen"}`}</Text>
-                </View>
-                <Text style={[styles.strafBetrag, !l.beglichen && { color: c.coralText }]}>{formatBetrag(l.betrag)}</Text>
-              </PressableScale>
-            );
-          })}
-        </View>
-      ) : (
-        <Text style={styles.meta}>Keine Strafen in dieser Saison.</Text>
-      )}
     </Card>
   );
 }
@@ -244,6 +225,9 @@ const makeStyles = (c: ThemeColors) =>
     titelJahr: { ...TYPE.num, fontSize: 20, color: c.textDark },
     titelName: { fontFamily: FONT.w600, fontSize: 12, color: c.textMid },
 
+    zeitraum: { flexDirection: "row", borderRadius: 999, padding: 3 },
+    zeitraumOption: { minHeight: 30, paddingHorizontal: 12, borderRadius: 999, justifyContent: "center" },
+    zeitraumText: { fontFamily: FONT.w700, fontSize: 12 },
     bilanzRaster: { flexDirection: "row", flexWrap: "wrap", marginHorizontal: -5 },
     bilanzZelle: { width: "50%", padding: 5 },
     bilanzKachel: { borderRadius: RADIUS.tile, padding: 12, gap: 4, minHeight: 116 },
@@ -252,11 +236,7 @@ const makeStyles = (c: ThemeColors) =>
     bilanzWert: { ...TYPE.num, fontSize: 22, marginTop: 6 },
     bilanzLabel: { ...TYPE.caption, fontSize: 13, color: c.textMuted },
 
-    strafWert: { ...TYPE.num, fontSize: 22, color: c.textDark },
-    senkrecht: { width: StyleSheet.hairlineWidth, alignSelf: "stretch" },
-    strafZeile: { flexDirection: "row", alignItems: "center", gap: 12, minHeight: 56, paddingVertical: 6 },
     strafName: { fontFamily: FONT.w700, fontSize: 15, color: c.textDark },
-    strafBetrag: { ...TYPE.num, fontSize: 17, color: c.textDark },
 
     abend: { flexDirection: "row", alignItems: "center", gap: 12, minHeight: 56, paddingVertical: 6 },
     abendPunkt: { width: 10, height: 10, borderRadius: 5 },
