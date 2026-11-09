@@ -4,24 +4,26 @@ import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeIn, FadeOut, LinearTransition } from "react-native-reanimated";
 import { FONT, TYPE, ThemeColors } from "../../../constants/design";
 import { useColors, useThemedStyles } from "../../../contexts/ThemeContext";
-import { Card, PressableScale, haptik } from "../../ui";
+import { Card, IconSquircle, PressableScale, Ton, haptik } from "../../ui";
 
 export interface VerlaufEintrag {
   id: string;
   /** Uhrzeit, z. B. „20:45"; fehlt, wenn es keine gibt. */
   zeit?: string;
-  symbol?: React.ReactNode;
+  /** Symbol im getönten Kästchen – in allen Bereichen gleich groß. */
+  emoji: string;
+  ton?: Ton;
   wer: string;
   was?: string;
-  /** Rechts, z. B. der Betrag. */
+  /** Rechts der Wert, z. B. Betrag oder Minuten. */
   rechts?: string;
   /** × zum Zurücknehmen; ohne gibt es keins. */
   loeschen?: () => Promise<void>;
 }
 
 /**
- * Verlauf eines Live-Bereichs (Anwesenheit, Strafen, Spiel) als schlichte
- * Liste: Uhrzeit, wer, was, ggf. Betrag und × zum Zurücknehmen.
+ * Verlauf eines Live-Bereichs (Verspätungen, Strafen, Spiel), überall gleich
+ * gebaut: Uhrzeit, Symbol, wer · was, rechts der Wert und × zum Zurücknehmen.
  */
 export function VerlaufListe({ titel, eintraege, leer, fuss }: { titel: string; eintraege: VerlaufEintrag[]; leer?: string; fuss?: React.ReactNode }) {
   const c = useColors();
@@ -36,7 +38,7 @@ export function VerlaufListe({ titel, eintraege, leer, fuss }: { titel: string; 
         {eintraege.map((e, i) => (
           <Animated.View key={e.id} entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)} layout={LinearTransition} style={[styles.zeile, i > 0 && styles.trenner]}>
             <Text style={styles.zeit}>{e.zeit ?? "–"}</Text>
-            {e.symbol}
+            <IconSquircle emoji={e.emoji} ton={e.ton ?? "neutral"} size={28} />
             <Text style={styles.text} numberOfLines={2}>
               <Text style={styles.wer}>{e.wer}</Text>
               {e.was ? ` · ${e.was}` : ""}

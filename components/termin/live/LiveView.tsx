@@ -4,12 +4,10 @@ import { useThemedStyles } from "../../../contexts/ThemeContext";
 import { ThemeColors } from "../../../constants/design";
 import { TerminAbend } from "../../../utils/useTerminAbend";
 import { abendStats } from "../../../utils/abendStats";
-import { hauptEreignis } from "../../../utils/spiel";
 import { showAlert } from "../../../utils/alert";
 import { Button, SegmentedTabs, TabItem } from "../../ui";
 import { Heute } from "./Heute";
 import { StrafenErfassen } from "./StrafenErfassen";
-import { formatBetrag } from "../../../utils/format";
 import { SpielZaehler } from "./SpielZaehler";
 
 export type LiveBereich = "anwesend" | "strafen" | "spiel";
@@ -41,17 +39,10 @@ export function LiveView({ abend, start, now, startBereich, onZusagen }: {
   // Für Strafen auch, wer nicht da ist (z. B. „unentschuldigt fehlen“).
   const nichtDa = mitglieder.filter((m) => !t.anwesenheit?.includes(m.id));
 
-  const spielStrafen = new Set(Object.values(abend.spielLogMap).flat().map((l) => l.strafLogId).filter(Boolean));
-  // Dieselbe Summe wie Danach, Home und Kasse: Strafen inklusive Spiel, der Spielanteil extra genannt.
-  const alleStrafen = Object.values(abend.strafMap).flat();
-  const strafenSumme = alleStrafen.reduce((s, l) => s + l.betrag, 0);
-  const spielSumme = alleStrafen.filter((l) => spielStrafen.has(l.id)).reduce((s, l) => s + l.betrag, 0);
-  const haupt = hauptEreignis(abend.ereignisTypen);
-  const hauptAnzahl = haupt ? Object.values(abend.spielLogMap).flat().filter((l) => l.ereignisTypId === haupt.id).length : 0;
-
-  const items: TabItem<Bereich>[] = [{ key: "anwesend", label: "Heute", sub: `${da.length} dabei` }];
-  if (abend.verordnung.tabStrafenAktiv !== false) items.push({ key: "strafen", label: "Strafen", sub: spielSumme > 0 ? `${formatBetrag(strafenSumme)} · ${formatBetrag(spielSumme)} Spiel` : formatBetrag(strafenSumme) });
-  if (abend.aktivesSpiel) items.push({ key: "spiel", label: abend.aktivesSpiel.name, sub: haupt ? `${hauptAnzahl}× ${haupt.label}` : undefined });
+  // Nur die Überbegriffe; Zahlen stehen in den Bereichen selbst.
+  const items: TabItem<Bereich>[] = [{ key: "anwesend", label: "Heute" }];
+  if (abend.verordnung.tabStrafenAktiv !== false) items.push({ key: "strafen", label: "Strafen" });
+  if (abend.aktivesSpiel) items.push({ key: "spiel", label: abend.aktivesSpiel.name });
   const aktiv = items.some((i) => i.key === bereich) ? bereich : "anwesend";
   const strafenAn = items.some((i) => i.key === "strafen");
   const wechseln = (b: Bereich) => { setStrafeFuer(null); setBereich(b); };

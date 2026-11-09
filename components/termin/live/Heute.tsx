@@ -11,6 +11,7 @@ import { formatUhrzeit } from "../../../utils/date";
 import { Avatar, Button, Card, PressableScale, Sheet, haptik } from "../../ui";
 import { Agenda } from "../Agenda";
 import { VerlaufListe } from "./VerlaufListe";
+import { SYMBOL } from "../../../constants/symbole";
 
 /** Vorschlag, wenn noch keine Verspätung eingetragen ist. */
 const SPAET_VORSCHLAG_MIN = 15;
@@ -103,8 +104,11 @@ export function Heute({ abend, dabei, start, onStrafe, onZusagen }: {
     .map(({ m, min }) => ({
       id: m.id,
       zeit: start ? formatUhrzeit(new Date(start.getTime() + min * 60_000).toISOString()) : undefined,
+      emoji: SYMBOL.zuSpaet,
+      ton: "coral" as const,
       wer: displayName(m),
-      was: `+${min} Min.${spaetGrund(m.id) ? ` · ${spaetGrund(m.id)}` : ""}`,
+      was: spaetGrund(m.id) ?? "zu spät",
+      rechts: `+${min} Min.`,
       loeschen: async () => { for (const log of spaetLogs(m.id)) await abend.verspätungLöschen(m.id, log.id); },
     }));
 

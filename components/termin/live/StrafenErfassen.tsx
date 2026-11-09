@@ -9,7 +9,7 @@ import { TerminAbend } from "../../../utils/useTerminAbend";
 import { displayName, formatBetrag } from "../../../utils/format";
 import { formatUhrzeit } from "../../../utils/date";
 import { SYMBOL } from "../../../constants/symbole";
-import { Avatar, Card, Emoji, KategorieIcon, PressableScale, Sheet, haptik, tonFarben, tonFuer } from "../../ui";
+import { Avatar, Card, Emoji, PressableScale, Sheet, haptik, kategorieSymbol, tonFarben, tonFuer } from "../../ui";
 import { VerlaufListe } from "./VerlaufListe";
 
 /** So lange bleibt „Rückgängig“ nach dem Eintragen stehen. */
@@ -51,11 +51,11 @@ export function StrafenErfassen({ abend, dabei, andere, vorauswahl }: {
   const alle = [...dabei, ...andere];
   const vorPerson = alle.find((m) => m.id === fuer);
   const kat = (id: string) => abend.strafKategorien.find((k) => k.id === id);
-  const spielStrafen = new Set(Object.values(abend.spielLogMap).flat().map((s) => s.strafLogId).filter(Boolean));
-  // Stand und Summe zählen alle Strafen des Abends (wie der Tab oben); im
-  // Verlauf fehlen die aus dem Spiel, die stehen im Spiel-Tab.
+  // Strafen aus dem Spiel gehören auch hierher: im Stand, in der Summe und im
+  // Verlauf (mit Spielname). Zurückgenommen werden sie über das Spiel, damit
+  // Spiel-Eintrag und Strafe zusammen verschwinden.
+  const spielLogZuStrafe = new Map(Object.values(abend.spielLogMap).flat().filter((s) => s.strafLogId).map((s) => [s.strafLogId!, s]));
   const alleHeute: StrafLog[] = Object.values(abend.strafMap).flat().sort((a, b) => b.loggedAt.localeCompare(a.loggedAt));
-  const verlauf = alleHeute.filter((l) => !spielStrafen.has(l.id));
   const summe = alleHeute.reduce((s, l) => s + l.betrag, 0);
   const label = (l: StrafLog) => {
     const k = kat(l.kategorie);
@@ -222,17 +222,21 @@ export function StrafenErfassen({ abend, dabei, andere, vorauswahl }: {
 
       <VerlaufListe
         titel="Verlauf"
-        eintraege={verlauf.map((l) => {
+        eintraege={alleHeute.map((l) => {
           const k = kat(l.kategorie);
           const m = abend.members.find((x) => x.id === l.memberId);
+          const spielLog = spielLogZuStrafe.get(l.id);
+          const was = [label(l), spielLog ? abend.aktivesSpiel?.name ?? "Spiel" : null, l.beglichen ? "bezahlt" : null].filter(Boolean).join(" · ");
           return {
             id: l.id,
             zeit: formatUhrzeit(l.loggedAt),
-            symbol: <KategorieIcon kat={k} size={24} />,
+            ...kategorieSymbol(k),
             wer: m ? displayName(m) : "?",
-            was: l.beglichen ? `${label(l)} · bezahlt` : label(l),
+            was,
             rechts: formatBetrag(l.betrag),
-            loeschen: () => abend.strafeLöschen(l.memberId, l.id),
+            loeschen: spielLog
+              ? () => abend.spielEreignisLöschen(spielLog.memberId, spielLog.id)
+              : () => abend.strafeLöschen(l.memberId, l.id),
           };
         })}
       />

@@ -6,7 +6,7 @@ import { useColors, useThemedStyles } from "../../../contexts/ThemeContext";
 import { TerminAbend } from "../../../utils/useTerminAbend";
 import { displayName, formatBetrag } from "../../../utils/format";
 import { showAlert } from "../../../utils/alert";
-import { Avatar, Card, CountBurst, Emoji, PressableScale, Ton, haptik } from "../../ui";
+import { Avatar, Card, CountBurst, Emoji, PressableScale, Ton, haptik, tonFuer } from "../../ui";
 import { formatUhrzeit } from "../../../utils/date";
 import { VerlaufListe } from "./VerlaufListe";
 
@@ -88,7 +88,8 @@ export function SpielZaehler({ abend, mitglieder }: { abend: TerminAbend; mitgli
       return {
         id: l.id,
         zeit: formatUhrzeit(l.loggedAt),
-        symbol: typ.emoji ? <Emoji size={16}>{typ.emoji}</Emoji> : undefined,
+        emoji: typ.emoji ?? "🎲",
+        ton: tonFuer(typ.id),
         wer: m ? displayName(m) : "?",
         was: typ.label,
         rechts: strafe ? formatBetrag(strafe.betrag) : undefined,
