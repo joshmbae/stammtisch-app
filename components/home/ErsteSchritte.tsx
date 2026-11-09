@@ -23,8 +23,9 @@ async function schluessel(): Promise<string> {
 /**
  * Checkliste für neue Stammtische auf Home: vier Schritte (Grunddaten, Admin,
  * Runde einladen, erster Termin), die sich von selbst abhaken. Darunter
- * „Auch möglich“ – Satzung, Strafenkatalog, Spiele – als Hinweis, was es noch
- * gibt, ohne dass es abgearbeitet werden muss. Verschwindet, wenn die vier
+ * „Wenn ihr mögt“ – Satzung festlegen, Strafen einstellen, Spiel anlegen –
+ * als Hinweis, was es noch gibt (alles auch später in der Runde), ohne dass
+ * es abgearbeitet werden muss. Verschwindet, wenn die vier
  * erledigt sind, von Hand ausgeblendet wurde oder der Stammtisch schon
  * mehrere Abende hinter sich hat.
  */
@@ -89,9 +90,9 @@ export function ErsteSchritte({ verordnung, members, termine, ich }: {
   ];
   const fertig = schritte.filter((s) => s.erledigt).length;
   const extras: { key: string; emoji: string; ton: Ton; titel: string; route: string }[] = [
-    { key: "satzung", emoji: SYMBOL.satzung, ton: "green", titel: "Satzung", route: "/satzung" },
-    { key: "strafen", emoji: SYMBOL.strafenkatalog, ton: "coral", titel: "Strafen", route: "/strafen-kategorien" },
-    { key: "spiele", emoji: SYMBOL.spiele, ton: "mustard", titel: "Spiele", route: "/spiele" },
+    { key: "satzung", emoji: SYMBOL.satzung, ton: "green", titel: "Satzung festlegen", route: "/satzung" },
+    { key: "strafen", emoji: SYMBOL.strafenkatalog, ton: "coral", titel: "Strafen einstellen", route: "/strafen-kategorien" },
+    { key: "spiele", emoji: SYMBOL.spiele, ton: "mustard", titel: "Spiel anlegen", route: "/spiele" },
   ];
   if (fertig === schritte.length) return null;
 
@@ -137,8 +138,7 @@ export function ErsteSchritte({ verordnung, members, termine, ich }: {
         ),
       )}
       <View style={styles.extrasKopf}>
-        <Text style={styles.extrasTitel}>Auch möglich</Text>
-        <Text style={styles.meta}>wenn ihr mögt</Text>
+        <Text style={styles.extrasTitel}>Wenn ihr mögt</Text>
       </View>
       <View style={styles.extras}>
         {extras.map((e) => (
@@ -151,10 +151,11 @@ export function ErsteSchritte({ verordnung, members, termine, ich }: {
             accessibilityLabel={`${e.titel} einrichten`}
           >
             <IconSquircle emoji={e.emoji} ton={e.ton} size={30} />
-            <Text style={styles.extraText} numberOfLines={1}>{e.titel}</Text>
+            <Text style={styles.extraText} numberOfLines={2}>{e.titel}</Text>
           </PressableScale>
         ))}
       </View>
+      <Text style={styles.extrasHinweis}>Findet ihr auch später alles in der Runde.</Text>
     </Card>
   );
 }
@@ -176,6 +177,7 @@ const makeStyles = (c: ThemeColors) =>
     extrasKopf: { flexDirection: "row", alignItems: "baseline", gap: 8, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border, paddingTop: 12, marginTop: 2 },
     extrasTitel: { ...TYPE.label, color: c.textMuted },
     extras: { flexDirection: "row", gap: 8 },
-    extra: { flex: 1, minWidth: 0, alignItems: "center", gap: 6, paddingVertical: 10, borderRadius: RADIUS.md },
-    extraText: { fontFamily: FONT.w600, fontSize: 13, color: c.textDark },
+    extra: { flex: 1, minWidth: 0, alignItems: "center", gap: 6, paddingVertical: 10, paddingHorizontal: 6, borderRadius: RADIUS.md },
+    extraText: { fontFamily: FONT.w600, fontSize: 13, lineHeight: 17, color: c.textDark, textAlign: "center" },
+    extrasHinweis: { ...TYPE.caption, fontSize: 13, color: c.textMuted, textAlign: "center" },
   });
