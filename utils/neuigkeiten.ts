@@ -5,7 +5,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
  * für das nächste große Update eine neue Id vergeben, dann sehen alle den
  * Screen wieder einmal.
  */
-export const NEUIGKEITEN_ID = "redesign-2026-10";
+export const NEUIGKEITEN_ID = "release-1.9.0";
 const KEY = `st_neuigkeiten_${NEUIGKEITEN_ID}`;
 
 export async function neuigkeitenGesehen(): Promise<boolean> {

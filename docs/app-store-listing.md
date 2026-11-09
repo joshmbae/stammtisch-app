@@ -1,4 +1,4 @@
-# App Store Connect — Einreichung DeinStammtisch v1.8.0
+# App Store Connect — Einreichung DeinStammtisch v1.9.0
 
 Alles, was in App Store Connect einzutragen ist, in der Reihenfolge der Oberfläche.
 Zeichenlimits sind geprüft. Die App-ID `6789122309` (ascAppId in `eas.json`) existiert bereits.
@@ -18,20 +18,20 @@ Zeichenlimits sind geprüft. Die App-ID `6789122309` (ascAppId in `eas.json`) ex
 3. **AVV mit Supabase:** Gilt automatisch als Teil der Nutzungsbedingungen, nichts zu unterschreiben
    (https://supabase.com/legal/dpa, Vertragspartner Supabase Pte. Ltd., Singapur; SCCs in Schedule 2).
    Eine Kopie mit Datum für die eigenen Unterlagen speichern (z. B. als PDF).
-4. **Prod-Datenbank auf Stand bringen** (alle Dateien in `supabase/migrations/` seit 1.7.0):
-   - `2026-10-29-ranglisten-richtung.sql` (dev. → public.)
-   - `2026-10-31-versuche-begrenzen.sql` (dev. → public.)
-   - `2026-11-01-admins.sql` (dev. → public.) – vor dem Ausliefern, sonst scheitert das Speichern, wenn jemand „Admin“ einschaltet
-   - `2026-10-31-avatars-bucket-absichern.sql` (einmal, wie sie ist – Storage ist für dev und Prod gleich; erst wenn alle 1.8.0 haben)
-   Danach in der App testen: beitreten, PIN, Profilfoto/Terminfoto/Logo hochladen, ersetzen, entfernen.
+4. **Prod-Datenbank:** Für 1.9.0 gibt es **keine neue Migration**. Die letzte
+   (`2026-11-01-admins.sql`) gehörte zu 1.8.0 und ist in `public` angekommen
+   (Spalte `members.ist_admin` geprüft am 09.11.2026). Falls von der 1.8.0-Liste
+   noch `2026-10-31-avatars-bucket-absichern.sql` offen ist: erst ausführen, wenn
+   alle mindestens 1.8.0 haben.
+   `supabase/seed/demo-mehr-daten.sql` ist nur für dev – **nicht** gegen `public` ausführen.
 5. **Build hochladen:**
    ```bash
-   eas build --platform ios --profile production
-   eas submit --platform ios --latest
+   eas build --platform all --profile production
+   eas submit --platform all --latest
    ```
    Processing dauert 15–60 Minuten; erst dann ist der Build in der Version auswählbar.
 
-## 1. Version 1.8.0 — Seite „Distribution → iOS-App → 1.8.0“
+## 1. Version 1.9.0 — Seite „Distribution → iOS-App → 1.9.0“
 
 ### Promotional Text (max. 170 Zeichen, jederzeit ohne Review änderbar)
 ```
@@ -96,18 +96,20 @@ Leer lassen (optional).
 
 ### What's New in This Version (max. 4000 Zeichen)
 ```
-Das ist neu:
+Der Abend geht noch schneller von der Hand:
 
-• Rückblick als Bild: nach dem Abend mit eurem Foto und den Siegern des Abends teilen, z. B. in die WhatsApp-Gruppe
-• Neuer Dunkel-Modus: ruhig und warm, umschaltbar in der Runde
-• Tabelle übersichtlicher: alle Wertungen auf einen Blick, je Rangliste einstellbar, ob viel oder wenig gut ist
-• Stammtisch wechseln: die App merkt sich eure Runden, zurück geht's mit einem Tipp
-• Admins: Einstellungen, Ranglisten und das Löschen fremder Profile sind für Admins, alles andere bleibt für alle
-• Countdown zum nächsten Abend als Klappkarten
-• Kompaktere Termin-Übersicht, Absagen mit Grund übersichtlicher
-• Mehr Sicherheit: begrenzte Fehlversuche bei Passwort und PIN, Fotos werden beim Löschen mit entfernt
-• Viele kleine Verbesserungen bei Beträgen, Texten und Kontrasten
+• Live-Abend aufgeräumt: oben immer sichtbar, ob Vorher, Live oder Danach – darunter Heute, Strafen und euer Spiel. Das Foto vom Abend ist schon während des Abends zu sehen.
+• Strafen mit zwei Tipps: der ganze Katalog als Kacheln, Strafe und Person antippen, fertig – mit „Rückgängig“.
+• Verspätung schnell eintragen: unter „Heute“ die Person antippen und Minuten eintragen.
+• Agenda auch am Abend, mit Namen, wer den Punkt eingetragen hat.
+• Direkt bezahlen: offene Strafen mit einem Tipp per PayPal zahlen, bei paypal.me ist der Betrag schon eingetragen.
+• Rückblick-Bild mit allen Siegern bei Gleichstand und der Anwesenheit in Prozent.
+• Profil: Bilanz fürs Jahr oder „Allzeit“, offene Strafen deutlich sichtbar, Profilbilder groß ansehen.
+• Dein Profilbild oben auf Home: Profil, Offenes, Hell/Dunkel und Einstellungen mit einem Tipp.
+• Neue Runde gründen: Schritt für Schritt mit Einladung, erstem Termin und Admin – als Checkliste auf Home.
+• Außerdem: „Die Runde“ aufgeräumt, auf Wunsch Veranstaltungen oben auf Home, viele kleine Verbesserungen und Fehlerbehebungen.
 ```
+(ca. 1.120 Zeichen)
 
 ## 2. App-Informationen (links unter „Allgemein“)
 
@@ -156,9 +158,9 @@ Alle erfassten Daten: **mit der Identität verknüpft = Ja**, **Tracking = Nein*
 
 **Nicht erfasst:** E-Mail, Telefon, Standort, Kontakte, Browserverlauf, Nutzungsdaten/Analytics, Diagnosedaten, Zahlungsdaten.
 
-## 5. Screenshots — für 1.8.0 neu aufnehmen
+## 5. Screenshots — für 1.9.0 die Live-Bilder erneuern
 
-Die alten Screenshots zeigen das Design vor 1.7.0 und sollten ersetzt werden. Aufnehmen im Simulator (iPhone 16/17 Pro Max = 6,9", 1320 × 2868) gegen den Demo-Stammtisch, Statusleiste auf 9:41, erfundene Namen und Beträge. Ablage lokal in `store-assets/iphone-6.9/` (nicht im Repo).
+Für 1.9.0 haben sich vor allem der Live-Abend (Phasen oben, Tab „Heute“, Strafenkatalog als Kacheln) und die Home-Live-Karte geändert. Bild 2 neu aufnehmen; die übrigen 1.8.0-Bilder können bleiben, wenn sie das aktuelle Design zeigen. Aufnehmen im Simulator (iPhone 16/17 Pro Max = 6,9", 1320 × 2868) gegen den Demo-Stammtisch, Statusleiste auf 9:41, erfundene Namen und Beträge. Ablage lokal in `store-assets/iphone-6.9/` (nicht im Repo).
 
 **iPad:** `supportsTablet` ist ab 1.8.0 aus. Es werden keine iPad-Screenshots mehr gebraucht; die App läuft auf dem iPad im iPhone-Modus.
 
@@ -215,7 +217,7 @@ Hinweise:
 
 ## 8. Build zuordnen & einreichen
 
-1. Version 1.8.0 → „Build“ → „+“ → den hochgeladenen Build auswählen.
+1. Version 1.9.0 → „Build“ → „+“ → den hochgeladenen Build auswählen.
 2. Alle Pflichtfelder prüfen (Screenshots, Beschreibung, Support-URL, Datenschutz, Review-Kontakt).
 3. „Zur Prüfung hinzufügen“ → „Zur Prüfung einreichen“.
 4. Release-Methode: „Manuell veröffentlichen“ empfohlen, dann bestimmt ihr den Zeitpunkt nach Freigabe.
@@ -256,6 +258,24 @@ eingeladen. Quelle: [Expos Anleitung](https://expo.fyi/creating-google-service-a
 7. **Schlüssel hochladen**: beim ersten `eas submit --platform android` fragt die
    CLI nach der JSON-Datei und legt sie bei EAS ab. Danach kann die lokale Datei weg.
 
+## Versionshinweise 1.9.0 für Google Play (max. 500 Zeichen)
+
+Play Console → Release → „Versionshinweise“ → Deutsch (de-DE):
+```
+<de-DE>
+Neu in 1.9:
+• Live-Abend aufgeräumt: Vorher, Live, Danach immer oben, Foto schon am Abend sichtbar
+• Strafen mit zwei Tipps, mit Rückgängig
+• Verspätung schnell eintragen, Agenda auch live
+• Offene Strafen direkt per PayPal zahlen
+• Rückblick mit allen Siegern und Anwesenheit
+• Profil: Bilanz fürs Jahr oder Allzeit
+• Neue Runde gründen mit Checkliste
+• Viele Verbesserungen und Fehlerbehebungen
+</de-DE>
+```
+(ca. 400 Zeichen ohne die Tags; die `<de-DE>`-Tags nur beim Einfügen über „Release-Hinweise für alle Sprachen“, sonst weglassen.)
+
 ## Bei jedem Release
 
 ```bash
@@ -263,9 +283,15 @@ eas build --platform all --profile production
 eas submit --platform all --latest
 ```
 
-`eas.json` schickt Android in den Track `internal` (Gegenstück zu TestFlight).
-Für eine öffentliche Veröffentlichung `submit.production.android.track` auf
-`production` setzen.
+`eas.json` schickt Android seit 1.9.0 in den Track **`production`** (öffentlich).
+Für reine Testversionen vorübergehend wieder `internal` eintragen.
+
+**Wichtig für die erste öffentliche Veröffentlichung:** Private Entwicklerkonten,
+die nach dem 13.11.2023 angelegt wurden, müssen vor dem ersten Produktions-Release
+einen **geschlossenen Test mit mindestens 12 Testern über 14 Tage** abschließen.
+Ist das noch nicht erfolgt, lehnt Google den Upload in `production` ab – dann zuerst
+in den Track `alpha` (geschlossener Test) und den Produktionszugriff in der Play
+Console beantragen. Prüfen unter Play Console → Dashboard → „Produktionszugriff“.
 
 **Achtung bei der allerersten Veröffentlichung:** Die Google-API darf keinen
 neuen Store-Eintrag anlegen. War die App noch nie im Play Store, muss die erste

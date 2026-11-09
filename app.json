@@ -3,7 +3,7 @@
     "name": "DeinStammtisch",
     "slug": "stammtisch-app",
     "scheme": "stammtisch-app",
-    "version": "1.8.0",
+    "version": "1.9.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",

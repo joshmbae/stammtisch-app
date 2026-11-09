@@ -11,12 +11,13 @@ import StammtischLogo from "../components/StammtischLogo";
 import { Button, Card, IconSquircle, Ton } from "../components/ui";
 
 const NEU: { emoji: string; ton: Ton; titel: string; text: string }[] = [
-  { emoji: SYMBOL.navigation, ton: "blue", titel: "Neue Leiste unten", text: "Home, Termine, Kasse, Tabelle und Runde – immer nur einen Tipp entfernt." },
-  { emoji: SYMBOL.live, ton: "green", titel: "Live-Abend", text: "Zur Startzeit öffnet sich direkt der laufende Abend – Strafen und Spiel mit einem Tipp." },
-  { emoji: SYMBOL.kasse, ton: "mustard", titel: "Kasse an einem Ort", text: "Strafen, Rechnungen und Buchungen zusammen – offene Strafen direkt begleichen." },
-  { emoji: SYMBOL.pokal, ton: "mustard", titel: "Wer führt, sieht man", text: "Wer eine Wertung anführt, trägt ihr Symbol am Profilbild. Deine Plätze stehen auf Home." },
-  { emoji: SYMBOL.erinnern, ton: "coral", titel: "Erinnern per Push", text: "Wer noch nicht zugesagt hat, bekommt mit einem Tipp eine Erinnerung." },
-  { emoji: SYMBOL.neu, ton: "blue", titel: "Dunkel-Modus", text: "Neben Hell gibt’s einen ruhigen Dunkel-Modus – umschalten in der Runde." },
+  { emoji: SYMBOL.live, ton: "green", titel: "Live-Abend aufgeräumt", text: "Oben siehst du, ob Vorher, Live oder Danach. Darunter Heute, Strafen und euer Spiel – mit dem Foto vom Abend." },
+  { emoji: SYMBOL.strafe, ton: "coral", titel: "Strafen mit zwei Tipps", text: "Der ganze Katalog als Kacheln: Strafe antippen, Person antippen, fertig. Vertippt? Einfach rückgängig." },
+  { emoji: SYMBOL.zuSpaet, ton: "coral", titel: "Verspätung eintragen", text: "Unter Heute siehst du, wer da ist. Wer zu spät kam: antippen, Minuten eintragen." },
+  { emoji: SYMBOL.protokoll, ton: "blue", titel: "Agenda am Abend", text: "Die Agenda gibt's jetzt auch live – mit Namen, wer den Punkt eingetragen hat." },
+  { emoji: SYMBOL.einnahme, ton: "green", titel: "Direkt bezahlen", text: "Offene Strafen mit einem Tipp per PayPal zahlen, der Betrag ist schon eingetragen." },
+  { emoji: SYMBOL.pokal, ton: "mustard", titel: "Rückblick und Profil", text: "Der Rückblick zeigt alle Sieger und die Anwesenheit. Im Profil: Bilanz fürs Jahr oder Allzeit." },
+  { emoji: SYMBOL.bearbeiten, ton: "blue", titel: "Dein Profilbild oben", text: "Ein Tipp darauf: dein Profil, was du noch offen hast, Hell/Dunkel und die Einstellungen." },
 ];
 
 /**
@@ -45,8 +46,8 @@ export default function NeuigkeitenScreen() {
               <Text style={[styles.badgeText, { color: c.onMustard }]}>NEU</Text>
             </View>
           </View>
-          <Text style={styles.titel} accessibilityRole="header">Alles neu am Stammtisch</Text>
-          <Text style={styles.text}>Neues Gesicht und am Abend viel schneller. Das Wichtigste auf einen Blick:</Text>
+          <Text style={styles.titel} accessibilityRole="header">Neu in 1.9</Text>
+          <Text style={styles.text}>Der Abend geht noch schneller von der Hand. Das Wichtigste auf einen Blick:</Text>
         </Animated.View>
 
         <Card style={styles.liste}>
