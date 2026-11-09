@@ -112,19 +112,27 @@ function Vorher({ hero, now, members, stammtischzeit, meinStatus, onRsvp, rsvpBu
   const halbTransparent = "rgba(255,255,255,0.14)";
   const dabei = meinStatus === "ja";
   const abgesagt = meinStatus === "nein";
-  const was = t.art === "stammtisch" ? "Nächster Stammtisch" : `Nächste Veranstaltung${t.titel ? ` · ${t.titel}` : ""}`;
+  const stammtisch = t.art === "stammtisch";
+  const was = stammtisch ? "Nächster Stammtisch" : "Nächste Veranstaltung";
+  // Neben dem Umschalter („Nächster · Letzter“) reicht die Art; der Titel einer
+  // Veranstaltung steht in der Zeile darunter über die volle Breite.
+  const label = umschalter ? (stammtisch ? "Stammtisch" : "Veranstaltung") : was;
+  const wann = `${formatWochentagDatum(new Date(`${t.datum}T00:00:00`))} · ${zeitText(start)}`;
 
   return (
-    <PressableScale onPress={() => oeffne(t.id)} onLayout={(e) => { vorherHoehe = e.nativeEvent.layout.height; }} scaleTo={0.99} style={[styles.hero, flaeche]} accessibilityLabel={`${was}, ${formatWochentagDatum(new Date(`${t.datum}T00:00:00`))}, öffnen`}>
-      <View style={styles.row}>
-        <View style={{ flex: 1, minWidth: 0, gap: 6 }}>
-          <Text style={[styles.label, { color: c.heroBlueSub }]} numberOfLines={1}>{was}</Text>
-          <View style={styles.datumZeile}>
-            <Text style={[styles.chipText, { color: c.onHeroBlue }]} numberOfLines={1}>{`${formatWochentagDatum(new Date(`${t.datum}T00:00:00`))} · ${zeitText(start)}`}</Text>
-            <Ionicons name="chevron-forward" size={14} color={c.onHeroBlue} />
-          </View>
+    <PressableScale onPress={() => oeffne(t.id)} onLayout={(e) => { vorherHoehe = e.nativeEvent.layout.height; }} scaleTo={0.99} style={[styles.hero, flaeche]} accessibilityLabel={`${was}${t.titel && !stammtisch ? ` ${t.titel}` : ""}, ${formatWochentagDatum(new Date(`${t.datum}T00:00:00`))}, öffnen`}>
+      <View style={{ gap: 6 }}>
+        <View style={styles.row}>
+          <Text style={[styles.label, { color: c.heroBlueSub, flexShrink: 1 }]} numberOfLines={1}>{label}</Text>
+          {umschalter ? <HeroUmschalter {...umschalter} hell /> : null}
         </View>
-        {umschalter ? <HeroUmschalter {...umschalter} hell /> : null}
+        <View style={styles.datumZeile}>
+          <Text style={[styles.chipText, { color: c.onHeroBlue, flexShrink: 1 }]} numberOfLines={1}>
+            {!stammtisch && t.titel ? <Text style={{ fontFamily: FONT.w800 }}>{`${t.titel} · `}</Text> : null}
+            {wann}
+          </Text>
+          <Ionicons name="chevron-forward" size={14} color={c.onHeroBlue} />
+        </View>
       </View>
       <FlipCountdown ziel={start} now={now} tileColor={c.heroBlueInner} digitColor={c.heroBlueSub} labelColor={c.onHeroBlue} />
       <View style={[styles.row, { gap: 12 }]}>
