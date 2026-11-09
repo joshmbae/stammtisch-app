@@ -172,7 +172,11 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
   ].map(siegerVon).filter((x): x is RueckblickSieger => !!x);
   const bildFuss = [
     stats.strafenSumme > 0 ? `${formatBetrag(stats.strafenSumme)} für die Kasse` : null,
-    stats.fehlten.length === 0 ? "Alle waren da 🎉" : `${stats.fehlten.map(displayName).join(", ")} ${stats.fehlten.length === 1 ? "hat" : "haben"} gefehlt`,
+    // Bis zwei Namen ausschreiben, sonst nur die Zahl – damit die Zeile ins Bild passt.
+    stats.fehlten.length === 0 ? "Alle waren da 🎉"
+      : stats.fehlten.length === 1 ? `${displayName(stats.fehlten[0])} hat gefehlt`
+      : stats.fehlten.length === 2 ? `${stats.fehlten.map(displayName).join(" & ")} haben gefehlt`
+      : `${stats.fehlten.length} haben gefehlt`,
   ].filter(Boolean).join(" · ");
   const dauerText = dauer ? `${Math.floor(dauer / 60)}:${String(dauer % 60).padStart(2, "0")} h gesessen` : null;
 
