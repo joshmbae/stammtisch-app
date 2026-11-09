@@ -209,6 +209,7 @@ export function MitgliedFormular({ form: f, rollenOptionen, pinVorhanden, onPinU
             );
           })}
         </View>
+        <Text style={styles.rollenHinweis}>Weitere Rollen wie Bierwart oder Vorstand legst du in den Einstellungen unter „Rollen“ an.</Text>
       </Card>
 
       <Card enterIndex={3} style={{ gap: 12 }}>
@@ -399,6 +400,7 @@ const makeStyles = (c: ThemeColors) =>
     zeile: { flexDirection: "row", gap: 10 },
     spalte: { flex: 1, minWidth: 0, gap: 6 },
     rollen: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+    rollenHinweis: { ...TYPE.caption, fontSize: 13, lineHeight: 18, color: c.textMuted },
 
     label: { ...TYPE.label, color: c.textMuted },
     datum: { minHeight: 50, borderRadius: RADIUS.md, paddingHorizontal: 14, backgroundColor: c.cardAlt, justifyContent: "center" },
