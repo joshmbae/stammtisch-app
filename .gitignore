@@ -53,3 +53,6 @@ google-play-*.json
 
 # Demo-Zugang und Seed (enthält Passwort-Hash)
 store-assets/
+
+# Lokale Notizen mit Test-Zugangsdaten (nicht ins Repo, nicht in EAS-Builds)
+supabase/seed/test-stammtisch.md
