@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { MemberProfile } from "../../types";
 import { FONT, MAX_FONT_SCALE, RADIUS, TYPE, ThemeColors } from "../../constants/design";
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
@@ -101,6 +102,8 @@ export interface BilanzKachel {
   farbe?: string;
   /** Wohin Antippen führt; ohne Angabe die Tabelle im gewählten Zeitraum. */
   ziel?: string;
+  /** Deutlicher Hinweis unten in Koralle, z. B. „4 € offen“; die Kachel wird dann koralle getönt. */
+  offen?: string;
 }
 
 /**
@@ -142,7 +145,7 @@ export function BilanzKarte({ jahr, zeitraum, onZeitraum, kacheln }: {
       <View style={styles.bilanzRaster}>
         {kacheln.map((k) => (
           <View key={k.key} style={styles.bilanzZelle}>
-            <PressableScale onPress={() => router.push((k.ziel ?? `/ranglisten?jahr=${zeitraum}`) as never)} scaleTo={0.97} style={[styles.bilanzKachel, { backgroundColor: c.cardAlt }]} accessibilityRole="link" accessibilityLabel={`${k.label}: ${k.wert}${k.platz ? `, Platz ${k.platz}` : ""}. ${k.ziel ? "Öffnen" : "Tabelle öffnen"}`}>
+            <PressableScale onPress={() => router.push((k.ziel ?? `/ranglisten?jahr=${zeitraum}`) as never)} scaleTo={0.97} style={[styles.bilanzKachel, { backgroundColor: k.offen ? c.coralSoft : c.cardAlt }]} accessibilityRole="link" accessibilityLabel={`${k.label}: ${k.wert}${k.offen ? `, davon ${k.offen}` : ""}${k.platz ? `, Platz ${k.platz}` : ""}. ${k.ziel ? "Öffnen" : "Tabelle öffnen"}`}>
               <View style={styles.zeile}>
                 <IconSquircle emoji={k.emoji} ton={tonFuerRangliste(k.key)} size={34} />
                 <View style={{ flex: 1 }} />
@@ -155,6 +158,12 @@ export function BilanzKarte({ jahr, zeitraum, onZeitraum, kacheln }: {
               </View>
               <Text style={[styles.bilanzWert, { color: k.farbe ?? c.textDark }]} maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} adjustsFontSizeToFit>{k.wert}</Text>
               <Text style={styles.bilanzLabel} numberOfLines={1}>{k.label}</Text>
+              {k.offen ? (
+                <View style={[styles.offenPill, { backgroundColor: c.coral }]}>
+                  <Text style={[styles.offenText, { color: c.onCoral }]} numberOfLines={1}>{k.offen}</Text>
+                  <Ionicons name="chevron-forward" size={13} color={c.onCoral} />
+                </View>
+              ) : null}
             </PressableScale>
           </View>
         ))}
@@ -230,7 +239,9 @@ const makeStyles = (c: ThemeColors) =>
     zeitraumText: { fontFamily: FONT.w700, fontSize: 12 },
     bilanzRaster: { flexDirection: "row", flexWrap: "wrap", marginHorizontal: -5 },
     bilanzZelle: { width: "50%", padding: 5 },
-    bilanzKachel: { borderRadius: RADIUS.tile, padding: 12, gap: 4, minHeight: 116 },
+    bilanzKachel: { flexGrow: 1, borderRadius: RADIUS.tile, padding: 12, gap: 4, minHeight: 116 },
+    offenPill: { flexDirection: "row", alignItems: "center", alignSelf: "flex-start", gap: 2, height: 26, paddingLeft: 10, paddingRight: 6, borderRadius: 999, marginTop: 4 },
+    offenText: { fontFamily: FONT.w700, fontSize: 13 },
     platzPill: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 9, height: 26, borderRadius: 13 },
     platzText: { fontFamily: FONT.w700, fontSize: 12 },
     bilanzWert: { ...TYPE.num, fontSize: 22, marginTop: 6 },

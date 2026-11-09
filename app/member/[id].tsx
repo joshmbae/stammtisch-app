@@ -62,8 +62,9 @@ export default function ProfilScreen() {
         .map((l) => ({ key: l.key, emoji: l.emoji, wert: wertKurz(l.key, platz(l.key)?.wert ?? 0), label: l.kurz, platz: platz(l.key)?.platz })),
       {
         key: "strafen", emoji: "💰", wert: formatBetrag(strafenSumme),
-        label: offen > 0 ? `Strafen · ${formatBetrag(offen)} offen` : "Strafen · alles bezahlt",
-        platz: platz("strafen")?.platz, farbe: offen > 0 ? c.coralText : undefined,
+        label: offen > 0 ? "Strafen" : "Strafen · alles bezahlt",
+        platz: platz("strafen")?.platz,
+        offen: offen > 0 ? `${formatBetrag(offen)} offen` : undefined,
         ziel: `/kasse?tab=strafen&memberId=${member.id}`,
       },
     ];
