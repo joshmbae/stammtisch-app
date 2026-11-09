@@ -7,7 +7,7 @@ import { MemberProfile, SpielEreignisTyp } from "../../types";
 import { FONT, MAX_FONT_SCALE, RADIUS, TYPE, ThemeColors } from "../../constants/design";
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { AbendStats, meisteBei } from "../../utils/abendStats";
-import { HomeHero, terminEnde, terminStart } from "../../utils/terminPhase";
+import { HomeHero, terminStart } from "../../utils/terminPhase";
 import { formatWochentagDatum } from "../../utils/date";
 import { displayName, formatEuro, formatBetrag } from "../../utils/format";
 import { AvatarStack, Button, Emoji, FlipCountdown, IconSquircle, LiveTimer, PressableScale, PulseDot, Scrim } from "../ui";
@@ -298,12 +298,15 @@ function Danach({ hero, now, members, stats, spielTypen, umschalter }: Props) {
   const flaeche = useHeroFlaeche("senf");
   if (hero.phase !== "danach" || !stats) return null;
   const t = hero.termin;
-  const ende = terminEnde(t);
   const tag = new Date(`${t.datum}T00:00:00`);
-  const vortag = new Date(now);
-  vortag.setDate(vortag.getDate() - 1);
-  // „Heute“/„Gestern“ davor; ältere Abende nur mit Datum (der Umschalter sagt schon „Letzter“).
-  const wann = ende.toDateString() === now.toDateString() ? "Heute · " : ende.toDateString() === vortag.toDateString() ? "Gestern · " : "";
+  // „Heute“/„Gestern“ nach dem (letzten) Termintag, nicht nach dem Ende um 4 Uhr
+  // früh. Bis 4 Uhr zählt die Nacht noch zum Vortag, wie das automatische Ende.
+  const letzterTag = new Date(`${t.datumBis ?? t.datum}T00:00:00`).toDateString();
+  const stammtischHeute = new Date(now.getTime() - 4 * 3_600_000);
+  const stammtischGestern = new Date(stammtischHeute);
+  stammtischGestern.setDate(stammtischGestern.getDate() - 1);
+  // Ältere Abende nur mit Datum (der Umschalter sagt schon „Letzter“).
+  const wann = letzterTag === stammtischHeute.toDateString() ? "Heute · " : letzterTag === stammtischGestern.toDateString() ? "Gestern · " : "";
   const foto = !!t.bildUrl;
   const dunkel = foto || c.isDark;
   const text = foto ? "#FFFFFF" : c.textDark;
