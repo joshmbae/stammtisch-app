@@ -9,7 +9,7 @@ import { TerminAbend } from "../../../utils/useTerminAbend";
 import { displayName, formatBetrag } from "../../../utils/format";
 import { formatUhrzeit } from "../../../utils/date";
 import { SYMBOL } from "../../../constants/symbole";
-import { Avatar, Card, Emoji, PressableScale, Sheet, haptik, kategorieSymbol, tonFarben, tonFuer } from "../../ui";
+import { Avatar, Emoji, PressableScale, Sheet, haptik, kategorieSymbol, tonFarben, tonFuer } from "../../ui";
 import { VerlaufListe } from "./VerlaufListe";
 
 /** So lange bleibt „Rückgängig“ nach dem Eintragen stehen. */
@@ -22,8 +22,8 @@ const istFehlen = (k: StrafKategorieDef) => /fehl/i.test(k.label);
  * Strafen am Abend, Katalog zuerst: alle Strafen als Kacheln, damit man
  * sieht, was es gibt. Kachel antippen, dann wer – ein Tipp auf die Person
  * trägt sofort ein (mit „Rückgängig“). „Betrag frei“ (Sonstiges) fragt
- * vorher Betrag und Notiz. Darunter der Stand des Abends pro Person und der
- * Verlauf.
+ * vorher Betrag und Notiz. Darunter der Verlauf; die Zusammenfassung pro
+ * Person steht unter „Danach“.
  */
 export function StrafenErfassen({ abend, dabei, andere, vorauswahl }: {
   abend: TerminAbend;
@@ -51,24 +51,15 @@ export function StrafenErfassen({ abend, dabei, andere, vorauswahl }: {
   const alle = [...dabei, ...andere];
   const vorPerson = alle.find((m) => m.id === fuer);
   const kat = (id: string) => abend.strafKategorien.find((k) => k.id === id);
-  // Strafen aus dem Spiel gehören auch hierher: im Stand, in der Summe und im
-  // Verlauf (mit Spielname). Zurückgenommen werden sie über das Spiel, damit
+  // Strafen aus dem Spiel gehören auch hierher: im Verlauf (mit Spielname)
+  // und in den Summen bei der Personenwahl. Zurückgenommen werden sie über das Spiel, damit
   // Spiel-Eintrag und Strafe zusammen verschwinden.
   const spielLogZuStrafe = new Map(Object.values(abend.spielLogMap).flat().filter((s) => s.strafLogId).map((s) => [s.strafLogId!, s]));
   const alleHeute: StrafLog[] = Object.values(abend.strafMap).flat().sort((a, b) => b.loggedAt.localeCompare(a.loggedAt));
-  const summe = alleHeute.reduce((s, l) => s + l.betrag, 0);
   const label = (l: StrafLog) => {
     const k = kat(l.kategorie);
     return l.notiz && k?.systemKey === "sonstiges" ? l.notiz : k?.label ?? "Strafe";
   };
-  const stand = alle
-    .map((m) => {
-      const logs = alleHeute.filter((l) => l.memberId === m.id);
-      return { m, logs, sum: logs.reduce((s, l) => s + l.betrag, 0) };
-    })
-    .filter((z) => z.logs.length > 0)
-    .sort((a, b) => b.sum - a.sum);
-
   const freiZahl = parseFloat(betrag.replace(",", "."));
   const freiBetrag = !!wofuer && wofuer.betrag <= 0;
   const wert = freiBetrag ? freiZahl : wofuer?.betrag ?? NaN;
@@ -199,27 +190,6 @@ export function StrafenErfassen({ abend, dabei, andere, vorauswahl }: {
         </View>
       )}
 
-      <Card style={{ gap: 10 }}>
-        <View style={styles.standKopf}>
-          <Text style={styles.kartenTitel} accessibilityRole="header">Stand heute</Text>
-          <Text style={[styles.standSumme, { color: summe > 0 ? c.coralText : c.textMuted }]} maxFontSizeMultiplier={MAX_FONT_SCALE}>{formatBetrag(summe)}</Text>
-        </View>
-        {stand.length === 0 ? (
-          <Text style={styles.leer}>Noch keine Strafen heute. Ein sauberer Abend – bisher.</Text>
-        ) : (
-          stand.map(({ m, logs, sum }) => (
-            <View key={m.id} style={styles.standZeile} accessible accessibilityLabel={`${displayName(m)}: ${formatBetrag(sum)}, ${logs.map(label).join(", ")}`}>
-              <Avatar name={displayName(m)} color={m.avatarColor} photoUri={m.photoUri} size={28} />
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={styles.standName} numberOfLines={1}>{displayName(m)}</Text>
-                <Text style={styles.standWas} numberOfLines={1}>{logs.map(label).join(", ")}</Text>
-              </View>
-              <Text style={[styles.standBetrag, { color: c.coralText }]}>{formatBetrag(sum)}</Text>
-            </View>
-          ))
-        )}
-      </Card>
-
       <VerlaufListe
         titel="Verlauf"
         eintraege={alleHeute.map((l) => {
@@ -330,13 +300,6 @@ const makeStyles = (c: ThemeColors) =>
     kachelBetrag: { ...TYPE.num, fontSize: 17, lineHeight: 22, marginTop: 1 },
     kachelFrei: { fontFamily: FONT.w600, fontSize: 13, color: c.textMid },
 
-    kartenTitel: { ...TYPE.heading, color: c.textDark },
-    standKopf: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-    standSumme: { ...TYPE.num, fontSize: 20 },
-    standZeile: { flexDirection: "row", alignItems: "center", gap: 10, minHeight: 40 },
-    standName: { fontFamily: FONT.w600, fontSize: 15, color: c.textDark },
-    standWas: { ...TYPE.caption, fontSize: 12, color: c.textMuted },
-    standBetrag: { ...TYPE.num, fontSize: 15 },
 
     toast: {
       flexDirection: "row", alignItems: "center", gap: 10, minHeight: 48, paddingLeft: 14, paddingRight: 12,
