@@ -368,6 +368,7 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
           datum={formatWochentagDatum(new Date(`${t.datum}T00:00:00`))}
           titel={t.titel ?? "Stammtisch"}
           zeile={[t.ort, `${stats.da.length} von ${stats.mitglieder.length} da`, dauerText].filter(Boolean).join(" · ")}
+          quote={stats.quote}
           bildUrl={t.bildUrl}
           sieger={bildSieger}
           fuss={bildFuss}

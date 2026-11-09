@@ -1,6 +1,6 @@
 import React, { forwardRef } from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
-import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
+import Svg, { Circle, Defs, LinearGradient, Rect, Stop } from "react-native-svg";
 import { FONT, kombiAvatarFarbe } from "../../constants/design";
 
 export interface RueckblickPerson {
@@ -25,6 +25,8 @@ interface Props {
   datum: string;
   titel: string;
   zeile: string;
+  /** Anwesenheit 0 … 1, als Ring neben dem Titel. */
+  quote: number;
   /** Foto vom Abend; ohne Foto die grüne Fläche. */
   bildUrl?: string;
   sieger: RueckblickSieger[];
@@ -46,7 +48,7 @@ const FOTO_HOEHE = 220;
  * außerhalb der App gezeigt wird. Ohne runde Ecken, sonst werden sie im Bild
  * schwarz. Wird unsichtbar gerendert und nur abfotografiert.
  */
-export const RueckblickBild = forwardRef<View, Props>(function RueckblickBild({ datum, titel, zeile, bildUrl, sieger, fuss, stammtisch }, ref) {
+export const RueckblickBild = forwardRef<View, Props>(function RueckblickBild({ datum, titel, zeile, quote, bildUrl, sieger, fuss, stammtisch }, ref) {
   return (
     <View ref={ref} collapsable={false} style={styles.bild}>
       <View style={styles.foto}>
@@ -71,8 +73,11 @@ export const RueckblickBild = forwardRef<View, Props>(function RueckblickBild({ 
           <Text style={styles.stammtisch} numberOfLines={1}>{`🍻 ${stammtisch}`}</Text>
         </View>
         <View style={styles.kopfUnten}>
-          <Text style={styles.titel} numberOfLines={1}>{titel}</Text>
-          <Text style={styles.zeile} numberOfLines={1}>{zeile}</Text>
+          <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+            <Text style={styles.titel} numberOfLines={1}>{titel}</Text>
+            <Text style={styles.zeile} numberOfLines={1}>{zeile}</Text>
+          </View>
+          <AnwesenheitsRing quote={quote} />
         </View>
       </View>
 
@@ -98,6 +103,29 @@ export const RueckblickBild = forwardRef<View, Props>(function RueckblickBild({ 
     </View>
   );
 });
+
+/** Anwesenheit als Ring: Senf auf hellem Grund, Prozent in der Mitte. */
+function AnwesenheitsRing({ quote }: { quote: number }) {
+  const groesse = 64;
+  const strich = 6;
+  const r = (groesse - strich) / 2;
+  const umfang = 2 * Math.PI * r;
+  const anteil = Math.max(0, Math.min(1, quote));
+  return (
+    <View style={styles.ring64}>
+      <Svg width={groesse} height={groesse} style={StyleSheet.absoluteFill}>
+        <Circle cx={groesse / 2} cy={groesse / 2} r={r} stroke="rgba(255,255,255,0.22)" strokeWidth={strich} fill="rgba(20,18,16,0.35)" />
+        <Circle
+          cx={groesse / 2} cy={groesse / 2} r={r} stroke={SENF} strokeWidth={strich} fill="none"
+          strokeDasharray={`${umfang * anteil} ${umfang}`} strokeLinecap="round"
+          transform={`rotate(-90 ${groesse / 2} ${groesse / 2})`}
+        />
+      </Svg>
+      <Text style={styles.ringWert}>{`${Math.round(anteil * 100)}%`}</Text>
+      <Text style={styles.ringLabel}>da</Text>
+    </View>
+  );
+}
 
 /** „Tommy“, „Tommy & Marky“, „Tommy, Marky & Krüger“, ab vier „Tommy, Marky & 2 weitere“. */
 function namen(personen: RueckblickPerson[]): string {
@@ -136,7 +164,10 @@ const styles = StyleSheet.create({
   kopfOben: { flexDirection: "row", alignItems: "center", gap: 10 },
   kicker: { fontFamily: FONT.w700, fontSize: 12, letterSpacing: 1.2, color: SENF, flexShrink: 0, ...SCHATTEN },
   stammtisch: { fontFamily: FONT.w700, fontSize: 12, color: "#FFFFFF", marginLeft: "auto", flexShrink: 1, textAlign: "right", ...SCHATTEN },
-  kopfUnten: { gap: 2 },
+  kopfUnten: { flexDirection: "row", alignItems: "flex-end", gap: 12 },
+  ring64: { width: 64, height: 64, alignItems: "center", justifyContent: "center", marginBottom: 2 },
+  ringWert: { fontFamily: FONT.w800, fontSize: 17, lineHeight: 19, letterSpacing: -0.4, color: "#FFFFFF" },
+  ringLabel: { fontFamily: FONT.w700, fontSize: 10, lineHeight: 12, color: HELL },
   titel: { fontFamily: FONT.w800, fontSize: 30, lineHeight: 34, letterSpacing: -0.6, color: "#FFFFFF" },
   zeile: { fontFamily: FONT.w600, fontSize: 13, color: HELL },
   siegerReihe: { flex: 1, flexDirection: "row", justifyContent: "space-around", alignItems: "flex-start", paddingHorizontal: 10, paddingTop: 16 },
