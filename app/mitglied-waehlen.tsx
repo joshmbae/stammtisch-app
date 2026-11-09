@@ -26,11 +26,13 @@ export default function MitgliedWaehlenScreen() {
   const [pendingMember, setPendingMember] = useState<MemberProfile | null>(null);
   const [pinError, setPinError] = useState<string | undefined>(undefined);
   const { setActiveSession, clearSession } = useSession();
-  const { stammtischName, clearStammtisch } = useStammtisch();
+  const { stammtischName, stammtischVerlassen } = useStammtisch();
 
+  // Wechseln, nicht vergessen: der Stammtisch bleibt in „Deine Stammtische“
+  // (clearStammtisch wäre für gelöschte Stammtische und nimmt ihn aus der Liste).
   async function handleStammtischWechseln() {
     await clearSession();
-    await clearStammtisch();
+    await stammtischVerlassen(stammtischName ?? undefined);
     router.replace("/stammtisch-waehlen");
   }
 

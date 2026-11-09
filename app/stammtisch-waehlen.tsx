@@ -5,10 +5,12 @@ import { router } from "expo-router";
 import { createStammtisch, findStammtischByName } from "../utils/storage";
 import { hashStammtischPassword } from "../utils/pin";
 import { useStammtisch } from "../contexts/StammtischContext";
-import { FONT, TYPE, ThemeColors } from "../constants/design";
+import { FONT, MOTION, RADIUS, TYPE, ThemeColors } from "../constants/design";
 import { useColors, useThemedStyles } from "../contexts/ThemeContext";
-import { Button, Card, Field, IconSquircle, PressableScale, SectionLabel, SegmentedTabs } from "../components/ui";
-import { EinstiegHero, EinstiegScreen, Vorteil } from "../components/einstieg/Einstieg";
+import { Button, Card, Emoji, Field, PressableScale, SegmentedTabs, tonFarben, tonFuer } from "../components/ui";
+import Animated, { FadeInDown } from "react-native-reanimated";
+import { EinstiegScreen } from "../components/einstieg/Einstieg";
+import StammtischLogo from "../components/StammtischLogo";
 import { SYMBOL } from "../constants/symbole";
 
 type Mode = "join" | "create";
@@ -18,10 +20,10 @@ const MODI: { key: Mode; label: string }[] = [
   { key: "create", label: "Anlegen" },
 ];
 
-const VORTEILE: Vorteil[] = [
-  { emoji: SYMBOL.termin, ton: "blue", titel: "Termine & Zusagen", text: "Wer kommt zum nächsten Abend?" },
-  { emoji: SYMBOL.kasse, ton: "mustard", titel: "Kasse & Strafen", text: "Jeder Euro nachvollziehbar" },
-  { emoji: SYMBOL.tabelle, ton: "green", titel: "Tabelle & Rückblick", text: "Wer führt und was war los" },
+const VORTEILE: { emoji: string; titel: string; kurz: string }[] = [
+  { emoji: SYMBOL.termin, titel: "Termine & Zusagen", kurz: "Termine" },
+  { emoji: SYMBOL.kasse, titel: "Kasse & Strafen", kurz: "Kasse & Strafen" },
+  { emoji: SYMBOL.pokal, titel: "Tabelle & Rückblick", kurz: "Tabelle" },
 ];
 
 export default function StammtischWaehlenScreen() {
@@ -34,6 +36,9 @@ export default function StammtischWaehlenScreen() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { setActiveStammtisch, meineStammtische, stammtischBetreten, stammtischVergessen } = useStammtisch();
+  const [bearbeiten, setBearbeiten] = useState(false);
+  const zurueck = meineStammtische.length > 0;
+  const ein = (i: number) => FadeInDown.duration(MOTION.base).delay(i * MOTION.stagger * 2);
 
   async function betreten(s: (typeof meineStammtische)[number]) {
     const mitProfil = await stammtischBetreten(s);
@@ -102,105 +107,151 @@ export default function StammtischWaehlenScreen() {
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={0}>
-      <EinstiegScreen>
-        {meineStammtische.length > 0 ? (
-          <>
-            <EinstiegHero titel={"Willkommen zurück."} text="Wähl deinen Stammtisch – oder tritt einem neuen bei." />
-            <Card style={styles.meine}>
-              <SectionLabel>Deine Stammtische</SectionLabel>
-              {meineStammtische.map((s, i) => (
-                <View key={s.id} style={[styles.meinZeile, i > 0 && styles.trenner]}>
-                  <PressableScale onPress={() => betreten(s)} style={styles.meinInfo} accessibilityLabel={`${s.name} öffnen`}>
-                    <IconSquircle emoji={SYMBOL.stammtisch} ton="mustard" size={36} />
-                    <Text style={styles.meinName} numberOfLines={1}>{s.name}</Text>
-                    <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
-                  </PressableScale>
-                  <PressableScale onPress={() => stammtischVergessen(s.id)} hitSlop={8} style={styles.vergessen} accessibilityLabel={`${s.name} aus der Liste entfernen`}>
-                    <Ionicons name="close" size={16} color={c.textMuted} />
-                  </PressableScale>
+      <EinstiegScreen contentStyle={{ gap: 0 }}>
+        {/* Kopf: blaue Karte wie auf Home und nach dem Anlegen. */}
+        <Animated.View entering={ein(0)} style={[styles.hero, { backgroundColor: c.heroBlue }]}>
+          <View style={[styles.ring, { borderColor: "rgba(255,255,255,0.07)" }]} pointerEvents="none" />
+          {zurueck ? (
+            // Wiederkehrend: kompakt, damit Liste und Formular schnell erreichbar sind.
+            <View style={styles.kompakt}>
+              <StammtischLogo size={52} />
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={[styles.kicker, { color: c.heroBlueSub, marginTop: 0 }]}>DeinStammtisch</Text>
+                <Text style={[styles.heroTitel, { color: c.onHeroBlue, fontSize: 26, lineHeight: 30 }]} accessibilityRole="header">Willkommen zurück.</Text>
+              </View>
+            </View>
+          ) : (
+            <>
+              <StammtischLogo size={56} />
+              <Text style={[styles.kicker, { color: c.heroBlueSub }]}>DeinStammtisch</Text>
+              <Text style={[styles.heroTitel, { color: c.onHeroBlue }]} accessibilityRole="header">{"Euer Stammtisch.\nAlles an einem Ort."}</Text>
+              <Text style={[styles.heroText, { color: "rgba(255,255,255,0.8)" }]}>Termine, Kasse und Tabelle – für alle am Tisch.</Text>
+            </>
+          )}
+          {!zurueck ? (
+            <View style={styles.chips}>
+              {VORTEILE.map((v) => (
+                <View key={v.titel} style={styles.chip}>
+                  <Emoji size={14}>{v.emoji}</Emoji>
+                  <Text style={styles.chipText} numberOfLines={1}>{v.kurz}</Text>
                 </View>
               ))}
+            </View>
+          ) : null}
+        </Animated.View>
+
+        {zurueck ? (
+          <Animated.View entering={ein(1)}>
+            <View style={styles.abschnittZeile}>
+              <Text style={styles.abschnitt}>Deine Stammtische</Text>
+              <PressableScale onPress={() => setBearbeiten((v) => !v)} hitSlop={8} accessibilityRole="button" accessibilityLabel={bearbeiten ? "Fertig" : "Liste bearbeiten"}>
+                <Text style={[styles.abschnittLink, { color: c.blue }]}>{bearbeiten ? "Fertig" : "Bearbeiten"}</Text>
+              </PressableScale>
+            </View>
+            <Card style={styles.meine}>
+              {meineStammtische.map((s, i) => {
+                const ton = tonFarben(tonFuer(s.id), c);
+                return (
+                  <View key={s.id} style={[styles.meinZeile, i > 0 && styles.trenner]}>
+                    <PressableScale onPress={() => (bearbeiten ? undefined : betreten(s))} disabled={bearbeiten} scaleTo={0.98} style={styles.meinInfo} accessibilityLabel={`${s.name} öffnen`}>
+                      <View style={[styles.initiale, { backgroundColor: ton.bg }]}>
+                        <Text style={[styles.initialeText, { color: ton.fg }]}>{s.name.trim().charAt(0).toUpperCase()}</Text>
+                      </View>
+                      <Text style={styles.meinName} numberOfLines={1}>{s.name}</Text>
+                      {!bearbeiten ? <Ionicons name="chevron-forward" size={18} color={c.textMuted} /> : null}
+                    </PressableScale>
+                    {bearbeiten ? (
+                      <PressableScale onPress={() => stammtischVergessen(s.id)} hitSlop={8} style={[styles.vergessen, { backgroundColor: c.coralSoft }]} accessibilityLabel={`${s.name} aus der Liste entfernen`}>
+                        <Ionicons name="remove" size={18} color={c.coralText} />
+                      </PressableScale>
+                    ) : null}
+                  </View>
+                );
+              })}
             </Card>
-          </>
-        ) : (
-          <EinstiegHero titel={"Euer Stammtisch.\nAlles an einem Ort."} text="Termine, Kasse und Tabelle – für alle am Tisch." vorteile={VORTEILE} />
-        )}
+            {bearbeiten ? <Text style={styles.klein}>Entfernen nimmt den Stammtisch nur von diesem Gerät. Mit Name und Passwort kommst du jederzeit wieder rein.</Text> : null}
+          </Animated.View>
+        ) : null}
 
-        <View style={styles.modi}>
-          <SegmentedTabs variant="blue" items={MODI} value={mode} onChange={switchMode} />
-        </View>
-
-        <Card style={styles.form}>
-          <Field
-            label="Name des Stammtischs"
-            value={name}
-            onChangeText={setName}
-            placeholder="z. B. Die Hellen"
-            autoCapitalize="words"
-            autoCorrect={false}
-            style={styles.feld}
-          />
-          {anlegen ? (
-            <View style={styles.zeile}>
+        {/* Beitreten / Anlegen als eine Karte: Umschalter oben, Formular darunter. */}
+        <Animated.View entering={ein(2)}>
+          <Text style={styles.abschnitt}>{zurueck ? "Weiterer Stammtisch" : "Los geht's"}</Text>
+          <Card style={styles.form}>
+            <SegmentedTabs variant="light" items={MODI} value={mode} onChange={switchMode} />
+            <Text style={styles.formText}>
+              {anlegen ? "Du gründest die Runde und lädst danach ein." : "Name und Passwort bekommst du von deiner Runde."}
+            </Text>
+            <Field
+              label="Name des Stammtischs"
+              value={name}
+              onChangeText={setName}
+              placeholder="z. B. Die Hellen"
+              autoCapitalize="words"
+              autoCorrect={false}
+              style={styles.feld}
+            />
+            {anlegen ? (
+              <View style={styles.zeile}>
+                <Field
+                  label="Passwort"
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder="Passwort"
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoComplete="off"
+                  textContentType="none"
+                  style={styles.feld}
+                  containerStyle={styles.spalte}
+                />
+                <Field
+                  label="Wiederholen"
+                  value={passwordRepeat}
+                  onChangeText={setPasswordRepeat}
+                  placeholder="Passwort"
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoComplete="off"
+                  textContentType="none"
+                  style={styles.feld}
+                  containerStyle={styles.spalte}
+                  onSubmitEditing={absenden}
+                />
+              </View>
+            ) : (
               <Field
                 label="Passwort"
                 value={password}
                 onChangeText={setPassword}
-                placeholder="Passwort"
+                placeholder="Passwort der Runde"
                 secureTextEntry
                 autoCapitalize="none"
-                autoComplete="off"
-                textContentType="none"
+                autoComplete="current-password"
                 style={styles.feld}
-                containerStyle={styles.spalte}
-              />
-              <Field
-                label="Wiederholen"
-                value={passwordRepeat}
-                onChangeText={setPasswordRepeat}
-                placeholder="Passwort"
-                secureTextEntry
-                autoCapitalize="none"
-                autoComplete="off"
-                textContentType="none"
-                style={styles.feld}
-                containerStyle={styles.spalte}
                 onSubmitEditing={absenden}
               />
-            </View>
-          ) : (
-            <Field
-              label="Passwort"
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Bekommst du von deiner Runde"
-              secureTextEntry
-              autoCapitalize="none"
-              autoComplete="current-password"
-              style={styles.feld}
-              onSubmitEditing={absenden}
+            )}
+
+            {anlegen ? (
+              <View style={[styles.hinweis, { backgroundColor: c.mustardSoft }]}>
+                <Emoji size={14}>{SYMBOL.pin}</Emoji>
+                <Text style={[styles.hinweisText, { color: c.textMid }]}>
+                  Das Passwort gibst du an deine Runde weiter – also kein persönliches nehmen.
+                </Text>
+              </View>
+            ) : null}
+            {error ? <Text style={styles.error} accessibilityRole="alert">{error}</Text> : null}
+
+            <Button
+              label={anlegen ? "Stammtisch anlegen" : "Beitreten"}
+              icon={anlegen ? "add" : "log-in-outline"}
+              variant="blue"
+              onPress={absenden}
+              loading={loading}
+              style={{ marginTop: 2 }}
             />
-          )}
-
-          {anlegen ? (
-            <View style={styles.hinweis}>
-              <Ionicons name="information-circle-outline" size={16} color={c.textMuted} />
-              <Text style={styles.hinweisText}>
-                Name und Passwort gibst du an deine Runde weiter – damit treten die anderen bei. Wähl also kein persönliches Passwort.
-              </Text>
-            </View>
-          ) : null}
-          {error ? <Text style={styles.error} accessibilityRole="alert">{error}</Text> : null}
-
-          <Button
-            label={anlegen ? "Stammtisch anlegen" : "Beitreten"}
-            icon={anlegen ? "add" : "log-in-outline"}
-            variant="blue"
-            onPress={absenden}
-            loading={loading}
-            style={{ marginTop: 2 }}
-          />
-        </Card>
+          </Card>
+        </Animated.View>
       </EinstiegScreen>
     </KeyboardAvoidingView>
   );
@@ -208,18 +259,36 @@ export default function StammtischWaehlenScreen() {
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
-    hinweis: { flexDirection: "row", gap: 6, alignItems: "flex-start" },
-    hinweisText: { ...TYPE.caption, fontSize: 13, lineHeight: 18, color: c.textMuted, flex: 1 },
-    modi: { marginTop: 16 },
+    hero: { borderRadius: RADIUS.hero, padding: 22, overflow: "hidden", marginTop: 8 },
+    ring: { position: "absolute", width: 260, height: 260, borderRadius: 130, borderWidth: 40, right: -90, top: -100 },
+    kicker: { ...TYPE.label, marginTop: 18 },
+    kompakt: { flexDirection: "row", alignItems: "center", gap: 14 },
+    heroTitel: { fontFamily: FONT.w800, fontSize: 30, lineHeight: 34, letterSpacing: -0.7, marginTop: 4 },
+    heroText: { fontFamily: FONT.w500, fontSize: 15, lineHeight: 21, marginTop: 8 },
+    chips: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 16 },
+    chip: { flexDirection: "row", alignItems: "center", gap: 6, height: 32, paddingHorizontal: 12, borderRadius: RADIUS.pill, backgroundColor: "rgba(255,255,255,0.14)" },
+    chipText: { fontFamily: FONT.w700, fontSize: 13, color: "#FFFFFF" },
+
+    abschnittZeile: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+    abschnitt: { ...TYPE.label, color: c.textMuted, marginTop: 26, marginBottom: 10 },
+    abschnittLink: { fontFamily: FONT.w600, fontSize: 14, marginTop: 16 },
+    klein: { ...TYPE.caption, fontSize: 13, lineHeight: 18, color: c.textMuted, marginTop: 8, paddingHorizontal: 4 },
+
+    meine: { paddingVertical: 4 },
+    meinZeile: { flexDirection: "row", alignItems: "center", gap: 10 },
+    meinInfo: { flex: 1, flexDirection: "row", alignItems: "center", gap: 12, minHeight: 60 },
+    initiale: { width: 40, height: 40, borderRadius: 13, alignItems: "center", justifyContent: "center" },
+    initialeText: { fontFamily: FONT.w800, fontSize: 17 },
+    meinName: { flex: 1, fontFamily: FONT.w700, fontSize: 16, color: c.textDark },
+    vergessen: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center" },
+    trenner: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
+
     form: { gap: 12 },
+    formText: { ...TYPE.caption, fontSize: 13, lineHeight: 18, color: c.textMuted, marginTop: -2 },
     feld: { backgroundColor: c.cardAlt, borderColor: "transparent" },
     zeile: { flexDirection: "row", gap: 10 },
     spalte: { flex: 1, minWidth: 0 },
+    hinweis: { flexDirection: "row", gap: 8, alignItems: "center", borderRadius: RADIUS.md, paddingVertical: 10, paddingHorizontal: 12 },
+    hinweisText: { ...TYPE.caption, fontSize: 13, lineHeight: 18, flex: 1 },
     error: { ...TYPE.caption, fontSize: 14, lineHeight: 19, color: c.dangerText },
-    meine: { marginTop: 16, paddingVertical: 12, gap: 4 },
-    meinZeile: { flexDirection: "row", alignItems: "center", gap: 8 },
-    meinInfo: { flex: 1, flexDirection: "row", alignItems: "center", gap: 12, minHeight: 56 },
-    meinName: { flex: 1, fontFamily: FONT.w700, fontSize: 16, color: c.textDark },
-    vergessen: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", backgroundColor: c.cardAlt },
-    trenner: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
   });
