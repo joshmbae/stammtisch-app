@@ -415,7 +415,7 @@ function Leer({ umschalter, alleArten }: { umschalter?: Props["umschalter"]; all
         {umschalter ? <HeroUmschalter {...umschalter} hell /> : null}
       </View>
       <Text style={[styles.titel, { color: c.onHeroBlue }]}>Noch nichts geplant.</Text>
-      <Button label="Termin anlegen" icon="add" onPress={() => router.push("/kalender")} />
+      <Button label="Termin anlegen" icon="add" onPress={() => router.push("/kalender?neu=1")} />
     </View>
   );
 }

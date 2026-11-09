@@ -154,19 +154,20 @@ export function BuehneLive({ spielName }: { spielName: string }) {
   return (
     <Buehne bg={c.greenSoft} ring={c.isDark ? "rgba(255,255,255,0.05)" : "rgba(36,85,63,0.08)"}>
       <Animated.View style={[styles.karte, { backgroundColor: c.live, borderColor: c.liveEdge }, schweben]}>
-        <View style={styles.zeile}>
+        {/* Wie die Live-Karte auf Home: Pille, großer Timer, „+ Strafe“ hell hervorgehoben. */}
+        <View style={[styles.zeile, styles.livePille]}>
           <PulseDot color={c.liveAccent} size={8} />
-          <Text style={[styles.kartenLabel, { color: c.heroBlueSub }]}>Läuft gerade</Text>
+          <Text style={[styles.kartenLabel, { color: "#FFFFFF" }]}>Live · Stammtisch</Text>
         </View>
         <Text style={[styles.timer, { color: c.onLive }]}>1:13:05</Text>
         <View style={styles.zeile}>
-          <View style={styles.liveChip}>
-            <Text style={[styles.liveChipText, { color: c.onLive }]}>Strafen</Text>
-            <Ionicons name="add" size={16} color={c.onLive} />
+          <View style={[styles.liveChip, { backgroundColor: "#FFFFFF", justifyContent: "center" }]}>
+            <Ionicons name="add" size={16} color={c.live} />
+            <Text style={[styles.liveChipText, { color: c.live, flex: 0 }]}>Strafe</Text>
           </View>
-          <View style={styles.liveChip}>
-            <Text style={[styles.liveChipText, { color: c.onLive }]} numberOfLines={1}>{spielName}</Text>
+          <View style={[styles.liveChip, { justifyContent: "center" }]}>
             <Ionicons name="add" size={16} color={c.onLive} />
+            <Text style={[styles.liveChipText, { color: c.onLive, flex: 0, flexShrink: 1 }]} numberOfLines={1}>{spielName}</Text>
             <TippRing farbe={c.liveAccent} radius={14} />
           </View>
         </View>
@@ -284,6 +285,7 @@ const makeStyles = (c: ThemeColors) =>
     knopfText: { fontFamily: FONT.w700, fontSize: 15 },
 
     timer: { ...TYPE.num, fontSize: 36, lineHeight: 40, letterSpacing: -1 },
+    livePille: { alignSelf: "flex-start", height: 26, paddingHorizontal: 10, borderRadius: 999, backgroundColor: "rgba(255,255,255,0.12)" },
     liveChip: { flex: 1, height: 40, borderRadius: 14, paddingHorizontal: 10, backgroundColor: "rgba(255,255,255,0.14)", flexDirection: "row", alignItems: "center", gap: 4 },
     liveChipText: { flex: 1, fontFamily: FONT.w800, fontSize: 14 },
     toast: {

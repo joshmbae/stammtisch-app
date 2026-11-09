@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Platform, KeyboardAvoidingView } from "react-native";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { showAlert } from "../../utils/alert";
 import { MemberProfile } from "../../types";
 import { loadMembers, saveMembers, uploadAvatar, loadVerordnung } from "../../utils/storage";
@@ -17,6 +17,16 @@ export default function NewMemberScreen() {
   const admin = useAdmin();
   const [rollenOptionen, setRollenOptionen] = useState<string[]>(["Mitglied"]);
   const [speichert, setSpeichert] = useState(false);
+  // Erstes Mitglied eines neuen Stammtischs: Admin mit PIN vorschlagen (abschaltbar).
+  const { erstes } = useLocalSearchParams<{ erstes?: string }>();
+  const istErstes = erstes === "1";
+
+  useEffect(() => {
+    if (!istErstes) return;
+    f.setIstAdmin(true);
+    f.setPinAn(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [istErstes]);
 
   useEffect(() => {
     loadVerordnung().then((v) => {
@@ -86,7 +96,12 @@ export default function NewMemberScreen() {
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={0}>
-      <Screen header={<FormularKopf title="Neues Mitglied" subtitle="Nur der Name ist Pflicht" onSpeichern={save} speichert={speichert} />}>
+      <Screen header={<FormularKopf
+        title={istErstes ? "Du als erstes Mitglied" : "Neues Mitglied"}
+        subtitle={istErstes ? "Nur der Name ist Pflicht. Als Admin (mit 4-stelliger PIN) darfst nur du die Einstellungen ändern – unten abschaltbar." : "Nur der Name ist Pflicht"}
+        onSpeichern={save}
+        speichert={speichert}
+      />}>
         <MitgliedFormular form={f} rollenOptionen={rollenOptionen} onPinUmschalten={pinUmschalten} adminAenderbar={admin.darf} adminHinweis={nurAdminText(admin.admins)} />
       </Screen>
     </KeyboardAvoidingView>

@@ -115,21 +115,28 @@ export default function MitgliedWaehlenScreen() {
         </View>
       ) : (
         <Card style={{ gap: 12 }}>
-          <Text style={styles.muted}>Leg zuerst die Stammtischrunde an, dann kann jeder sein Profil wählen.</Text>
-          <Button label="Mitglied anlegen" icon="person-add-outline" variant="blue" onPress={() => router.push("/member/new")} />
+          <Text style={styles.muted}>Leg dich zuerst selbst an – du wirst das erste Mitglied und am besten Admin. Die anderen wählen sich später hier aus oder legen sich an.</Text>
+          <Button label="Mich anlegen" icon="person-add-outline" variant="blue" onPress={() => router.push("/member/new?erstes=1")} />
         </Card>
       )}
 
       <View style={{ flex: 1 }} />
 
       <View style={styles.unten}>
-        <Button
-          label="Als Gast fortfahren"
-          variant="secondary"
-          colors={{ bg: c.cardAlt, fg: c.textDark }}
-          onPress={() => router.replace("/(tabs)/home")}
-          style={{ alignSelf: "stretch" }}
-        />
+        {/* Ohne Mitglieder gibt es nichts zum Umschauen – dann nur „Mich anlegen“ oben. */}
+        {members.length > 0 ? (
+          <>
+            <Button
+              label="Nur umschauen"
+              variant="secondary"
+              colors={{ bg: c.cardAlt, fg: c.textDark }}
+              onPress={() => router.replace("/(tabs)/home")}
+              style={{ alignSelf: "stretch" }}
+              accessibilityLabel="Nur umschauen, ohne Profil. Zusagen und Eintragen gehen erst mit Profil"
+            />
+            <Text style={[styles.muted, { textAlign: "center" }]}>Ohne Profil – zusagen und eintragen geht erst, wenn du dich auswählst.</Text>
+          </>
+        ) : null}
         <PressableScale onPress={handleStammtischWechseln} style={styles.wechseln} accessibilityLabel="Anderer Stammtisch">
           <Ionicons name="swap-horizontal" size={18} color={c.blue} />
           <Text style={styles.wechselnText}>Anderer Stammtisch</Text>

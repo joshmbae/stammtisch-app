@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from "react";
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useEffect, useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { MemberProfile, StammtischTermin, StammtischVerordnung } from "../../types";
 import { FONT, ThemeColors } from "../../constants/design";
@@ -41,6 +42,13 @@ export default function TermineScreen() {
   const [tab, setTab] = useState<"kommend" | "vergangen">("kommend");
   const [tag, setTag] = useState<string | null>(null);
   const [neu, setNeu] = useState(false);
+  // ?neu=1 (z. B. „Termin anlegen“ auf Home): Formular gleich öffnen, dann aus der URL nehmen.
+  const params = useLocalSearchParams<{ neu?: string }>();
+  useEffect(() => {
+    if (params.neu !== "1") return;
+    setNeu(true);
+    router.setParams({ neu: undefined });
+  }, [params.neu]);
 
   async function load() {
     const [ts, ms, v] = await Promise.all([loadTermine(), loadMembers(), loadVerordnung()]);

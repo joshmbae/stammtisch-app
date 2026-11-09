@@ -19,7 +19,7 @@ import { useSession } from "../contexts/SessionContext";
 import LoadingSpinner from "../components/LoadingSpinner";
 import ErrorState from "../components/ErrorState";
 import StammtischLogo from "../components/StammtischLogo";
-import { Avatar, FormSection, ListGroup, ListRow, Screen, ScreenHeader, SegmentedTabs, ToggleRow } from "../components/ui";
+import { Avatar, FormSection, ListGroup, ListRow, PressableScale, Screen, ScreenHeader, SegmentedTabs, ToggleRow } from "../components/ui";
 import { SatzungSheet } from "../components/einstellungen/SatzungSheet";
 import {
   FeldDef,
@@ -227,8 +227,16 @@ export default function EinstellungenScreen() {
       {!admin.gibtAdmins ? (
         <View style={[styles.adminHinweis, { backgroundColor: c.mustardSoft }]}>
           <Text style={[styles.adminHinweisText, { color: c.textDark }]}>
-            Noch kein Admin: Gerade darf jede:r alles ändern. Ein Admin wird im Profil festgelegt (Profil → Bearbeiten), braucht eine PIN und darf danach als Einzige:r Einstellungen ändern.
+            {activeMember
+              ? "Noch kein Admin: Gerade darf jede:r alles ändern. Admin wirst du in deinem Profil (Bearbeiten → „Admin“, mit PIN) – dann darfst nur du Einstellungen ändern."
+              : "Noch kein Admin: Gerade darf jede:r alles ändern. Leg dich zuerst als Mitglied an – dabei kannst du gleich Admin werden."}
           </Text>
+          {activeMember ? (
+            <PressableScale onPress={() => router.push(`/member/edit/${activeMember.id}`)} style={styles.adminLink} accessibilityRole="link">
+              <Text style={[styles.adminLinkText, { color: c.blue }]}>Jetzt Admin werden</Text>
+              <Ionicons name="chevron-forward" size={14} color={c.blue} />
+            </PressableScale>
+          ) : null}
         </View>
       ) : !admin.istAdmin ? (
         <View style={[styles.adminHinweis, { backgroundColor: c.cardAlt }]}>
@@ -424,6 +432,8 @@ export default function EinstellungenScreen() {
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
+    adminLink: { flexDirection: "row", alignItems: "center", gap: 2, marginTop: 8, minHeight: 32 },
+    adminLinkText: { fontFamily: FONT.w700, fontSize: 14 },
     rechts: { flexDirection: "row", alignItems: "center", gap: 8, maxWidth: "50%" },
     wert: { fontFamily: FONT.w600, fontSize: 15, color: c.textMuted, flexShrink: 1 },
     rollen: { paddingLeft: 46, paddingBottom: 14 },

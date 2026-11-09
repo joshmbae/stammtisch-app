@@ -97,6 +97,16 @@ export async function createStammtisch(name: string, passwordHash: string): Prom
   }
   const stammtischId = data[0].id as string;
   await seedDefaultStrafKategorien(stammtischId);
+  // Stammtisch-Daten gleich mit dem eingegebenen Namen anlegen, sonst stünde
+  // überall der Platzhalter „Mein Stammtisch“. Fehler hier sind nicht fatal:
+  // loadVerordnung fällt auf den Namen aus der Stammtisch-Tabelle zurück.
+  await supabase.from("verordnung").upsert({
+    stammtisch_id: stammtischId,
+    name: name.trim(),
+    regeln: [],
+    rollen_optionen: ROLLEN_OPTIONEN_DEFAULT,
+    tab_strafen_aktiv: true,
+  });
   return { id: stammtischId };
 }
 
@@ -321,7 +331,11 @@ export async function loadVerordnung(): Promise<StammtischVerordnung> {
       .select("*")
       .eq("stammtisch_id", stammtischId)
       .maybeSingle();
-    if (error || !data) return { name: "Mein Stammtisch", regeln: [], rollenOptionen: ROLLEN_OPTIONEN_DEFAULT };
+    if (error || !data) {
+      // Noch keine Stammtisch-Daten (ältere Anlagen): wenigstens den Namen aus der Stammtisch-Tabelle zeigen.
+      const { data: st } = await supabase.from("stammtische").select("name").eq("id", stammtischId).maybeSingle();
+      return { name: st?.name || "Mein Stammtisch", regeln: [], rollenOptionen: ROLLEN_OPTIONEN_DEFAULT };
+    }
     return rowToVerordnung(data);
   });
 }

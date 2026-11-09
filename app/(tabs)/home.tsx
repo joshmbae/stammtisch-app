@@ -47,6 +47,7 @@ import ErrorState from "../../components/ErrorState";
 import OfflineBanner from "../../components/OfflineBanner";
 import { Avatar, Button, Card, HeaderIconButton, IconSquircle, PressableScale, Screen } from "../../components/ui";
 import { IchSheet } from "../../components/home/IchSheet";
+import { ErsteSchritte } from "../../components/home/ErsteSchritte";
 import { useHomeArten } from "../../utils/homeArten";
 import { HeroCard, HeroWahl, RsvpStatus } from "../../components/home/HeroCard";
 import { BilanzRow, BilanzWerte, Platzierung } from "../../components/home/BilanzRow";
@@ -235,6 +236,7 @@ export default function HomeScreen() {
         </Card>
       ) : (
         <>
+          <ErsteSchritte verordnung={verordnung} members={members} termine={daten.termine} ich={activeMember ?? null} />
           <HeroCard
             hero={hero}
             now={now}

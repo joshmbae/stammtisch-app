@@ -79,7 +79,7 @@ export function FormularKopf({ title, subtitle, onSpeichern, speichert }: {
       </View>
       <View>
         <Text style={styles.titel} accessibilityRole="header" numberOfLines={1}>{title}</Text>
-        {subtitle ? <Text style={styles.untertitel} numberOfLines={1}>{subtitle}</Text> : null}
+        {subtitle ? <Text style={styles.untertitel} numberOfLines={3}>{subtitle}</Text> : null}
       </View>
     </View>
   );

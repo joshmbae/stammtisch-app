@@ -27,6 +27,7 @@ import {
   Ton,
 } from "../../components/ui";
 import { SYMBOL } from "../../constants/symbole";
+import { rundeEinladen } from "../../utils/einladen";
 
 
 
@@ -124,6 +125,8 @@ export default function RundeScreen() {
             ))}
           </View>
         )}
+        {/* Neue Leute kommen über Name + Passwort dazu; der Text erklärt den Weg. */}
+        <Button label="Runde einladen" icon="share-outline" size="sm" variant="secondary" onPress={() => rundeEinladen(name)} style={{ marginTop: 12 }} />
       </Card>
 
       <Card enterIndex={2} style={{ paddingVertical: 6 }}>

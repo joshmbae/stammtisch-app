@@ -149,7 +149,8 @@ export default function StammtischWaehlenScreen() {
                 placeholder="Passwort"
                 secureTextEntry
                 autoCapitalize="none"
-                autoComplete="new-password"
+                autoComplete="off"
+                textContentType="none"
                 style={styles.feld}
                 containerStyle={styles.spalte}
               />
@@ -160,7 +161,8 @@ export default function StammtischWaehlenScreen() {
                 placeholder="Passwort"
                 secureTextEntry
                 autoCapitalize="none"
-                autoComplete="new-password"
+                autoComplete="off"
+                textContentType="none"
                 style={styles.feld}
                 containerStyle={styles.spalte}
                 onSubmitEditing={absenden}
@@ -180,6 +182,14 @@ export default function StammtischWaehlenScreen() {
             />
           )}
 
+          {anlegen ? (
+            <View style={styles.hinweis}>
+              <Ionicons name="information-circle-outline" size={16} color={c.textMuted} />
+              <Text style={styles.hinweisText}>
+                Name und Passwort gibst du an deine Runde weiter – damit treten die anderen bei. Wähl also kein persönliches Passwort.
+              </Text>
+            </View>
+          ) : null}
           {error ? <Text style={styles.error} accessibilityRole="alert">{error}</Text> : null}
 
           <Button
@@ -198,6 +208,8 @@ export default function StammtischWaehlenScreen() {
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
+    hinweis: { flexDirection: "row", gap: 6, alignItems: "flex-start" },
+    hinweisText: { ...TYPE.caption, fontSize: 13, lineHeight: 18, color: c.textMuted, flex: 1 },
     modi: { marginTop: 16 },
     form: { gap: 12 },
     feld: { backgroundColor: c.cardAlt, borderColor: "transparent" },
