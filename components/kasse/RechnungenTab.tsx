@@ -19,14 +19,17 @@ import { SYMBOL } from "../../constants/symbole";
 /**
  * Stammtischrechnungen: einer hat für alle bezahlt, die anderen zahlen ihm
  * ihren Anteil zurück. Offene Rechnungen ausgeklappt, erledigte eingeklappt.
+ * `fokus` (z. B. vom Termin aus): diese Rechnung steht als volle Karte oben
+ * und ist hervorgehoben, auch wenn sie schon erledigt ist.
  */
-export function RechnungenTab({ kasse, onEintrag }: { kasse: Kasse; onEintrag: (e: KassenEintrag) => void }) {
+export function RechnungenTab({ kasse, onEintrag, fokus }: { kasse: Kasse; onEintrag: (e: KassenEintrag) => void; fokus?: string | null }) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const [erledigtOffen, setErledigtOffen] = useState(false);
   const rechnungen = kasse.eintraege.filter((e) => e.typ === "abendkosten");
-  const offen = rechnungen.filter((e) => !rechnungBeglichen(e));
-  const erledigt = rechnungen.filter(rechnungBeglichen);
+  const fokusRechnung = fokus ? rechnungen.find((e) => e.id === fokus) : undefined;
+  const offen = rechnungen.filter((e) => !rechnungBeglichen(e) && e.id !== fokusRechnung?.id);
+  const erledigt = rechnungen.filter((e) => rechnungBeglichen(e) && e.id !== fokusRechnung?.id);
 
   if (rechnungen.length === 0) {
     return (
@@ -40,7 +43,8 @@ export function RechnungenTab({ kasse, onEintrag }: { kasse: Kasse; onEintrag: (
 
   return (
     <>
-      {offen.map((e, i) => <RechnungKarte key={e.id} e={e} kasse={kasse} onDetails={() => onEintrag(e)} enterIndex={i} />)}
+      {fokusRechnung ? <RechnungKarte e={fokusRechnung} kasse={kasse} onDetails={() => onEintrag(fokusRechnung)} enterIndex={0} hervorheben /> : null}
+      {offen.map((e, i) => <RechnungKarte key={e.id} e={e} kasse={kasse} onDetails={() => onEintrag(e)} enterIndex={i + (fokusRechnung ? 1 : 0)} />)}
       {erledigt.length > 0 ? (
         <Card style={{ paddingVertical: 0 }}>
           <PressableScale onPress={() => setErledigtOffen((v) => !v)} style={styles.aufklapp} accessibilityState={{ expanded: erledigtOffen }} accessibilityLabel={`Erledigte Rechnungen, ${erledigt.length}`}>
@@ -72,7 +76,7 @@ function titel(e: KassenEintrag, kasse: Kasse): string {
   return e.beschreibung?.trim() || `Rechnung ${formatWochentagDatum(new Date(e.datum))}`;
 }
 
-function RechnungKarte({ e, kasse, onDetails, enterIndex }: { e: KassenEintrag; kasse: Kasse; onDetails: () => void; enterIndex: number }) {
+function RechnungKarte({ e, kasse, onDetails, enterIndex, hervorheben }: { e: KassenEintrag; kasse: Kasse; onDetails: () => void; enterIndex: number; hervorheben?: boolean }) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const guard = useSingleFlight();
@@ -84,6 +88,7 @@ function RechnungKarte({ e, kasse, onDetails, enterIndex }: { e: KassenEintrag; 
   const ort = kasse.termine.find((t) => t.id === e.terminId)?.ort;
   const teilnehmer = e.teilnehmerIds?.length ?? 0;
   const name = (id: string) => { const m = kasse.members.find((x) => x.id === id); return m ? displayName(m) : "?"; };
+  const erledigt = rechnungBeglichen(e);
 
   async function erinnern() {
     const an = zahler ? displayName(zahler) : "den Zahler";
@@ -92,10 +97,10 @@ function RechnungKarte({ e, kasse, onDetails, enterIndex }: { e: KassenEintrag; 
   }
 
   return (
-    <Card enterIndex={enterIndex} style={{ gap: 12 }}>
+    <Card enterIndex={enterIndex} style={[{ gap: 12 }, hervorheben && { borderWidth: 1.5, borderColor: c.blue }]}>
       <PressableScale onPress={onDetails} scaleTo={0.99} style={{ gap: 2 }} accessibilityLabel={`${titel(e, kasse)}, Details`}>
         <View style={styles.kopf}>
-          <Text style={[styles.label, { color: c.blue }]}>Offene Rechnung</Text>
+          <Text style={[styles.label, { color: erledigt ? c.successText : c.blue }]}>{erledigt ? "Erledigte Rechnung" : "Offene Rechnung"}</Text>
           {ort ? <Text style={styles.sub} numberOfLines={1}>{ort}</Text> : null}
         </View>
         <Text style={styles.titel} numberOfLines={2}>{titel(e, kasse)}</Text>
@@ -153,7 +158,12 @@ function RechnungKarte({ e, kasse, onDetails, enterIndex }: { e: KassenEintrag; 
         </>
       ) : (
         // Altbestand ohne Teilnehmerliste: nur „erledigt" als Ganzes.
-        <Button label="Als erledigt markieren" icon="checkmark" variant="secondary" onPress={() => guard(() => kasse.rechnungUmschalten(e.id))} />
+        <Button
+          label={erledigt ? "Wieder als offen markieren" : "Als erledigt markieren"}
+          icon={erledigt ? "arrow-undo" : "checkmark"}
+          variant="secondary"
+          onPress={() => guard(() => kasse.rechnungUmschalten(e.id))}
+        />
       )}
     </Card>
   );

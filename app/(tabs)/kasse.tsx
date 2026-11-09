@@ -20,14 +20,17 @@ type Tab = "uebersicht" | "strafen" | "rechnungen";
  * Strafen und Stammtischrechnungen. Neues kommt immer über das „+".
  *
  * Deep-Links: ?tab=strafen&memberId=… · ?eintragId=… (Details) ·
- * ?neu=abendkosten&terminId=… (Rechnung zum Termin).
+ * ?neu=abendkosten&terminId=… (Rechnung zum Termin) ·
+ * ?rechnungId=… (Rechnungen-Tab, diese Rechnung oben hervorgehoben).
  */
 export default function KasseScreen() {
-  const params = useLocalSearchParams<{ tab?: string; memberId?: string; eintragId?: string; neu?: string; terminId?: string }>();
+  const params = useLocalSearchParams<{ tab?: string; memberId?: string; eintragId?: string; neu?: string; terminId?: string; rechnungId?: string }>();
   const kasse = useKasse();
   const [tab, setTab] = useState<Tab>("uebersicht");
   const [filter, setFilter] = useState<string | null>(null);
   const [eintrag, setEintrag] = useState<KassenEintrag | null>(null);
+  /** Rechnung, die vom Termin aus geöffnet wurde: steht im Rechnungen-Tab oben. */
+  const [rechnungFokus, setRechnungFokus] = useState<string | null>(null);
   const [strafe, setStrafe] = useState<StrafLog | null>(null);
   const [buchung, setBuchung] = useState<{ art?: BuchungsArt; terminId?: string } | null>(null);
 
@@ -35,17 +38,18 @@ export default function KasseScreen() {
   // damit ein späterer Tab-Wechsel nicht wieder dorthin springt.
   useEffect(() => {
     if (kasse.loading) return;
-    const { tab: t, memberId, eintragId, neu, terminId } = params;
-    if (!t && !memberId && !eintragId && !neu) return;
+    const { tab: t, memberId, eintragId, neu, terminId, rechnungId } = params;
+    if (!t && !memberId && !eintragId && !neu && !rechnungId) return;
     if (t === "strafen" || t === "rechnungen" || t === "uebersicht") setTab(t);
     if (memberId) { setTab("strafen"); setFilter(memberId); }
     if (eintragId) {
       const e = kasse.eintraege.find((x) => x.id === eintragId);
       if (e) { setEintrag(e); if (e.typ === "abendkosten") setTab("rechnungen"); }
     }
+    if (rechnungId) { setTab("rechnungen"); setRechnungFokus(rechnungId); }
     if (neu === "abendkosten" || neu === "einnahme" || neu === "ausgabe" || neu === "strafe") setBuchung({ art: neu, terminId });
-    router.setParams({ tab: undefined, memberId: undefined, eintragId: undefined, neu: undefined, terminId: undefined });
-  }, [kasse.loading, params.tab, params.memberId, params.eintragId, params.neu]);
+    router.setParams({ tab: undefined, memberId: undefined, eintragId: undefined, neu: undefined, terminId: undefined, rechnungId: undefined });
+  }, [kasse.loading, params.tab, params.memberId, params.eintragId, params.neu, params.rechnungId]);
 
   // Unter dem Titel: wer die Kasse führt (statt des Anmeldenamens des Stammtischs).
   const kassenwarte = kasse.members.filter((m) => m.rollen?.some((r) => /kasse/i.test(r)));
@@ -78,7 +82,8 @@ export default function KasseScreen() {
           <SegmentedTabs
             variant="blue"
             value={tab}
-            onChange={setTab}
+            // Hervorhebung gilt nur für den Sprung vom Termin aus.
+            onChange={(t) => { setTab(t); setRechnungFokus(null); }}
             items={[
               { key: "uebersicht", label: "Übersicht" },
               { key: "strafen", label: offeneStrafen ? `Strafen · ${offeneStrafen}` : "Strafen" },
@@ -89,7 +94,7 @@ export default function KasseScreen() {
             <UebersichtTab kasse={kasse} onStrafen={() => setTab("strafen")} onRechnungen={() => setTab("rechnungen")} onEintrag={setEintrag} />
           ) : null}
           {tab === "strafen" ? <StrafenTab kasse={kasse} filter={filter} onFilter={setFilter} onStrafe={setStrafe} /> : null}
-          {tab === "rechnungen" ? <RechnungenTab kasse={kasse} onEintrag={setEintrag} /> : null}
+          {tab === "rechnungen" ? <RechnungenTab kasse={kasse} onEintrag={setEintrag} fokus={rechnungFokus} /> : null}
         </>
       )}
 

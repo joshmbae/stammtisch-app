@@ -315,7 +315,7 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
       ) : null}
 
       {abend.rechnung ? (
-        <PressableScale onPress={() => router.push(`/kasse?eintragId=${abend.rechnung!.id}`)} style={[styles.rechnung, styles.rechnungDa]} accessibilityLabel="Rechnung ansehen">
+        <PressableScale onPress={() => router.push(`/kasse?rechnungId=${abend.rechnung!.id}`)} style={[styles.rechnung, styles.rechnungDa]} accessibilityLabel="Rechnung ansehen">
           <IconSquircle emoji={SYMBOL.rechnung} ton="blue" size={36} />
           <View style={{ flex: 1 }}>
             <Text style={styles.rechnungTitel}>{`Rechnung · ${formatBetrag(abend.rechnung.betrag)}`}</Text>
