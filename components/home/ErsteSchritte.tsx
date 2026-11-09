@@ -9,7 +9,7 @@ import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { getStammtischId } from "../../utils/storage";
 import { rundeEinladen } from "../../utils/einladen";
 import { SYMBOL } from "../../constants/symbole";
-import { Card, IconSquircle, PressableScale, Ton } from "../ui";
+import { Card, Emoji, IconSquircle, PressableScale, Ton } from "../ui";
 
 interface Zustand {
   /** Von Hand ausgeblendet. */
@@ -23,9 +23,8 @@ async function schluessel(): Promise<string> {
 /**
  * Checkliste für neue Stammtische auf Home: vier Schritte (Grunddaten, Admin,
  * Runde einladen, erster Termin), die sich von selbst abhaken. Darunter
- * „Wenn ihr mögt“ – Satzung festlegen, Strafen einstellen, Spiel anlegen –
- * als Hinweis, was es noch gibt (alles auch später in der Runde), ohne dass
- * es abgearbeitet werden muss. Verschwindet, wenn die vier
+ * eine Zeile mit Hinweis, dass Satzung, Strafen und Spiele in den
+ * Einstellungen liegen – kein Pflichtteil. Verschwindet, wenn die vier
  * erledigt sind, von Hand ausgeblendet wurde oder der Stammtisch schon
  * mehrere Abende hinter sich hat.
  */
@@ -89,11 +88,6 @@ export function ErsteSchritte({ verordnung, members, termine, ich }: {
     },
   ];
   const fertig = schritte.filter((s) => s.erledigt).length;
-  const extras: { key: string; emoji: string; ton: Ton; titel: string; route: string }[] = [
-    { key: "satzung", emoji: SYMBOL.satzung, ton: "green", titel: "Satzung festlegen", route: "/satzung" },
-    { key: "strafen", emoji: SYMBOL.strafenkatalog, ton: "coral", titel: "Strafen einstellen", route: "/strafen-kategorien" },
-    { key: "spiele", emoji: SYMBOL.spiele, ton: "mustard", titel: "Spiel anlegen", route: "/spiele" },
-  ];
   if (fertig === schritte.length) return null;
 
   return (
@@ -137,25 +131,16 @@ export function ErsteSchritte({ verordnung, members, termine, ich }: {
           </PressableScale>
         ),
       )}
-      <View style={styles.extrasKopf}>
-        <Text style={styles.extrasTitel}>Wenn ihr mögt</Text>
-      </View>
-      <View style={styles.extras}>
-        {extras.map((e) => (
-          <PressableScale
-            key={e.key}
-            onPress={() => router.push(e.route as never)}
-            scaleTo={0.96}
-            style={[styles.extra, { backgroundColor: c.cardAlt }]}
-            accessibilityRole="link"
-            accessibilityLabel={`${e.titel} einrichten`}
-          >
-            <IconSquircle emoji={e.emoji} ton={e.ton} size={30} />
-            <Text style={styles.extraText} numberOfLines={2}>{e.titel}</Text>
-          </PressableScale>
-        ))}
-      </View>
-      <Text style={styles.extrasHinweis}>Findet ihr auch später alles in der Runde.</Text>
+      {/* Kein weiterer Pflichtteil: nur ein Hinweis, wo der Rest liegt. */}
+      <PressableScale onPress={() => router.push("/einstellungen")} scaleTo={0.98} style={styles.weiteres} accessibilityRole="link" accessibilityLabel="Alles Weitere wie Satzung, Strafen und Spiele in den Einstellungen">
+        <View style={styles.weiteresIcons}>
+          {[SYMBOL.satzung, SYMBOL.strafenkatalog, SYMBOL.spiele].map((e) => <Emoji key={e} size={16}>{e}</Emoji>)}
+        </View>
+        <Text style={styles.weiteresText}>
+          Alles Weitere – Satzung, Strafen, Spiele – in den <Text style={{ color: c.blue, fontFamily: FONT.w600 }}>Einstellungen</Text>
+        </Text>
+        <Ionicons name="chevron-forward" size={16} color={c.textMuted} />
+      </PressableScale>
     </Card>
   );
 }
@@ -173,11 +158,8 @@ const makeStyles = (c: ThemeColors) =>
     trenner: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
     haken: { width: 34, height: 34, borderRadius: 12, alignItems: "center", justifyContent: "center" },
     schritt: { fontFamily: FONT.w600, fontSize: 15, color: c.textDark },
+    weiteres: { flexDirection: "row", alignItems: "center", gap: 10, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border, paddingTop: 12, marginTop: 2, minHeight: 44 },
+    weiteresIcons: { flexDirection: "row", gap: 2 },
+    weiteresText: { flex: 1, ...TYPE.caption, fontSize: 13, lineHeight: 18, color: c.textMuted },
     schrittErledigt: { color: c.textMuted, textDecorationLine: "line-through" },
-    extrasKopf: { flexDirection: "row", alignItems: "baseline", gap: 8, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border, paddingTop: 12, marginTop: 2 },
-    extrasTitel: { ...TYPE.label, color: c.textMuted },
-    extras: { flexDirection: "row", gap: 8 },
-    extra: { flex: 1, minWidth: 0, alignItems: "center", gap: 6, paddingVertical: 10, paddingHorizontal: 6, borderRadius: RADIUS.md },
-    extraText: { fontFamily: FONT.w600, fontSize: 13, lineHeight: 17, color: c.textDark, textAlign: "center" },
-    extrasHinweis: { ...TYPE.caption, fontSize: 13, color: c.textMuted, textAlign: "center" },
   });
