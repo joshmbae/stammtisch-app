@@ -32,10 +32,9 @@ import { useNow } from "../../utils/useNow";
 import { aktuellesJahr, computeRanglisten, fuehrendeTitel, StatsDaten } from "../../utils/stats";
 import { anwesenheitsQuote } from "../../utils/format";
 import { naechsterGeburtstag } from "../../utils/date";
-import { homeHero, homeHeroMitWahl } from "../../utils/terminPhase";
+import { homeHero } from "../../utils/terminPhase";
 import { useAppGeoeffnet } from "../../utils/appGeoeffnet";
 import { neuigkeitenGesehen } from "../../utils/neuigkeiten";
-import { abendStats } from "../../utils/abendStats";
 import { introBereit, introNachher, introZiel, introZielVerwerfen } from "../../utils/intro";
 import { hauptEreignis } from "../../utils/spiel";
 import { monatsSalden, saldo } from "../../utils/kasse";
@@ -48,8 +47,8 @@ import OfflineBanner from "../../components/OfflineBanner";
 import { Avatar, Button, Card, HeaderIconButton, IconSquircle, PressableScale, Screen } from "../../components/ui";
 import { IchSheet } from "../../components/home/IchSheet";
 import { ErsteSchritte } from "../../components/home/ErsteSchritte";
-import { useHomeArten } from "../../utils/homeArten";
-import { HeroCard, HeroWahl, RsvpStatus } from "../../components/home/HeroCard";
+import { RsvpStatus } from "../../components/home/HeroCard";
+import { HeroKarussell } from "../../components/home/HeroKarussell";
 import { BilanzRow, BilanzWerte, Platzierung } from "../../components/home/BilanzRow";
 import { KasseTile } from "../../components/home/KasseTile";
 import { GeburtstagTile } from "../../components/home/GeburtstagTile";
@@ -84,9 +83,7 @@ export default function HomeScreen() {
   const [kategorien, setKategorien] = useState<StrafKategorieDef[]>([]);
   const [aktivitaet, setAktivitaet] = useState<ActivityLogEntry[]>([]);
   const [rsvpBusy, setRsvpBusy] = useState(false);
-  const [heroWahl, setHeroWahl] = useState<HeroWahl | null>(null);
   const [ichOffen, setIchOffen] = useState(false);
-  const [homeArten] = useHomeArten();
   const feedGesehen = useFeedSeen();
   const fokus = useIsFocused();
   const [appGeoeffnet, landungErledigt] = useAppGeoeffnet();
@@ -122,7 +119,7 @@ export default function HomeScreen() {
     if (!appGeoeffnet || !daten) return;
     landungErledigt();
     if (!fokus) return;
-    const h = homeHero(daten.termine, new Date(), verordnung?.stammtischzeit, homeArten);
+    const h = homeHero(daten.termine, new Date(), verordnung?.stammtischzeit, "alle");
     if (h.phase === "live" || h.phase === "danach") {
       introZielVerwerfen();
       router.push(`/termin/${h.termin.id}`);
@@ -174,16 +171,9 @@ export default function HomeScreen() {
 
   const { members, rangl, fuehrende, spielTypen, spielName, listen } = abgeleitet;
   const membersById = new Map(members.map((m) => [m.id, m]));
-  const { hero, umschaltbar } = homeHeroMitWahl(daten.termine, now, verordnung?.stammtischzeit, heroWahl, homeArten);
-  const heroStats = hero.phase === "leer" ? null : abendStats(hero.termin, members, daten.strafLogs, daten.spielLogs);
-  const meinStatus: RsvpStatus =
-    hero.phase === "vorher" && activeMemberId
-      ? hero.termin.anwesenheit?.includes(activeMemberId) ? "ja" : hero.termin.absagen?.includes(activeMemberId) ? "nein" : null
-      : null;
-
-  async function handleRsvp(status: RsvpStatus) {
-    if (hero.phase !== "vorher" || !activeMemberId) return;
-    const termin = hero.termin;
+  /** Zu- oder Absage für den Termin der gerade sichtbaren Karte im Karussell. */
+  async function handleRsvp(termin: StammtischTermin, status: RsvpStatus) {
+    if (!activeMemberId) return;
     setRsvpBusy(true);
     try {
       await setRsvpStatus(termin.id, activeMemberId, status);
@@ -237,19 +227,18 @@ export default function HomeScreen() {
       ) : (
         <>
           <ErsteSchritte verordnung={verordnung} members={members} termine={daten.termine} ich={activeMember ?? null} />
-          <HeroCard
-            hero={hero}
+          <HeroKarussell
+            termine={daten.termine}
             now={now}
             members={members}
-            stats={heroStats}
+            strafLogs={daten.strafLogs}
+            spielLogs={daten.spielLogs}
             stammtischzeit={verordnung?.stammtischzeit}
             spielTypen={spielTypen}
             spielName={spielName}
-            meinStatus={meinStatus}
+            ichId={activeMemberId}
             onRsvp={handleRsvp}
             rsvpBusy={rsvpBusy}
-            alleArten={homeArten === "alle"}
-            umschalter={umschaltbar ? { wert: hero.phase === "danach" ? "letzter" : "naechster", onChange: setHeroWahl } : undefined}
           />
 
           {bilanz ? <BilanzRow

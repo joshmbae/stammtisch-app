@@ -10,7 +10,7 @@ import { AbendStats, meisteBei } from "../../utils/abendStats";
 import { HomeHero, terminStart } from "../../utils/terminPhase";
 import { formatWochentagDatum } from "../../utils/date";
 import { displayName, formatEuro, formatBetrag } from "../../utils/format";
-import { AvatarStack, Button, Emoji, FlipCountdown, IconSquircle, LiveTimer, PressableScale, PulseDot, Scrim } from "../ui";
+import { AvatarStack, Button, Emoji, FlipCountdown, LiveTimer, PressableScale, PulseDot, Scrim } from "../ui";
 import { SYMBOL } from "../../constants/symbole";
 
 export type RsvpStatus = "ja" | "nein" | null;
@@ -28,56 +28,31 @@ interface Props {
   meinStatus: RsvpStatus;
   onRsvp: (s: RsvpStatus) => void;
   rsvpBusy?: boolean;
-  /** Oben auf Home stehen auch Veranstaltungen (persönliche Einstellung). */
-  alleArten?: boolean;
-  /** Umschalten zwischen nächstem und letztem Stammtisch (nicht während ein Abend läuft). */
-  umschalter?: { wert: HeroWahl; onChange: (w: HeroWahl) => void };
+  /** Zeitliche Einordnung oben links, z. B. „Als Nächstes“ oder „Zuletzt“. */
+  rolle?: string;
+  /** Füllt die Höhe der Umgebung (im Karussell gleich hohe Karten). */
+  fill?: boolean;
 }
 
-export type HeroWahl = "naechster" | "letzter";
+/** Name des Termins, groß oben links: „Stammtisch“ oder der Titel der Veranstaltung. */
+function terminName(t: { titel?: string; art: string }): string {
+  return t.titel ?? (t.art === "stammtisch" ? "Stammtisch" : t.art === "geburtstag" ? "Geburtstag" : "Veranstaltung");
+}
 
 /**
  * Die große Karte oben auf Home, in drei Zuständen, die sich von selbst
  * ablösen: vor dem Abend (Countdown, zusagen), während des Abends (Tippen
  * öffnet den Termin, die Kacheln direkt Strafen bzw. Spiel) und danach
- * (kurzes Fazit). Die ganze Fläche öffnet den Termin; oben rechts lässt sich
- * zwischen nächstem und letztem Stammtisch umschalten.
+ * (kurzes Fazit). Die ganze Fläche öffnet den Termin. Oben links steht klein,
+ * wo der Termin zeitlich liegt (`rolle`), darunter groß sein Name.
  */
 export function HeroCard(props: Props) {
   switch (props.hero.phase) {
     case "vorher": return <Vorher {...props} />;
     case "live": return <Live {...props} />;
     case "danach": return <Danach {...props} />;
-    default: return <Leer umschalter={props.umschalter} alleArten={props.alleArten} />;
+    default: return <Leer />;
   }
-}
-
-/** Kleiner Umschalter „Nächster · Letzter“ auf der Hero-Fläche. */
-function HeroUmschalter({ wert, onChange, hell }: { wert: HeroWahl; onChange: (w: HeroWahl) => void; hell: boolean }) {
-  const c = useColors();
-  const styles = useThemedStyles(makeStyles);
-  const optionen: { key: HeroWahl; label: string }[] = [{ key: "naechster", label: "Nächster" }, { key: "letzter", label: "Letzter" }];
-  return (
-    <View style={[styles.umschalter, { backgroundColor: hell ? "rgba(255,255,255,0.14)" : "rgba(28,27,25,0.08)" }]} accessibilityRole="tablist">
-      {optionen.map((o) => {
-        const aktiv = o.key === wert;
-        return (
-          <PressableScale
-            key={o.key}
-            onPress={() => onChange(o.key)}
-            haptic="leicht"
-            hitSlop={6}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: aktiv }}
-            accessibilityLabel={`${o.label} Stammtisch`}
-            style={[styles.umschalterOption, aktiv && { backgroundColor: hell ? "#FFFFFF" : c.card }]}
-          >
-            <Text style={[styles.umschalterText, { color: aktiv ? (hell ? "#1C1B19" : c.textDark) : hell ? "#FFFFFF" : c.textMid }]}>{o.label}</Text>
-          </PressableScale>
-        );
-      })}
-    </View>
-  );
 }
 
 const oeffne = (id: string, bereich?: "strafen" | "spiel") => router.push(bereich ? `/termin/${id}?bereich=${bereich}` : `/termin/${id}`);
@@ -101,7 +76,7 @@ let vorherHoehe = 261;
 
 const zeitText = (d: Date) => d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
 
-function Vorher({ hero, now, members, stammtischzeit, meinStatus, onRsvp, rsvpBusy, umschalter }: Props) {
+function Vorher({ hero, now, members, stammtischzeit, meinStatus, onRsvp, rsvpBusy, rolle, fill }: Props) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const flaeche = useHeroFlaeche("blau");
@@ -112,25 +87,16 @@ function Vorher({ hero, now, members, stammtischzeit, meinStatus, onRsvp, rsvpBu
   const halbTransparent = "rgba(255,255,255,0.14)";
   const dabei = meinStatus === "ja";
   const abgesagt = meinStatus === "nein";
-  const stammtisch = t.art === "stammtisch";
-  const was = stammtisch ? "Nächster Stammtisch" : "Nächste Veranstaltung";
-  // Neben dem Umschalter („Nächster · Letzter“) reicht die Art; der Titel einer
-  // Veranstaltung steht in der Zeile darunter über die volle Breite.
-  const label = umschalter ? (stammtisch ? "Stammtisch" : "Veranstaltung") : was;
+  const name = terminName(t);
   const wann = `${formatWochentagDatum(new Date(`${t.datum}T00:00:00`))} · ${zeitText(start)}`;
 
   return (
-    <PressableScale onPress={() => oeffne(t.id)} onLayout={(e) => { vorherHoehe = e.nativeEvent.layout.height; }} scaleTo={0.99} style={[styles.hero, flaeche]} accessibilityLabel={`${was}${t.titel && !stammtisch ? ` ${t.titel}` : ""}, ${formatWochentagDatum(new Date(`${t.datum}T00:00:00`))}, öffnen`}>
-      <View style={{ gap: 6 }}>
-        <View style={styles.row}>
-          <Text style={[styles.label, { color: c.heroBlueSub, flexShrink: 1 }]} numberOfLines={1}>{label}</Text>
-          {umschalter ? <HeroUmschalter {...umschalter} hell /> : null}
-        </View>
-        <View style={styles.datumZeile}>
-          <Text style={[styles.chipText, { color: c.onHeroBlue, flexShrink: 1 }]} numberOfLines={1}>
-            {!stammtisch && t.titel ? <Text style={{ fontFamily: FONT.w800 }}>{`${t.titel} · `}</Text> : null}
-            {wann}
-          </Text>
+    <PressableScale onPress={() => oeffne(t.id)} onLayout={(e) => { vorherHoehe = e.nativeEvent.layout.height; }} scaleTo={0.99} style={[styles.hero, flaeche, fill && styles.fuellen]} accessibilityLabel={`${rolle ?? "Als Nächstes"}: ${name}, ${formatWochentagDatum(new Date(`${t.datum}T00:00:00`))}, öffnen`}>
+      <View style={{ gap: 2 }}>
+        <Text style={[styles.label, { color: c.heroBlueSub }]} numberOfLines={1}>{rolle ?? "Als Nächstes"}</Text>
+        <Text style={[styles.name, { color: c.onHeroBlue }]} numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE} accessibilityRole="header">{name}</Text>
+        <View style={[styles.datumZeile, { marginTop: 2 }]}>
+          <Text style={[styles.chipText, { color: c.onHeroBlue, flexShrink: 1 }]} numberOfLines={1}>{wann}</Text>
           <Ionicons name="chevron-forward" size={14} color={c.onHeroBlue} />
         </View>
       </View>
@@ -180,7 +146,7 @@ function Vorher({ hero, now, members, stammtischzeit, meinStatus, onRsvp, rsvpBu
  * und die Knöpfe direkt zum Eintragen. Mit Foto füllt es die Karte wie beim
  * Rückblick, sonst die Live-Fläche.
  */
-function Live({ hero, now, members, stats, stammtischzeit, spielTypen, spielName }: Props) {
+function Live({ hero, now, members, stats, stammtischzeit, spielTypen, spielName, rolle, fill }: Props) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const flaeche = useHeroFlaeche("live");
@@ -195,7 +161,7 @@ function Live({ hero, now, members, stats, stammtischzeit, spielTypen, spielName
     : { backgroundColor: "rgba(255,255,255,0.08)", borderColor: "rgba(255,255,255,0.14)" };
   const trenner = "rgba(255,255,255,0.18)";
   const schatten = foto ? styles.schatten : null;
-  const was = t.art === "stammtisch" ? "Stammtisch" : t.titel ?? "Veranstaltung";
+  const was = terminName(t);
 
   // Stand des Abends: Strafen bisher und wer beim Spiel vorne liegt (bis zu zwei Ereignisse).
   const spiel = stats
@@ -226,7 +192,7 @@ function Live({ hero, now, members, stats, stammtischzeit, spielTypen, spielName
     <PressableScale
       onPress={() => oeffne(t.id)}
       scaleTo={0.99}
-      style={[styles.hero, foto ? styles.heroFoto : [flaeche, { overflow: "hidden" }]]}
+      style={[styles.hero, foto ? styles.heroFoto : [flaeche, { overflow: "hidden" }], fill && styles.fuellen]}
       accessibilityLabel={`${was} läuft gerade seit ${zeitText(start)}, ${amTisch.length} am Tisch, ${formatEuro(stats?.strafenSumme ?? 0)} Euro Strafen. Öffnen`}
     >
       {foto ? (
@@ -238,10 +204,13 @@ function Live({ hero, now, members, stats, stammtischzeit, spielTypen, spielName
         <View style={[styles.liveRing, { borderColor: "rgba(255,255,255,0.06)" }]} pointerEvents="none" />
       )}
 
-      <View style={styles.row}>
-        <View style={[styles.livePill, { backgroundColor: foto ? "rgba(20,18,16,0.45)" : "rgba(255,255,255,0.12)" }]}>
-          <PulseDot color={c.liveAccent} size={8} />
-          <Text style={[styles.label, { color: "#FFFFFF" }]} numberOfLines={1}>{`Live · ${was}`}</Text>
+      <View style={[styles.row, { alignItems: "flex-start" }]}>
+        <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+          <View style={styles.liveLabelZeile}>
+            <PulseDot color={c.liveAccent} size={8} />
+            <Text style={[styles.label, { color: c.liveAccent }, schatten]} numberOfLines={1}>{rolle ?? "Läuft gerade"}</Text>
+          </View>
+          <Text style={[styles.name, { color: "#FFFFFF" }, schatten]} numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE} accessibilityRole="header">{was}</Text>
         </View>
         <View style={[styles.round, foto && { backgroundColor: "rgba(20,18,16,0.45)" }]}>
           <Ionicons name="chevron-forward" size={16} color="#FFFFFF" />
@@ -270,7 +239,7 @@ function Live({ hero, now, members, stats, stammtischzeit, spielTypen, spielName
                 <Emoji size={12}>{sp.emoji}</Emoji>
                 <Text style={[styles.glasLabel, { color: leise }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{sp.label}</Text>
               </View>
-              <Text style={[styles.glasWert, { color: "#FFFFFF" }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} maxFontSizeMultiplier={MAX_FONT_SCALE}>{sp.wert}</Text>
+              <Text style={[styles.glasWert, { color: "#FFFFFF" }]} numberOfLines={1} adjustsFontSizeToFit={spalten.length > 1} minimumFontScale={0.7} maxFontSizeMultiplier={MAX_FONT_SCALE}>{sp.wert}</Text>
               <Text style={[styles.glasSub, { color: leise }]} numberOfLines={1}>{sp.sub}</Text>
             </View>
           </React.Fragment>
@@ -300,7 +269,7 @@ function Live({ hero, now, members, stats, stammtischzeit, spielTypen, spielName
  * ein Glas-Feld: Strafen des Abends und wer beim Spiel vorne lag. Antippen
  * öffnet den Danach-Bereich; gleich hoch wie die „Nächster“-Karte.
  */
-function Danach({ hero, now, members, stats, spielTypen, umschalter }: Props) {
+function Danach({ hero, now, members, stats, spielTypen, rolle, fill }: Props) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const flaeche = useHeroFlaeche("senf");
@@ -313,10 +282,9 @@ function Danach({ hero, now, members, stats, spielTypen, umschalter }: Props) {
   const stammtischHeute = new Date(now.getTime() - 4 * 3_600_000);
   const stammtischGestern = new Date(stammtischHeute);
   stammtischGestern.setDate(stammtischGestern.getDate() - 1);
-  // Ältere Abende nur mit Datum (der Umschalter sagt schon „Letzter“).
   const wann = letzterTag === stammtischHeute.toDateString() ? "Heute · " : letzterTag === stammtischGestern.toDateString() ? "Gestern · " : "";
+  const name = terminName(t);
   const foto = !!t.bildUrl;
-  const dunkel = foto || c.isDark;
   const text = foto ? "#FFFFFF" : c.textDark;
   const leise = foto ? "rgba(255,255,255,0.92)" : c.textMid;
   const glas = foto
@@ -354,8 +322,8 @@ function Danach({ hero, now, members, stats, spielTypen, umschalter }: Props) {
     <PressableScale
       onPress={() => oeffne(t.id)}
       scaleTo={0.99}
-      style={[styles.hero, foto ? styles.heroFoto : flaeche, { minHeight: vorherHoehe }]}
-      accessibilityLabel={`Rückblick auf den Stammtisch am ${formatWochentagDatum(tag)}: ${stats.da.length} von ${stats.mitglieder.length} waren da, ${formatEuro(stats.strafenSumme)} Euro Strafen. Öffnen`}
+      style={[styles.hero, foto ? styles.heroFoto : flaeche, { minHeight: vorherHoehe }, fill && styles.fuellen]}
+      accessibilityLabel={`${rolle ?? "Zuletzt"}: ${name} am ${formatWochentagDatum(tag)}: ${stats.da.length} von ${stats.mitglieder.length} waren da, ${formatEuro(stats.strafenSumme)} Euro Strafen. Öffnen`}
     >
       {foto ? (
         <>
@@ -364,21 +332,16 @@ function Danach({ hero, now, members, stats, spielTypen, umschalter }: Props) {
         </>
       ) : null}
 
-      <View style={styles.row}>
-        <View style={[styles.datumPill, foto ? { backgroundColor: "rgba(20,18,16,0.45)", paddingHorizontal: 10 } : null]}>
-          <Text style={[styles.label, { color: foto ? "#FFFFFF" : c.mustardText }]} numberOfLines={1}>{`${wann}${formatWochentagDatum(tag)}`}</Text>
-        </View>
-        {umschalter ? <HeroUmschalter {...umschalter} hell={dunkel} /> : null}
+      <View style={{ gap: 2 }}>
+        <Text style={[styles.label, { color: foto ? "#FFFFFF" : c.mustardText }, schatten]} numberOfLines={1}>{`${rolle ?? "Zuletzt"} · ${wann}${formatWochentagDatum(tag)}`}</Text>
+        <Text style={[styles.name, { color: text }, schatten]} numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE} accessibilityRole="header">{name}</Text>
       </View>
 
-      <View style={{ gap: 8 }}>
-        <Text style={[styles.titel, { color: text }, schatten]} maxFontSizeMultiplier={MAX_FONT_SCALE}>{`${stats.da.length} von ${stats.mitglieder.length} waren da`}</Text>
-        <View style={[styles.row, { justifyContent: "flex-start" }]}>
-          <AvatarStack members={stats.da.map((m) => ({ id: m.id, name: displayName(m), color: m.avatarColor, photoUri: m.photoUri }))} size={26} max={8} ringColor={foto ? "#141210" : c.mustardSoft} />
-          {stats.fehlten.length > 0 ? (
-            <Text style={[styles.small, { color: leise, flex: 1 }, schatten]} numberOfLines={1}>{`ohne ${stats.fehlten.map(displayName).join(", ")}`}</Text>
-          ) : null}
-        </View>
+      <View style={[styles.row, { justifyContent: "flex-start" }]}>
+        <AvatarStack members={stats.da.map((m) => ({ id: m.id, name: displayName(m), color: m.avatarColor, photoUri: m.photoUri }))} size={26} max={8} ringColor={foto ? "#141210" : c.mustardSoft} />
+        <Text style={[styles.small, { color: leise, flex: 1, fontFamily: FONT.w600 }, schatten]} numberOfLines={1}>
+          {`${stats.da.length} von ${stats.mitglieder.length} da${stats.fehlten.length > 0 ? ` · ohne ${stats.fehlten.map(displayName).join(", ")}` : ""}`}
+        </Text>
       </View>
 
       <View style={[styles.glas, glas]}>
@@ -391,7 +354,7 @@ function Danach({ hero, now, members, stats, spielTypen, umschalter }: Props) {
                 <Emoji size={12}>{sp.emoji}</Emoji>
                 <Text style={[styles.glasLabel, { color: leise }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{sp.label}</Text>
               </View>
-              <Text style={[styles.glasWert, { color: text }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} maxFontSizeMultiplier={MAX_FONT_SCALE}>{sp.wert}</Text>
+              <Text style={[styles.glasWert, { color: text }]} numberOfLines={1} adjustsFontSizeToFit={spalten.length > 1} minimumFontScale={0.7} maxFontSizeMultiplier={MAX_FONT_SCALE}>{sp.wert}</Text>
               <View style={styles.glasKopf}>
                 {sp.punkt ? <View style={[styles.punkt, { backgroundColor: sp.punkt }]} /> : null}
                 <Text style={[styles.glasSub, { color: leise }]} numberOfLines={1}>{sp.sub}</Text>
@@ -404,15 +367,14 @@ function Danach({ hero, now, members, stats, spielTypen, umschalter }: Props) {
   );
 }
 
-function Leer({ umschalter, alleArten }: { umschalter?: Props["umschalter"]; alleArten?: boolean }) {
+function Leer() {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const flaeche = useHeroFlaeche("blau");
   return (
     <View style={[styles.hero, flaeche, { minHeight: 0 }]}>
       <View style={styles.row}>
-        <Text style={[styles.label, { color: c.heroBlueSub, flex: 1 }]}>{alleArten ? "Nächster Termin" : "Nächster Stammtisch"}</Text>
-        {umschalter ? <HeroUmschalter {...umschalter} hell /> : null}
+        <Text style={[styles.label, { color: c.heroBlueSub, flex: 1 }]}>Als Nächstes</Text>
       </View>
       <Text style={[styles.titel, { color: c.onHeroBlue }]}>Noch nichts geplant.</Text>
       <Button label="Termin anlegen" icon="add" onPress={() => router.push("/kalender?neu=1")} />
@@ -423,12 +385,12 @@ function Leer({ umschalter, alleArten }: { umschalter?: Props["umschalter"]; all
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     hero: { borderRadius: RADIUS.hero, padding: 18, gap: 14, minHeight: 248, justifyContent: "space-between" },
+    fuellen: { flex: 1 },
+    name: { fontFamily: FONT.w800, fontSize: 24, lineHeight: 29, letterSpacing: -0.5 },
+    liveLabelZeile: { flexDirection: "row", alignItems: "center", gap: 6 },
     row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
     label: { ...TYPE.label },
     datumZeile: { flexDirection: "row", alignItems: "center", gap: 4 },
-    umschalter: { flexDirection: "row", borderRadius: 999, padding: 3 },
-    umschalterOption: { minHeight: 30, paddingHorizontal: 11, borderRadius: 999, justifyContent: "center" },
-    umschalterText: { fontFamily: FONT.w700, fontSize: 12 },
     chipText: { fontFamily: FONT.w600, fontSize: 13 },
     small: { ...TYPE.caption, fontSize: 13 },
     bodyStrong: { ...TYPE.bodyStrong },
@@ -439,7 +401,6 @@ const makeStyles = (c: ThemeColors) =>
     liveChip: { flex: 1, minHeight: 48, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 9, backgroundColor: "rgba(255,255,255,0.14)", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 },
     liveChipHell: { backgroundColor: "#FFFFFF" },
     liveChipText: { fontFamily: FONT.w800, fontSize: 16, flexShrink: 1 },
-    livePill: { flexDirection: "row", alignItems: "center", gap: 7, height: 30, paddingHorizontal: 11, borderRadius: 999, flexShrink: 1 },
     liveTimer: { fontSize: 44, lineHeight: 48, letterSpacing: -1.2 },
     liveRing: { position: "absolute", width: 280, height: 280, borderRadius: 140, borderWidth: 40, right: -100, top: -110 },
     gross: { ...TYPE.num, fontSize: 36, lineHeight: 40, letterSpacing: -1 },
@@ -449,7 +410,6 @@ const makeStyles = (c: ThemeColors) =>
     heroFoto: { overflow: "hidden", backgroundColor: "#141210" },
     // Text direkt auf dem Foto: leichter Schatten, damit er auch auf hellen Bildstellen lesbar bleibt.
     schatten: { textShadowColor: "rgba(0,0,0,0.55)", textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 6 },
-    datumPill: { height: 26, borderRadius: 999, justifyContent: "center", flexShrink: 1 },
     glas: { flexDirection: "row", borderRadius: RADIUS.tile, borderWidth: StyleSheet.hairlineWidth, paddingVertical: 12, paddingHorizontal: 14, gap: 12, overflow: "hidden" },
     glasSpalte: { flex: 1, minWidth: 0, gap: 3 },
     glasKopf: { flexDirection: "row", alignItems: "center", gap: 5 },
