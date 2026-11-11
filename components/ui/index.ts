@@ -18,7 +18,7 @@ export { Scrim } from "./Scrim";
 export { Krone } from "./Krone";
 export { PulseDot, LiveTimer, FlipCountdown, CountBurst } from "./Live";
 export { tonFarben, tonFuer, tonFuerRangliste } from "./ton";
-export type { Ton } from "./ton";
+export type { Ton, Farbton } from "./ton";
 export { Sheet } from "./Sheet";
 export { BildVollbild } from "./BildVollbild";
 export { KategorieIcon, kategorieSymbol } from "./KategorieIcon";

@@ -142,7 +142,7 @@ function TerminZeile({ termin, vergangen, members, onGeburtstagTermin }: {
   const status = termin.art === "geburtstag" ? null : vergangen ? `${zusagen} da` : zusagen > 0 ? `${zusagen} ${zusagen === 1 ? "Zusage" : "Zusagen"}` : "offen";
   const mehrtaegig = termin.datumBis && termin.datumBis !== termin.datum;
   const bisText = mehrtaegig ? `bis ${termin.datumBis!.slice(8, 10)}.${termin.datumBis!.slice(5, 7)}.` : null;
-  const tint = { stammtisch: c.blueBg, veranstaltung: c.mustardSoft, geburtstag: c.coralSoft }[termin.art];
+  const tint = { stammtisch: c.blueBg, veranstaltung: c.eventSoft, geburtstag: c.coralSoft }[termin.art];
   return (
     <PressableScale
       onPress={() => (termin.art === "geburtstag" ? onGeburtstagTermin(termin) : router.push(`/termin/${termin.id}`))}
@@ -150,7 +150,7 @@ function TerminZeile({ termin, vergangen, members, onGeburtstagTermin }: {
       accessibilityLabel={`${titel}, ${new Date(`${termin.datum}T00:00:00`).toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" })}${termin.startZeit ? `, ${termin.startZeit} Uhr` : ""}${status ? `, ${status}` : ""}`}
     >
       <View style={[styles.blockRahmen, { backgroundColor: tint }]}>
-        <Text style={[styles.blockWt, { color: { stammtisch: c.blue, veranstaltung: c.mustardText, geburtstag: c.coralText }[termin.art] }]}>{WT[new Date(`${termin.datum}T00:00:00`).getDay()]}</Text>
+        <Text style={[styles.blockWt, { color: { stammtisch: c.blue, veranstaltung: c.eventText, geburtstag: c.coralText }[termin.art] }]}>{WT[new Date(`${termin.datum}T00:00:00`).getDay()]}</Text>
         <Text style={[styles.blockTag, { color: c.textDark }]}>{termin.datum.slice(8, 10)}</Text>
       </View>
       <View style={{ flex: 1, minWidth: 0 }}>

@@ -97,7 +97,7 @@ export default function TerminScreen() {
             onBack={zurueck}
             onEdit={() => setBearbeiten(true)}
             live={phase === "live" && zeige === "live" ? { start: start ?? now, now } : undefined}
-            motiv={{ flaeche: zeige === "danach" ? "senf" : "blau" }}
+            motiv={{ flaeche: zeige === "danach" ? "senf" : termin.art === "stammtisch" ? "blau" : "event" }}
             phasen={{ phase, ansicht: zeige, onChange: setAnsicht }}
           />
           <OfflineBanner />

@@ -36,7 +36,12 @@ function WannWo({ abend, now, start }: { abend: TerminAbend; now: Date; start: D
   const t = abend.termin!;
   const tag = new Date(`${t.datum}T00:00:00`);
   const ort = t.ort || abend.verordnung.treffpunkt;
-  const flaeche = { backgroundColor: c.heroBlue, borderColor: c.heroBlueEdge, borderWidth: 1 };
+  // Stammtisch im Markenblau, Veranstaltung im hellen Himmelblau (wie auf Home).
+  const ev = t.art !== "stammtisch";
+  const f = ev
+    ? { bg: c.event, kante: "transparent", text: c.onEvent, leise: "rgba(28,27,25,0.7)", knopf: "rgba(255,255,255,0.5)", inner: c.eventInner }
+    : { bg: c.heroBlue, kante: c.heroBlueEdge, text: c.onHeroBlue, leise: "rgba(255,255,255,0.78)", knopf: "rgba(255,255,255,0.16)", inner: c.heroBlueInner };
+  const flaeche = { backgroundColor: f.bg, borderColor: f.kante, borderWidth: 1 };
 
   function route() {
     if (!ort) return;
@@ -52,26 +57,26 @@ function WannWo({ abend, now, start }: { abend: TerminAbend; now: Date; start: D
   return (
     <Card enterIndex={0} style={[styles.hero, flaeche]}>
       <View style={styles.wannZeile}>
-        <View style={[styles.datumBlock, { backgroundColor: c.heroBlueInner }]} accessibilityLabel={tag.toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" })}>
+        <View style={[styles.datumBlock, { backgroundColor: f.inner }]} accessibilityLabel={tag.toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" })}>
           <Text style={[styles.datumKlein, { color: c.heroBlueSub }]}>{WOCHENTAG[tag.getDay()]}</Text>
           <Text style={[styles.datumTag, { color: c.onHeroBlue }]} maxFontSizeMultiplier={1.1}>{tag.getDate()}</Text>
           <Text style={[styles.datumKlein, { color: c.heroBlueSub }]}>{MONAT[tag.getMonth()]}</Text>
         </View>
         <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={[styles.zeit, { color: c.onHeroBlue }]} maxFontSizeMultiplier={MAX_FONT_SCALE}>
+          <Text style={[styles.zeit, { color: f.text }]} maxFontSizeMultiplier={MAX_FONT_SCALE}>
             {start ? `${uhr(start)} Uhr` : "Uhrzeit offen"}
           </Text>
-          {ort ? <Text style={[styles.ort, { color: c.onHeroBlue }]} numberOfLines={2}>{ort}</Text> : null}
-          {t.notizen ? <Text style={[styles.notiz, { color: "rgba(255,255,255,0.78)" }]} numberOfLines={2}>{t.notizen}</Text> : null}
+          {ort ? <Text style={[styles.ort, { color: f.text }]} numberOfLines={2}>{ort}</Text> : null}
+          {t.notizen ? <Text style={[styles.notiz, { color: f.leise }]} numberOfLines={2}>{t.notizen}</Text> : null}
         </View>
         {ort ? (
-          <PressableScale onPress={route} style={[styles.routeKnopf, { backgroundColor: "rgba(255,255,255,0.16)" }]} accessibilityLabel={`Route zu ${ort}`}>
-            <Ionicons name="navigate-outline" size={20} color={c.onHeroBlue} />
+          <PressableScale onPress={route} style={[styles.routeKnopf, { backgroundColor: f.knopf }]} accessibilityLabel={`Route zu ${ort}`}>
+            <Ionicons name="navigate-outline" size={20} color={f.text} />
           </PressableScale>
         ) : null}
       </View>
       {start && start > now ? (
-        <FlipCountdown ziel={start} now={now} tileColor={c.heroBlueInner} digitColor={c.heroBlueSub} labelColor={c.onHeroBlue} />
+        <FlipCountdown ziel={start} now={now} tileColor={f.inner} digitColor={c.heroBlueSub} labelColor={f.text} />
       ) : null}
     </Card>
   );

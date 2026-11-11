@@ -60,6 +60,16 @@ export const LIGHT_COLORS = {
   onHeroBlue:    "#FFFFFF",
   heroBlueSub:   "#F0D48C",      // Akzenttext auf Blau
   heroBlueEdge:  "transparent",
+  // Veranstaltungen: helles Himmelblau aus derselben Farbfamilie wie das Markenblau
+  // (Ton 216° statt 222°, also weiter Gegenfarbe zu Senf). Unterscheidet sich über
+  // die Helligkeit: helle Fläche mit Tinte darauf, Kacheln im Markenblau.
+  event:         "#A2BFEC",      // Tinte darauf 9,2:1
+  onEvent:       "#1C1B19",
+  eventSub:      "#1F3770",      // Akzenttext auf event, 6,1:1
+  eventInner:    "#2D4F9E",      // Kacheln = Markenblau
+  eventSoft:     "#A2BFEC",      // Datumsblock in Listen
+  eventText:     "#1F3770",      // Text auf eventSoft
+  eventDot:      "#5B8FD8",      // Punkte im Kalender: 3,3:1 auf Karte, klar heller als das Markenblau
   live:          "#24553F",
   onLive:        "#FFFFFF",
   liveSub:       "#CFE0D5",
@@ -132,6 +142,13 @@ export const DARK_COLORS: ThemeColors = {
   onHeroBlue:    "#FFFFFF",
   heroBlueSub:   "#F0D48C",
   heroBlueEdge:  "transparent",
+  event:         "#85A9E0",      // eine Stufe tiefer, Tinte darauf 7,2:1
+  onEvent:       "#1C1B19",
+  eventSub:      "#1F3770",      // 4,8:1
+  eventInner:    "#2B4689",
+  eventSoft:     "#213D63",
+  eventText:     "#A2BFEC",      // 5,8:1 auf eventSoft
+  eventDot:      "#9ED8F5",      // heller und türkisstichig gegen blue (#8AA5F0): Kalenderpunkte bleiben unterscheidbar
   live:          "#23503C",
   onLive:        "#FFFFFF",
   liveSub:       "#CFE0D5",

@@ -1,14 +1,17 @@
 import { ThemeColors } from "../../constants/design";
 
 export type Ton = "blue" | "mustard" | "coral" | "green" | "neutral";
+/** Ton plus Veranstaltungs-Himmelblau – nur für Flächen, die eine Terminart zeigen. */
+export type Farbton = Ton | "event";
 
 /** Getönte Fläche + lesbare Vordergrundfarbe darauf, pro Theme. */
-export function tonFarben(ton: Ton, c: ThemeColors): { bg: string; fg: string } {
+export function tonFarben(ton: Farbton, c: ThemeColors): { bg: string; fg: string } {
   switch (ton) {
     case "blue": return { bg: c.blueBg, fg: c.blue };
     case "mustard": return { bg: c.mustardSoft, fg: c.mustardText };
     case "coral": return { bg: c.coralSoft, fg: c.coralText };
     case "green": return { bg: c.greenSoft, fg: c.greenText };
+    case "event": return { bg: c.eventSoft, fg: c.eventText };
     default: return { bg: c.cardAlt, fg: c.textMid };
   }
 }

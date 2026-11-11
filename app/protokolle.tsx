@@ -11,7 +11,7 @@ import LoadingSpinner from "../components/LoadingSpinner";
 import ErrorState from "../components/ErrorState";
 import OfflineBanner from "../components/OfflineBanner";
 import { useScreenLoad } from "../utils/useScreenLoad";
-import { Card, IconSquircle, Screen, ScreenHeader, Ton } from "../components/ui";
+import { Card, IconSquircle, Screen, ScreenHeader, Farbton } from "../components/ui";
 import { protokollAuszug } from "../components/protokoll/ProtokollText";
 import { SYMBOL } from "../constants/symbole";
 
@@ -24,9 +24,9 @@ function terminLabel(t: StammtischTermin | null): string {
   return t.titel ?? (t.art === "stammtisch" ? "Stammtisch" : t.art === "geburtstag" ? "Geburtstag" : "Veranstaltung");
 }
 
-function tonFuerArt(t: StammtischTermin | null): Ton {
+function tonFuerArt(t: StammtischTermin | null): Farbton {
   if (t?.art === "geburtstag") return "coral";
-  if (t?.art === "veranstaltung") return "mustard";
+  if (t?.art === "veranstaltung") return "event";
   return "blue";
 }
 

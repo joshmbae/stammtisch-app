@@ -1,12 +1,12 @@
 import React from "react";
 import { Text, View } from "react-native";
 import { useColors } from "../../contexts/ThemeContext";
-import { Ton, tonFarben } from "./ton";
+import { Farbton, tonFarben } from "./ton";
 
 interface Props {
   /** iPhone-Emoji als Symbol (Kategorie, Spiel, Menüpunkt, Kassenart …). */
   emoji: string;
-  ton?: Ton;
+  ton?: Farbton;
   size?: number;
 }
 

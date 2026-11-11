@@ -17,7 +17,7 @@ export function amTag(t: StammtischTermin, iso: string): boolean {
 }
 
 export function artFarbe(art: TerminArt, c: ThemeColors): string {
-  return art === "stammtisch" ? c.blue : art === "veranstaltung" ? c.mustard : c.coral;
+  return art === "stammtisch" ? c.blue : art === "veranstaltung" ? c.eventDot : c.coral;
 }
 
 /** Tage in Wochen zu je 7 aufteilen. */

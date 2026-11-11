@@ -22,7 +22,7 @@ interface Props {
   /** Während der Abend läuft: grünes Band mit Timer statt Foto. */
   live?: { start: Date; now: Date };
   /** Ohne Foto: Fläche in der Farbe der Phase (wie die Karte auf Home). */
-  motiv: { flaeche: "blau" | "senf" };
+  motiv: { flaeche: "blau" | "senf" | "event" };
   /** Vorher › Live › Danach über dem Titel. */
   phasen: Phasen;
 }
@@ -200,28 +200,34 @@ export function PhotoBand({ titel, untertitel, bildUrl, uploading, onUpload, onR
     );
   }
 
-  // Ohne Foto: Standardmotiv in Markenblau bzw. Senf, im Dunkeln eine Stufe tiefer.
+  // Ohne Foto: Standardmotiv in Markenblau (Stammtisch), Himmelblau (Veranstaltung)
+  // bzw. Senf (danach), im Dunkeln eine Stufe tiefer.
   const dunkel = c.isDark;
   const blau = motiv.flaeche === "blau";
+  const event = motiv.flaeche === "event";
   const flaeche = blau
     ? { bg: c.heroBlue, kante: c.heroBlueEdge, text: c.onHeroBlue, sub: c.heroBlueSub, ring: "rgba(255,255,255,0.08)" }
-    : { bg: c.mustardSoft, kante: c.mustardEdge, text: c.textDark, sub: c.mustardText, ring: dunkel ? "rgba(255,255,255,0.05)" : "rgba(122,94,28,0.08)" };
-  const hellerText = blau || dunkel;
+    : event
+      ? { bg: c.event, kante: "transparent", text: c.onEvent, sub: c.eventSub, ring: "rgba(31,55,112,0.08)" }
+      : { bg: c.mustardSoft, kante: c.mustardEdge, text: c.textDark, sub: c.mustardText, ring: dunkel ? "rgba(255,255,255,0.05)" : "rgba(122,94,28,0.08)" };
+  // Himmelblau ist in beiden Themes hell: dort immer dunkle Schrift.
+  const hellerText = blau || (dunkel && !event);
+  const glas = event ? { backgroundColor: "rgba(255,255,255,0.45)", borderColor: "rgba(31,55,112,0.12)" } : null;
   return (
     <View style={[styles.motiv, { height: MOTIV_HOEHE + insets.top, backgroundColor: flaeche.bg, borderBottomColor: flaeche.kante }]}>
       <StatusBar style={hellerText ? "light" : "dark"} />
       <View style={[styles.motivRing, { borderColor: flaeche.ring }]} pointerEvents="none" />
       <View style={[styles.knopfZeile, { top: insets.top + 8 }]} pointerEvents="box-none">
-        <PressableScale onPress={onBack} style={[styles.rund, styles.rundGlasMotiv]} accessibilityLabel="Zurück" hitSlop={6}>
+        <PressableScale onPress={onBack} style={[styles.rund, styles.rundGlasMotiv, glas]} accessibilityLabel="Zurück" hitSlop={6}>
           <Ionicons name="chevron-back" size={20} color={flaeche.text} />
         </PressableScale>
-        <PhasenZeile {...phasen} farbe={flaeche.text} punkt={blau ? c.mustard : flaeche.text} aktivText={blau ? c.heroBlue : "#1C1B19"} grund={blau ? "farbe" : "hell"} />
-        <PressableScale onPress={onEdit} style={[styles.rund, styles.rundGlasMotiv]} accessibilityLabel="Termin bearbeiten" hitSlop={6}>
+        <PhasenZeile {...phasen} farbe={flaeche.text} punkt={blau ? c.mustard : event ? c.eventInner : flaeche.text} aktivText={blau ? c.heroBlue : event ? c.eventInner : "#1C1B19"} grund={blau ? "farbe" : "hell"} />
+        <PressableScale onPress={onEdit} style={[styles.rund, styles.rundGlasMotiv, glas]} accessibilityLabel="Termin bearbeiten" hitSlop={6}>
           <Ionicons name="pencil" size={18} color={flaeche.text} />
         </PressableScale>
       </View>
       {/* Foto hinzufügen unten rechts neben dem Titel, damit oben Platz für die Phasen bleibt. */}
-      <PressableScale onPress={waehlen} style={[styles.kameraUnten, styles.rundGlasMotiv]} disabled={uploading} accessibilityLabel="Foto zum Termin hinzufügen" hitSlop={6}>
+      <PressableScale onPress={waehlen} style={[styles.kameraUnten, styles.rundGlasMotiv, glas]} disabled={uploading} accessibilityLabel="Foto zum Termin hinzufügen" hitSlop={6}>
         {uploading ? <ActivityIndicator size="small" color={flaeche.text} /> : <Ionicons name="camera-outline" size={19} color={flaeche.text} />}
       </PressableScale>
       <View style={[styles.titelAufFoto, { right: 72 }]}>
