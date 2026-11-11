@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler";
+import { runOnJS } from "react-native-reanimated";
 import { useIsFocused } from "@react-navigation/native";
 import { router } from "expo-router";
 import Animated, { Easing, FadeIn, useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withTiming } from "react-native-reanimated";
@@ -16,7 +18,8 @@ const PODIUM_H = SAEULE_MAX + KOPF_H;
 
 /**
  * Top 3 einer Wertung als Podium; wechselt alle 4 s zur nächsten Wertung.
- * Antippen eines Punkts wählt eine Wertung und hält an. Bei „Bewegung
+ * Wischen nach links/rechts oder Antippen eines Punkts wählt eine Wertung und
+ * hält an. Bei „Bewegung
  * reduzieren" und wenn der Screen nicht sichtbar ist, wird nicht gewechselt.
  */
 export function RanglisteRotator({ listen, jahr, fuehrende, onAlle }: {
@@ -38,6 +41,21 @@ export function RanglisteRotator({ listen, jahr, fuehrende, onAlle }: {
     return () => clearInterval(id);
   }, [fokus, reduce, angehalten, listen.length]);
 
+  // Waagerechtes Wischen blättert; senkrecht bleibt es beim Scrollen der Seite.
+  const anzahl = listen.length;
+  const blaettern = (richtung: number) => {
+    setAngehalten(true);
+    setIndex((i) => (i + richtung + anzahl) % anzahl);
+  };
+  const wisch = Gesture.Pan()
+    .enabled(anzahl > 1)
+    .activeOffsetX([-15, 15])
+    .failOffsetY([-12, 12])
+    .onEnd((e) => {
+      if (Math.abs(e.translationX) < 40) return;
+      runOnJS(blaettern)(e.translationX < 0 ? 1 : -1);
+    });
+
   if (listen.length === 0) return null;
   const liste = listen[index % listen.length];
   const top = liste.eintraege.slice(0, 3);
@@ -46,7 +64,12 @@ export function RanglisteRotator({ listen, jahr, fuehrende, onAlle }: {
   const maxWert = Math.max(1, top[0]?.wert ?? 1);
 
   return (
+    // Eigene Gesten-Wurzel: Home liegt nicht in einem GestureHandlerRootView.
+    <GestureHandlerRootView>
+    <GestureDetector gesture={wisch}>
+    <View collapsable={false}>
     <Card enterIndex={4} style={{ paddingBottom: 0, overflow: "hidden" }}>
+      <View>
       <View style={styles.kopf}>
         <IconSquircle emoji={liste.emoji} ton={tonFuerRangliste(liste.key)} size={36} />
         <View style={{ flex: 1, minWidth: 0 }}>
@@ -80,7 +103,11 @@ export function RanglisteRotator({ listen, jahr, fuehrende, onAlle }: {
           ))}
         </View>
       )}
+      </View>
     </Card>
+    </View>
+    </GestureDetector>
+    </GestureHandlerRootView>
   );
 }
 

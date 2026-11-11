@@ -1,11 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import { LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent, ScrollView, StyleSheet, View } from "react-native";
 import { MemberProfile, SpielEreignisTyp, SpielLog, StammtischTermin, StrafLog } from "../../types";
-import { RADIUS, ThemeColors } from "../../constants/design";
-import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
+import { ThemeColors } from "../../constants/design";
+import { useThemedStyles } from "../../contexts/ThemeContext";
 import { abendStats } from "../../utils/abendStats";
 import { homeHero, terminEnde, terminPhase } from "../../utils/terminPhase";
-import { PressableScale } from "../ui";
 import { HeroCard, RsvpStatus } from "./HeroCard";
 
 /** So viele vergangene bzw. kommende Termine liegen links bzw. rechts. */
@@ -41,8 +40,8 @@ export function heroSeiten(termine: StammtischTermin[], now: Date, stammtischzei
 /**
  * Oben auf Home: alle Termine nebeneinander zum Wischen – links die
  * vergangenen, rechts die kommenden. Startet beim wichtigsten (läuft gerade,
- * eben vorbei oder als Nächstes, siehe homeHero). Punkte darüber zeigen, wo
- * man steht, und lassen sich antippen.
+ * eben vorbei oder als Nächstes, siehe homeHero). Punkte am unteren Rand
+ * jeder Karte zeigen, wo man steht, und lassen sich antippen.
  */
 export function HeroKarussell({
   termine, now, members, strafLogs, spielLogs, stammtischzeit, spielTypen, spielName, ichId, onRsvp, rsvpBusy,
@@ -59,7 +58,6 @@ export function HeroKarussell({
   onRsvp: (termin: StammtischTermin, s: RsvpStatus) => void;
   rsvpBusy?: boolean;
 }) {
-  const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const scroll = useRef<ScrollView>(null);
   const [breite, setBreite] = useState(0);
@@ -95,28 +93,6 @@ export function HeroKarussell({
 
   return (
     <View style={styles.huelle} onLayout={aufLayout}>
-      {seiten.length > 1 ? (
-        <View style={styles.punkte} accessibilityRole="adjustable" accessibilityLabel={`Termin ${index + 1} von ${seiten.length}: ${seiten[index]?.rolle}. Wischen für frühere und spätere Termine`}>
-          {seiten.map((s, i) => (
-            <PressableScale
-              key={s.termin.id}
-              onPress={() => springen(i)}
-              hitSlop={{ top: 10, bottom: 10, left: 2, right: 2 }}
-              scaleTo={0.9}
-              accessibilityLabel={s.rolle}
-            >
-              <View
-                style={[
-                  styles.punkt,
-                  { backgroundColor: i === index ? c.textDark : c.borderDark },
-                  i === index && styles.punktAktiv,
-                  s.phase === "live" && i !== index && { backgroundColor: c.success },
-                ]}
-              />
-            </PressableScale>
-          ))}
-        </View>
-      ) : null}
       {breite > 0 ? (
         <ScrollView
           ref={scroll}
@@ -150,6 +126,7 @@ export function HeroKarussell({
                   rsvpBusy={rsvpBusy}
                   rolle={s.rolle}
                   fill
+                  punkte={{ anzahl: seiten.length, aktiv: i, onWahl: springen }}
                 />
               </View>
             );
@@ -160,13 +137,10 @@ export function HeroKarussell({
   );
 }
 
-const makeStyles = (c: ThemeColors) =>
+const makeStyles = (_c: ThemeColors) =>
   StyleSheet.create({
     huelle: { gap: 10 },
     // Über die Seitenränder hinaus, damit die Nachbarkarten beim Wischen nicht abgeschnitten wirken.
     band: { marginHorizontal: -16 },
     bandInhalt: { paddingHorizontal: 16 },
-    punkte: { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 6, height: 12 },
-    punkt: { width: 6, height: 6, borderRadius: RADIUS.pill },
-    punktAktiv: { width: 18 },
   });

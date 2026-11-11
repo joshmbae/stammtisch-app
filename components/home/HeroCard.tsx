@@ -32,6 +32,27 @@ interface Props {
   rolle?: string;
   /** Füllt die Höhe der Umgebung (im Karussell gleich hohe Karten). */
   fill?: boolean;
+  /** Seitenpunkte am unteren Rand der Karte (im Karussell). */
+  punkte?: { anzahl: number; aktiv: number; onWahl: (i: number) => void };
+}
+
+/** Punkte am unteren Kartenrand: welche Karte im Karussell, antippbar. */
+function Punkte({ anzahl, aktiv, onWahl, hell }: { anzahl: number; aktiv: number; onWahl: (i: number) => void; hell: boolean }) {
+  const styles = useThemedStyles(makeStyles);
+  if (anzahl < 2) return null;
+  const farbe = hell ? "#FFFFFF" : "#1C1B19";
+  return (
+    <View style={styles.seitenPunkte} pointerEvents="box-none">
+      {/* Leicht getönte Kapsel, damit die Punkte auch auf bunten Fotos lesbar sind. */}
+      <View style={[styles.punktKapsel, { backgroundColor: hell ? "rgba(20,18,16,0.5)" : "rgba(28,27,25,0.07)" }]}>
+      {Array.from({ length: anzahl }, (_, i) => (
+        <PressableScale key={i} onPress={() => onWahl(i)} hitSlop={{ top: 8, bottom: 8, left: 2, right: 2 }} scaleTo={0.9} accessibilityLabel={`Termin ${i + 1} von ${anzahl}`}>
+          <View style={[styles.seitenPunkt, { backgroundColor: farbe, opacity: i === aktiv ? 0.95 : 0.35 }, i === aktiv && styles.seitenPunktAktiv]} />
+        </PressableScale>
+      ))}
+      </View>
+    </View>
+  );
 }
 
 /** Name des Termins, groß oben links: „Stammtisch“ oder der Titel der Veranstaltung. */
@@ -76,7 +97,7 @@ let vorherHoehe = 261;
 
 const zeitText = (d: Date) => d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
 
-function Vorher({ hero, now, members, stammtischzeit, meinStatus, onRsvp, rsvpBusy, rolle, fill }: Props) {
+function Vorher({ hero, now, members, stammtischzeit, meinStatus, onRsvp, rsvpBusy, rolle, fill, punkte }: Props) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const flaeche = useHeroFlaeche("blau");
@@ -91,14 +112,17 @@ function Vorher({ hero, now, members, stammtischzeit, meinStatus, onRsvp, rsvpBu
   const wann = `${formatWochentagDatum(new Date(`${t.datum}T00:00:00`))} · ${zeitText(start)}`;
 
   return (
-    <PressableScale onPress={() => oeffne(t.id)} onLayout={(e) => { vorherHoehe = e.nativeEvent.layout.height; }} scaleTo={0.99} style={[styles.hero, flaeche, fill && styles.fuellen]} accessibilityLabel={`${rolle ?? "Als Nächstes"}: ${name}, ${formatWochentagDatum(new Date(`${t.datum}T00:00:00`))}, öffnen`}>
+    <PressableScale onPress={() => oeffne(t.id)} onLayout={(e) => { vorherHoehe = e.nativeEvent.layout.height; }} scaleTo={0.99} style={[styles.hero, flaeche, fill && styles.fuellen, punkte && styles.mitPunkten]} accessibilityLabel={`${rolle ?? "Als Nächstes"}: ${name}, ${formatWochentagDatum(new Date(`${t.datum}T00:00:00`))}, öffnen`}>
       <View style={{ gap: 2 }}>
-        <Text style={[styles.label, { color: c.heroBlueSub }]} numberOfLines={1}>{rolle ?? "Als Nächstes"}</Text>
-        <Text style={[styles.name, { color: c.onHeroBlue }]} numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE} accessibilityRole="header">{name}</Text>
-        <View style={[styles.datumZeile, { marginTop: 2 }]}>
-          <Text style={[styles.chipText, { color: c.onHeroBlue, flexShrink: 1 }]} numberOfLines={1}>{wann}</Text>
-          <Ionicons name="chevron-forward" size={14} color={c.onHeroBlue} />
+        {/* Einordnung links, Datum rechts – eine Zeile, darunter groß der Name. */}
+        <View style={styles.row}>
+          <Text style={[styles.label, { color: c.heroBlueSub, flexShrink: 1 }]} numberOfLines={1}>{rolle ?? "Als Nächstes"}</Text>
+          <View style={styles.datumZeile}>
+            <Text style={[styles.chipText, { color: c.onHeroBlue }]} numberOfLines={1}>{wann}</Text>
+            <Ionicons name="chevron-forward" size={14} color={c.onHeroBlue} />
+          </View>
         </View>
+        <Text style={[styles.name, { color: c.onHeroBlue }]} numberOfLines={2} maxFontSizeMultiplier={MAX_FONT_SCALE} accessibilityRole="header">{name}</Text>
       </View>
       <FlipCountdown ziel={start} now={now} tileColor={c.heroBlueInner} digitColor={c.heroBlueSub} labelColor={c.onHeroBlue} />
       <View style={[styles.row, { gap: 12 }]}>
@@ -136,6 +160,7 @@ function Vorher({ hero, now, members, stammtischzeit, meinStatus, onRsvp, rsvpBu
           accessibilityLabel={abgesagt ? "Kann nicht, ausgewählt. Tippen zum Zurücknehmen" : "Kann nicht"}
         />
       </View>
+      {punkte ? <Punkte {...punkte} hell /> : null}
     </PressableScale>
   );
 }
@@ -146,7 +171,7 @@ function Vorher({ hero, now, members, stammtischzeit, meinStatus, onRsvp, rsvpBu
  * und die Knöpfe direkt zum Eintragen. Mit Foto füllt es die Karte wie beim
  * Rückblick, sonst die Live-Fläche.
  */
-function Live({ hero, now, members, stats, stammtischzeit, spielTypen, spielName, rolle, fill }: Props) {
+function Live({ hero, now, members, stats, stammtischzeit, spielTypen, spielName, rolle, fill, punkte }: Props) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const flaeche = useHeroFlaeche("live");
@@ -192,7 +217,7 @@ function Live({ hero, now, members, stats, stammtischzeit, spielTypen, spielName
     <PressableScale
       onPress={() => oeffne(t.id)}
       scaleTo={0.99}
-      style={[styles.hero, foto ? styles.heroFoto : [flaeche, { overflow: "hidden" }], fill && styles.fuellen]}
+      style={[styles.hero, foto ? styles.heroFoto : [flaeche, { overflow: "hidden" }], fill && styles.fuellen, punkte && styles.mitPunkten]}
       accessibilityLabel={`${was} läuft gerade seit ${zeitText(start)}, ${amTisch.length} am Tisch, ${formatEuro(stats?.strafenSumme ?? 0)} Euro Strafen. Öffnen`}
     >
       {foto ? (
@@ -259,6 +284,7 @@ function Live({ hero, now, members, stats, stammtischzeit, spielTypen, spielName
           </PressableScale>
         ) : null}
       </View>
+      {punkte ? <Punkte {...punkte} hell /> : null}
     </PressableScale>
   );
 }
@@ -269,7 +295,7 @@ function Live({ hero, now, members, stats, stammtischzeit, spielTypen, spielName
  * ein Glas-Feld: Strafen des Abends und wer beim Spiel vorne lag. Antippen
  * öffnet den Danach-Bereich; gleich hoch wie die „Nächster“-Karte.
  */
-function Danach({ hero, now, members, stats, spielTypen, rolle, fill }: Props) {
+function Danach({ hero, now, members, stats, spielTypen, rolle, fill, punkte }: Props) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const flaeche = useHeroFlaeche("senf");
@@ -322,7 +348,7 @@ function Danach({ hero, now, members, stats, spielTypen, rolle, fill }: Props) {
     <PressableScale
       onPress={() => oeffne(t.id)}
       scaleTo={0.99}
-      style={[styles.hero, foto ? styles.heroFoto : flaeche, { minHeight: vorherHoehe }, fill && styles.fuellen]}
+      style={[styles.hero, foto ? styles.heroFoto : flaeche, { minHeight: vorherHoehe }, fill && styles.fuellen, punkte && styles.mitPunkten]}
       accessibilityLabel={`${rolle ?? "Zuletzt"}: ${name} am ${formatWochentagDatum(tag)}: ${stats.da.length} von ${stats.mitglieder.length} waren da, ${formatEuro(stats.strafenSumme)} Euro Strafen. Öffnen`}
     >
       {foto ? (
@@ -333,8 +359,11 @@ function Danach({ hero, now, members, stats, spielTypen, rolle, fill }: Props) {
       ) : null}
 
       <View style={{ gap: 2 }}>
-        <Text style={[styles.label, { color: foto ? "#FFFFFF" : c.mustardText }, schatten]} numberOfLines={1}>{`${rolle ?? "Zuletzt"} · ${wann}${formatWochentagDatum(tag)}`}</Text>
-        <Text style={[styles.name, { color: text }, schatten]} numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE} accessibilityRole="header">{name}</Text>
+        <View style={styles.row}>
+          <Text style={[styles.label, { color: foto ? "#FFFFFF" : c.mustardText, flexShrink: 1 }, schatten]} numberOfLines={1}>{rolle ?? "Zuletzt"}</Text>
+          <Text style={[styles.chipText, { color: text }, schatten]} numberOfLines={1}>{`${wann}${formatWochentagDatum(tag)}`}</Text>
+        </View>
+        <Text style={[styles.name, { color: text }, schatten]} numberOfLines={2} maxFontSizeMultiplier={MAX_FONT_SCALE} accessibilityRole="header">{name}</Text>
       </View>
 
       <View style={[styles.row, { justifyContent: "flex-start" }]}>
@@ -363,6 +392,7 @@ function Danach({ hero, now, members, stats, spielTypen, rolle, fill }: Props) {
           </React.Fragment>
         ))}
       </View>
+      {punkte ? <Punkte {...punkte} hell={foto || c.isDark} /> : null}
     </PressableScale>
   );
 }
@@ -386,6 +416,12 @@ const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     hero: { borderRadius: RADIUS.hero, padding: 18, gap: 14, minHeight: 248, justifyContent: "space-between" },
     fuellen: { flex: 1 },
+    // Platz unten für die Seitenpunkte.
+    mitPunkten: { paddingBottom: 30 },
+    seitenPunkte: { position: "absolute", left: 0, right: 0, bottom: 8, flexDirection: "row", justifyContent: "center" },
+    punktKapsel: { flexDirection: "row", alignItems: "center", gap: 6, height: 18, paddingHorizontal: 8, borderRadius: 9 },
+    seitenPunkt: { width: 6, height: 6, borderRadius: 3 },
+    seitenPunktAktiv: { width: 18 },
     name: { fontFamily: FONT.w800, fontSize: 24, lineHeight: 29, letterSpacing: -0.5 },
     liveLabelZeile: { flexDirection: "row", alignItems: "center", gap: 6 },
     row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
