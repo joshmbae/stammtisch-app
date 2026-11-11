@@ -60,16 +60,16 @@ export const LIGHT_COLORS = {
   onHeroBlue:    "#FFFFFF",
   heroBlueSub:   "#F0D48C",      // Akzenttext auf Blau
   heroBlueEdge:  "transparent",
-  // Veranstaltungen: helles Himmelblau aus derselben Farbfamilie wie das Markenblau
-  // (Ton 216° statt 222°, also weiter Gegenfarbe zu Senf). Unterscheidet sich über
-  // die Helligkeit: helle Fläche mit Tinte darauf, Kacheln im Markenblau.
-  event:         "#A2BFEC",      // Tinte darauf 9,2:1
-  onEvent:       "#1C1B19",
-  eventSub:      "#1F3770",      // Akzenttext auf event, 6,1:1
-  eventInner:    "#2D4F9E",      // Kacheln = Markenblau
-  eventSoft:     "#A2BFEC",      // Datumsblock in Listen
-  eventText:     "#1F3770",      // Text auf eventSoft
-  eventDot:      "#5B8FD8",      // Punkte im Kalender: 3,3:1 auf Karte, klar heller als das Markenblau
+  // Veranstaltungen: Preußischblau. Dunkler und etwas grünstichiger als das
+  // Markenblau (207° statt 222°) – unterscheidet sich über die Tiefe, trägt wie
+  // die Stammtisch-Karte weiße Schrift und Senf-Akzente.
+  event:         "#0F3B5F",      // Weiß 11,6:1, Senf-Akzent 8,0:1
+  onEvent:       "#FFFFFF",
+  eventSub:      "#F0D48C",
+  eventInner:    "#082B47",      // Kacheln, eine Stufe tiefer
+  eventSoft:     "#C9D9E6",      // Datumsblock in Listen
+  eventText:     "#0F3B5F",      // Text auf eventSoft, 8,0:1
+  eventDot:      "#3F86B5",      // Kalenderpunkte: 4,0:1 auf Karte, klar heller als das Markenblau
   live:          "#24553F",
   onLive:        "#FFFFFF",
   liveSub:       "#CFE0D5",
@@ -142,12 +142,12 @@ export const DARK_COLORS: ThemeColors = {
   onHeroBlue:    "#FFFFFF",
   heroBlueSub:   "#F0D48C",
   heroBlueEdge:  "transparent",
-  event:         "#85A9E0",      // eine Stufe tiefer, Tinte darauf 7,2:1
-  onEvent:       "#1C1B19",
-  eventSub:      "#1F3770",      // 4,8:1
-  eventInner:    "#2B4689",
-  eventSoft:     "#213D63",
-  eventText:     "#A2BFEC",      // 5,8:1 auf eventSoft
+  event:         "#16415F",      // eine Spur heller, damit es sich vom Graphit abhebt
+  onEvent:       "#FFFFFF",
+  eventSub:      "#F0D48C",
+  eventInner:    "#0C2C45",
+  eventSoft:     "#183650",
+  eventText:     "#A8CFEA",      // 7,6:1 auf eventSoft
   eventDot:      "#9ED8F5",      // heller und türkisstichig gegen blue (#8AA5F0): Kalenderpunkte bleiben unterscheidbar
   live:          "#23503C",
   onLive:        "#FFFFFF",

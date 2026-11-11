@@ -103,27 +103,18 @@ function Vorher({ hero, now, members, stammtischzeit, meinStatus, onRsvp, rsvpBu
   const flaecheBlau = useHeroFlaeche("blau");
   if (hero.phase !== "vorher") return null;
   const t = hero.termin;
-  // Stammtische im Markenblau, Veranstaltungen im hellen Himmelblau (gleiche
-  // Farbfamilie, andere Helligkeit) – beim Wischen sofort unterscheidbar.
-  const p = t.art !== "stammtisch"
-    ? {
-        flaeche: { backgroundColor: c.event, borderColor: "transparent", borderWidth: 1 } as ViewStyle,
-        text: c.onEvent, sub: c.eventSub,
-        kachel: c.eventInner, ziffer: c.heroBlueSub,
-        spur: "rgba(31,55,112,0.16)", fuell: c.eventInner,
-        ring: c.event,
-        dabei: undefined, offen: { bg: "rgba(255,255,255,0.6)", fg: c.onEvent },
-        nicht: { bg: "rgba(31,55,112,0.1)", fg: c.onEvent }, hell: false,
-      }
-    : {
-        flaeche: flaecheBlau,
-        text: c.onHeroBlue, sub: c.heroBlueSub,
-        kachel: c.heroBlueInner, ziffer: c.heroBlueSub,
-        spur: "rgba(255,255,255,0.2)", fuell: c.mustard,
-        ring: c.isDark ? c.heroBlue : c.background,
-        dabei: undefined, offen: { bg: c.card, fg: c.textDark },
-        nicht: { bg: "rgba(255,255,255,0.14)", fg: c.onHeroBlue }, hell: true,
-      };
+  // Stammtische im Markenblau, Veranstaltungen im Preußischblau – gleich
+  // aufgebaut, beim Wischen über Ton und Tiefe sofort unterscheidbar.
+  const ev = t.art !== "stammtisch";
+  const p = {
+    flaeche: ev ? ({ backgroundColor: c.event, borderColor: "transparent", borderWidth: 1 } as ViewStyle) : flaecheBlau,
+    text: ev ? c.onEvent : c.onHeroBlue, sub: ev ? c.eventSub : c.heroBlueSub,
+    kachel: ev ? c.eventInner : c.heroBlueInner, ziffer: c.heroBlueSub,
+    spur: "rgba(255,255,255,0.2)", fuell: c.mustard,
+    ring: ev ? c.event : c.isDark ? c.heroBlue : c.background,
+    dabei: undefined, offen: { bg: c.card, fg: c.textDark },
+    nicht: { bg: "rgba(255,255,255,0.14)", fg: ev ? c.onEvent : c.onHeroBlue }, hell: true,
+  };
   const start = terminStart(t, stammtischzeit) ?? (() => { const d = new Date(`${t.datum}T00:00:00`); d.setHours(19, 0, 0, 0); return d; })();
   const zugesagt = members.filter((m) => t.anwesenheit?.includes(m.id));
   const dabei = meinStatus === "ja";

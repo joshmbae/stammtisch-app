@@ -36,10 +36,10 @@ function WannWo({ abend, now, start }: { abend: TerminAbend; now: Date; start: D
   const t = abend.termin!;
   const tag = new Date(`${t.datum}T00:00:00`);
   const ort = t.ort || abend.verordnung.treffpunkt;
-  // Stammtisch im Markenblau, Veranstaltung im hellen Himmelblau (wie auf Home).
+  // Stammtisch im Markenblau, Veranstaltung im Preußischblau (wie auf Home).
   const ev = t.art !== "stammtisch";
   const f = ev
-    ? { bg: c.event, kante: "transparent", text: c.onEvent, leise: "rgba(28,27,25,0.7)", knopf: "rgba(255,255,255,0.5)", inner: c.eventInner }
+    ? { bg: c.event, kante: "transparent", text: c.onEvent, leise: "rgba(255,255,255,0.78)", knopf: "rgba(255,255,255,0.16)", inner: c.eventInner }
     : { bg: c.heroBlue, kante: c.heroBlueEdge, text: c.onHeroBlue, leise: "rgba(255,255,255,0.78)", knopf: "rgba(255,255,255,0.16)", inner: c.heroBlueInner };
   const flaeche = { backgroundColor: f.bg, borderColor: f.kante, borderWidth: 1 };
 
