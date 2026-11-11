@@ -44,7 +44,7 @@ function Punkte({ anzahl, aktiv, onWahl, hell }: { anzahl: number; aktiv: number
   return (
     <View style={styles.seitenPunkte} pointerEvents="box-none">
       {/* Leicht getönte Kapsel, damit die Punkte auch auf bunten Fotos lesbar sind. */}
-      <View style={[styles.punktKapsel, { backgroundColor: hell ? "rgba(20,18,16,0.5)" : "rgba(28,27,25,0.07)" }]}>
+      <View style={[styles.punktKapsel, { backgroundColor: hell ? "rgba(0,0,0,0.16)" : "rgba(28,27,25,0.08)" }]}>
       {Array.from({ length: anzahl }, (_, i) => (
         <PressableScale key={i} onPress={() => onWahl(i)} hitSlop={{ top: 8, bottom: 8, left: 2, right: 2 }} scaleTo={0.9} accessibilityLabel={`Termin ${i + 1} von ${anzahl}`}>
           <View style={[styles.seitenPunkt, { backgroundColor: farbe, opacity: i === aktiv ? 0.95 : 0.35 }, i === aktiv && styles.seitenPunktAktiv]} />
@@ -100,41 +100,63 @@ const zeitText = (d: Date) => d.toLocaleTimeString("de-DE", { hour: "2-digit", m
 function Vorher({ hero, now, members, stammtischzeit, meinStatus, onRsvp, rsvpBusy, rolle, fill, punkte }: Props) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
-  const flaeche = useHeroFlaeche("blau");
+  const flaecheBlau = useHeroFlaeche("blau");
   if (hero.phase !== "vorher") return null;
   const t = hero.termin;
+  // Stammtische blau, Veranstaltungen senfgelb – so erkennt man beim Wischen sofort, was ansteht.
+  const veranstaltung = t.art !== "stammtisch";
+  const dunkelText = "#1C1B19";
+  const p = veranstaltung
+    ? {
+        flaeche: { backgroundColor: c.mustard, borderColor: "transparent", borderWidth: 1 } as ViewStyle,
+        text: dunkelText, sub: "rgba(28,27,25,0.68)", kachel: "rgba(28,27,25,0.12)", ziffer: dunkelText,
+        spur: "rgba(28,27,25,0.14)", fuell: dunkelText, ring: c.mustard,
+        dabei: { bg: dunkelText, fg: "#FFFFFF" }, offen: { bg: "#FFFFFF", fg: dunkelText },
+        nicht: { bg: "rgba(28,27,25,0.1)", fg: dunkelText }, hell: false,
+      }
+    : {
+        flaeche: flaecheBlau,
+        text: c.onHeroBlue, sub: c.heroBlueSub, kachel: c.heroBlueInner, ziffer: c.heroBlueSub,
+        spur: "rgba(255,255,255,0.2)", fuell: c.mustard, ring: c.isDark ? c.heroBlue : c.background,
+        dabei: undefined, offen: { bg: c.card, fg: c.textDark },
+        nicht: { bg: "rgba(255,255,255,0.14)", fg: c.onHeroBlue }, hell: true,
+      };
   const start = terminStart(t, stammtischzeit) ?? (() => { const d = new Date(`${t.datum}T00:00:00`); d.setHours(19, 0, 0, 0); return d; })();
   const zugesagt = members.filter((m) => t.anwesenheit?.includes(m.id));
-  const halbTransparent = "rgba(255,255,255,0.14)";
   const dabei = meinStatus === "ja";
   const abgesagt = meinStatus === "nein";
   const name = terminName(t);
   const wann = `${formatWochentagDatum(new Date(`${t.datum}T00:00:00`))} · ${zeitText(start)}`;
 
   return (
-    <PressableScale onPress={() => oeffne(t.id)} onLayout={(e) => { vorherHoehe = e.nativeEvent.layout.height; }} scaleTo={0.99} style={[styles.hero, flaeche, fill && styles.fuellen, punkte && styles.mitPunkten]} accessibilityLabel={`${rolle ?? "Als Nächstes"}: ${name}, ${formatWochentagDatum(new Date(`${t.datum}T00:00:00`))}, öffnen`}>
+    <PressableScale onPress={() => oeffne(t.id)} onLayout={(e) => { vorherHoehe = e.nativeEvent.layout.height; }} scaleTo={0.99} style={[styles.hero, p.flaeche, fill && styles.fuellen, punkte && styles.mitPunkten]} accessibilityLabel={`${rolle ?? "Als Nächstes"}: ${name}, ${formatWochentagDatum(new Date(`${t.datum}T00:00:00`))}, öffnen`}>
       <View style={{ gap: 2 }}>
         {/* Einordnung links, Datum rechts – eine Zeile, darunter groß der Name. */}
         <View style={styles.row}>
-          <Text style={[styles.label, { color: c.heroBlueSub, flexShrink: 1 }]} numberOfLines={1}>{rolle ?? "Als Nächstes"}</Text>
+          <Text style={[styles.label, { color: p.sub, flexShrink: 1 }]} numberOfLines={1}>{rolle ?? "Als Nächstes"}</Text>
           <View style={styles.datumZeile}>
-            <Text style={[styles.chipText, { color: c.onHeroBlue }]} numberOfLines={1}>{wann}</Text>
-            <Ionicons name="chevron-forward" size={14} color={c.onHeroBlue} />
+            <Text style={[styles.chipText, { color: p.text }]} numberOfLines={1}>{wann}</Text>
+            <Ionicons name="chevron-forward" size={14} color={p.text} />
           </View>
         </View>
-        <Text style={[styles.name, { color: c.onHeroBlue }]} numberOfLines={2} maxFontSizeMultiplier={MAX_FONT_SCALE} accessibilityRole="header">{name}</Text>
+        <Text style={[styles.name, { color: p.text }]} numberOfLines={2} maxFontSizeMultiplier={MAX_FONT_SCALE} accessibilityRole="header">{name}</Text>
+        {/* Ort nur bei Veranstaltungen – beim Stammtisch ist es meist der übliche Treffpunkt. */}
+        {veranstaltung && t.ort ? (
+          <View style={styles.ortZeile}>
+            <Ionicons name="location-outline" size={14} color={p.sub} />
+            <Text style={[styles.small, { color: p.sub, flexShrink: 1 }]} numberOfLines={1}>{t.ort}</Text>
+          </View>
+        ) : null}
       </View>
-      <FlipCountdown ziel={start} now={now} tileColor={c.heroBlueInner} digitColor={c.heroBlueSub} labelColor={c.onHeroBlue} />
+      <FlipCountdown ziel={start} now={now} tileColor={p.kachel} digitColor={p.ziffer} labelColor={p.text} />
       <View style={[styles.row, { gap: 12 }]}>
         {zugesagt.length > 0 ? (
-          <AvatarStack size={28} ringColor={c.isDark ? c.heroBlue : c.background} members={zugesagt.map((m) => ({ id: m.id, name: displayName(m), color: m.avatarColor, photoUri: m.photoUri }))} />
+          <AvatarStack size={28} ringColor={p.ring} members={zugesagt.map((m) => ({ id: m.id, name: displayName(m), color: m.avatarColor, photoUri: m.photoUri }))} />
         ) : null}
         <View style={{ flex: 1, gap: 5 }}>
-          <Text style={[styles.small, { color: c.onHeroBlue }]} numberOfLines={1}>
-            {`${zugesagt.length} von ${members.length} dabei${t.ort ? ` · ${t.ort}` : ""}`}
-          </Text>
-          <View style={styles.track}>
-            <View style={[styles.fill, { width: `${members.length ? Math.round((zugesagt.length / members.length) * 100) : 0}%`, backgroundColor: c.mustard }]} />
+          <Text style={[styles.small, { color: p.text, fontFamily: FONT.w600 }]} numberOfLines={1}>{`${zugesagt.length} von ${members.length} dabei`}</Text>
+          <View style={[styles.track, { backgroundColor: p.spur }]}>
+            <View style={[styles.fill, { width: `${members.length ? Math.round((zugesagt.length / members.length) * 100) : 0}%`, backgroundColor: p.fuell }]} />
           </View>
         </View>
       </View>
@@ -143,7 +165,7 @@ function Vorher({ hero, now, members, stammtischzeit, meinStatus, onRsvp, rsvpBu
           label="Bin dabei"
           icon={dabei ? "checkmark" : undefined}
           variant="primary"
-          colors={dabei ? undefined : { bg: c.card, fg: c.textDark }}
+          colors={dabei ? p.dabei : p.offen}
           haptic="erfolg"
           loading={rsvpBusy}
           onPress={() => onRsvp(dabei ? null : "ja")}
@@ -153,14 +175,14 @@ function Vorher({ hero, now, members, stammtischzeit, meinStatus, onRsvp, rsvpBu
         <Button
           label="Kann nicht"
           icon={abgesagt ? "close" : undefined}
-          colors={{ bg: abgesagt ? c.coral : halbTransparent, fg: abgesagt ? c.onCoral : c.onHeroBlue }}
+          colors={abgesagt ? { bg: c.coral, fg: c.onCoral } : p.nicht}
           onPress={() => onRsvp(abgesagt ? null : "nein")}
           disabled={rsvpBusy}
           style={{ flex: 1 }}
           accessibilityLabel={abgesagt ? "Kann nicht, ausgewählt. Tippen zum Zurücknehmen" : "Kann nicht"}
         />
       </View>
-      {punkte ? <Punkte {...punkte} hell /> : null}
+      {punkte ? <Punkte {...punkte} hell={p.hell} /> : null}
     </PressableScale>
   );
 }
@@ -366,13 +388,12 @@ function Danach({ hero, now, members, stats, spielTypen, rolle, fill, punkte }: 
         <Text style={[styles.name, { color: text }, schatten]} numberOfLines={2} maxFontSizeMultiplier={MAX_FONT_SCALE} accessibilityRole="header">{name}</Text>
       </View>
 
+      {/* Wer da war, direkt über den Zahlen – die Mitte bleibt fürs Foto frei. */}
+      <View style={{ gap: 10 }}>
       <View style={[styles.row, { justifyContent: "flex-start" }]}>
         <AvatarStack members={stats.da.map((m) => ({ id: m.id, name: displayName(m), color: m.avatarColor, photoUri: m.photoUri }))} size={26} max={8} ringColor={foto ? "#141210" : c.mustardSoft} />
-        <Text style={[styles.small, { color: leise, flex: 1, fontFamily: FONT.w600 }, schatten]} numberOfLines={1}>
-          {`${stats.da.length} von ${stats.mitglieder.length} da${stats.fehlten.length > 0 ? ` · ohne ${stats.fehlten.map(displayName).join(", ")}` : ""}`}
-        </Text>
+        <Text style={[styles.small, { color: leise, fontFamily: FONT.w600 }, schatten]} numberOfLines={1}>{`${stats.da.length} von ${stats.mitglieder.length} da`}</Text>
       </View>
-
       <View style={[styles.glas, glas]}>
         {foto ? <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} /> : null}
         {spalten.map((sp, i) => (
@@ -391,6 +412,7 @@ function Danach({ hero, now, members, stats, spielTypen, rolle, fill, punkte }: 
             </View>
           </React.Fragment>
         ))}
+      </View>
       </View>
       {punkte ? <Punkte {...punkte} hell={foto || c.isDark} /> : null}
     </PressableScale>
@@ -416,9 +438,10 @@ const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     hero: { borderRadius: RADIUS.hero, padding: 18, gap: 14, minHeight: 248, justifyContent: "space-between" },
     fuellen: { flex: 1 },
+    ortZeile: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 },
     // Platz unten für die Seitenpunkte.
-    mitPunkten: { paddingBottom: 30 },
-    seitenPunkte: { position: "absolute", left: 0, right: 0, bottom: 8, flexDirection: "row", justifyContent: "center" },
+    mitPunkten: { paddingBottom: 42 },
+    seitenPunkte: { position: "absolute", left: 0, right: 0, bottom: 12, flexDirection: "row", justifyContent: "center" },
     punktKapsel: { flexDirection: "row", alignItems: "center", gap: 6, height: 18, paddingHorizontal: 8, borderRadius: 9 },
     seitenPunkt: { width: 6, height: 6, borderRadius: 3 },
     seitenPunktAktiv: { width: 18 },
