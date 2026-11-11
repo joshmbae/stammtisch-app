@@ -103,24 +103,20 @@ function Vorher({ hero, now, members, stammtischzeit, meinStatus, onRsvp, rsvpBu
   const flaecheBlau = useHeroFlaeche("blau");
   if (hero.phase !== "vorher") return null;
   const t = hero.termin;
-  // Stammtische blau, Veranstaltungen senfgelb – so erkennt man beim Wischen sofort, was ansteht.
+  // Stammtische im Markenblau, Veranstaltungen in einem Petrolblau – beim Wischen sofort unterscheidbar.
   const veranstaltung = t.art !== "stammtisch";
-  const dunkelText = "#1C1B19";
-  const p = veranstaltung
-    ? {
-        flaeche: { backgroundColor: c.mustard, borderColor: "transparent", borderWidth: 1 } as ViewStyle,
-        text: dunkelText, sub: "rgba(28,27,25,0.68)", kachel: "rgba(28,27,25,0.12)", ziffer: dunkelText,
-        spur: "rgba(28,27,25,0.14)", fuell: dunkelText, ring: c.mustard,
-        dabei: { bg: dunkelText, fg: "#FFFFFF" }, offen: { bg: "#FFFFFF", fg: dunkelText },
-        nicht: { bg: "rgba(28,27,25,0.1)", fg: dunkelText }, hell: false,
-      }
-    : {
-        flaeche: flaecheBlau,
-        text: c.onHeroBlue, sub: c.heroBlueSub, kachel: c.heroBlueInner, ziffer: c.heroBlueSub,
-        spur: "rgba(255,255,255,0.2)", fuell: c.mustard, ring: c.isDark ? c.heroBlue : c.background,
-        dabei: undefined, offen: { bg: c.card, fg: c.textDark },
-        nicht: { bg: "rgba(255,255,255,0.14)", fg: c.onHeroBlue }, hell: true,
-      };
+  const p = {
+    flaeche: veranstaltung
+      ? ({ backgroundColor: c.isDark ? "#1B5670" : "#1F6585", borderColor: "transparent", borderWidth: 1 } as ViewStyle)
+      : flaecheBlau,
+    text: c.onHeroBlue, sub: c.heroBlueSub,
+    kachel: veranstaltung ? (c.isDark ? "#14405A" : "#174C66") : c.heroBlueInner,
+    ziffer: c.heroBlueSub,
+    spur: "rgba(255,255,255,0.2)", fuell: c.mustard,
+    ring: veranstaltung ? (c.isDark ? "#1B5670" : "#1F6585") : c.isDark ? c.heroBlue : c.background,
+    dabei: undefined, offen: { bg: c.card, fg: c.textDark },
+    nicht: { bg: "rgba(255,255,255,0.14)", fg: c.onHeroBlue }, hell: true,
+  };
   const start = terminStart(t, stammtischzeit) ?? (() => { const d = new Date(`${t.datum}T00:00:00`); d.setHours(19, 0, 0, 0); return d; })();
   const zugesagt = members.filter((m) => t.anwesenheit?.includes(m.id));
   const dabei = meinStatus === "ja";
@@ -140,13 +136,6 @@ function Vorher({ hero, now, members, stammtischzeit, meinStatus, onRsvp, rsvpBu
           </View>
         </View>
         <Text style={[styles.name, { color: p.text }]} numberOfLines={2} maxFontSizeMultiplier={MAX_FONT_SCALE} accessibilityRole="header">{name}</Text>
-        {/* Ort nur bei Veranstaltungen – beim Stammtisch ist es meist der übliche Treffpunkt. */}
-        {veranstaltung && t.ort ? (
-          <View style={styles.ortZeile}>
-            <Ionicons name="location-outline" size={14} color={p.sub} />
-            <Text style={[styles.small, { color: p.sub, flexShrink: 1 }]} numberOfLines={1}>{t.ort}</Text>
-          </View>
-        ) : null}
       </View>
       <FlipCountdown ziel={start} now={now} tileColor={p.kachel} digitColor={p.ziffer} labelColor={p.text} />
       <View style={[styles.row, { gap: 12 }]}>
@@ -370,7 +359,7 @@ function Danach({ hero, now, members, stats, spielTypen, rolle, fill, punkte }: 
     <PressableScale
       onPress={() => oeffne(t.id)}
       scaleTo={0.99}
-      style={[styles.hero, foto ? styles.heroFoto : flaeche, { minHeight: vorherHoehe }, fill && styles.fuellen, punkte && styles.mitPunkten]}
+      style={[styles.hero, foto ? styles.heroFoto : flaeche, !fill && { minHeight: vorherHoehe }, fill && styles.fuellen, punkte && styles.mitPunkten]}
       accessibilityLabel={`${rolle ?? "Zuletzt"}: ${name} am ${formatWochentagDatum(tag)}: ${stats.da.length} von ${stats.mitglieder.length} waren da, ${formatEuro(stats.strafenSumme)} Euro Strafen. Öffnen`}
     >
       {foto ? (
@@ -436,12 +425,11 @@ function Leer() {
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
-    hero: { borderRadius: RADIUS.hero, padding: 18, gap: 14, minHeight: 248, justifyContent: "space-between" },
+    hero: { borderRadius: RADIUS.hero, padding: 18, gap: 12, minHeight: 232, justifyContent: "space-between" },
     fuellen: { flex: 1 },
-    ortZeile: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 },
     // Platz unten für die Seitenpunkte.
-    mitPunkten: { paddingBottom: 42 },
-    seitenPunkte: { position: "absolute", left: 0, right: 0, bottom: 12, flexDirection: "row", justifyContent: "center" },
+    mitPunkten: { paddingBottom: 34 },
+    seitenPunkte: { position: "absolute", left: 0, right: 0, bottom: 10, flexDirection: "row", justifyContent: "center" },
     punktKapsel: { flexDirection: "row", alignItems: "center", gap: 6, height: 18, paddingHorizontal: 8, borderRadius: 9 },
     seitenPunkt: { width: 6, height: 6, borderRadius: 3 },
     seitenPunktAktiv: { width: 18 },

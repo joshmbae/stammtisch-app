@@ -74,7 +74,7 @@ export function FlipCountdown({ ziel, now, tileColor, digitColor, labelColor }: 
   );
 }
 
-const KARTE_HOEHE = 52;
+const KARTE_HOEHE = 46;
 const HALB = KARTE_HOEHE / 2;
 const KLAPP_DAUER = 600;
 
