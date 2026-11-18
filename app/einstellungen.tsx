@@ -365,11 +365,12 @@ export default function EinstellungenScreen() {
               </View>
             }
           />
-          {/* Kein Abmelden im eigentlichen Sinn: der Stammtisch bleibt gemerkt und ist mit einem Tipp wieder offen. */}
+          {/* Abmelden vom Stammtisch: Die meisten haben nur einen, deshalb kein „wechseln“.
+              Er bleibt auf dem Gerät gemerkt und ist auf der Anmeldung mit einem Tipp wieder offen. */}
           <ListRow
-            title="Stammtisch wechseln"
-            subtitle="Dieser bleibt gemerkt"
-            emoji={SYMBOL.stammtisch}
+            title="Abmelden"
+            subtitle={`${v.name || stammtischName || "Euer Stammtisch"} bleibt auf diesem Gerät gemerkt`}
+            emoji={SYMBOL.abmelden}
             onPress={async () => { await stammtischVerlassen(v.name || stammtischName || "Unser Stammtisch"); router.replace("/stammtisch-waehlen"); }}
           />
         </ListGroup>

@@ -7,6 +7,7 @@ import { FONT, RADIUS, TYPE, ThemeColors } from "../../constants/design";
 import { ERSCHEINUNGSBILD_OPTIONEN, useTheme, useThemedStyles } from "../../contexts/ThemeContext";
 import { displayName, formatBetrag } from "../../utils/format";
 import { SYMBOL } from "../../constants/symbole";
+import { strafenAktiv } from "../../utils/strafenSchalter";
 import { Avatar, IconSquircle, PressableScale, SegmentedTabs, Sheet } from "../ui";
 
 /**
@@ -66,7 +67,7 @@ export function IchSheet({ visible, onClose, member, offen }: {
           <IconSquircle emoji={SYMBOL.einstellungen} ton="neutral" size={34} />
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text style={styles.zeileTitel}>Einstellungen</Text>
-            <Text style={styles.muted} numberOfLines={1}>Stammtisch, Strafen, Profil wechseln</Text>
+            <Text style={styles.muted} numberOfLines={1}>{strafenAktiv() ? "Stammtisch, Strafen, Profil, Abmelden" : "Stammtisch, Spiele, Profil, Abmelden"}</Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
         </PressableScale>

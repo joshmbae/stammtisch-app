@@ -22,8 +22,8 @@ async function schluessel(): Promise<string> {
 }
 
 /**
- * Checkliste für neue Stammtische auf Home: vier Schritte (Grunddaten, Admin,
- * Runde einladen, erster Termin), die sich von selbst abhaken. Darunter
+ * Checkliste für neue Stammtische auf Home, nur für Admins: vier Schritte
+ * (Admin, Grunddaten, Runde einladen, erster Termin), die sich von selbst abhaken. Darunter
  * eine Zeile mit Hinweis, dass Satzung, Strafen und Spiele in den
  * Einstellungen liegen – kein Pflichtteil. Verschwindet, wenn die vier
  * erledigt sind, von Hand ausgeblendet wurde oder der Stammtisch schon
@@ -58,23 +58,27 @@ export function ErsteSchritte({ verordnung, members, termine, ich }: {
   }
 
   if (!zustand || zustand.aus) return null;
+  // Einrichten ist Sache der Admins: Die anderen sehen die Checkliste nicht.
+  // Gibt es noch keinen Admin, sieht sie jede:r (sonst richtet es niemand ein).
+  if (members.some((m) => m.istAdmin) && !ich?.istAdmin) return null;
   const heute = new Date().toISOString().slice(0, 10);
   // Eingespielte Runden brauchen das nicht mehr.
   if (termine.filter((t) => t.datum < heute).length >= 3) return null;
 
   const name = verordnung?.name ?? "";
   const schritte: { key: string; emoji: string; ton: Ton; titel: string; text: string; erledigt: boolean; los: () => void }[] = [
-    {
-      key: "grunddaten", emoji: SYMBOL.treffpunkt, ton: "blue",
-      titel: "Grunddaten eintragen", text: "Treffpunkt und Stammtischtag",
-      erledigt: !!verordnung?.treffpunkt && !!verordnung?.stammtischTag,
-      los: () => router.push("/einstellungen"),
-    },
+    // Admin zuerst: Wer gründet, ist es meist schon – dann steht gleich ein Haken da.
     {
       key: "admin", emoji: SYMBOL.krone, ton: "mustard",
       titel: "Admin festlegen", text: "Dann darf nicht jede:r alles ändern",
       erledigt: members.some((m) => m.istAdmin),
       los: () => router.push(ich ? `/member/edit/${ich.id}` : "/mitglieder"),
+    },
+    {
+      key: "grunddaten", emoji: SYMBOL.treffpunkt, ton: "blue",
+      titel: "Grunddaten eintragen", text: "Treffpunkt und Stammtischtag",
+      erledigt: !!verordnung?.treffpunkt && !!verordnung?.stammtischTag,
+      los: () => router.push("/einstellungen"),
     },
     {
       key: "einladen", emoji: SYMBOL.rollen, ton: "green",
