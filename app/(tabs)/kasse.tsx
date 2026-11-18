@@ -11,6 +11,7 @@ import { UebersichtTab } from "../../components/kasse/UebersichtTab";
 import { StrafenTab } from "../../components/kasse/StrafenTab";
 import { RechnungenTab } from "../../components/kasse/RechnungenTab";
 import { EintragSheet, StrafeSheet } from "../../components/kasse/DetailSheets";
+import { useStrafenAktiv } from "../../utils/strafenSchalter";
 import { BuchungSheet, BuchungsArt } from "../../components/kasse/BuchungSheet";
 
 type Tab = "uebersicht" | "strafen" | "rechnungen";
@@ -26,7 +27,10 @@ type Tab = "uebersicht" | "strafen" | "rechnungen";
 export default function KasseScreen() {
   const params = useLocalSearchParams<{ tab?: string; memberId?: string; eintragId?: string; neu?: string; terminId?: string; rechnungId?: string }>();
   const kasse = useKasse();
-  const [tab, setTab] = useState<Tab>("uebersicht");
+  const [tabGewaehlt, setTab] = useState<Tab>("uebersicht");
+  // Ohne Strafen (Einstellungen) gibt es keinen Strafen-Tab, auch nicht über Links.
+  const mitStrafen = useStrafenAktiv();
+  const tab: Tab = !mitStrafen && tabGewaehlt === "strafen" ? "uebersicht" : tabGewaehlt;
   const [filter, setFilter] = useState<string | null>(null);
   const [eintrag, setEintrag] = useState<KassenEintrag | null>(null);
   /** Rechnung, die vom Termin aus geöffnet wurde: steht im Rechnungen-Tab oben. */
@@ -47,7 +51,7 @@ export default function KasseScreen() {
       if (e) { setEintrag(e); if (e.typ === "abendkosten") setTab("rechnungen"); }
     }
     if (rechnungId) { setTab("rechnungen"); setRechnungFokus(rechnungId); }
-    if (neu === "abendkosten" || neu === "einnahme" || neu === "ausgabe" || neu === "strafe") setBuchung({ art: neu, terminId });
+    if (neu === "abendkosten" || neu === "einnahme" || neu === "ausgabe" || (neu === "strafe" && mitStrafen)) setBuchung({ art: neu, terminId });
     router.setParams({ tab: undefined, memberId: undefined, eintragId: undefined, neu: undefined, terminId: undefined, rechnungId: undefined });
   }, [kasse.loading, params.tab, params.memberId, params.eintragId, params.neu, params.rechnungId]);
 
@@ -85,9 +89,9 @@ export default function KasseScreen() {
             // Hervorhebung gilt nur für den Sprung vom Termin aus.
             onChange={(t) => { setTab(t); setRechnungFokus(null); }}
             items={[
-              { key: "uebersicht", label: "Übersicht" },
-              { key: "strafen", label: offeneStrafen ? `Strafen · ${offeneStrafen}` : "Strafen" },
-              { key: "rechnungen", label: "Rechnungen" },
+              { key: "uebersicht" as Tab, label: "Übersicht" },
+              ...(mitStrafen ? [{ key: "strafen" as Tab, label: offeneStrafen ? `Strafen · ${offeneStrafen}` : "Strafen" }] : []),
+              { key: "rechnungen" as Tab, label: "Rechnungen" },
             ]}
           />
           {tab === "uebersicht" ? (

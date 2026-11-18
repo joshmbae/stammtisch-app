@@ -7,6 +7,7 @@ import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { useSession } from "../../contexts/SessionContext";
 import { displayName, formatBetrag } from "../../utils/format";
 import { showAlert } from "../../utils/alert";
+import { useStrafenAktiv } from "../../utils/strafenSchalter";
 import { Avatar, Card, Emoji, IconSquircle, ListGroup, ListRow, PressableScale, SectionLabel, StatusPill, Ton } from "../ui";
 
 export const MAX_EREIGNISSE = 4;
@@ -101,6 +102,8 @@ export function SpielFormular({ form }: { form: SpielForm }) {
   const styles = useThemedStyles(makeStyles);
   const { name, setName, emoji, setEmoji, ereignisse, updateRow, addRow, removeRow } = form;
   const eigenes = !!emoji && !SYMBOLE.includes(emoji);
+  // Ohne Strafen (Einstellungen) wird nur gezählt: keine Kopplung, kein Betrag.
+  const mitStrafen = useStrafenAktiv();
 
   function schritt(r: EreignisRow, d: number) {
     const neu = Math.max(0, Math.round(zahl(r.strafBetrag)) + d);
@@ -179,9 +182,11 @@ export function SpielFormular({ form }: { form: SpielForm }) {
                 placeholderTextColor={c.textLight}
                 accessibilityLabel={`Ereignis ${i + 1}: Bezeichnung`}
               />
-              <View>
-                {r.strafAktiv ? <StatusPill label={`+${formatBetrag(betrag)} Strafe`} ton="coral" /> : <StatusPill label="zählt nur" />}
-              </View>
+              {mitStrafen ? (
+                <View>
+                  {r.strafAktiv ? <StatusPill label={`+${formatBetrag(betrag)} Strafe`} ton="coral" /> : <StatusPill label="zählt nur" />}
+                </View>
+              ) : null}
               {ereignisse.length > 1 ? (
                 <PressableScale onPress={() => removeRow(r.key)} style={styles.weg} accessibilityLabel={`Ereignis ${i + 1} entfernen`}>
                   <Ionicons name="close" size={20} color={c.textMid} />
@@ -189,7 +194,7 @@ export function SpielFormular({ form }: { form: SpielForm }) {
               ) : null}
             </View>
 
-            <View style={[styles.zeile, styles.trenner]}>
+            {mitStrafen ? <View style={[styles.zeile, styles.trenner]}>
               <Emoji size={17} style={{ opacity: r.strafAktiv ? 1 : 0.45 }}>🔗</Emoji>
               <Text style={styles.zeileText}>Strafe koppeln</Text>
               <Switch
@@ -201,9 +206,9 @@ export function SpielFormular({ form }: { form: SpielForm }) {
                 ios_backgroundColor={c.borderDark}
                 accessibilityLabel={`Strafe koppeln für ${r.label || `Ereignis ${i + 1}`}`}
               />
-            </View>
+            </View> : null}
 
-            {r.strafAktiv ? (
+            {mitStrafen && r.strafAktiv ? (
               <View style={[styles.zeile, styles.trenner]}>
                 <Text style={[styles.zeileText, { paddingLeft: 30 }]}>Betrag</Text>
                 <PressableScale onPress={() => schritt(r, -1)} disabled={betrag <= 0} style={styles.stepper} accessibilityLabel="Betrag um einen Euro senken">
@@ -247,9 +252,10 @@ function SpielVorschau({ ereignisse }: { ereignisse: EreignisRow[] }) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const { activeMember } = useSession();
+  const mitStrafen = useStrafenAktiv();
   const zeilen = ereignisse.map((r, i) => ({ r, ton: TOENE[i % TOENE.length] })).filter(({ r }) => r.label.trim());
   if (zeilen.length === 0) return null;
-  const mitStrafe = zeilen.filter(({ r }) => r.strafAktiv && zahl(r.strafBetrag) > 0);
+  const mitStrafe = mitStrafen ? zeilen.filter(({ r }) => r.strafAktiv && zahl(r.strafBetrag) > 0) : [];
   const voll = (ton: Ton) => ({
     mustard: { bg: c.mustard, fg: c.onMustard },
     coral: { bg: c.coral, fg: c.onCoral },
@@ -282,7 +288,7 @@ function SpielVorschau({ ereignisse }: { ereignisse: EreignisRow[] }) {
       <Text style={styles.vorschauFuss}>
         {mitStrafe.length > 0
           ? mitStrafe.map(({ r }) => `${r.label} bucht ${formatBetrag(zahl(r.strafBetrag))}`).join(", ") + " automatisch in die Kasse"
-          : "Ereignisse werden nur gezählt, ohne Strafe."}
+          : mitStrafen ? "Ereignisse werden nur gezählt, ohne Strafe." : "Jedes Ereignis wird pro Person gezählt."}
       </Text>
     </View>
   );

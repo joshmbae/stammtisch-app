@@ -60,12 +60,14 @@ export function begleichenDialog(opts: {
   betrag?: number;
   betragText: string;
   beschreibung: string;
+  /** Text der Rückfrage ohne Link; Standard: „… als bezahlt markiert und in die Kasse gebucht.“ */
+  ohneLinkText?: string;
   onBeglichen: () => Promise<void>;
 }) {
-  const { link, betrag, betragText, beschreibung, onBeglichen } = opts;
+  const { link, betrag, betragText, beschreibung, ohneLinkText, onBeglichen } = opts;
   const gueltig = link ? normalisiereZahlungsLink(link) : null;
   if (!gueltig) {
-    showAlert(`${betragText} begleichen?`, `${beschreibung} als bezahlt markiert und in die Kasse gebucht.`, [
+    showAlert(`${betragText} begleichen?`, ohneLinkText ?? `${beschreibung} als bezahlt markiert und in die Kasse gebucht.`, [
       { text: "Abbrechen", style: "cancel" },
       { text: "Begleichen", onPress: () => { onBeglichen(); } },
     ]);

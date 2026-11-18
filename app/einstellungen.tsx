@@ -77,6 +77,19 @@ export default function EinstellungenScreen() {
     }
   }
 
+  /** Strafen ein- oder ausschalten. Beim Ausschalten kurz sagen, was passiert – nichts wird gelöscht. */
+  function strafenUmschalten(an: boolean) {
+    if (an) { speichern({ tabStrafenAktiv: true }); return; }
+    showAlert(
+      "Strafen ausschalten?",
+      "Dann gibt es in der App keine Strafen mehr: nicht am Abend, nicht in Kasse, Bilanz und Tabelle. Schon erfasste Strafen bleiben gespeichert und sind wieder da, wenn ihr sie einschaltet.",
+      [
+        { text: "Abbrechen", style: "cancel" },
+        { text: "Ausschalten", onPress: () => { speichern({ tabStrafenAktiv: false }); } },
+      ],
+    );
+  }
+
   async function handleSelectSpiel(spiel: Spiel | null) {
     setActivatingSpiel(spiel?.id ?? "none");
     try {
@@ -188,6 +201,7 @@ export default function EinstellungenScreen() {
   const regeln = v.regeln.filter((r) => r.trim()).length;
   const rollen = v.rollenOptionen ?? [];
   const manuelleKategorien = strafKategorien.filter((k) => !k.spielEreignisTypId).length;
+  const strafenAn = v.tabStrafenAktiv !== false;
   const aktivesSpiel = spiele.find((s) => s.id === v.aktivesSpielId);
   const tagZeit = [v.stammtischTag, v.stammtischzeit].filter(Boolean).join(", ");
   const version = Constants.expoConfig?.version;
@@ -291,34 +305,39 @@ export default function EinstellungenScreen() {
 
       <FormSection title="Strafen & Spiele">
         <ListGroup>
-          <ListRow
-            title="Strafenkatalog"
-            value={`${manuelleKategorien} ${manuelleKategorien === 1 ? "Kategorie" : "Kategorien"}`}
+          {/* Hauptschalter: ohne Strafen verschwinden sie überall in der App (utils/strafenSchalter.ts). */}
+          <ToggleRow
+            title="Strafen"
+            subtitle={strafenAn ? "Am Abend, in Kasse, Bilanz und Tabelle" : "Aus – eure Runde kommt ohne aus"}
             emoji={SYMBOL.strafenkatalog}
             ton="coral"
-            onPress={() => nurAdmin(() => router.push("/strafen-kategorien"))}
+            value={strafenAn}
+            onValueChange={(an) => nurAdmin(() => strafenUmschalten(an))}
           />
-          <ListRow
-            title="Zahlungslink"
-            value={v.zahlungsLink ? zahlungsAnbieter(v.zahlungsLink) : "keiner"}
-            emoji={SYMBOL.einnahme}
-            ton="green"
-            onPress={() => nurAdmin(() => setOffen("zahlung"))}
-          />
+          {strafenAn ? (
+            <>
+              <ListRow
+                title="Strafenkatalog"
+                value={`${manuelleKategorien} ${manuelleKategorien === 1 ? "Kategorie" : "Kategorien"}`}
+                emoji={SYMBOL.liveErfassen}
+                ton="coral"
+                onPress={() => nurAdmin(() => router.push("/strafen-kategorien"))}
+              />
+              <ListRow
+                title="Zahlungslink"
+                value={v.zahlungsLink ? zahlungsAnbieter(v.zahlungsLink) : "keiner"}
+                emoji={SYMBOL.einnahme}
+                ton="green"
+                onPress={() => nurAdmin(() => setOffen("zahlung"))}
+              />
+            </>
+          ) : null}
           <ListRow
             title="Spiele"
             value={aktivesSpiel ? `${aktivesSpiel.name} aktiv` : "kein Spiel"}
             emoji={SYMBOL.spiele}
             ton="mustard"
             onPress={() => nurAdmin(() => setOffen("spiel"))}
-          />
-          <ToggleRow
-            title="Strafen am Abend erfassen"
-            subtitle="Strafen-Tab im Termin"
-            emoji={SYMBOL.liveErfassen}
-            ton="coral"
-            value={v.tabStrafenAktiv !== false}
-            onValueChange={(an) => nurAdmin(() => { speichern({ tabStrafenAktiv: an }); })}
           />
         </ListGroup>
       </FormSection>

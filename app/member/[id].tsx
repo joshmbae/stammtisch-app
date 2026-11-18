@@ -16,6 +16,7 @@ import LoadingSpinner from "../../components/LoadingSpinner";
 import ErrorState from "../../components/ErrorState";
 import OfflineBanner from "../../components/OfflineBanner";
 import { PressableScale, Screen, ScreenHeader } from "../../components/ui";
+import { useStrafenAktiv } from "../../utils/strafenSchalter";
 import { AbendZeile, AbendeKarte, BilanzKachel, BilanzKarte, ProfilHero, TitelKarte } from "../../components/profil/ProfilKarten";
 
 /**
@@ -42,6 +43,7 @@ export default function ProfilScreen() {
   const jahr = aktuellesJahr();
   const member = daten?.members.find((m) => m.id === id) ?? null;
 
+  const mitStrafen = useStrafenAktiv();
   const auswertung = useMemo(() => {
     if (!daten || !member) return null;
     const listen = computeRanglisten(daten, zeitraum);
@@ -60,13 +62,14 @@ export default function ProfilScreen() {
       ...listen
         .filter((l) => l.key.startsWith("spiel_"))
         .map((l) => ({ key: l.key, emoji: l.emoji, wert: wertKurz(l.key, platz(l.key)?.wert ?? 0), label: l.kurz, platz: platz(l.key)?.platz })),
-      {
+      // Ohne Strafen (Einstellungen) keine Strafen-Kachel.
+      ...(mitStrafen ? [{
         key: "strafen", emoji: "💰", wert: formatBetrag(strafenSumme),
         label: offen > 0 ? "Strafen" : "Strafen · alles bezahlt",
         platz: platz("strafen")?.platz,
         offen: offen > 0 ? `${formatBetrag(offen)} offen` : undefined,
         ziel: `/kasse?tab=strafen&memberId=${member.id}`,
-      },
+      }] : []),
     ];
 
     const heute = toLocalIsoDate(new Date());
@@ -84,12 +87,12 @@ export default function ProfilScreen() {
         return {
           id: t.id, datum: t.datum, titel: t.titel ?? "Stammtisch",
           dabei: (t.anwesenheit ?? []).includes(member.id),
-          chips: [spaet > 0 ? `${spaet}′ spät` : null, ...spiel, strafe > 0 ? formatBetrag(strafe) : null].filter(Boolean) as string[],
+          chips: [spaet > 0 ? `${spaet}′ spät` : null, ...spiel, mitStrafen && strafe > 0 ? formatBetrag(strafe) : null].filter(Boolean) as string[],
         };
       });
 
     return { titel, kacheln, abende };
-  }, [daten, member, jahr, zeitraum, c]);
+  }, [daten, member, jahr, zeitraum, c, mitStrafen]);
 
   function bearbeiten() {
     if (!member) return;

@@ -27,6 +27,7 @@ import LoadingSpinner from "../../components/LoadingSpinner";
 import ErrorState from "../../components/ErrorState";
 import OfflineBanner from "../../components/OfflineBanner";
 import { Chip, HeaderIconButton, Screen, ScreenHeader } from "../../components/ui";
+import { useStrafenAktiv } from "../../utils/strafenSchalter";
 import { RanglisteKarte } from "../../components/tabelle/RanglisteKarte";
 
 /**
@@ -57,9 +58,10 @@ export default function TabelleScreen() {
   }, []);
 
   const jahre = useMemo(() => (daten ? verfuegbareJahre(daten) : [aktuellesJahr()]), [daten]);
-  const listen = useMemo(() => (daten ? computeRanglisten(daten, jahr) : []), [daten, jahr]);
+  const mitStrafen = useStrafenAktiv();
+  const listen = useMemo(() => (daten ? computeRanglisten(daten, jahr) : []), [daten, jahr, mitStrafen]);
   // Badges zeigen immer die laufende Saison, egal welches Jahr gewählt ist.
-  const fuehrende = useMemo(() => (daten ? fuehrendeTitel(daten, aktuellesJahr()) : new Map()), [daten]);
+  const fuehrende = useMemo(() => (daten ? fuehrendeTitel(daten, aktuellesJahr()) : new Map()), [daten, mitStrafen]);
   const verlauf = useMemo(() => (daten ? computeRangVerlauf(daten, jahr) : null), [daten, jahr]);
   const abende = daten ? daten.termine.filter((t) => t.art === "stammtisch" && t.datum <= toLocalIsoDate(new Date()) && (jahr === ALLZEIT || t.datum.startsWith(jahr))).length : 0;
 

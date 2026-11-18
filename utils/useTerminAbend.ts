@@ -244,9 +244,10 @@ export function useTerminAbend(id: string) {
     const typ = ereignisTypen.find((e) => e.id === ereignisTypId);
     if (!typ) return;
 
-    // Ereignisse mit Strafe (z. B. „Verloren") legen die Strafe gleich mit an.
+    // Ereignisse mit Strafe (z. B. „Verloren") legen die Strafe gleich mit an –
+    // nicht, wenn der Stammtisch Strafen ausgeschaltet hat.
     let strafLogId: string | undefined;
-    if (typ.strafKategorie) {
+    if (typ.strafKategorie && verordnung.tabStrafenAktiv !== false) {
       const strafLog = await addStrafLog(memberId, {
         kategorie: typ.strafKategorie,
         betrag: typ.strafBetrag ?? 0,

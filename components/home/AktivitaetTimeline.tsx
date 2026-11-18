@@ -8,6 +8,7 @@ import { activityRoute } from "../../utils/activityFeed";
 import { renderChronik } from "../../utils/pushText";
 import { formatActivityZeit } from "../../utils/date";
 import { PressableScale, SectionLabel, tonFarben } from "../ui";
+import { strafenAktiv } from "../../utils/strafenSchalter";
 import { tonFuerAktion } from "../chronik/ChronikEintrag";
 
 /** Die letzten Einträge der Chronik als kleiner Zeitstrahl. */
@@ -22,7 +23,7 @@ export function AktivitaetTimeline({ eintraege, membersById, kategorien }: {
     <View style={styles.card}>
       <SectionLabel tone="blue" action={{ label: "Alle", onPress: () => router.push("/feed") }}>Chronik</SectionLabel>
       {eintraege.length === 0 ? (
-        <Text style={styles.leer}>Noch nichts passiert. Die erste Strafe kommt bestimmt.</Text>
+        <Text style={styles.leer}>{strafenAktiv() ? "Noch nichts passiert. Die erste Strafe kommt bestimmt." : "Noch nichts passiert. Zusagen und Spiel tauchen hier auf."}</Text>
       ) : (
         <View style={{ marginTop: 4 }}>
           {eintraege.map((e, i) => {

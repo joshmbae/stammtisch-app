@@ -49,7 +49,7 @@ export default function SpieleScreen() {
   const ereignisText = (spielId: string) =>
     typen
       .filter((t) => t.spielId === spielId)
-      .map((t) => (t.strafBetrag ? `${t.label} (${formatBetrag(t.strafBetrag)})` : t.label))
+      .map((t) => (t.strafBetrag && verordnung?.tabStrafenAktiv !== false ? `${t.label} (${formatBetrag(t.strafBetrag)})` : t.label))
       .join(", ");
 
   return (

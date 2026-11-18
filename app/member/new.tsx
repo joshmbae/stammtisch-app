@@ -9,6 +9,7 @@ import { nurAdminText, useAdmin } from "../../utils/useAdmin";
 import { toLocalIsoDate } from "../../utils/date";
 import { hashPin, isValidPin } from "../../utils/pin";
 import { Screen } from "../../components/ui";
+import { normalisiereZahlungsLink } from "../../utils/zahlungslink";
 import { FormularKopf, MitgliedFormular, useMitgliedFormular } from "../../components/mitglied/MitgliedFormular";
 
 export default function NewMemberScreen() {
@@ -58,6 +59,12 @@ export default function NewMemberScreen() {
         return;
       }
     }
+    // PayPal-Link: leer = keiner, sonst nur gültige https-Links (paypal.me/… wird ergänzt).
+    const zahlungsLink = f.zahlungsLink.trim() ? normalisiereZahlungsLink(f.zahlungsLink) : "";
+    if (zahlungsLink === null) {
+      showAlert("Ungültiger Link", "Bitte einen Link wie paypal.me/deinname eingeben oder das Feld leer lassen.");
+      return;
+    }
     setSpeichert(true);
     try {
       const id = Date.now().toString();
@@ -77,6 +84,7 @@ export default function NewMemberScreen() {
         createdAt: new Date().toISOString(),
         pinHash: f.pin ? await hashPin(id, f.pin) : undefined,
         ...(admin.darf && f.istAdmin ? { istAdmin: true } : {}),
+        zahlungsLink: zahlungsLink || undefined,
       };
       const existing = await loadMembers();
       await saveMembers([...existing, newMember]);

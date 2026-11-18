@@ -17,6 +17,8 @@ export interface MemberProfile {
   pinHash?: string;                          // gehashter 4-stelliger PIN zum Schutz des Profils vor fremden Änderungen/Löschen
   /** Admin dieses Stammtischs (utils/useAdmin.ts). Fehlt die Spalte in der DB, bleibt es undefined. */
   istAdmin?: boolean;
+  /** Eigener Zahlungslink (z. B. paypal.me/name): dahin zahlen die anderen ihren Rechnungsanteil. Leerer Text = entfernen. */
+  zahlungsLink?: string;
 }
 
 // ─── Stammtisch-Termin ────────────────────────────────────────────────────────

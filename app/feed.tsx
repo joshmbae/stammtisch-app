@@ -16,6 +16,7 @@ import { subscribeToActivityFeed } from "../utils/realtime";
 import { useStammtisch } from "../contexts/StammtischContext";
 import { Button, Card, Chip, IconSquircle, Screen, ScreenHeader } from "../components/ui";
 import { CHRONIK_FILTER, ChronikBereich, ChronikEintrag, bereichVon } from "../components/chronik/ChronikEintrag";
+import { strafenAktiv } from "../utils/strafenSchalter";
 import { SYMBOL } from "../constants/symbole";
 
 const PAGE_SIZE = 50;
@@ -110,7 +111,7 @@ export default function FeedScreen() {
         <Card enterIndex={0} style={styles.leer}>
           <IconSquircle emoji={SYMBOL.chronik} ton="blue" size={48} />
           <Text style={styles.leerTitel}>Noch nichts los</Text>
-          <Text style={styles.leerText}>Strafen, Bezahlungen, Zusagen und Spiel-Ergebnisse tauchen hier auf.</Text>
+          <Text style={styles.leerText}>{strafenAktiv() ? "Strafen, Bezahlungen, Zusagen und Spiel-Ergebnisse tauchen hier auf." : "Zusagen, Rechnungen und Spiel-Ergebnisse tauchen hier auf."}</Text>
         </Card>
       ) : (
         <>

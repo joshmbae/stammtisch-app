@@ -8,6 +8,7 @@ import {
   SpielEreignisTyp,
 } from "../types";
 import { formatBetrag } from "./format";
+import { strafenAktiv } from "./strafenSchalter";
 import { toLocalIsoDate } from "./date";
 
 /**
@@ -242,7 +243,8 @@ export function computeRanglisten(daten: StatsDaten, jahr: JahrFilter): Ranglist
       label: "Gesamt",
       sub: e.wert === 0 ? "keine Strafen" : e.offen > 0 ? `⚠️ ${formatBetrag(e.offen)} noch offen` : "✅ alles beglichen",
     }));
-  if (strafenJemals && strafen.length > 0) {
+  // Ohne Strafen (Einstellungen) keine Strafen-Rangliste – auch nicht für alte Einträge.
+  if (strafenJemals && strafen.length > 0 && strafenAktiv()) {
     listen.push({
       key: "strafen",
       emoji: "💰",

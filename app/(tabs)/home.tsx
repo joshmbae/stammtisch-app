@@ -54,6 +54,7 @@ import { KasseTile } from "../../components/home/KasseTile";
 import { GeburtstagTile } from "../../components/home/GeburtstagTile";
 import { AktivitaetTimeline } from "../../components/home/AktivitaetTimeline";
 import { RanglisteRotator } from "../../components/home/RanglisteRotator";
+import { useStrafenAktiv } from "../../utils/strafenSchalter";
 import { SYMBOL } from "../../constants/symbole";
 
 function begruessung(name?: string): string {
@@ -144,6 +145,7 @@ export default function HomeScreen() {
     }, [stammtischId])
   );
 
+  const mitStrafen = useStrafenAktiv();
   const abgeleitet = useMemo(() => {
     if (!daten) return null;
     const members = daten.members;
@@ -164,7 +166,7 @@ export default function HomeScreen() {
     ].filter((l): l is NonNullable<typeof l> => !!l && l.eintraege.some((e) => e.wert > 0));
 
     return { members, rangl, fuehrende, spielTypen, spielName: spiel?.spiel.name ?? null, listen };
-  }, [daten, verordnung?.aktivesSpielId, jahr]);
+  }, [daten, verordnung?.aktivesSpielId, jahr, mitStrafen]);
 
   if (loading) return <LoadingSpinner />;
   if (error || !daten || !abgeleitet) return <ErrorState message={error ?? "Keine Daten."} onRetry={retry} />;
@@ -245,6 +247,7 @@ export default function HomeScreen() {
             werte={bilanz}
             onPress={() => router.push(`/member/${activeMember!.id}`)}
             onOffen={() => router.push(`/kasse?tab=strafen&memberId=${activeMember!.id}`)}
+            mitStrafen={mitStrafen}
           /> : null}
 
           <View style={styles.kacheln}>
@@ -270,7 +273,7 @@ export default function HomeScreen() {
           visible={ichOffen}
           onClose={() => setIchOffen(false)}
           member={activeMember}
-          offen={bilanz?.offen ?? 0}
+          offen={mitStrafen ? bilanz?.offen ?? 0 : 0}
         />
       ) : null}
     </Screen>

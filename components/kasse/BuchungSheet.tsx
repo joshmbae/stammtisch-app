@@ -9,6 +9,7 @@ import { formatWochentagDatum, toLocalIsoDate } from "../../utils/date";
 import { displayName, formatEuro, formatBetrag } from "../../utils/format";
 import { showAlert } from "../../utils/alert";
 import { Button, Chip, Emoji, KategorieIcon, PersonChip, PressableScale, Sheet, haptik } from "../ui";
+import { useStrafenAktiv } from "../../utils/strafenSchalter";
 import { SYMBOL } from "../../constants/symbole";
 
 export type BuchungsArt = "einnahme" | "ausgabe" | "abendkosten" | "strafe";
@@ -43,6 +44,7 @@ export function BuchungSheet({ visible, kasse, onClose, start }: {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const [art, setArt] = useState<BuchungsArt>("einnahme");
+  const mitStrafen = useStrafenAktiv();
   const [betrag, setBetrag] = useState("");
   const [text, setText] = useState("");
   const [schnell, setSchnell] = useState<string | null>(null);
@@ -174,7 +176,7 @@ export function BuchungSheet({ visible, kasse, onClose, start }: {
       }
     >
       <View style={styles.arten} accessibilityRole="radiogroup">
-        {ARTEN.map((a) => {
+        {ARTEN.filter((a) => mitStrafen || a.key !== "strafe").map((a) => {
           const sel = a.key === art;
           return (
             <PressableScale

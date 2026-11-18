@@ -12,6 +12,9 @@ import { formatWochentagDatum } from "../../utils/date";
 import { displayName, formatBetrag } from "../../utils/format";
 import { terminBezeichnung } from "../../utils/activityFeed";
 import { useSingleFlight } from "../../utils/useSingleFlight";
+import { sendErinnerungPush } from "../../utils/push";
+import { showAlert } from "../../utils/alert";
+import { begleichenDialog, zahlungsAnbieter } from "../../utils/zahlungslink";
 import { Avatar, Button, Card, IconSquircle, PressableScale, haptik } from "../ui";
 import { SYMBOL } from "../../constants/symbole";
 
@@ -70,6 +73,11 @@ export function RechnungenTab({ kasse, onEintrag, fokus }: { kasse: Kasse; onEin
   );
 }
 
+/** „A“, „A und B“, „A, B und C“. */
+function aufzaehlen(namen: string[]): string {
+  return namen.length <= 1 ? namen.join("") : `${namen.slice(0, -1).join(", ")} und ${namen[namen.length - 1]}`;
+}
+
 function titel(e: KassenEintrag, kasse: Kasse): string {
   const t = kasse.termine.find((x) => x.id === e.terminId);
   if (t) return terminBezeichnung({ terminDatum: t.datum, terminTitel: t.titel, terminArt: t.art }, true);
@@ -89,11 +97,67 @@ function RechnungKarte({ e, kasse, onDetails, enterIndex, hervorheben }: { e: Ka
   const teilnehmer = e.teilnehmerIds?.length ?? 0;
   const name = (id: string) => { const m = kasse.members.find((x) => x.id === id); return m ? displayName(m) : "?"; };
   const erledigt = rechnungBeglichen(e);
+  // Mein eigener offener Anteil: direkt zahlen – an den Zahler (sein PayPal-Link
+  // aus dem Profil) oder, wenn die Kasse bezahlt hat, an den Link des Stammtischs.
+  const ichOffen = !!kasse.activeMemberId && offenIds.includes(kasse.activeMemberId);
+  const empfaengerLink = zahler ? zahler.zahlungsLink : kasse.zahlungsLink;
+  const paypal = !!empfaengerLink && zahlungsAnbieter(empfaengerLink) === "PayPal";
+  function meinenAnteilZahlen() {
+    const an = zahler ? displayName(zahler) : "die Kasse";
+    begleichenDialog({
+      link: empfaengerLink,
+      betrag: anteil,
+      betragText: formatBetrag(anteil),
+      beschreibung: "Dein Anteil wird",
+      ohneLinkText: zahler
+        ? `Hast du ${displayName(zahler)} deinen Anteil gegeben? Dann hake ihn ab. (Mit einem PayPal-Link im Profil von ${displayName(zahler)} ginge es direkt aus der App.)`
+        : `Hast du deinen Anteil an ${an} gezahlt? Dann hake ihn ab.`,
+      onBeglichen: async () => {
+        haptik("erfolg");
+        await kasse.anteilUmschalten(e.id, kasse.activeMemberId!);
+      },
+    });
+  }
 
+  /**
+   * Erst per Push an jeden, der noch offen ist (außer mir selbst). Wer keine
+   * Mitteilungen bekommt, wird genannt und kann per Nachricht erinnert werden.
+   */
+  const [erinnertGerade, setErinnertGerade] = useState(false);
   async function erinnern() {
-    const an = zahler ? displayName(zahler) : "den Zahler";
-    const text = `${titel(e, kasse)}: noch offen sind ${offenIds.map(name).join(", ")} – je ${formatBetrag(anteil)} an ${an}.`;
-    try { await Share.share({ message: text }); } catch { /* abgebrochen */ }
+    const an = zahler ? displayName(zahler) : "die Kasse";
+    const ziel = offenIds.filter((id) => id !== kasse.activeMemberId);
+    const nachricht = (ids: string[]) => `${titel(e, kasse)}: noch offen sind ${ids.map(name).join(", ")} – je ${formatBetrag(anteil)} an ${an}.`;
+    setErinnertGerade(true);
+    let ohne: string[] = [];
+    try {
+      const ergebnis = await Promise.all(ziel.map(async (id) => ({
+        id,
+        ok: await sendErinnerungPush(id, {
+          title: `Dein Anteil: ${formatBetrag(anteil)}`,
+          body: `${titel(e, kasse)} – bitte an ${an} zahlen und in der Kasse abhaken.`,
+          url: `/kasse?rechnungId=${e.id}`,
+          terminId: e.terminId,
+        }),
+      })));
+      ohne = ergebnis.filter((x) => !x.ok).map((x) => x.id);
+    } finally {
+      setErinnertGerade(false);
+    }
+    const geschickt = ziel.length - ohne.length;
+    if (ohne.length === 0) {
+      haptik("erfolg");
+      showAlert("Erinnert", geschickt === 1 ? `${name(ziel[0])} hat eine Mitteilung bekommen.` : `${geschickt} haben eine Mitteilung bekommen.`);
+      return;
+    }
+    showAlert(
+      ohne.length === 1 ? `${name(ohne[0])} bekommt keine Mitteilung` : `${ohne.length} bekommen keine Mitteilung`,
+      `${geschickt > 0 ? `${geschickt} ${geschickt === 1 ? "hat" : "haben"} eine Mitteilung bekommen. ` : ""}Bei ${aufzaehlen(ohne.map(name))} sind Mitteilungen der App aus. Stattdessen eine Nachricht schicken, z. B. in eure Gruppe?`,
+      [
+        { text: "Abbrechen", style: "cancel" },
+        { text: "Nachricht schicken", onPress: () => { Share.share({ message: nachricht(ohne) }).catch(() => {}); } },
+      ],
+    );
   }
 
   return (
@@ -114,6 +178,16 @@ function RechnungKarte({ e, kasse, onDetails, enterIndex, hervorheben }: { e: Ka
             {`${displayName(zahler)} hat bezahlt${schuldner.length ? ` · bekommt ${formatBetrag(anteil * schuldner.length)}` : ""}`}
           </Text>
         </PressableScale>
+      ) : null}
+
+      {ichOffen ? (
+        <Button
+          label={paypal ? `Meinen Anteil zahlen · ${formatBetrag(anteil)}` : `Meinen Anteil begleichen · ${formatBetrag(anteil)}`}
+          icon={paypal ? "logo-paypal" : "checkmark"}
+          variant="primary"
+          onPress={meinenAnteilZahlen}
+          accessibilityLabel={`Deinen Anteil von ${formatBetrag(anteil)} ${paypal ? "per PayPal zahlen" : "begleichen"}`}
+        />
       ) : null}
 
       {schuldner.length > 0 ? (
@@ -152,8 +226,8 @@ function RechnungKarte({ e, kasse, onDetails, enterIndex, hervorheben }: { e: Ka
               );
             })}
           </View>
-          {offenIds.length > 0 ? (
-            <Button label={`Offene erinnern (${offenIds.length})`} icon="notifications-outline" variant="secondary" colors={{ bg: c.blueBg, fg: c.blue }} onPress={erinnern} />
+          {offenIds.some((id) => id !== kasse.activeMemberId) ? (
+            <Button label={`Offene erinnern (${offenIds.filter((id) => id !== kasse.activeMemberId).length})`} icon="notifications-outline" variant="secondary" colors={{ bg: c.blueBg, fg: c.blue }} onPress={erinnern} loading={erinnertGerade} />
           ) : null}
         </>
       ) : (

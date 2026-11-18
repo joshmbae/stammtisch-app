@@ -34,11 +34,13 @@ const SYMBOL_GROESSE = 28;
  * offene Strafen und die eigenen Platzierungen, die reihum wechseln (beste
  * zuerst). Bewusst flach gehalten.
  */
-export function BilanzRow({ werte, onPress, onOffen }: {
+export function BilanzRow({ werte, onPress, onOffen, mitStrafen = true }: {
   werte: BilanzWerte;
   onPress: () => void;
   /** „offen“ antippen: zur eigenen, gefilterten Strafenliste. */
   onOffen?: () => void;
+  /** Ohne Strafen (Einstellungen) entfällt die Spalte „offen“. */
+  mitStrafen?: boolean;
 }) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
@@ -58,9 +60,9 @@ export function BilanzRow({ werte, onPress, onOffen }: {
   const label = [
     `Deine Bilanz ${werte.jahr}`,
     werte.abende ? `${werte.dabei} von ${werte.abende} Abenden dabei, ${werte.quote ?? 0} Prozent` : "noch kein Abend",
-    `${offenText} offen`,
+    mitStrafen ? `${offenText} offen` : null,
     ...werte.platzierungen.map((p) => `${p.kurz}: Platz ${p.platz}`),
-  ].join(", ");
+  ].filter(Boolean).join(", ");
 
   return (
     <Card onPress={onPress} enterIndex={1} accessibilityLabel={label} style={{ paddingTop: 12, paddingBottom: 14 }}>
@@ -73,6 +75,7 @@ export function BilanzRow({ werte, onPress, onOffen }: {
           <Text style={[styles.label, { marginTop: 4 }]} numberOfLines={1}>{werte.abende ? "dabei" : "noch kein Abend"}</Text>
         </View>
 
+        {mitStrafen ? <>
         <View style={styles.trenner} />
 
         <PressableScale
@@ -87,6 +90,7 @@ export function BilanzRow({ werte, onPress, onOffen }: {
           <Text style={[styles.wert, { color: werte.offen > 0 ? c.coralText : c.success }]} numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE}>{offenText}</Text>
           <Text style={styles.label} numberOfLines={1}>offen</Text>
         </PressableScale>
+        </> : null}
 
         <View style={styles.trenner} />
 

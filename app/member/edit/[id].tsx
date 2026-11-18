@@ -9,6 +9,7 @@ import { hashPin, isValidPin } from "../../../utils/pin";
 import { Screen } from "../../../components/ui";
 import { useSession } from "../../../contexts/SessionContext";
 import { nurAdminText, useAdmin } from "../../../utils/useAdmin";
+import { normalisiereZahlungsLink } from "../../../utils/zahlungslink";
 import { FormularKopf, MitgliedFormular, useMitgliedFormular } from "../../../components/mitglied/MitgliedFormular";
 
 export default function EditMemberScreen() {
@@ -93,6 +94,12 @@ export default function EditMemberScreen() {
       }
       finalPinHash = await hashPin(id, f.pin);
     }
+    // PayPal-Link: leer = keiner, sonst nur gültige https-Links (paypal.me/… wird ergänzt).
+    const zahlungsLink = f.zahlungsLink.trim() ? normalisiereZahlungsLink(f.zahlungsLink) : "";
+    if (zahlungsLink === null) {
+      showAlert("Ungültiger Link", "Bitte einen Link wie paypal.me/deinname eingeben oder das Feld leer lassen.");
+      return;
+    }
     setSpeichert(true);
     try {
       const uploadedPhotoUri =
@@ -116,6 +123,8 @@ export default function EditMemberScreen() {
               pinHash: finalPinHash,
               // Nur Admins (oder ohne Admin jede:r) dürfen das ändern; sonst bleibt der alte Stand.
               istAdmin: admin.darf && f.istAdmin !== !!m.istAdmin ? f.istAdmin : m.istAdmin,
+              // "" entfernt einen bisherigen Link; ohne alten und neuen Link gar nicht mitschicken.
+              zahlungsLink: zahlungsLink || (m.zahlungsLink ? "" : undefined),
             }
           : m
       );

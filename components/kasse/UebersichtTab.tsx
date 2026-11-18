@@ -10,6 +10,7 @@ import { monatsSalden, rechnungBeglichen, rechnungOffen, saldo, schuldnerVon } f
 import { formatWochentagDatum, tagesSchluessel } from "../../utils/date";
 import { displayName, formatEuro, formatBetrag } from "../../utils/format";
 import { Card, Emoji, IconSquircle, PressableScale, SectionLabel } from "../ui";
+import { useStrafenAktiv } from "../../utils/strafenSchalter";
 import { SYMBOL } from "../../constants/symbole";
 
 const MONATE = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
@@ -40,7 +41,8 @@ export function UebersichtTab({ kasse, onStrafen, onRechnungen, onEintrag }: {
   const max = Math.max(1, ...monate.map((x) => Math.abs(x.stand)));
   const letzte = buchungen[0];
 
-  const offeneStrafen = kasse.strafen.filter((l) => !l.beglichen);
+  const mitStrafen = useStrafenAktiv();
+  const offeneStrafen = mitStrafen ? kasse.strafen.filter((l) => !l.beglichen) : [];
   const strafPersonen = [...new Set(offeneStrafen.map((l) => l.memberId))].map((id) => kasse.members.find((x) => x.id === id)).filter(Boolean);
   const offeneRechnungen = kasse.eintraege.filter((e) => e.typ === "abendkosten" && !rechnungBeglichen(e));
 

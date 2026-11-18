@@ -11,6 +11,7 @@ import { HomeHero, terminStart } from "../../utils/terminPhase";
 import { formatWochentagDatum } from "../../utils/date";
 import { displayName, formatEuro, formatBetrag } from "../../utils/format";
 import { AvatarStack, Button, Emoji, FlipCountdown, LiveTimer, PressableScale, PulseDot, Scrim } from "../ui";
+import { useStrafenAktiv } from "../../utils/strafenSchalter";
 import { SYMBOL } from "../../constants/symbole";
 
 export type RsvpStatus = "ja" | "nein" | null;
@@ -184,6 +185,7 @@ function Live({ hero, now, members, stats, stammtischzeit, spielTypen, spielName
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const flaeche = useHeroFlaeche("live");
+  const mitStrafen = useStrafenAktiv();
   if (hero.phase !== "live") return null;
   const t = hero.termin;
   const start = terminStart(t, stammtischzeit) ?? now;
@@ -202,13 +204,13 @@ function Live({ hero, now, members, stats, stammtischzeit, spielTypen, spielName
     ? spielTypen.map((typ) => ({ typ, wer: meisteBei(stats, typ.id, members) })).filter((z) => z.wer).slice(0, 2)
     : [];
   const spalten: { key: string; emoji: string; label: string; wert: string; sub: string }[] = [
-    {
+    ...(mitStrafen ? [{
       key: "strafen",
       emoji: SYMBOL.strafe,
       label: "Strafen",
       wert: formatBetrag(stats?.strafenSumme ?? 0),
       sub: !stats || stats.strafenSumme === 0 ? "noch keine" : stats.strafenOffen > 0 ? `${formatBetrag(stats.strafenOffen)} offen` : "bezahlt",
-    },
+    }] : []),
     ...(spiel.length > 0
       ? spiel.map(({ typ, wer }) => ({
           key: typ.id,
@@ -227,7 +229,7 @@ function Live({ hero, now, members, stats, stammtischzeit, spielTypen, spielName
       onPress={() => oeffne(t.id)}
       scaleTo={0.99}
       style={[styles.hero, foto ? styles.heroFoto : [flaeche, { overflow: "hidden" }], fill && styles.fuellen, punkte && styles.mitPunkten]}
-      accessibilityLabel={`${was} läuft gerade seit ${zeitText(start)}, ${amTisch.length} am Tisch, ${formatEuro(stats?.strafenSumme ?? 0)} Euro Strafen. Öffnen`}
+      accessibilityLabel={`${was} läuft gerade seit ${zeitText(start)}, ${amTisch.length} am Tisch${mitStrafen ? `, ${formatEuro(stats?.strafenSumme ?? 0)} Euro Strafen` : ""}. Öffnen`}
     >
       {foto ? (
         <>
@@ -263,36 +265,43 @@ function Live({ hero, now, members, stats, stammtischzeit, spielTypen, spielName
         ) : null}
       </View>
 
-      <View style={[styles.glas, glas]}>
-        {foto ? <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} /> : null}
-        {spalten.map((sp, i) => (
-          <React.Fragment key={sp.key}>
-            {i > 0 ? <View style={[styles.glasTrenner, { backgroundColor: trenner }]} /> : null}
-            <View style={styles.glasSpalte} accessible accessibilityLabel={`${sp.label}: ${sp.wert}, ${sp.sub}`}>
-              <View style={styles.glasKopf}>
-                <Emoji size={12}>{sp.emoji}</Emoji>
-                <Text style={[styles.glasLabel, { color: leise }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{sp.label}</Text>
+      {spalten.length > 0 ? (
+        <View style={[styles.glas, glas]}>
+          {foto ? <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} /> : null}
+          {spalten.map((sp, i) => (
+            <React.Fragment key={sp.key}>
+              {i > 0 ? <View style={[styles.glasTrenner, { backgroundColor: trenner }]} /> : null}
+              <View style={styles.glasSpalte} accessible accessibilityLabel={`${sp.label}: ${sp.wert}, ${sp.sub}`}>
+                <View style={styles.glasKopf}>
+                  <Emoji size={12}>{sp.emoji}</Emoji>
+                  <Text style={[styles.glasLabel, { color: leise }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{sp.label}</Text>
+                </View>
+                <Text style={[styles.glasWert, { color: "#FFFFFF" }]} numberOfLines={1} adjustsFontSizeToFit={spalten.length > 1} minimumFontScale={0.7} maxFontSizeMultiplier={MAX_FONT_SCALE}>{sp.wert}</Text>
+                <Text style={[styles.glasSub, { color: leise }]} numberOfLines={1}>{sp.sub}</Text>
               </View>
-              <Text style={[styles.glasWert, { color: "#FFFFFF" }]} numberOfLines={1} adjustsFontSizeToFit={spalten.length > 1} minimumFontScale={0.7} maxFontSizeMultiplier={MAX_FONT_SCALE}>{sp.wert}</Text>
-              <Text style={[styles.glasSub, { color: leise }]} numberOfLines={1}>{sp.sub}</Text>
-            </View>
-          </React.Fragment>
-        ))}
-      </View>
+            </React.Fragment>
+          ))}
+        </View>
+      ) : null}
 
-      <View style={styles.row}>
-        {/* Direkt in den passenden Bereich des Live-Termins: ein Tipp bis zum Eintragen. */}
-        <PressableScale onPress={() => oeffne(t.id, "strafen")} scaleTo={0.96} style={[styles.liveChip, styles.liveChipHell]} accessibilityLabel="Strafe eintragen">
-          <Ionicons name="add" size={20} color={c.live} />
-          <Text style={[styles.liveChipText, { color: c.live }]} numberOfLines={1}>Strafe</Text>
-        </PressableScale>
-        {spielName ? (
-          <PressableScale onPress={() => oeffne(t.id, "spiel")} scaleTo={0.96} style={[styles.liveChip, foto && { backgroundColor: "rgba(20,18,16,0.45)" }]} accessibilityLabel={`${spielName} eintragen`}>
-            <Ionicons name="add" size={20} color="#FFFFFF" />
-            <Text style={[styles.liveChipText, { color: "#FFFFFF" }]} numberOfLines={1}>{spielName}</Text>
-          </PressableScale>
-        ) : null}
-      </View>
+      {mitStrafen || spielName ? (
+        <View style={styles.row}>
+          {/* Direkt in den passenden Bereich des Live-Termins: ein Tipp bis zum Eintragen. */}
+          {mitStrafen ? (
+            <PressableScale onPress={() => oeffne(t.id, "strafen")} scaleTo={0.96} style={[styles.liveChip, styles.liveChipHell]} accessibilityLabel="Strafe eintragen">
+              <Ionicons name="add" size={20} color={c.live} />
+              <Text style={[styles.liveChipText, { color: c.live }]} numberOfLines={1}>Strafe</Text>
+            </PressableScale>
+          ) : null}
+          {spielName ? (
+            // Ohne Strafen ist das Spiel der einzige Knopf – dann der helle, wie sonst „Strafe“.
+            <PressableScale onPress={() => oeffne(t.id, "spiel")} scaleTo={0.96} style={[styles.liveChip, !mitStrafen ? styles.liveChipHell : foto && { backgroundColor: "rgba(20,18,16,0.45)" }]} accessibilityLabel={`${spielName} eintragen`}>
+              <Ionicons name="add" size={20} color={mitStrafen ? "#FFFFFF" : c.live} />
+              <Text style={[styles.liveChipText, { color: mitStrafen ? "#FFFFFF" : c.live }]} numberOfLines={1}>{spielName}</Text>
+            </PressableScale>
+          ) : null}
+        </View>
+      ) : null}
       {punkte ? <Punkte {...punkte} hell /> : null}
     </PressableScale>
   );
@@ -308,6 +317,7 @@ function Danach({ hero, now, members, stats, spielTypen, rolle, fill, punkte }: 
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const flaeche = useHeroFlaeche("senf");
+  const mitStrafen = useStrafenAktiv();
   if (hero.phase !== "danach" || !stats) return null;
   const t = hero.termin;
   const tag = new Date(`${t.datum}T00:00:00`);
@@ -333,14 +343,22 @@ function Danach({ hero, now, members, stats, spielTypen, rolle, fill, punkte }: 
     .slice(0, 2);
   const bezahlt = stats.strafenSumme > 0 && stats.strafenOffen === 0;
   // Gleich gebaute Spalten: kleines Label mit Emoji, großer Wert, Unterzeile (Status als Punkt).
+  // Ohne Strafen steht vorne die Anwesenheit des Abends.
+  const quote = stats.mitglieder.length ? Math.round((stats.da.length / stats.mitglieder.length) * 100) : 0;
   const spalten: { key: string; emoji: string; label: string; wert: string; sub: string; punkt?: string }[] = [
-    {
+    mitStrafen ? {
       key: "strafen",
       emoji: SYMBOL.strafe,
       label: "Strafen",
       wert: formatBetrag(stats.strafenSumme),
       sub: stats.strafenSumme === 0 ? "keine" : bezahlt ? "bezahlt" : `${formatBetrag(stats.strafenOffen)} offen`,
       punkt: stats.strafenSumme === 0 ? undefined : bezahlt ? c.success : c.coral,
+    } : {
+      key: "dabei",
+      emoji: SYMBOL.teilnahme,
+      label: "Anwesenheit",
+      wert: `${quote} %`,
+      sub: "der Runde da", // „X von Y da“ steht schon über dem Feld
     },
     ...spiel.map(({ typ, wer }) => ({
       key: typ.id,
@@ -358,7 +376,7 @@ function Danach({ hero, now, members, stats, spielTypen, rolle, fill, punkte }: 
       onPress={() => oeffne(t.id)}
       scaleTo={0.99}
       style={[styles.hero, foto ? styles.heroFoto : flaeche, !fill && { minHeight: vorherHoehe }, fill && styles.fuellen, punkte && styles.mitPunkten]}
-      accessibilityLabel={`${rolle ?? "Zuletzt"}: ${name} am ${formatWochentagDatum(tag)}: ${stats.da.length} von ${stats.mitglieder.length} waren da, ${formatEuro(stats.strafenSumme)} Euro Strafen. Öffnen`}
+      accessibilityLabel={`${rolle ?? "Zuletzt"}: ${name} am ${formatWochentagDatum(tag)}: ${stats.da.length} von ${stats.mitglieder.length} waren da${mitStrafen ? `, ${formatEuro(stats.strafenSumme)} Euro Strafen` : ""}. Öffnen`}
     >
       {foto ? (
         <>

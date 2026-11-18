@@ -7,7 +7,7 @@ import { hashStammtischPassword } from "../utils/pin";
 import { useStammtisch } from "../contexts/StammtischContext";
 import { FONT, MOTION, RADIUS, TYPE, ThemeColors } from "../constants/design";
 import { useColors, useThemedStyles } from "../contexts/ThemeContext";
-import { Button, Card, Emoji, Field, PressableScale, SegmentedTabs, tonFarben, tonFuer } from "../components/ui";
+import { Button, Card, Emoji, Field, PressableScale, SegmentedTabs, ToggleRow, tonFarben, tonFuer } from "../components/ui";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { EinstiegScreen } from "../components/einstieg/Einstieg";
 import StammtischLogo from "../components/StammtischLogo";
@@ -33,6 +33,8 @@ export default function StammtischWaehlenScreen() {
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [passwordRepeat, setPasswordRepeat] = useState("");
+  /** Nicht jede Runde verteilt Strafen – beim Gründen fragen, später in den Einstellungen änderbar. */
+  const [mitStrafen, setMitStrafen] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { setActiveStammtisch, meineStammtische, stammtischBetreten, stammtischVergessen } = useStammtisch();
@@ -69,7 +71,7 @@ export default function StammtischWaehlenScreen() {
     setLoading(true);
     try {
       const passwordHash = await hashStammtischPassword(name, password);
-      const { id } = await createStammtisch(name, passwordHash);
+      const { id } = await createStammtisch(name, passwordHash, mitStrafen);
       await setActiveStammtisch(id, name.trim());
       router.replace("/onboarding-setup");
     } catch (e: any) {
@@ -240,6 +242,18 @@ export default function StammtischWaehlenScreen() {
                 </Text>
               </View>
             ) : null}
+            {anlegen ? (
+              <View style={[styles.strafen, { borderColor: c.border }]}>
+                <ToggleRow
+                  title="Mit Strafen"
+                  subtitle={mitStrafen ? "Strafen am Abend, in Kasse und Tabelle" : "Ohne Strafen – später änderbar"}
+                  emoji={SYMBOL.strafe}
+                  ton="coral"
+                  value={mitStrafen}
+                  onValueChange={setMitStrafen}
+                />
+              </View>
+            ) : null}
             {error ? <Text style={styles.error} accessibilityRole="alert">{error}</Text> : null}
 
             <Button
@@ -259,6 +273,7 @@ export default function StammtischWaehlenScreen() {
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
+    strafen: { borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth, marginHorizontal: -2 },
     hero: { borderRadius: RADIUS.hero, padding: 22, overflow: "hidden", marginTop: 8 },
     ring: { position: "absolute", width: 260, height: 260, borderRadius: 130, borderWidth: 40, right: -90, top: -100 },
     kicker: { ...TYPE.label, marginTop: 18 },

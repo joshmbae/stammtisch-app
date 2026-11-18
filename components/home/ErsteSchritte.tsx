@@ -9,6 +9,7 @@ import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
 import { getStammtischId } from "../../utils/storage";
 import { rundeEinladen } from "../../utils/einladen";
 import { SYMBOL } from "../../constants/symbole";
+import { useStrafenAktiv } from "../../utils/strafenSchalter";
 import { Card, Emoji, IconSquircle, PressableScale, Ton } from "../ui";
 
 interface Zustand {
@@ -37,6 +38,7 @@ export function ErsteSchritte({ verordnung, members, termine, ich }: {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const [zustand, setZustand] = useState<Zustand | null>(null);
+  const mitStrafen = useStrafenAktiv();
 
   useFocusEffect(
     useCallback(() => {
@@ -132,12 +134,12 @@ export function ErsteSchritte({ verordnung, members, termine, ich }: {
         ),
       )}
       {/* Kein weiterer Pflichtteil: nur ein Hinweis, wo der Rest liegt. */}
-      <PressableScale onPress={() => router.push("/einstellungen")} scaleTo={0.98} style={styles.weiteres} accessibilityRole="link" accessibilityLabel="Alles Weitere wie Satzung, Strafen und Spiele in den Einstellungen">
+      <PressableScale onPress={() => router.push("/einstellungen")} scaleTo={0.98} style={styles.weiteres} accessibilityRole="link" accessibilityLabel={`Alles Weitere wie ${mitStrafen ? "Satzung, Strafen und Spiele" : "Satzung und Spiele"} in den Einstellungen`}>
         <View style={styles.weiteresIcons}>
-          {[SYMBOL.satzung, SYMBOL.strafenkatalog, SYMBOL.spiele].map((e) => <Emoji key={e} size={16}>{e}</Emoji>)}
+          {(mitStrafen ? [SYMBOL.satzung, SYMBOL.strafenkatalog, SYMBOL.spiele] : [SYMBOL.satzung, SYMBOL.spiele]).map((e) => <Emoji key={e} size={16}>{e}</Emoji>)}
         </View>
         <Text style={styles.weiteresText}>
-          Alles Weitere – Satzung, Strafen, Spiele – in den <Text style={{ color: c.blue, fontFamily: FONT.w600 }}>Einstellungen</Text>
+          {`Alles Weitere – ${mitStrafen ? "Satzung, Strafen, Spiele" : "Satzung, Spiele"} – in den `}<Text style={{ color: c.blue, fontFamily: FONT.w600 }}>Einstellungen</Text>
         </Text>
         <Ionicons name="chevron-forward" size={16} color={c.textMuted} />
       </PressableScale>

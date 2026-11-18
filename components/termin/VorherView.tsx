@@ -12,7 +12,8 @@ import { Agenda } from "./Agenda";
 import { formatWochentagDatum } from "../../utils/date";
 import { displayName } from "../../utils/format";
 import { sendErinnerungPush } from "../../utils/push";
-import { Avatar, Button, Card, FlipCountdown, PressableScale } from "../ui";
+import { Avatar, Button, Card, FlipCountdown, PressableScale, haptik } from "../ui";
+import { showAlert } from "../../utils/alert";
 
 const WOCHENTAG = ["SO", "MO", "DI", "MI", "DO", "FR", "SA"];
 const MONAT = ["JAN", "FEB", "MÄR", "APR", "MAI", "JUN", "JUL", "AUG", "SEP", "OKT", "NOV", "DEZ"];
@@ -164,29 +165,52 @@ function WerKommt({ abend, start }: { abend: TerminAbend; start: Date | null }) 
   const zuProfil = (m: MemberProfile) => router.push(`/member/${m.id}`);
   const [sendet, setSendet] = useState<string | null>(null);
 
-  /** Erst per Push direkt an die Person; ohne registriertes Gerät über das Teilen-Menü. */
+  /**
+   * Per Push direkt aufs Handy der Person. Hat sie kein Gerät mit erlaubten
+   * Mitteilungen (nie zugelassen, abgeschaltet, Android), sagt die App das
+   * und bietet stattdessen eine Nachricht über das Teilen-Menü an – nicht
+   * mehr kommentarlos WhatsApp & Co.
+   */
   async function erinnern(m: MemberProfile) {
     if (sendet || erinnert.includes(m.id)) return;
     const wann = `${formatWochentagDatum(new Date(`${t.datum}T00:00:00`))}${start ? ` um ${uhr(start)}` : ""}`;
+    const was = t.titel ?? (t.art === "stammtisch" ? "Stammtisch" : "Veranstaltung");
     const ich = abend.members.find((x) => x.id === abend.activeMemberId);
     setSendet(m.id);
+    let perPush = false;
     try {
-      const perPush = await sendErinnerungPush(m.id, {
+      perPush = await sendErinnerungPush(m.id, {
         title: `${ich ? displayName(ich) : "Die Runde"} fragt: Bist du dabei?`,
-        body: `Stammtisch am ${wann}. Sag kurz in der App zu oder ab.`,
+        body: `${was} am ${wann}. Sag kurz in der App zu oder ab.`,
         subtitle: abend.verordnung.name || undefined,
         url: `/termin/${t.id}`,
         terminId: t.id,
       });
-      if (perPush) {
-        setErinnert((prev) => [...prev, m.id]);
-        return;
-      }
-      const r = await Share.share({ message: `Servus ${displayName(m)}, bist du am ${wann} beim Stammtisch dabei? Sag kurz in der App zu oder ab.` });
-      if (r.action !== Share.dismissedAction) setErinnert((prev) => [...prev, m.id]);
-    } catch { /* Teilen abgebrochen oder nicht verfügbar */ } finally {
+    } finally {
       setSendet(null);
     }
+    if (perPush) {
+      haptik("erfolg");
+      setErinnert((prev) => [...prev, m.id]);
+      return;
+    }
+    const name = displayName(m);
+    showAlert(
+      `${name} bekommt keine Mitteilung`,
+      `Auf dem Handy von ${name} sind Mitteilungen der App aus oder wurden nie erlaubt. Stattdessen eine Nachricht schicken, z. B. per WhatsApp?`,
+      [
+        { text: "Abbrechen", style: "cancel" },
+        {
+          text: "Nachricht schicken",
+          onPress: async () => {
+            try {
+              const r = await Share.share({ message: `Servus ${name}, bist du am ${wann} dabei (${was})? Sag kurz in der App zu oder ab.` });
+              if (r.action !== Share.dismissedAction) setErinnert((prev) => [...prev, m.id]);
+            } catch { /* Teilen abgebrochen oder nicht verfügbar */ }
+          },
+        },
+      ],
+    );
   }
 
   return (

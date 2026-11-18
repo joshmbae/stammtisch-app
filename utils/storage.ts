@@ -1,6 +1,7 @@
 import { supabase } from "./supabase";
 import { sendActivityPush } from "./push";
 import { withCache } from "./cache";
+import { setzeStrafenAktiv } from "./strafenSchalter";
 import { ZU_VIELE_VERSUCHE, istZuVieleVersuche } from "./pin";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
@@ -84,7 +85,7 @@ export async function findStammtischByName(
   return { id: data[0].id, name: data[0].name };
 }
 
-export async function createStammtisch(name: string, passwordHash: string): Promise<{ id: string }> {
+export async function createStammtisch(name: string, passwordHash: string, mitStrafen = true): Promise<{ id: string }> {
   const { data, error } = await supabase.rpc("rpc_create_stammtisch", {
     p_name: name,
     p_password_hash: passwordHash,
@@ -105,8 +106,9 @@ export async function createStammtisch(name: string, passwordHash: string): Prom
     name: name.trim(),
     regeln: [],
     rollen_optionen: ROLLEN_OPTIONEN_DEFAULT,
-    tab_strafen_aktiv: true,
+    tab_strafen_aktiv: mitStrafen,
   });
+  setzeStrafenAktiv(stammtischId, mitStrafen);
   return { id: stammtischId };
 }
 
@@ -172,6 +174,7 @@ function rowToMember(row: any): MemberProfile {
     createdAt: row.created_at,
     pinHash: row.pin_hash ?? undefined,
     istAdmin: row.ist_admin ?? undefined,
+    zahlungsLink: row.zahlungs_link ?? undefined,
   };
 }
 
@@ -194,6 +197,7 @@ function memberToRow(m: MemberProfile, stammtischId: string) {
     pin_hash: m.pinHash ?? null,
     // Nur mitschicken, wenn bekannt: so speichert die App auch gegen ein Schema ohne die Spalte.
     ...(m.istAdmin !== undefined ? { ist_admin: m.istAdmin } : {}),
+    ...(m.zahlungsLink !== undefined ? { zahlungs_link: m.zahlungsLink || null } : {}),
   };
 }
 
@@ -325,7 +329,7 @@ const ROLLEN_OPTIONEN_DEFAULT = ["Mitglied", "Kassenwart", "Schriftführer"];
 
 export async function loadVerordnung(): Promise<StammtischVerordnung> {
   const stammtischId = await getStammtischId();
-  return withCache(`verordnung_${stammtischId}`, async () => {
+  const v: StammtischVerordnung = await withCache(`verordnung_${stammtischId}`, async () => {
     const { data, error } = await supabase
       .from("verordnung")
       .select("*")
@@ -338,6 +342,9 @@ export async function loadVerordnung(): Promise<StammtischVerordnung> {
     }
     return rowToVerordnung(data);
   });
+  // Strafen-Schalter für die ganze App nachziehen (utils/strafenSchalter.ts).
+  setzeStrafenAktiv(stammtischId, v.tabStrafenAktiv !== false);
+  return v;
 }
 
 export async function saveVerordnung(v: StammtischVerordnung): Promise<void> {
@@ -359,6 +366,7 @@ export async function saveVerordnung(v: StammtischVerordnung): Promise<void> {
     ...(v.zahlungsLink !== undefined ? { zahlungs_link: v.zahlungsLink || null } : {}),
   });
   if (error) throw error;
+  setzeStrafenAktiv(stammtischId, v.tabStrafenAktiv !== false);
 }
 
 /**

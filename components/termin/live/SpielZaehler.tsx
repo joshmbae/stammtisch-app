@@ -47,7 +47,7 @@ export function SpielZaehler({ abend, mitglieder }: { abend: TerminAbend; mitgli
 
   async function plus(m: MemberProfile, typ: SpielEreignisTyp) {
     const key = `${m.id}:${typ.id}`;
-    haptik((typ.strafBetrag ?? 0) > 0 ? "mittel" : "leicht");
+    haptik((typ.strafBetrag ?? 0) > 0 && abend.verordnung.tabStrafenAktiv !== false ? "mittel" : "leicht");
     const basis = laufendRef.current[key] ? Math.max(zielRef.current[key] ?? 0, gespeichert(m.id, typ.id)) : gespeichert(m.id, typ.id);
     zielRef.current = { ...zielRef.current, [key]: basis + 1 };
     laufendRef.current = { ...laufendRef.current, [key]: (laufendRef.current[key] ?? 0) + 1 };
@@ -76,7 +76,7 @@ export function SpielZaehler({ abend, mitglieder }: { abend: TerminAbend; mitgli
 
   // Bei mehr Ereignissen schmalere Knöpfe, damit Name und Zähler auf jedes Handy passen.
   const breite = typen.length <= 2 ? 72 : typen.length === 3 ? 58 : 48;
-  const mitStrafe = typen.filter((t) => (t.strafBetrag ?? 0) > 0);
+  const mitStrafe = abend.verordnung.tabStrafenAktiv !== false ? typen.filter((t) => (t.strafBetrag ?? 0) > 0) : [];
   const strafen = Object.values(abend.strafMap).flat();
   const verlauf = Object.values(abend.spielLogMap).flat()
     .filter((l) => typen.some((t) => t.id === l.ereignisTypId))

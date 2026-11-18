@@ -3,6 +3,7 @@ import { StyleSheet, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { FONT, RADIUS, TYPE, ThemeColors } from "../../constants/design";
 import { useColors, useThemedStyles } from "../../contexts/ThemeContext";
+import { strafenAktiv } from "../../utils/strafenSchalter";
 import { Button, Field, PressableScale, Sheet } from "../ui";
 
 interface Props {
@@ -57,7 +58,7 @@ export function SatzungSheet({ visible, regeln, sonstiges, onClose, onSave }: Pr
       footer={<Button label="Speichern" icon="checkmark" variant="blue" loading={busy} onPress={speichern} />}
     >
       <Text style={styles.hinweis}>
-        Für alle sichtbar unter „Satzung". Rein informativ, z. B. wer eine Runde ausgibt. Strafen legt ihr im Strafenkatalog an.
+        Für alle sichtbar unter „Satzung". Rein informativ, z. B. wer eine Runde ausgibt. {strafenAktiv() ? "Strafen legt ihr im Strafenkatalog an." : ""}
       </Text>
 
       <Text style={styles.label}>Regeln</Text>

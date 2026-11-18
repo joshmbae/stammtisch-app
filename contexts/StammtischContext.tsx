@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ensureAuthSession } from "../utils/supabase";
 import { clearCache } from "../utils/cache";
+import { strafenAktivVorladen } from "../utils/strafenSchalter";
 import { getLegacySingleStammtischId, setActiveStammtischId as cacheStammtischId, clearActiveStammtischId, STAMMTISCH_STORAGE_KEY } from "../utils/storage";
 
 const STAMMTISCH_KEY = STAMMTISCH_STORAGE_KEY;
@@ -62,6 +63,8 @@ export function StammtischProvider({ children }: { children: React.ReactNode }) 
   const [meineStammtische, setMeine] = useState<GemerkterStammtisch[]>([]);
 
   useEffect(() => { resolveStammtisch(); }, []);
+  // Gemerkten Strafen-Schalter des Stammtischs laden, bevor die Verordnung da ist.
+  useEffect(() => { strafenAktivVorladen(stammtischId); }, [stammtischId]);
 
   async function meineSpeichern(liste: GemerkterStammtisch[]) {
     setMeine(liste);

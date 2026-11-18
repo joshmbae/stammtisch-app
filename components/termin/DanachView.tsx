@@ -82,8 +82,8 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
   }
 
   const kategorien: Kategorie[] = [];
-  // Strafen abgeschaltet (Einstellungen) → keine Kachel, außer es gibt trotzdem welche.
-  if (abend.verordnung.tabStrafenAktiv !== false || strafLogs.length > 0) {
+  // Strafen abgeschaltet (Einstellungen) → keine Kachel; erfasste bleiben gespeichert.
+  if (abend.verordnung.tabStrafenAktiv !== false) {
     const proKopf = new Map<string, number>();
     const gruende = new Map<string, string[]>();
     for (const l of strafLogs) {
@@ -129,7 +129,7 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
   const toene: Ton[] = ["mustard", "coral", "green", "blue"];
   abend.ereignisTypen.forEach((typ, i) => {
     const n = ereignisGesamt(stats, typ.id);
-    const mitStrafe = (typ.strafBetrag ?? 0) > 0;
+    const mitStrafe = (typ.strafBetrag ?? 0) > 0 && abend.verordnung.tabStrafenAktiv !== false;
     kategorien.push({
       key: typ.id, label: typ.label, wert: `${n}×`, ton: toene[i % toene.length], emoji: typ.emoji, titel: `${typ.label} pro Kopf`,
       summe: mitStrafe && n > 0 ? `${n} × ${formatBetrag(typ.strafBetrag!)} = ${formatBetrag(n * typ.strafBetrag!)}` : `${n} insgesamt`,
@@ -149,6 +149,7 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
   const dauer = start && ende && ende > start ? Math.round((ende.getTime() - start.getTime()) / 60_000) : null;
   const zahler = abend.rechnung?.bezahltVon ? byId.get(abend.rechnung.bezahltVon) : undefined;
   const strafenMitSpiel = abend.ereignisTypen.some((e) => (e.strafBetrag ?? 0) > 0);
+  const mitStrafen = abend.verordnung.tabStrafenAktiv !== false;
   const vieleKacheln = kategorien.length > 3;
 
   // Rückblick-Bild: wer im Spiel und bei den Strafen vorne lag, mit Profilbild und großer Zahl.
@@ -171,7 +172,7 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
     ...kategorien.filter((k) => k.key === "strafen"),
   ].map(siegerVon).filter((x): x is RueckblickSieger => !!x);
   const bildFuss = [
-    stats.strafenSumme > 0 ? `${formatBetrag(stats.strafenSumme)} für die Kasse` : null,
+    mitStrafen && stats.strafenSumme > 0 ? `${formatBetrag(stats.strafenSumme)} für die Kasse` : null,
     // Bis zwei Namen ausschreiben, sonst nur die Zahl – damit die Zeile ins Bild passt.
     stats.fehlten.length === 0 ? "Alle waren da 🎉"
       : stats.fehlten.length === 1 ? `${displayName(stats.fehlten[0])} hat gefehlt`
@@ -296,7 +297,7 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
         </>
       ) : null}
 
-      {stats.strafenOffen > 0 ? (
+      {!mitStrafen ? null : stats.strafenOffen > 0 ? (
         <PressableScale
           // Hast du selbst von heute etwas offen, gleich deine Strafen; sonst alle offenen.
           onPress={() => router.push(activeMemberId && strafLogs.some((l) => l.memberId === activeMemberId && !l.beglichen) ? `/kasse?tab=strafen&memberId=${activeMemberId}` : "/kasse?tab=strafen")}

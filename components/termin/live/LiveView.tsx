@@ -49,7 +49,8 @@ export function LiveView({ abend, start, now, startBereich, onZusagen }: {
 
   return (
     <>
-      <SegmentedTabs variant="live" items={items} value={aktiv} onChange={wechseln} />
+      {/* Nur „Heute“ (ohne Strafen und Spiel): keine Leiste mit einem einzigen Tab. */}
+      {items.length > 1 ? <SegmentedTabs variant="live" items={items} value={aktiv} onChange={wechseln} /> : null}
       {aktiv === "anwesend" ? <Heute
           abend={abend} dabei={da} start={start} onZusagen={onZusagen}
           onStrafe={strafenAn ? (id) => { setStrafeFuer(id); setBereich("strafen"); } : undefined}

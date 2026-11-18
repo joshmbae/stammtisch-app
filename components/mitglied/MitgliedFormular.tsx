@@ -27,6 +27,7 @@ export function useMitgliedFormular() {
   const [pin, setPin] = useState("");
   const [pinConfirm, setPinConfirm] = useState("");
   const [istAdmin, setIstAdmin] = useState(false);
+  const [zahlungsLink, setZahlungsLink] = useState("");
 
   function uebernehmen(m: MemberProfile) {
     setName(m.name);
@@ -41,6 +42,7 @@ export function useMitgliedFormular() {
     setNotizen(m.notizen ?? "");
     setPinAn(!!m.pinHash);
     setIstAdmin(!!m.istAdmin);
+    setZahlungsLink(m.zahlungsLink ?? "");
   }
 
   return {
@@ -49,7 +51,7 @@ export function useMitgliedFormular() {
     mitgliedSeit, setMitgliedSeit, geburtsdatum, setGeburtsdatum,
     avatarColor, setAvatarColor, photoUri, setPhotoUri, notizen, setNotizen,
     pinAn, setPinAn, pin, setPin, pinConfirm, setPinConfirm,
-    istAdmin, setIstAdmin,
+    istAdmin, setIstAdmin, zahlungsLink, setZahlungsLink,
     uebernehmen,
   };
 }
@@ -261,6 +263,18 @@ export function MitgliedFormular({ form: f, rollenOptionen, pinVorhanden, onPinU
           multiline
           style={[feld, { minHeight: 80 }]}
         />
+        {/* Zahlt diese Person eine Rechnung für alle, können die anderen ihren Anteil direkt hierhin schicken. */}
+        <Field
+          label="PayPal-Link für Rechnungen"
+          value={f.zahlungsLink}
+          onChangeText={f.setZahlungsLink}
+          placeholder="paypal.me/deinname"
+          autoCapitalize="none"
+          autoCorrect={false}
+          keyboardType="url"
+          style={feld}
+        />
+        <Text style={styles.pinSub}>Übernimmst du mal die Rechnung, zahlen dir die anderen ihren Anteil darüber zurück – bei paypal.me mit Betrag.</Text>
       </Card>
 
       <Card enterIndex={4} style={{ gap: 8, paddingTop: 6 }}>
