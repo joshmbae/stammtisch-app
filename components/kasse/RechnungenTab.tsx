@@ -110,8 +110,9 @@ function RechnungKarte({ e, kasse, onDetails, enterIndex, hervorheben }: { e: Ka
       betragText: formatBetrag(anteil),
       beschreibung: "Dein Anteil wird",
       ohneLinkText: zahler
-        ? `Hast du ${displayName(zahler)} deinen Anteil gegeben? Dann hake ihn ab. (Mit einem PayPal-Link im Profil von ${displayName(zahler)} ginge es direkt aus der App.)`
-        : `Hast du deinen Anteil an ${an} gezahlt? Dann hake ihn ab.`,
+        ? `Hast du ${displayName(zahler)} deinen Anteil schon gegeben? Dann hake ihn ab.`
+        : `Hast du deinen Anteil an ${an} schon gezahlt? Dann hake ihn ab.`,
+      empfaenger: zahler ? displayName(zahler) : undefined,
       onBeglichen: async () => {
         haptik("erfolg");
         await kasse.anteilUmschalten(e.id, kasse.activeMemberId!);

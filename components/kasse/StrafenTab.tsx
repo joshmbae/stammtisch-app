@@ -12,7 +12,7 @@ import { displayName, formatBetrag } from "../../utils/format";
 import { terminBezeichnung } from "../../utils/activityFeed";
 import { useSingleFlight } from "../../utils/useSingleFlight";
 import { Button, Card, Chip, KategorieIcon, PersonChip, PressableScale, haptik } from "../ui";
-import { begleichenDialog, zahlungsAnbieter } from "../../utils/zahlungslink";
+import { begleichenDialog, kassenwartName, zahlungsAnbieter } from "../../utils/zahlungslink";
 import { showAlert } from "../../utils/alert";
 import { useAdmin } from "../../utils/useAdmin";
 
@@ -85,6 +85,8 @@ export function StrafenTab({ kasse, filter, onFilter, onStrafe }: {
       betrag: meineSumme,
       betragText: formatBetrag(meineSumme),
       beschreibung: `${meineOffen.length} ${meineOffen.length === 1 ? "Strafe wird" : "Strafen werden"}`,
+      // Ohne Zahlungslink: an den Kassenwart, falls es einen gibt.
+      empfaenger: kassenwartName(kasse.members),
       onBeglichen: async () => {
         setZahltGerade(true);
         try {

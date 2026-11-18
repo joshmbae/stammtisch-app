@@ -14,7 +14,7 @@ import { formatWochentagDatum } from "../../utils/date";
 import { displayName, formatBetrag } from "../../utils/format";
 import { useSession } from "../../contexts/SessionContext";
 import { showAlert } from "../../utils/alert";
-import { begleichenDialog } from "../../utils/zahlungslink";
+import { begleichenDialog, kassenwartName } from "../../utils/zahlungslink";
 import { Avatar, BarList, BarRow, Button, Card, Emoji, IconSquircle, Krone, PressableScale, Ring, Ton, haptik, tonFarben } from "../ui";
 import { SYMBOL } from "../../constants/symbole";
 import { RueckblickBild, RueckblickSieger } from "./RueckblickBild";
@@ -67,6 +67,7 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
       betrag,
       betragText: formatBetrag(betrag),
       beschreibung: `${offen.length} ${offen.length === 1 ? "Strafe von heute wird" : "Strafen von heute werden"}`,
+      empfaenger: kassenwartName(abend.members),
       onBeglichen: async () => {
         setZahltGerade(true);
         try {
