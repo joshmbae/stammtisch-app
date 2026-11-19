@@ -1,4 +1,4 @@
-# App Store Connect — Einreichung DeinStammtisch v1.9.0
+# App Store Connect — Einreichung DeinStammtisch v1.10.0
 
 Alles, was in App Store Connect einzutragen ist, in der Reihenfolge der Oberfläche.
 Zeichenlimits sind geprüft. Die App-ID `6789122309` (ascAppId in `eas.json`) existiert bereits.
@@ -18,11 +18,12 @@ Zeichenlimits sind geprüft. Die App-ID `6789122309` (ascAppId in `eas.json`) ex
 3. **AVV mit Supabase:** Gilt automatisch als Teil der Nutzungsbedingungen, nichts zu unterschreiben
    (https://supabase.com/legal/dpa, Vertragspartner Supabase Pte. Ltd., Singapur; SCCs in Schedule 2).
    Eine Kopie mit Datum für die eigenen Unterlagen speichern (z. B. als PDF).
-4. **Prod-Datenbank:** Für 1.9.0 gibt es **keine neue Migration**. Die letzte
-   (`2026-11-01-admins.sql`) gehörte zu 1.8.0 und ist in `public` angekommen
-   (Spalte `members.ist_admin` geprüft am 09.11.2026). Falls von der 1.8.0-Liste
-   noch `2026-10-31-avatars-bucket-absichern.sql` offen ist: erst ausführen, wenn
-   alle mindestens 1.8.0 haben.
+4. **Prod-Datenbank – VOR dem Einreichen:** 1.10.0 braucht drei neue Migrationen
+   in `public`. Alle in einem Skript: `supabase/prod/2026-11-20-release-1.10.0.sql`
+   (PayPal-Link im Profil, Strichliste, Einladungscode). Alle nur ergänzend, ältere
+   App-Versionen laufen weiter. Danach mit den Prüfabfragen am Ende des Skripts
+   kontrollieren. Die Sicherheits-Migration `2026-11-19-offene-policies-entfernen.sql`
+   ist am 19.11.2026 schon in `public` gelaufen.
    `supabase/seed/demo-mehr-daten.sql` ist nur für dev – **nicht** gegen `public` ausführen.
 5. **Build hochladen:**
    ```bash
@@ -31,7 +32,9 @@ Zeichenlimits sind geprüft. Die App-ID `6789122309` (ascAppId in `eas.json`) ex
    ```
    Processing dauert 15–60 Minuten; erst dann ist der Build in der Version auswählbar.
 
-## 1. Version 1.9.0 — Seite „Distribution → iOS-App → 1.9.0“
+## 1. Version 1.10.0 — Seite „Distribution → iOS-App → 1.10.0“
+
+„Neuigkeiten in dieser Version“: Text unten in `docs/release-notes-1.10.0.txt` (371 Zeichen).
 
 ### Promotional Text (max. 170 Zeichen, jederzeit ohne Review änderbar)
 ```
@@ -57,6 +60,9 @@ Kassenstand, Einnahmen, Ausgaben und Rechnungen, die einer für alle bezahlt hat
 
 SPIELE
 Eigene Spiele mit eigenen Ereignissen, zum Beispiel Schocken oder Skat. Pro Ereignis ein Zähler, Strafen bei bestimmten Ergebnissen entstehen automatisch.
+
+STRICHLISTE
+Bier, Kurze oder Runden – was ihr am Abend mitzählen wollt, kommt auf die Strichliste. Jeder Eintrag bekommt seine eigene Rangliste.
 
 TABELLE
 Ranglisten für Teilnahme, Verspätung, Strafen und eure Spiele, fürs laufende Jahr oder „Allzeit“. Ihr legt fest, ob viel oder wenig gut ist. Wer vorne liegt, trägt das Symbol am Profilbild.

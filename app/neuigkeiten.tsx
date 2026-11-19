@@ -11,13 +11,13 @@ import StammtischLogo from "../components/StammtischLogo";
 import { Button, Card, IconSquircle, Ton } from "../components/ui";
 
 const NEU: { emoji: string; ton: Ton; titel: string; text: string }[] = [
-  { emoji: SYMBOL.live, ton: "green", titel: "Live-Abend aufgeräumt", text: "Oben siehst du, ob Vorher, Live oder Danach. Darunter Heute, Strafen und euer Spiel – mit dem Foto vom Abend." },
-  { emoji: SYMBOL.strafe, ton: "coral", titel: "Strafen mit zwei Tipps", text: "Der ganze Katalog als Kacheln: Strafe antippen, Person antippen, fertig. Vertippt? Einfach rückgängig." },
-  { emoji: SYMBOL.zuSpaet, ton: "coral", titel: "Verspätung eintragen", text: "Unter Heute siehst du, wer da ist. Wer zu spät kam: antippen, Minuten eintragen." },
-  { emoji: SYMBOL.protokoll, ton: "blue", titel: "Agenda am Abend", text: "Die Agenda gibt's jetzt auch live – mit Namen, wer den Punkt eingetragen hat." },
-  { emoji: SYMBOL.einnahme, ton: "green", titel: "Direkt bezahlen", text: "Offene Strafen mit einem Tipp per PayPal zahlen, der Betrag ist schon eingetragen." },
-  { emoji: SYMBOL.pokal, ton: "mustard", titel: "Rückblick und Profil", text: "Der Rückblick zeigt alle Sieger und die Anwesenheit. Im Profil: Bilanz fürs Jahr oder Allzeit." },
-  { emoji: SYMBOL.bearbeiten, ton: "blue", titel: "Dein Profilbild oben", text: "Ein Tipp darauf: dein Profil, was du noch offen hast, Hell/Dunkel und die Einstellungen." },
+  { emoji: SYMBOL.termin, ton: "blue", titel: "Termine zum Wischen", text: "Oben auf Home: der nächste Termin, links die vergangenen, rechts die kommenden. Veranstaltungen in Preußischblau." },
+  { emoji: SYMBOL.strichliste, ton: "blue", titel: "Neu: die Strichliste", text: "Bier, Kurze, Runden – am Abend pro Person mitzählen, mit eigener Rangliste. Einrichten in den Einstellungen." },
+  { emoji: SYMBOL.einladung, ton: "green", titel: "Einladungscode", text: "Passwort vergessen? Mit dem Code aus den Einstellungen kommt jede:r wieder rein. Einladungen per WhatsApp enthalten ihn gleich." },
+  { emoji: SYMBOL.einnahme, ton: "green", titel: "Rechnung per PayPal", text: "Deinen Anteil an einer Rechnung zahlst du direkt per PayPal – an den, der bezahlt hat. Den eigenen Link trägst du im Profil ein." },
+  { emoji: SYMBOL.erinnern, ton: "mustard", titel: "Erinnern per Mitteilung", text: "Erinnern geht als Mitteilung aufs Handy. Wer keine bekommt, dem schickst du eine Nachricht." },
+  { emoji: SYMBOL.ohneStrafen, ton: "neutral", titel: "Strafen sind optional", text: "Keine Strafen in eurer Runde? In den Einstellungen ausschalten – dann verschwinden sie überall." },
+  { emoji: SYMBOL.zusage, ton: "coral", titel: "Besser ankommen", text: "Neue in der Runde legen sich mit „Ich bin neu“ an und bekommen eine kurze Liste für den Start." },
 ];
 
 /**

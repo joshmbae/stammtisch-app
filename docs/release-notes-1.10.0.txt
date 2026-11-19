@@ -1,0 +1,34 @@
+🍻 *DeinStammtisch 1.10 ist da!*
+
+🗓️ *Termine zum Wischen*
+Oben auf Home steht der nächste Termin – nach links wischen für die vergangenen, nach rechts für die kommenden. Veranstaltungen erkennst du am Preußischblau.
+
+✏️ *Neu: die Strichliste*
+Bier, Kurze, „Runde ausgegeben“ – was ihr am Abend mitzählen wollt, kommt auf die Strichliste. Mit eigener Rangliste: Wer hat die meisten Bier? Einrichten in den Einstellungen.
+
+🎟️ *Passwort vergessen? Einladungscode!*
+Jeder Stammtisch hat jetzt einen Einladungscode. Damit kommt man ohne Passwort rein – auf der Anmeldung „Mit Einladungscode beitreten“. Einladungen per WhatsApp enthalten den Code gleich. Admins können das Passwort jetzt auch ändern.
+
+💶 *Rechnung per PayPal*
+Hat einer für alle bezahlt, zahlst du deinen Anteil direkt per PayPal zurück. Trag dafür deinen PayPal-Link im Profil ein. Ohne Link landet der Betrag in der Zwischenablage und PayPal geht auf.
+
+🔔 *Erinnern per Mitteilung*
+„Erinnern“ schickt eine Mitteilung aufs Handy. Wer keine bekommt, dem kannst du direkt eine Nachricht schicken.
+
+🕊️ *Strafen sind optional*
+Nicht jede Runde verteilt Strafen: In den Einstellungen lassen sie sich ausschalten – dann verschwinden sie überall.
+
+🙋 *Besser ankommen*
+Neu in der Runde? „Ich bin neu“ antippen, kurze Tour, dann eine kleine Liste für den Start. Wer gründet, wählt gleich Strafen, Spiel und Strichliste.
+
+✨ *Außerdem*
+- „Stammtisch wechseln“ heißt jetzt „Abmelden“
+- Fehler behoben: Neue Mitglieder konnten sich nicht anlegen
+- Mehr Sicherheit beim Datenzugriff
+
+Einfach im App Store bzw. Play Store updaten. Prost! 🍺
+
+---
+App Store / Play Store („Neuigkeiten in dieser Version“, max. 500 Zeichen):
+
+Termine oben auf Home zum Wischen. Neu: die Strichliste – Bier & Co. am Abend mitzählen, mit Rangliste. Passwort vergessen? Mit dem Einladungscode kommt jede:r wieder rein. Rechnungsanteil direkt per PayPal zahlen. Erinnern per Mitteilung. Strafen lassen sich ausschalten. Neue Mitglieder werden besser begrüßt. Fehler behoben: Neue Mitglieder konnten sich nicht anlegen.
