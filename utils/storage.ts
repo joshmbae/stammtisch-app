@@ -215,7 +215,10 @@ export async function saveMembers(members: MemberProfile[]): Promise<void> {
   const stammtischId = await getStammtischId();
   const rows = members.map((m) => memberToRow(m, stammtischId));
   if (rows.length > 0) {
-    const { error } = await supabase.from("members").upsert(rows);
+    // Nicht jede Zeile hat jede Spalte (ist_admin nur, wenn bekannt). Ohne
+    // defaultToNull: false füllte die Bibliothek fehlende Werte mit NULL auf –
+    // bei ist_admin (NOT NULL) scheiterte damit das Anlegen neuer Mitglieder.
+    const { error } = await supabase.from("members").upsert(rows, { defaultToNull: false });
     if (error) throw error;
   }
   const keepIds = members.map((m) => m.id);

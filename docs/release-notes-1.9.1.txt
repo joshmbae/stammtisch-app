@@ -1,0 +1,17 @@
+DeinStammtisch 1.9.1 – Fehlerbehebung
+
+App Store / Play Store („Neuigkeiten in dieser Version“):
+
+Behoben: Neue Mitglieder konnten sich in einer bestehenden Runde nicht anlegen („Das Mitglied konnte nicht gespeichert werden“). Wer seiner Runde neu beitritt, kann sich jetzt wieder selbst eintragen.
+
+Für die WhatsApp-Gruppe:
+
+🛠️ *DeinStammtisch 1.9.1*
+Kleines Update: Neue Leute konnten sich in einer bestehenden Runde nicht als Mitglied anlegen – das klappt jetzt wieder. Einfach im App Store bzw. Play Store aktualisieren. Prost! 🍺
+
+Intern:
+- Ursache: Beim Speichern aller Mitglieder füllte die Supabase-Bibliothek die
+  Spalte ist_admin beim neuen Mitglied mit NULL auf (NOT NULL → Fehler).
+  Fix: upsert(rows, { defaultToNull: false }).
+- Basis: Stand von 1.9.0 (8d24769), keine neuen Funktionen, keine Migration.
+- Kein „Was ist neu“-Hinweis in der App (NEUIGKEITEN_ID bleibt release-1.9.0).
