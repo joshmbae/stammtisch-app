@@ -82,7 +82,7 @@ export function ErsteSchritte({ verordnung, members, termine, ich }: {
     },
     {
       key: "einladen", emoji: SYMBOL.rollen, ton: "green",
-      titel: "Runde einladen", text: "Name und Passwort an die anderen schicken",
+      titel: "Runde einladen", text: "Einladung mit Code per WhatsApp & Co.",
       erledigt: members.length >= 2,
       los: () => rundeEinladen(name),
     },

@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { StyleSheet, Text, View, Platform, KeyboardAvoidingView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import { createStammtisch, findStammtischByName } from "../utils/storage";
+import { router, useLocalSearchParams } from "expo-router";
+import { createStammtisch, findStammtischByName, joinPerCode } from "../utils/storage";
 import { hashStammtischPassword } from "../utils/pin";
 import { useStammtisch } from "../contexts/StammtischContext";
 import { FONT, MOTION, RADIUS, TYPE, ThemeColors } from "../constants/design";
@@ -29,7 +29,12 @@ const VORTEILE: { emoji: string; titel: string; kurz: string }[] = [
 export default function StammtischWaehlenScreen() {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
+  // ?code=… (z. B. aus einem Einladungslink): gleich im Code-Modus mit vorausgefülltem Code.
+  const params = useLocalSearchParams<{ code?: string }>();
   const [mode, setMode] = useState<Mode>("join");
+  /** Beitreten per Einladungscode statt Name und Passwort (z. B. Passwort vergessen). */
+  const [perCode, setPerCode] = useState(!!params.code);
+  const [code, setCode] = useState(params.code ?? "");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [passwordRepeat, setPasswordRepeat] = useState("");
@@ -47,6 +52,7 @@ export default function StammtischWaehlenScreen() {
 
   function switchMode(next: Mode) {
     setMode(next);
+    setPerCode(false);
     setError(null);
     setPassword("");
     setPasswordRepeat("");
@@ -103,8 +109,31 @@ export default function StammtischWaehlenScreen() {
     }
   }
 
+  async function handleJoinCode() {
+    setError(null);
+    if (code.replace(/[^A-Za-z0-9]/g, "").length !== 8) {
+      setError("Der Code hat 8 Zeichen, z. B. K7MP-Q4RX.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const found = await joinPerCode(code);
+      if (!found) {
+        setError("Diesen Code gibt es nicht (mehr). Frag nach dem aktuellen.");
+        return;
+      }
+      await setActiveStammtisch(found.id, found.name);
+      router.replace("/mitglied-waehlen");
+    } catch (e: any) {
+      setError(e?.message ?? "Beitreten fehlgeschlagen.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   const anlegen = mode === "create";
-  const absenden = anlegen ? handleCreate : handleJoin;
+  const mitCode = !anlegen && perCode;
+  const absenden = anlegen ? handleCreate : mitCode ? handleJoinCode : handleJoin;
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={0}>
@@ -180,9 +209,28 @@ export default function StammtischWaehlenScreen() {
           <Card style={styles.form}>
             <SegmentedTabs variant="light" items={MODI} value={mode} onChange={switchMode} />
             <Text style={styles.formText}>
-              {anlegen ? "Du gründest die Runde und lädst danach ein." : "Name und Passwort bekommst du von deiner Runde."}
+              {anlegen
+                ? "Du gründest die Runde und lädst danach ein."
+                : mitCode
+                  ? "Den Code sieht jede:r aus deiner Runde unter Runde → „Runde einladen“. Einfach nachfragen."
+                  : "Name und Passwort bekommst du von deiner Runde."}
             </Text>
-            <Field
+            {mitCode ? (
+              <Field
+                label="Einladungscode"
+                value={code}
+                // Nicht beim Tippen umwandeln (springt sonst der Cursor); die Tastatur schreibt groß, der Server ignoriert Groß/klein.
+                onChangeText={setCode}
+                placeholder="z. B. K7MP-Q4RX"
+                autoCapitalize="characters"
+                autoCorrect={false}
+                maxLength={14}
+                clearButtonMode="while-editing"
+                style={[styles.feld, { letterSpacing: 2 }]}
+                onSubmitEditing={absenden}
+              />
+            ) : null}
+            {mitCode ? null : <Field
               label="Name des Stammtischs"
               value={name}
               onChangeText={setName}
@@ -190,8 +238,8 @@ export default function StammtischWaehlenScreen() {
               autoCapitalize="words"
               autoCorrect={false}
               style={styles.feld}
-            />
-            {anlegen ? (
+            />}
+            {mitCode ? null : anlegen ? (
               <View style={styles.zeile}>
                 <Field
                   label="Passwort"
@@ -232,6 +280,13 @@ export default function StammtischWaehlenScreen() {
                 onSubmitEditing={absenden}
               />
             )}
+            {!anlegen ? (
+              <PressableScale onPress={() => { setPerCode((v) => !v); setError(null); }} hitSlop={6} style={styles.codeLink} accessibilityRole="button">
+                <Text style={[styles.codeLinkText, { color: c.blue }]}>
+                  {mitCode ? "Doch mit Name und Passwort" : "Passwort vergessen? Mit Einladungscode beitreten"}
+                </Text>
+              </PressableScale>
+            ) : null}
 
             {anlegen ? (
               <View style={[styles.hinweis, { backgroundColor: c.mustardSoft }]}>
@@ -261,6 +316,8 @@ export default function StammtischWaehlenScreen() {
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
+    codeLink: { alignSelf: "flex-start", minHeight: 32, justifyContent: "center" },
+    codeLinkText: { fontFamily: FONT.w600, fontSize: 14 },
     hero: { borderRadius: RADIUS.hero, padding: 22, overflow: "hidden", marginTop: 8 },
     ring: { position: "absolute", width: 260, height: 260, borderRadius: 130, borderWidth: 40, right: -90, top: -100 },
     kicker: { ...TYPE.label, marginTop: 18 },

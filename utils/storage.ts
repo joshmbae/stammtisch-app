@@ -85,6 +85,47 @@ export async function findStammtischByName(
   return { id: data[0].id, name: data[0].name };
 }
 
+// ─── Einladungscode & Passwort ────────────────────────────────────────────────
+
+/** Beitreten per Einladungscode statt Name und Passwort. null = Code unbekannt. */
+export async function joinPerCode(code: string): Promise<{ id: string; name: string } | null> {
+  const { data, error } = await supabase.rpc("rpc_join_per_code", { p_code: code });
+  if (istZuVieleVersuche(error)) throw new Error(ZU_VIELE_VERSUCHE);
+  if (error || !data || data.length === 0) return null;
+  return { id: data[0].id, name: data[0].name };
+}
+
+/** Einladungscode des aktiven Stammtischs, z. B. „K7MP-Q4RX“. */
+export async function loadEinladungscode(): Promise<string> {
+  const stammtischId = await getStammtischId();
+  const { data, error } = await supabase.rpc("rpc_einladungscode", { p_stammtisch_id: stammtischId });
+  if (error || !data) throw error ?? new Error("Kein Einladungscode.");
+  return data as string;
+}
+
+/** Neuer Einladungscode; der alte gilt danach nicht mehr. */
+export async function einladungscodeErneuern(): Promise<string> {
+  const stammtischId = await getStammtischId();
+  const { data, error } = await supabase.rpc("rpc_einladungscode_erneuern", { p_stammtisch_id: stammtischId });
+  if (error || !data) throw error ?? new Error("Code konnte nicht erneuert werden.");
+  return data as string;
+}
+
+/** Name, mit dem man beitritt (Stammtisch-Tabelle) – Grundlage für den Passwort-Hash. */
+export async function loadAnmeldename(): Promise<string> {
+  const stammtischId = await getStammtischId();
+  const { data, error } = await supabase.from("stammtische").select("name").eq("id", stammtischId).maybeSingle();
+  if (error || !data) throw error ?? new Error("Stammtisch nicht gefunden.");
+  return data.name as string;
+}
+
+/** Passwort ändern; der Hash entsteht wie beim Anlegen (hashStammtischPassword). */
+export async function passwortAendern(passwordHash: string): Promise<void> {
+  const stammtischId = await getStammtischId();
+  const { error } = await supabase.rpc("rpc_passwort_aendern", { p_stammtisch_id: stammtischId, p_password_hash: passwordHash });
+  if (error) throw error;
+}
+
 export async function createStammtisch(name: string, passwordHash: string, mitStrafen = true): Promise<{ id: string }> {
   const { data, error } = await supabase.rpc("rpc_create_stammtisch", {
     p_name: name,

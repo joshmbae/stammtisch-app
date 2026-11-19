@@ -7,7 +7,7 @@ import * as ImagePicker from "expo-image-picker";
 
 import { showAlert } from "../utils/alert";
 import { StammtischVerordnung, Spiel, SPIEL_VORLAGEN, StrafKategorieDef } from "../types";
-import { loadVerordnung, saveVerordnung, uploadStammtischLogo, loadSpiele, loadStrafKategorien, loadStrichliste, deleteStammtisch, instantiateSpielVorlage, bilderLoeschen, loadMembers, loadTermine } from "../utils/storage";
+import { loadVerordnung, saveVerordnung, uploadStammtischLogo, loadSpiele, loadStrafKategorien, loadStrichliste, loadEinladungscode, deleteStammtisch, instantiateSpielVorlage, bilderLoeschen, loadMembers, loadTermine } from "../utils/storage";
 import { hashStammtischPassword } from "../utils/pin";
 import { displayName, formatGruendungMonat } from "../utils/format";
 import { useScreenLoad } from "../utils/useScreenLoad";
@@ -33,10 +33,11 @@ import {
 } from "../components/einstellungen/EinstellungenSheets";
 import { SYMBOL } from "../constants/symbole";
 import { StrichlisteSheet } from "../components/einstellungen/StrichlisteSheet";
+import { EinladungSheet, PasswortSheet } from "../components/einstellungen/ZugangSheets";
 import { normalisiereZahlungsLink, zahlungsAnbieter } from "../utils/zahlungslink";
 
 
-type Offen = "name" | "treffpunkt" | "tag" | "zahlung" | "gruendung" | "logo" | "satzung" | "rollen" | "spiel" | "strichliste" | "loeschen" | null;
+type Offen = "name" | "treffpunkt" | "tag" | "zahlung" | "gruendung" | "logo" | "satzung" | "rollen" | "spiel" | "strichliste" | "einladung" | "passwort" | "loeschen" | null;
 
 /**
  * Einstellungen als Liste: jede Zeile öffnet ein Sheet, das seinen Teil
@@ -52,6 +53,7 @@ export default function EinstellungenScreen() {
   const [offen, setOffen] = useState<Offen>(null);
   /** Anzahl der Einträge auf der Strichliste (für die Zeile). */
   const [striche, setStriche] = useState(0);
+  const [code, setCode] = useState<string | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [activatingSpiel, setActivatingSpiel] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -62,6 +64,8 @@ export default function EinstellungenScreen() {
 
   const { loading, error, retry } = useScreenLoad(async () => {
     const [v, s, k, strich] = await Promise.all([loadVerordnung(), loadSpiele(), loadStrafKategorien(), loadStrichliste()]);
+    // Code nebenbei laden; offline bleibt die Zeile einfach ohne Wert.
+    loadEinladungscode().then(setCode).catch(() => {});
     setVerordnung(v);
     setSpiele(s);
     setStrafKategorien(k);
@@ -353,6 +357,25 @@ export default function EinstellungenScreen() {
         </ListGroup>
       </FormSection>
 
+      {/* Zugang: Code sehen alle (zum Weitergeben), Passwort ändern nur Admins. */}
+      <FormSection title="Zugang">
+        <ListGroup>
+          <ListRow
+            title="Einladungscode"
+            value={code ?? "…"}
+            emoji={SYMBOL.einladung}
+            ton="blue"
+            onPress={() => setOffen("einladung")}
+            accessibilityLabel={code ? `Einladungscode ${code}` : "Einladungscode"}
+          />
+          <ListRow
+            title="Passwort ändern"
+            emoji={SYMBOL.pin}
+            onPress={() => nurAdmin(() => setOffen("passwort"))}
+          />
+        </ListGroup>
+      </FormSection>
+
       <FormSection title="Dieses Gerät">
         <ListGroup>
           <View style={styles.erscheinung}>
@@ -436,6 +459,15 @@ export default function EinstellungenScreen() {
         onSave={(r, s) => speichern({ regeln: r, sonstiges: s })}
       />
       <RollenSheet visible={offen === "rollen"} rollen={rollen} onClose={() => setOffen(null)} onSave={(r) => speichern({ rollenOptionen: r })} />
+      <EinladungSheet
+        visible={offen === "einladung"}
+        code={code}
+        name={v.name || stammtischName || "Unser Stammtisch"}
+        istAdmin={admin.darf}
+        onClose={() => setOffen(null)}
+        onNeuerCode={setCode}
+      />
+      <PasswortSheet visible={offen === "passwort"} onClose={() => setOffen(null)} />
       <StrichlisteSheet visible={offen === "strichliste"} onClose={() => setOffen(null)} onGeaendert={setStriche} />
       <SpielWahlSheet
         visible={offen === "spiel"}

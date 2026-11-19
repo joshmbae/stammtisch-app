@@ -12,6 +12,7 @@ export const SYMBOL = {
   gegruendet: "🏁",
   satzung: "📜",
   rollen: "👥",
+  einladung: "🎟️",
   protokoll: "📝",
   einstellungen: "⚙️",
   erscheinungsbild: "🌗",
