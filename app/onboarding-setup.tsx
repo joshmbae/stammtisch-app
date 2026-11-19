@@ -136,33 +136,19 @@ export default function OnboardingSetupScreen() {
         </Text>
       </Animated.View>
 
-      {/* Frage 3: Strichliste – mehrere möglich, auch keine. */}
+      {/* Frage 3: Strichliste – gleiche Kacheln wie beim Spiel, aber mehrere möglich (eckige Haken). */}
       <Animated.View entering={ein(4)}>
         <Text style={styles.frage}>Was kommt auf die Strichliste?</Text>
-        <Text style={styles.erklaerung}>
-          Wie die Striche auf dem Bierdeckel: Am Abend zählt ihr pro Person mit, am Ende gibt's eine Rangliste.
-        </Text>
-        <View style={styles.chips}>
-          {STRICH_VORLAGEN.map((v) => {
-            const an = striche.includes(v.label);
-            return (
-              <PressableScale
-                key={v.label}
-                onPress={() => { haptik("leicht"); strichUmschalten(v.label); }}
-                scaleTo={0.95}
-                style={[styles.chip, { backgroundColor: an ? c.blueBg : c.card, borderColor: an ? c.blue : c.hairline }]}
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: an }}
-                accessibilityLabel={v.label}
-              >
-                <Emoji size={16}>{v.emoji}</Emoji>
-                <Text style={[styles.chipText, an && { color: c.blue }]}>{v.label}</Text>
-                {an ? <Ionicons name="checkmark" size={16} color={c.blue} /> : null}
-              </PressableScale>
-            );
-          })}
+        <View style={styles.raster}>
+          {STRICH_VORLAGEN.map((v) => (
+            <Wahl key={v.label} emoji={v.emoji} titel={v.label} gewaehlt={striche.includes(v.label)} onPress={() => strichUmschalten(v.label)} klein mehrfach />
+          ))}
         </View>
-        <Text style={styles.hinweis}>{striche.length ? "Eigenes wie „Pfeffi“ trägst du später in den Einstellungen ein." : "Nichts gewählt? Dann gibt's keine Strichliste – geht auch später."}</Text>
+        <Text style={styles.hinweis}>
+          {striche.length
+            ? "Wie die Striche auf dem Bierdeckel: Am Abend zählt ihr pro Person mit, am Ende gibt's eine Rangliste. Eigenes wie „Pfeffi“ trägst du später ein."
+            : "Wie die Striche auf dem Bierdeckel: Am Abend zählt ihr pro Person mit, am Ende gibt's eine Rangliste. Mehrere möglich – oder keins."}
+        </Text>
       </Animated.View>
 
       <View style={{ flex: 1, minHeight: 20 }} />
@@ -175,13 +161,15 @@ export default function OnboardingSetupScreen() {
 }
 
 /** Auswahl-Kachel: Emoji, Titel, optional ein Satz; gewählt mit blauem Rand. */
-function Wahl({ emoji, titel, text, gewaehlt, onPress, klein }: {
+function Wahl({ emoji, titel, text, gewaehlt, onPress, klein, mehrfach }: {
   emoji: string;
   titel: string;
   text?: string;
   gewaehlt: boolean;
   onPress: () => void;
   klein?: boolean;
+  /** Mehrfachauswahl: Kästchen statt Kreis, als Checkbox vorgelesen. */
+  mehrfach?: boolean;
 }) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
@@ -195,17 +183,17 @@ function Wahl({ emoji, titel, text, gewaehlt, onPress, klein }: {
         { backgroundColor: c.card, borderColor: gewaehlt ? c.blue : c.hairline },
         gewaehlt && { backgroundColor: c.blueBg },
       ]}
-      accessibilityRole="radio"
+      accessibilityRole={mehrfach ? "checkbox" : "radio"}
       accessibilityState={{ checked: gewaehlt }}
       accessibilityLabel={text ? `${titel}. ${text}` : titel}
     >
       <View style={styles.wahlKopf}>
         <Emoji size={klein ? 22 : 26}>{emoji}</Emoji>
-        <View style={[styles.punkt, { borderColor: gewaehlt ? c.blue : c.control }, gewaehlt && { backgroundColor: c.blue }]}>
+        <View style={[styles.punkt, mehrfach && styles.kaestchen, { borderColor: gewaehlt ? c.blue : c.control }, gewaehlt && { backgroundColor: c.blue }]}>
           {gewaehlt ? <Ionicons name="checkmark" size={12} color={c.onAccent} /> : null}
         </View>
       </View>
-      <Text style={[styles.wahlTitel, gewaehlt && { color: c.blue }]} numberOfLines={1}>{titel}</Text>
+      <Text style={[styles.wahlTitel, gewaehlt && { color: c.blue }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>{titel}</Text>
       {text ? <Text style={styles.wahlText} numberOfLines={2}>{text}</Text> : null}
     </PressableScale>
   );
@@ -232,12 +220,9 @@ const makeStyles = (c: ThemeColors) =>
     wahlKlein: { width: "47.5%", flexGrow: 1 },
     wahlKopf: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 },
     punkt: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, alignItems: "center", justifyContent: "center" },
+    kaestchen: { borderRadius: 6 },
     wahlTitel: { fontFamily: FONT.w700, fontSize: 16, color: c.textDark },
     wahlText: { ...TYPE.caption, fontSize: 13, lineHeight: 17, color: c.textMuted },
     hinweis: { ...TYPE.caption, fontSize: 13, lineHeight: 18, color: c.textMuted, marginTop: 10 },
-    erklaerung: { ...TYPE.caption, fontSize: 14, lineHeight: 19, color: c.textMid, marginTop: -4, marginBottom: 10 },
-    chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-    chip: { flexDirection: "row", alignItems: "center", gap: 6, height: 42, paddingHorizontal: 14, borderRadius: RADIUS.pill, borderWidth: 1.5 },
-    chipText: { fontFamily: FONT.w600, fontSize: 15, color: c.textDark },
     fuss: { ...TYPE.caption, fontSize: 13, color: c.textMuted, textAlign: "center" },
   });
