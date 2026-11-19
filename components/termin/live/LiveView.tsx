@@ -10,7 +10,7 @@ import { Heute } from "./Heute";
 import { StrafenErfassen } from "./StrafenErfassen";
 import { SpielZaehler } from "./SpielZaehler";
 
-export type LiveBereich = "anwesend" | "strafen" | "spiel";
+export type LiveBereich = "anwesend" | "strafen" | "spiel" | "strichliste";
 type Bereich = LiveBereich;
 
 /** Zuletzt genutzter Bereich je Termin: wer zurückkommt, landet wieder dort (z. B. direkt beim Spiel). */
@@ -43,6 +43,7 @@ export function LiveView({ abend, start, now, startBereich, onZusagen }: {
   const items: TabItem<Bereich>[] = [{ key: "anwesend", label: "Heute" }];
   if (abend.verordnung.tabStrafenAktiv !== false) items.push({ key: "strafen", label: "Strafen" });
   if (abend.aktivesSpiel) items.push({ key: "spiel", label: abend.aktivesSpiel.name });
+  if (abend.strichliste && abend.strichEintraege.length > 0) items.push({ key: "strichliste", label: "Strichliste" });
   const aktiv = items.some((i) => i.key === bereich) ? bereich : "anwesend";
   const strafenAn = items.some((i) => i.key === "strafen");
   const wechseln = (b: Bereich) => { setStrafeFuer(null); setBereich(b); };
@@ -57,6 +58,7 @@ export function LiveView({ abend, start, now, startBereich, onZusagen }: {
         /> : null}
       {aktiv === "strafen" ? <StrafenErfassen abend={abend} dabei={da} andere={nichtDa} vorauswahl={strafeFuer} /> : null}
       {aktiv === "spiel" ? <SpielZaehler abend={abend} mitglieder={da} /> : null}
+      {aktiv === "strichliste" ? <SpielZaehler abend={abend} mitglieder={da} strichliste /> : null}
     </>
   );
 }

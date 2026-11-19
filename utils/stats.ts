@@ -65,6 +65,8 @@ export interface Rangliste {
   richtung: RanglistenRichtung;
   /** Teilnahme ist immer „viel“; die übrigen Listen lassen sich in der Tabelle umdrehen. */
   umschaltbar: boolean;
+  /** Liste zu einem Eintrag der Strichliste (Bier, Kurze, …) statt zu einem Spiel. */
+  strichliste?: boolean;
 }
 
 /** Titel, den jemand in einem bestimmten Jahr geholt hat (Platz 1). */
@@ -190,10 +192,12 @@ export function computeRanglisten(daten: StatsDaten, jahr: JahrFilter): Ranglist
         ).length,
       }))).map((e) => ({ ...e, anzeige: String(e.wert), label: et.label }));
       if (eintraege.length === 0) continue;
+      const strich = spiel.art === "strichliste";
       listen.push({
         key,
         emoji: et.emoji ?? spiel.emoji ?? "🎮",
-        titel: `${spiel.name} — ${et.label}`,
+        titel: strich ? et.label : `${spiel.name} — ${et.label}`,
+        strichliste: strich,
         kurz: et.label,
         untertitel: `Wer hat am ${richtung(key) === "wenig" ? "wenigsten" : "meisten"} „${et.label}"`,
         eintraege: mitPlatz(eintraege),

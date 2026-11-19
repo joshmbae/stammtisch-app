@@ -16,11 +16,15 @@ const TOENE: Ton[] = ["mustard", "coral", "green", "blue"];
  * Eine Zeile pro Person am Tisch, ein Zähl-Knopf pro Ereignis des Spiels
  * (meist zwei, manchmal drei oder mehr). Bei 0 blass, ab dem ersten Treffer
  * kräftig. Darunter der Verlauf des Spiels, dort lässt sich zurücknehmen.
+ * Mit `strichliste` dasselbe für die Strichliste (Bier, Kurze, …).
  */
-export function SpielZaehler({ abend, mitglieder }: { abend: TerminAbend; mitglieder: MemberProfile[] }) {
+export function SpielZaehler({ abend, mitglieder, strichliste }: { abend: TerminAbend; mitglieder: MemberProfile[]; strichliste?: boolean }) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
-  const typen = abend.ereignisTypen;
+  const quelle = strichliste
+    ? { typen: abend.strichEintraege, logMap: abend.strichLogMap, eintragen: abend.strichEintragen, loeschen: abend.strichLöschen, da: !!abend.strichliste }
+    : { typen: abend.ereignisTypen, logMap: abend.spielLogMap, eintragen: abend.spielEreignisEintragen, loeschen: abend.spielEreignisLöschen, da: !!abend.aktivesSpiel };
+  const typen = quelle.typen;
   // Damit die Zahl sofort springt: pro Knopf der angezeigte Zielwert und wie viele Taps noch laufen.
   // Angezeigt wird max(gespeichert, Ziel) – so zählt ein schon gespeicherter, aber noch
   // „laufender“ Tap nicht doppelt (vorher blitzte nach dem ersten Tap kurz eine 2 auf).
@@ -30,7 +34,7 @@ export function SpielZaehler({ abend, mitglieder }: { abend: TerminAbend; mitgli
   const zielRef = useRef<Record<string, number>>({});
   const laufendRef = useRef<Record<string, number>>({});
   const gespeichert = (memberId: string, typId: string) =>
-    (abend.spielLogMap[memberId] ?? []).filter((l) => l.ereignisTypId === typId).length;
+    (quelle.logMap[memberId] ?? []).filter((l) => l.ereignisTypId === typId).length;
   const anzeige = (memberId: string, typId: string) => {
     const key = `${memberId}:${typId}`;
     return Math.max(gespeichert(memberId, typId), laufend[key] ? ziel[key] ?? 0 : 0);
@@ -55,7 +59,7 @@ export function SpielZaehler({ abend, mitglieder }: { abend: TerminAbend; mitgli
     setLaufend(laufendRef.current);
     setBursts((b) => ({ ...b, [key]: (b[key] ?? 0) + 1 }));
     try {
-      await abend.spielEreignisEintragen(m.id, typ.id);
+      await quelle.eintragen(m.id, typ.id);
     } catch {
       // Ohne Speichern fällt die Anzeige auf den gespeicherten Stand zurück.
       zielRef.current = { ...zielRef.current, [key]: Math.max(0, (zielRef.current[key] ?? 1) - 1) };
@@ -67,8 +71,8 @@ export function SpielZaehler({ abend, mitglieder }: { abend: TerminAbend; mitgli
     }
   }
 
-  if (!abend.aktivesSpiel || typen.length === 0) {
-    return <Text style={styles.leer}>Kein Spiel aktiv. In den Einstellungen lässt sich eins auswählen.</Text>;
+  if (!quelle.da || typen.length === 0) {
+    return <Text style={styles.leer}>{strichliste ? "Noch nichts auf der Strichliste. In den Einstellungen lässt sich etwas eintragen, z. B. Bier." : "Kein Spiel aktiv. In den Einstellungen lässt sich eins auswählen."}</Text>;
   }
   if (mitglieder.length === 0) {
     return <Text style={styles.leer}>Noch niemand am Tisch. Erst unter „Anwesend" eintragen.</Text>;
@@ -76,9 +80,9 @@ export function SpielZaehler({ abend, mitglieder }: { abend: TerminAbend; mitgli
 
   // Bei mehr Ereignissen schmalere Knöpfe, damit Name und Zähler auf jedes Handy passen.
   const breite = typen.length <= 2 ? 72 : typen.length === 3 ? 58 : 48;
-  const mitStrafe = abend.verordnung.tabStrafenAktiv !== false ? typen.filter((t) => (t.strafBetrag ?? 0) > 0) : [];
+  const mitStrafe = !strichliste && abend.verordnung.tabStrafenAktiv !== false ? typen.filter((t) => (t.strafBetrag ?? 0) > 0) : [];
   const strafen = Object.values(abend.strafMap).flat();
-  const verlauf = Object.values(abend.spielLogMap).flat()
+  const verlauf = Object.values(quelle.logMap).flat()
     .filter((l) => typen.some((t) => t.id === l.ereignisTypId))
     .sort((a, b) => b.loggedAt.localeCompare(a.loggedAt))
     .map((l) => {
@@ -88,12 +92,12 @@ export function SpielZaehler({ abend, mitglieder }: { abend: TerminAbend; mitgli
       return {
         id: l.id,
         zeit: formatUhrzeit(l.loggedAt),
-        emoji: typ.emoji ?? "🎲",
+        emoji: typ.emoji ?? (strichliste ? "✏️" : "🎲"),
         ton: tonFuer(typ.id),
         wer: m ? displayName(m) : "?",
         was: typ.label,
         rechts: strafe ? formatBetrag(strafe.betrag) : undefined,
-        loeschen: () => abend.spielEreignisLöschen(l.memberId, l.id),
+        loeschen: () => quelle.loeschen(l.memberId, l.id),
       };
     });
 

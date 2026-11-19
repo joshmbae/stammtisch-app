@@ -59,7 +59,7 @@ const SEITEN: Seite[] = [
     key: "tabelle",
     wann: "Das ganze Jahr",
     titel: "Wer führt?",
-    text: "Ranglisten für Teilnahme, Strafen und euer Spiel. Wer vorn liegt, trägt die Krone – am Jahresende gibt’s den Titel.",
+    text: "Ranglisten für Teilnahme, Strafen, euer Spiel und die Strichliste – wer hat die meisten Bier? Wer vorn liegt, trägt die Krone, am Jahresende gibt’s den Titel.",
     tipp: "Tipp: Unter „Profil bearbeiten“ schützt du dein Profil mit einer PIN.",
   },
 ];

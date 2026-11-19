@@ -155,14 +155,24 @@ export default function HomeScreen() {
     // Nur das in den Einstellungen gewählte Spiel; „kein Spiel" ist eine bewusste Wahl.
     const spiel = daten.spiele.find((s) => s.spiel.id === verordnung?.aktivesSpielId);
     const haupt = spiel ? hauptEreignis(spiel.ereignisTypen) : null;
-    const spielTypen: SpielEreignisTyp[] = spiel && haupt
-      ? [haupt, ...[...spiel.ereignisTypen].filter((t) => t.id !== haupt.id).sort((a, b) => a.reihenfolge - b.reihenfolge)]
-      : [];
+    // Strichliste (Bier, Kurze, …) hinter den Spiel-Ereignissen: Die Karten zeigen, wer vorne liegt, solange Platz ist.
+    const strich = daten.spiele.find((s) => s.spiel.art === "strichliste");
+    const strichTypen = strich ? [...strich.ereignisTypen].sort((a, b) => a.reihenfolge - b.reihenfolge) : [];
+    const spielTypen: SpielEreignisTyp[] = [
+      ...(spiel && haupt
+        ? [haupt, ...[...spiel.ereignisTypen].filter((t) => t.id !== haupt.id).sort((a, b) => a.reihenfolge - b.reihenfolge)]
+        : []),
+      ...strichTypen,
+    ];
+    // In der Ranglisten-Box der meistgezählte Eintrag der Strichliste.
+    const summe = (l: (typeof rangl)[number]) => l.eintraege.reduce((s, e) => s + e.wert, 0);
+    const topStrich = rangl.filter((l) => l.strichliste).sort((a, b) => summe(b) - summe(a))[0];
 
     const listen = [
       haupt ? rangl.find((l) => l.key === `spiel_${haupt.id}`) : undefined,
       rangl.find((l) => l.key === "teilnahme"),
       rangl.find((l) => l.key === "strafen"),
+      topStrich,
     ].filter((l): l is NonNullable<typeof l> => !!l && l.eintraege.some((e) => e.wert > 0));
 
     return { members, rangl, fuehrende, spielTypen, spielName: spiel?.spiel.name ?? null, listen };

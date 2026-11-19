@@ -30,7 +30,7 @@ import {
   loadKasse,
   loadMembers,
   loadProtokoll,
-  loadSpiele,
+  loadAlleSpiele,
   loadStrafKategorien,
   loadTermine,
   loadVerordnung,
@@ -89,6 +89,12 @@ export function useTerminAbend(id: string) {
   const [spielLogMap, setSpielLogMap] = useState<ProMitglied<SpielLog>>({});
   const [aktivesSpiel, setAktivesSpiel] = useState<Spiel | null>(null);
   const [ereignisTypen, setEreignisTypen] = useState<SpielEreignisTyp[]>([]);
+  // Strichliste (Bier, Kurze, …): immer aktiv, eigene Striche getrennt vom Spiel.
+  const [strichliste, setStrichliste] = useState<Spiel | null>(null);
+  const [strichEintraege, setStrichEintraege] = useState<SpielEreignisTyp[]>([]);
+  const [strichLogMap, setStrichLogMap] = useState<ProMitglied<SpielLog>>({});
+  const strichlisteRef = useRef<Spiel | null>(null);
+  useEffect(() => { strichlisteRef.current = strichliste; }, [strichliste]);
   const [uploadingBild, setUploadingBild] = useState(false);
   /** Stammtischrechnung zu diesem Abend (einer zahlt für alle), falls erfasst. */
   const [rechnung, setRechnung] = useState<KassenEintrag | null>(null);
@@ -112,23 +118,28 @@ export function useTerminAbend(id: string) {
     const [proto, agenda, alleSpiele, vLogs, spLogs, stLogs, kasse] = await Promise.all([
       loadProtokoll(t.id),
       loadAgenda(t.id),
-      v.aktivesSpielId ? loadSpiele() : Promise.resolve([] as Spiel[]),
+      loadAlleSpiele(),
       loadAllVerspätungLogs(memberIds),
       loadAllSpielLogs(memberIds),
       loadAllStrafLogs(memberIds),
       loadKasse(),
     ]);
     if (v.aktivesSpielId) {
-      spiel = alleSpiele.find((s) => s.id === v.aktivesSpielId) ?? null;
+      spiel = alleSpiele.find((s) => s.id === v.aktivesSpielId && s.art !== "strichliste") ?? null;
       if (spiel) typen = await loadEreignisTypen(spiel.id);
     }
+    const strich = alleSpiele.find((s) => s.art === "strichliste") ?? null;
+    const strichTypen = strich ? await loadEreignisTypen(strich.id) : [];
     setRechnung(kasse.find((e) => e.typ === "abendkosten" && e.terminId === t.id) ?? null);
     setProtokoll(proto);
     setAgendaText(agenda);
     setAktivesSpiel(spiel);
     setEreignisTypen(typen);
     setVerspätungMap(nachMitglied(vLogs.filter((l) => l.terminId === t.id), memberIds));
-    setSpielLogMap(nachMitglied(spLogs.filter((l) => l.terminId === t.id && (!spiel || l.spielId === spiel.id)), memberIds));
+    setSpielLogMap(nachMitglied(spLogs.filter((l) => l.terminId === t.id && !!spiel && l.spielId === spiel.id), memberIds));
+    setStrichliste(strich);
+    setStrichEintraege(strichTypen);
+    setStrichLogMap(nachMitglied(spLogs.filter((l) => l.terminId === t.id && !!strich && l.spielId === strich.id), memberIds));
     setStrafMap(nachMitglied(stLogs.filter((l) => l.terminId === t.id), memberIds));
   }
 
@@ -141,10 +152,17 @@ export function useTerminAbend(id: string) {
         id,
         {
           onSpielLogInsert: (log) => {
+            if (strichlisteRef.current && log.spielId === strichlisteRef.current.id) {
+              setStrichLogMap((prev) => dedupeInsert(prev, log, log.memberId));
+              return;
+            }
             if (aktivesSpielRef.current && log.spielId !== aktivesSpielRef.current.id) return;
             setSpielLogMap((prev) => dedupeInsert(prev, log, log.memberId));
           },
-          onSpielLogDelete: (logId) => setSpielLogMap((prev) => removeByIdEverywhere(prev, logId)),
+          onSpielLogDelete: (logId) => {
+            setSpielLogMap((prev) => removeByIdEverywhere(prev, logId));
+            setStrichLogMap((prev) => removeByIdEverywhere(prev, logId));
+          },
           onStrafLogInsert: (log) => setStrafMap((prev) => dedupeInsert(prev, log, log.memberId)),
           onStrafLogUpdate: (log) => setStrafMap((prev) => patchById(prev, log, log.memberId)),
           onStrafLogDelete: (logId) => setStrafMap((prev) => removeByIdEverywhere(prev, logId)),
@@ -313,6 +331,25 @@ export function useTerminAbend(id: string) {
     });
   }
 
+  // ── Strichliste ───────────────────────────────────────────────────────────
+  // Bewusst ohne Aktivitätsprotokoll: jeder Strich eine Chronik-Zeile (und Push) wäre zu viel.
+
+  async function strichEintragen(memberId: string, eintragId: string) {
+    if (!termin || !strichliste) return;
+    const log = await addSpielLog(memberId, {
+      spielId: strichliste.id,
+      ereignisTypId: eintragId,
+      terminId: termin.id,
+      loggedAt: new Date().toISOString(),
+    });
+    setStrichLogMap((prev) => dedupeInsert(prev, log, memberId));
+  }
+
+  async function strichLöschen(memberId: string, logId: string) {
+    await deleteSpielLog(memberId, logId);
+    setStrichLogMap((prev) => removeByIdEverywhere(prev, logId));
+  }
+
   // ── Strafen ───────────────────────────────────────────────────────────────
 
   /** Trägt eine Strafe ein und gibt den neuen Eintrag zurück (z. B. für „Rückgängig"). */
@@ -457,6 +494,7 @@ export function useTerminAbend(id: string) {
     activeMemberId,
     termin, members, verordnung, protokoll, agendaText, strafKategorien,
     verspätungMap, strafMap, spielLogMap, aktivesSpiel, ereignisTypen, uploadingBild, rechnung,
+    strichliste, strichEintraege, strichLogMap, strichEintragen, strichLöschen,
     rsvp, anwesenheitUmschalten, anwesenheitSetzen, alleAnwesend, verspätungEintragen, verspätungLöschen,
     spielEreignisEintragen, spielEreignisLöschen,
     strafeEintragen, strafeBeglichenUmschalten, strafeLöschen, meineStrafenBegleichen,

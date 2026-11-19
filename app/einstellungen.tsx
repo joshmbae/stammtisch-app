@@ -7,7 +7,7 @@ import * as ImagePicker from "expo-image-picker";
 
 import { showAlert } from "../utils/alert";
 import { StammtischVerordnung, Spiel, SPIEL_VORLAGEN, StrafKategorieDef } from "../types";
-import { loadVerordnung, saveVerordnung, uploadStammtischLogo, loadSpiele, loadStrafKategorien, deleteStammtisch, instantiateSpielVorlage, bilderLoeschen, loadMembers, loadTermine } from "../utils/storage";
+import { loadVerordnung, saveVerordnung, uploadStammtischLogo, loadSpiele, loadStrafKategorien, loadStrichliste, deleteStammtisch, instantiateSpielVorlage, bilderLoeschen, loadMembers, loadTermine } from "../utils/storage";
 import { hashStammtischPassword } from "../utils/pin";
 import { displayName, formatGruendungMonat } from "../utils/format";
 import { useScreenLoad } from "../utils/useScreenLoad";
@@ -32,10 +32,11 @@ import {
   SpielWahlSheet,
 } from "../components/einstellungen/EinstellungenSheets";
 import { SYMBOL } from "../constants/symbole";
+import { StrichlisteSheet } from "../components/einstellungen/StrichlisteSheet";
 import { normalisiereZahlungsLink, zahlungsAnbieter } from "../utils/zahlungslink";
 
 
-type Offen = "name" | "treffpunkt" | "tag" | "zahlung" | "gruendung" | "logo" | "satzung" | "rollen" | "spiel" | "loeschen" | null;
+type Offen = "name" | "treffpunkt" | "tag" | "zahlung" | "gruendung" | "logo" | "satzung" | "rollen" | "spiel" | "strichliste" | "loeschen" | null;
 
 /**
  * Einstellungen als Liste: jede Zeile öffnet ein Sheet, das seinen Teil
@@ -49,6 +50,8 @@ export default function EinstellungenScreen() {
   const [spiele, setSpiele] = useState<Spiel[]>([]);
   const [strafKategorien, setStrafKategorien] = useState<StrafKategorieDef[]>([]);
   const [offen, setOffen] = useState<Offen>(null);
+  /** Anzahl der Einträge auf der Strichliste (für die Zeile). */
+  const [striche, setStriche] = useState(0);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [activatingSpiel, setActivatingSpiel] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -58,10 +61,11 @@ export default function EinstellungenScreen() {
   const { activeMember, clearSession } = useSession();
 
   const { loading, error, retry } = useScreenLoad(async () => {
-    const [v, s, k] = await Promise.all([loadVerordnung(), loadSpiele(), loadStrafKategorien()]);
+    const [v, s, k, strich] = await Promise.all([loadVerordnung(), loadSpiele(), loadStrafKategorien(), loadStrichliste()]);
     setVerordnung(v);
     setSpiele(s);
     setStrafKategorien(k);
+    setStriche(strich?.eintraege.length ?? 0);
   }, []);
 
   /** Speichert einen Teil der Verordnung; false bei Fehler (Sheet bleibt dann offen). */
@@ -303,7 +307,7 @@ export default function EinstellungenScreen() {
         </ListGroup>
       </FormSection>
 
-      <FormSection title="Strafen & Spiele">
+      <FormSection title={strafenAn ? "Strafen, Spiele & Strichliste" : "Spiele & Strichliste"}>
         <ListGroup>
           {/* Hauptschalter: ohne Strafen verschwinden sie überall in der App (utils/strafenSchalter.ts). */}
           <ToggleRow
@@ -338,6 +342,13 @@ export default function EinstellungenScreen() {
             emoji={SYMBOL.spiele}
             ton="mustard"
             onPress={() => nurAdmin(() => setOffen("spiel"))}
+          />
+          <ListRow
+            title="Strichliste"
+            value={striche ? `${striche} ${striche === 1 ? "Eintrag" : "Einträge"}` : "leer"}
+            emoji={SYMBOL.strichliste}
+            ton="blue"
+            onPress={() => nurAdmin(() => setOffen("strichliste"))}
           />
         </ListGroup>
       </FormSection>
@@ -425,6 +436,7 @@ export default function EinstellungenScreen() {
         onSave={(r, s) => speichern({ regeln: r, sonstiges: s })}
       />
       <RollenSheet visible={offen === "rollen"} rollen={rollen} onClose={() => setOffen(null)} onSave={(r) => speichern({ rollenOptionen: r })} />
+      <StrichlisteSheet visible={offen === "strichliste"} onClose={() => setOffen(null)} onGeaendert={setStriche} />
       <SpielWahlSheet
         visible={offen === "spiel"}
         spiele={spiele}

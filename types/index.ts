@@ -118,7 +118,21 @@ export interface Spiel {
   name: string;
   emoji?: string;
   createdAt: string;
+  /**
+   * „strichliste“: kein Spiel, sondern die Strichliste des Stammtischs (höchstens
+   * eine). Ihre Ereignistypen sind die Einträge (Bier, Kurze, …), jeder Strich
+   * ein SpielLog. Immer aktiv, taucht in Spiel-Listen nicht auf. Fehlt = Spiel.
+   */
+  art?: "spiel" | "strichliste";
 }
+
+/** Vorschläge für die Strichliste (Onboarding und Einstellungen). */
+export const STRICH_VORLAGEN: { label: string; emoji: string }[] = [
+  { label: "Bier", emoji: "🍺" },
+  { label: "Kurze", emoji: "🥃" },
+  { label: "Runde ausgegeben", emoji: "🍻" },
+  { label: "Wasser", emoji: "💧" },
+];
 
 export interface SpielEreignisTyp {
   id: string;

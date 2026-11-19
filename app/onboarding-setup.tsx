@@ -9,8 +9,8 @@ import StammtischLogo from "../components/StammtischLogo";
 import { FONT, MOTION, RADIUS, TYPE, ThemeColors } from "../constants/design";
 import { useColors, useThemedStyles } from "../contexts/ThemeContext";
 import { useStammtisch } from "../contexts/StammtischContext";
-import { SPIEL_VORLAGEN } from "../types";
-import { instantiateSpielVorlage, loadVerordnung, saveVerordnung } from "../utils/storage";
+import { SPIEL_VORLAGEN, STRICH_VORLAGEN } from "../types";
+import { instantiateSpielVorlage, loadVerordnung, saveVerordnung, strichEintragHinzufuegen } from "../utils/storage";
 import { formatBetrag } from "../utils/format";
 import { showAlert } from "../utils/alert";
 import { SYMBOL } from "../constants/symbole";
@@ -19,8 +19,9 @@ type Vorlage = (typeof SPIEL_VORLAGEN)[number];
 
 /**
  * Direkt nach dem Anlegen, nur für den, der gründet: oben der neue
- * Stammtisch als Karte (mit Haken), darunter zwei Fragen, die die ganze App
- * prägen – gibt es Strafen, und welches Spiel spielt ihr? Beides lässt sich
+ * Stammtisch als Karte (mit Haken), darunter drei Fragen, die die ganze App
+ * prägen – gibt es Strafen, welches Spiel spielt ihr, und was kommt auf die
+ * Strichliste (Bier, Kurze, …)? Alles lässt sich
  * später in den Einstellungen ändern. Danach legt man sich selbst an (als
  * Admin); der Rest steht auf Home als Checkliste.
  */
@@ -33,6 +34,10 @@ export default function OnboardingSetupScreen() {
   const [strafen, setStrafen] = useState(true);
   /** null = kein Spiel. */
   const [spiel, setSpiel] = useState<Vorlage | null>(null);
+  /** Labels der gewählten Strichlisten-Einträge; leer = keine Strichliste. */
+  const [striche, setStriche] = useState<string[]>([]);
+  const strichUmschalten = (label: string) =>
+    setStriche((s) => (s.includes(label) ? s.filter((x) => x !== label) : [...s, label]));
   const [busy, setBusy] = useState(false);
 
   async function weiter() {
@@ -47,6 +52,10 @@ export default function OnboardingSetupScreen() {
         aktivesSpielId = (await instantiateSpielVorlage(vorlage)).id;
       }
       await saveVerordnung({ ...v, tabStrafenAktiv: strafen, aktivesSpielId });
+      // Nacheinander, damit die Reihenfolge der Auswahl erhalten bleibt.
+      for (const vorlage of STRICH_VORLAGEN.filter((x) => striche.includes(x.label))) {
+        await strichEintragHinzufuegen(vorlage);
+      }
       router.replace("/mitglied-waehlen");
     } catch (e: any) {
       showAlert(
@@ -85,7 +94,7 @@ export default function OnboardingSetupScreen() {
 
       <Animated.View entering={ein(1)}>
         <Text style={styles.titel}>Wie läuft eure Runde?</Text>
-        <Text style={styles.untertitel}>Beides lässt sich später in den Einstellungen ändern.</Text>
+        <Text style={styles.untertitel}>Alles lässt sich später in den Einstellungen ändern.</Text>
       </Animated.View>
 
       {/* Frage 1: Strafen ja oder nein. */}
@@ -127,8 +136,37 @@ export default function OnboardingSetupScreen() {
         </Text>
       </Animated.View>
 
+      {/* Frage 3: Strichliste – mehrere möglich, auch keine. */}
+      <Animated.View entering={ein(4)}>
+        <Text style={styles.frage}>Was kommt auf die Strichliste?</Text>
+        <Text style={styles.erklaerung}>
+          Wie die Striche auf dem Bierdeckel: Am Abend zählt ihr pro Person mit, am Ende gibt's eine Rangliste.
+        </Text>
+        <View style={styles.chips}>
+          {STRICH_VORLAGEN.map((v) => {
+            const an = striche.includes(v.label);
+            return (
+              <PressableScale
+                key={v.label}
+                onPress={() => { haptik("leicht"); strichUmschalten(v.label); }}
+                scaleTo={0.95}
+                style={[styles.chip, { backgroundColor: an ? c.blueBg : c.card, borderColor: an ? c.blue : c.hairline }]}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: an }}
+                accessibilityLabel={v.label}
+              >
+                <Emoji size={16}>{v.emoji}</Emoji>
+                <Text style={[styles.chipText, an && { color: c.blue }]}>{v.label}</Text>
+                {an ? <Ionicons name="checkmark" size={16} color={c.blue} /> : null}
+              </PressableScale>
+            );
+          })}
+        </View>
+        <Text style={styles.hinweis}>{striche.length ? "Eigenes wie „Pfeffi“ trägst du später in den Einstellungen ein." : "Nichts gewählt? Dann gibt's keine Strichliste – geht auch später."}</Text>
+      </Animated.View>
+
       <View style={{ flex: 1, minHeight: 20 }} />
-      <Animated.View entering={ein(4)} style={{ gap: 8 }}>
+      <Animated.View entering={ein(5)} style={{ gap: 8 }}>
         <Button label="Weiter – mich anlegen" icon="arrow-forward" variant="blue" loading={busy} onPress={weiter} />
         <Text style={styles.fuss}>Als erstes Mitglied wirst du Admin. Der Rest steht auf Home als Checkliste.</Text>
       </Animated.View>
@@ -197,5 +235,9 @@ const makeStyles = (c: ThemeColors) =>
     wahlTitel: { fontFamily: FONT.w700, fontSize: 16, color: c.textDark },
     wahlText: { ...TYPE.caption, fontSize: 13, lineHeight: 17, color: c.textMuted },
     hinweis: { ...TYPE.caption, fontSize: 13, lineHeight: 18, color: c.textMuted, marginTop: 10 },
+    erklaerung: { ...TYPE.caption, fontSize: 14, lineHeight: 19, color: c.textMid, marginTop: -4, marginBottom: 10 },
+    chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+    chip: { flexDirection: "row", alignItems: "center", gap: 6, height: 42, paddingHorizontal: 14, borderRadius: RADIUS.pill, borderWidth: 1.5 },
+    chipText: { fontFamily: FONT.w600, fontSize: 15, color: c.textDark },
     fuss: { ...TYPE.caption, fontSize: 13, color: c.textMuted, textAlign: "center" },
   });

@@ -473,10 +473,17 @@ function rowToSpiel(row: any): Spiel {
     name: row.name,
     emoji: row.emoji ?? undefined,
     createdAt: row.created_at,
+    art: row.art === "strichliste" ? "strichliste" : "spiel",
   };
 }
 
+/** Nur die Spiele – ohne die Strichliste (siehe loadAlleSpiele). */
 export async function loadSpiele(): Promise<Spiel[]> {
+  return (await loadAlleSpiele()).filter((s) => s.art !== "strichliste");
+}
+
+/** Spiele und die Strichliste (für Auswertungen und den Abend). */
+export async function loadAlleSpiele(): Promise<Spiel[]> {
   const stammtischId = await getStammtischId();
   return withCache(`spiele_${stammtischId}`, async () => {
     const { data, error } = await supabase
@@ -498,9 +505,28 @@ export async function addSpiel(entry: Omit<Spiel, "id" | "createdAt">): Promise<
     name: spiel.name,
     emoji: spiel.emoji ?? null,
     created_at: spiel.createdAt,
+    // Nur bei der Strichliste mitschicken: so geht das Anlegen von Spielen auch gegen ein Schema ohne die Spalte.
+    ...(spiel.art === "strichliste" ? { art: "strichliste" } : {}),
   });
   if (error) throw error;
   return spiel;
+}
+
+// ─── Strichliste ──────────────────────────────────────────────────────────────
+
+/** Die Strichliste mit ihren Einträgen; null, solange keine angelegt ist. */
+export async function loadStrichliste(): Promise<{ spiel: Spiel; eintraege: SpielEreignisTyp[] } | null> {
+  const spiel = (await loadAlleSpiele()).find((s) => s.art === "strichliste");
+  if (!spiel) return null;
+  return { spiel, eintraege: await loadEreignisTypen(spiel.id) };
+}
+
+/** Eintrag zur Strichliste hinzufügen; legt die Strichliste beim ersten Mal an. */
+export async function strichEintragHinzufuegen(eintrag: { label: string; emoji?: string }): Promise<SpielEreignisTyp> {
+  const vorhanden = await loadStrichliste();
+  const spiel = vorhanden?.spiel ?? (await addSpiel({ name: "Strichliste", emoji: "✏️", art: "strichliste" }));
+  const reihenfolge = Math.max(0, ...(vorhanden?.eintraege ?? []).map((e) => e.reihenfolge)) + 1;
+  return addEreignisTyp(spiel.id, { label: eintrag.label, emoji: eintrag.emoji, reihenfolge });
 }
 
 export async function updateSpiel(id: string, partial: Partial<Spiel>): Promise<void> {

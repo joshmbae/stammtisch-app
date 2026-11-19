@@ -138,12 +138,12 @@ export function ErsteSchritte({ verordnung, members, termine, ich }: {
         ),
       )}
       {/* Kein weiterer Pflichtteil: nur ein Hinweis, wo der Rest liegt. */}
-      <PressableScale onPress={() => router.push("/einstellungen")} scaleTo={0.98} style={styles.weiteres} accessibilityRole="link" accessibilityLabel={`Alles Weitere wie ${mitStrafen ? "Satzung, Strafen und Spiele" : "Satzung und Spiele"} in den Einstellungen`}>
+      <PressableScale onPress={() => router.push("/einstellungen")} scaleTo={0.98} style={styles.weiteres} accessibilityRole="link" accessibilityLabel={`Alles Weitere wie ${mitStrafen ? "Satzung, Strafen, Spiele und Strichliste" : "Satzung, Spiele und Strichliste"} in den Einstellungen`}>
         <View style={styles.weiteresIcons}>
-          {(mitStrafen ? [SYMBOL.satzung, SYMBOL.strafenkatalog, SYMBOL.spiele] : [SYMBOL.satzung, SYMBOL.spiele]).map((e) => <Emoji key={e} size={16}>{e}</Emoji>)}
+          {(mitStrafen ? [SYMBOL.satzung, SYMBOL.strafenkatalog, SYMBOL.spiele, SYMBOL.strichliste] : [SYMBOL.satzung, SYMBOL.spiele, SYMBOL.strichliste]).map((e) => <Emoji key={e} size={16}>{e}</Emoji>)}
         </View>
         <Text style={styles.weiteresText}>
-          {`Alles Weitere – ${mitStrafen ? "Satzung, Strafen, Spiele" : "Satzung, Spiele"} – in den `}<Text style={{ color: c.blue, fontFamily: FONT.w600 }}>Einstellungen</Text>
+          {`Alles Weitere – ${mitStrafen ? "Satzung, Strafen, Spiele, Strichliste" : "Satzung, Spiele, Strichliste"} – in den `}<Text style={{ color: c.blue, fontFamily: FONT.w600 }}>Einstellungen</Text>
         </Text>
         <Ionicons name="chevron-forward" size={16} color={c.textMuted} />
       </PressableScale>

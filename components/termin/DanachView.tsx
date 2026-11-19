@@ -41,7 +41,11 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
   const bildRef = useRef<View>(null);
   const t = abend.termin!;
   const strafLogs = useMemo(() => Object.values(abend.strafMap).flat(), [abend.strafMap]);
-  const spielLogs = useMemo(() => Object.values(abend.spielLogMap).flat(), [abend.spielLogMap]);
+  // Spiel und Strichliste zusammen auswerten: beide zählen pro Ereignistyp.
+  const spielLogs = useMemo(
+    () => [...Object.values(abend.spielLogMap).flat(), ...Object.values(abend.strichLogMap).flat()],
+    [abend.spielLogMap, abend.strichLogMap],
+  );
   const stats = abendStats(t, abend.members, strafLogs, spielLogs);
   const byId = new Map(abend.members.map((m) => [m.id, m]));
 
@@ -134,6 +138,16 @@ export function DanachView({ abend, start }: { abend: TerminAbend; start: Date |
     kategorien.push({
       key: typ.id, label: typ.label, wert: `${n}×`, ton: toene[i % toene.length], emoji: typ.emoji, titel: `${typ.label} pro Kopf`,
       summe: mitStrafe && n > 0 ? `${n} × ${formatBetrag(typ.strafBetrag!)} = ${formatBetrag(n * typ.strafBetrag!)}` : `${n} insgesamt`,
+      zeilen: zeilen(stats.spielZaehler.get(typ.id) ?? new Map(), (v) => `${v}×`),
+    });
+  });
+  // Strichliste: nur Einträge, bei denen an diesem Abend etwas zusammenkam.
+  abend.strichEintraege.forEach((typ, i) => {
+    const n = ereignisGesamt(stats, typ.id);
+    if (n === 0) return;
+    kategorien.push({
+      key: typ.id, label: typ.label, wert: `${n}×`, ton: toene[(i + abend.ereignisTypen.length) % toene.length], emoji: typ.emoji ?? "✏️",
+      titel: `${typ.label} pro Kopf`, summe: `${n} insgesamt`,
       zeilen: zeilen(stats.spielZaehler.get(typ.id) ?? new Map(), (v) => `${v}×`),
     });
   });

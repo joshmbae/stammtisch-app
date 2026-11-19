@@ -126,6 +126,7 @@ export function RanglisteKarte({ liste, alle, onAlle, onRichtung, ichId, fuehren
 
 function untertitel(liste: Rangliste): string {
   if (liste.richtung === "wenig") return liste.untertitel;
+  if (liste.strichliste) return "auf der Strichliste";
   return UNTERTITEL[liste.key] ?? (liste.key.startsWith("spiel_") ? `beim ${liste.titel.split(" — ")[0]}` : liste.untertitel);
 }
 

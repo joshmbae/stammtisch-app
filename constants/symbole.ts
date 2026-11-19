@@ -51,6 +51,7 @@ export const SYMBOL = {
 
   // Spiele & Tabelle
   spiele: "🎲",
+  strichliste: "✏️",
   keinSpiel: "🚫",
   tabelle: "📈",
   teilnahme: "✅",

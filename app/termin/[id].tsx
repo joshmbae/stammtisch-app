@@ -37,7 +37,7 @@ export default function TerminScreen() {
   const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const { id, bereich } = useLocalSearchParams<{ id: string; bereich?: string }>();
-  const startBereich: LiveBereich | undefined = bereich === "anwesend" || bereich === "strafen" || bereich === "spiel" ? bereich : undefined;
+  const startBereich: LiveBereich | undefined = bereich === "anwesend" || bereich === "strafen" || bereich === "spiel" || bereich === "strichliste" ? bereich : undefined;
   const abend = useTerminAbend(id);
   const now = useNow(1000);
   const [ansicht, setAnsicht] = useState<TerminPhase | null>(null);
