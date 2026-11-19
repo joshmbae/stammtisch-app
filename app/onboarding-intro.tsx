@@ -17,9 +17,9 @@ import { useColors, useThemedStyles } from "../contexts/ThemeContext";
 import { useSession } from "../contexts/SessionContext";
 import { markAppIntroSeen } from "../utils/onboarding";
 import { markiereNeuigkeitenGesehen } from "../utils/neuigkeiten";
-import { loadSpiele, loadVerordnung } from "../utils/storage";
+import { loadSpiele, loadStrichliste, loadVerordnung } from "../utils/storage";
 import { Button, PressableScale } from "../components/ui";
-import { BUEHNE_HOEHE, BuehneKasse, BuehneLive, BuehneTabelle, BuehneWillkommen, BuehneZusagen } from "../components/einstieg/TutorialBuehnen";
+import { BUEHNE_HOEHE, BuehneDu, BuehneKasse, BuehneLive, BuehneTabelle, BuehneWillkommen, BuehneZusagen } from "../components/einstieg/TutorialBuehnen";
 
 interface Seite {
   key: string;
@@ -30,43 +30,71 @@ interface Seite {
   tipp?: string;
 }
 
-const SEITEN: Seite[] = [
-  {
-    key: "willkommen",
-    wann: "Willkommen",
-    titel: "Euer Stammtisch in einer App",
-    text: "Termine, Strafen, Kasse und Tabelle – alle am Tisch sehen dasselbe, und zwar sofort.",
-  },
-  {
-    key: "zusagen",
-    wann: "Vor dem Abend",
-    titel: "Sag zu – mit einem Tipp",
-    text: "Auf Home steht immer der nächste Stammtisch. Ein Tipp auf „Bin dabei“, und alle sehen, wer kommt.",
-  },
-  {
-    key: "live",
-    wann: "Am Abend",
-    titel: "Live eintragen",
-    text: "Zur Startzeit öffnet die App direkt den laufenden Abend. Strafen und Spiel trägst du mit einem Tipp ein – alles lässt sich rückgängig machen.",
-  },
-  {
-    key: "kasse",
-    wann: "Danach",
-    titel: "Die Kasse rechnet mit",
-    text: "Strafen landen automatisch in der Kasse. Bezahlt? Abhaken. Übernimmt einer die Rechnung, sieht jeder seinen Anteil.",
-  },
-  {
-    key: "tabelle",
-    wann: "Das ganze Jahr",
-    titel: "Wer führt?",
-    text: "Ranglisten für Teilnahme, Strafen, euer Spiel und die Strichliste – wer hat die meisten Bier? Wer vorn liegt, trägt die Krone, am Jahresende gibt’s den Titel.",
-    tipp: "Tipp: Unter „Profil bearbeiten“ schützt du dein Profil mit einer PIN.",
-  },
-];
+/** Wie der Stammtisch eingerichtet ist – das Tutorial erzählt nur, was es bei euch gibt. */
+interface Runde {
+  name: string;
+  mitStrafen: boolean;
+  spielName: string | null;
+  striche: string[];
+}
+
+/** „A“, „A und B“, „A, B und C“. */
+const aufzaehlen = (teile: string[]) =>
+  teile.length <= 1 ? teile.join("") : `${teile.slice(0, -1).join(", ")} und ${teile[teile.length - 1]}`;
+
+function seitenFuer(r: Runde): Seite[] {
+  const amAbend = [r.mitStrafen ? "Strafen" : null, r.spielName, r.striche.length ? "die Strichliste" : null].filter(Boolean) as string[];
+  const listen = ["Teilnahme", r.mitStrafen ? "Strafen" : null, r.spielName, r.striche[0] ?? null].filter(Boolean) as string[];
+  return [
+    {
+      key: "willkommen",
+      wann: "Willkommen",
+      titel: `${r.name} in einer App`,
+      text: `Termine, ${r.mitStrafen ? "Strafen, " : ""}Kasse und Tabelle – alle am Tisch sehen dasselbe, und zwar sofort.`,
+    },
+    {
+      key: "zusagen",
+      wann: "Vor dem Abend",
+      titel: "Sag zu – mit einem Tipp",
+      text: "Oben auf Home steht der nächste Termin, zum Wischen auch die davor und danach. Ein Tipp auf „Bin dabei“, und alle sehen, wer kommt.",
+    },
+    {
+      key: "live",
+      wann: "Am Abend",
+      titel: "Live eintragen",
+      text: amAbend.length
+        ? `Zur Startzeit öffnet die App direkt den laufenden Abend. ${aufzaehlen(amAbend)} trägst du mit einem Tipp ein – alles lässt sich rückgängig machen.`
+        : "Zur Startzeit öffnet die App direkt den laufenden Abend: wer da ist, wer zu spät kam, die Agenda – alles mit einem Tipp.",
+    },
+    {
+      key: "kasse",
+      wann: "Danach",
+      titel: "Die Kasse rechnet mit",
+      text: r.mitStrafen
+        ? "Strafen landen automatisch in der Kasse und lassen sich per PayPal zahlen. Übernimmt einer die Rechnung, sieht jeder seinen Anteil."
+        : "Einnahmen und Ausgaben an einem Ort. Übernimmt einer die Rechnung, sieht jeder seinen Anteil – und zahlt ihn per PayPal zurück.",
+    },
+    {
+      key: "tabelle",
+      wann: "Das ganze Jahr",
+      titel: "Wer führt?",
+      text: `Ranglisten für ${aufzaehlen(listen)}. Wer vorn liegt, trägt die Krone – am Jahresende gibt's den Titel.`,
+    },
+    {
+      key: "du",
+      wann: "Und jetzt du",
+      titel: "Mach dich bekannt",
+      text: "Auf Home wartet eine kurze Liste: Profilbild und Geburtstag eintragen, beim nächsten Termin antworten, Mitteilungen erlauben.",
+      tipp: "Tipp: Ein Tipp auf dein Profilbild oben links öffnet dein Profil, die Einstellungen und Hell/Dunkel.",
+    },
+  ];
+}
 
 /**
- * Tutorial: fünf kurze Seiten entlang eines Stammtisch-Abends, jede mit einem
- * kleinen Nachbau der echten Oberfläche. Wischen oder „Weiter“; die Punkte
+ * Tutorial: sechs kurze Seiten entlang eines Stammtisch-Abends, jede mit einem
+ * kleinen Nachbau der echten Oberfläche – angepasst an den Stammtisch (ohne
+ * Strafen kein Wort von Strafen, mit dem echten Spiel und der Strichliste).
+ * Die letzte Seite sagt, was man jetzt tun kann (Liste auf Home). Wischen oder „Weiter“; die Punkte
  * und Vorschaukarten folgen dem Wischen.
  */
 export default function OnboardingIntroScreen() {
@@ -76,20 +104,26 @@ export default function OnboardingIntroScreen() {
   const isReplay = replay === "1";
   const { activeMemberId } = useSession();
   const [index, setIndex] = useState(0);
-  const [spielName, setSpielName] = useState("Spiel");
+  const [runde, setRunde] = useState<Runde>({ name: "Euer Stammtisch", mitStrafen: true, spielName: null, striche: [] });
   const [logoUrl, setLogoUrl] = useState<string | undefined>(undefined);
+  const SEITEN = seitenFuer(runde);
   // Seitenhöhe = Höhe des Wischbereichs, damit der Inhalt vertikal mittig sitzen kann.
   const [hoehe, setHoehe] = useState(0);
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const x = useSharedValue(0);
   const beendet = useRef(false);
 
-  // Mit dem echten Spielnamen und Logo des Stammtischs; ohne Verbindung bleibt es beim Beispiel.
+  // So, wie der Stammtisch eingerichtet ist (Strafen, Spiel, Strichliste, Name, Logo);
+  // ohne Verbindung bleibt es beim allgemeinen Text.
   useEffect(() => {
-    Promise.all([loadVerordnung(), loadSpiele()])
-      .then(([v, spiele]) => {
-        const aktiv = spiele.find((s) => s.id === v?.aktivesSpielId);
-        if (aktiv) setSpielName(aktiv.name);
+    Promise.all([loadVerordnung(), loadSpiele(), loadStrichliste().catch(() => null)])
+      .then(([v, spiele, strich]) => {
+        setRunde({
+          name: v?.name || "Euer Stammtisch",
+          mitStrafen: v?.tabStrafenAktiv !== false,
+          spielName: spiele.find((s) => s.id === v?.aktivesSpielId)?.name ?? null,
+          striche: (strich?.eintraege ?? []).map((e) => e.label),
+        });
         if (v?.logoUrl) setLogoUrl(v.logoUrl);
       })
       .catch(() => {});
@@ -122,8 +156,12 @@ export default function OnboardingIntroScreen() {
     switch (key) {
       case "willkommen": return <BuehneWillkommen logoUrl={logoUrl} />;
       case "zusagen": return <BuehneZusagen />;
-      case "live": return <BuehneLive spielName={spielName} />;
-      case "kasse": return <BuehneKasse />;
+      case "live": {
+        const knoepfe = [runde.mitStrafen ? "Strafe" : null, runde.spielName, runde.striche[0] ?? null].filter(Boolean) as string[];
+        return <BuehneLive knoepfe={knoepfe.length ? knoepfe : ["Zu spät"]} />;
+      }
+      case "kasse": return <BuehneKasse mitStrafen={runde.mitStrafen} />;
+      case "du": return <BuehneDu stammtischName={runde.name} />;
       default: return <BuehneTabelle />;
     }
   }

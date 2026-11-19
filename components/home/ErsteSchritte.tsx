@@ -66,7 +66,7 @@ export function ErsteSchritte({ verordnung, members, termine, ich }: {
   if (termine.filter((t) => t.datum < heute).length >= 3) return null;
 
   const name = verordnung?.name ?? "";
-  const schritte: { key: string; emoji: string; ton: Ton; titel: string; text: string; erledigt: boolean; los: () => void }[] = [
+  const schritte: Schritt[] = [
     // Admin zuerst: Wer gründet, ist es meist schon – dann steht gleich ein Haken da.
     {
       key: "admin", emoji: SYMBOL.krone, ton: "mustard",
@@ -97,13 +97,53 @@ export function ErsteSchritte({ verordnung, members, termine, ich }: {
   if (fertig === schritte.length) return null;
 
   return (
+    <ChecklistenKarte titel="Erste Schritte" schritte={schritte} onAus={() => merken({ aus: true })}>
+      {/* Kein weiterer Pflichtteil: nur ein Hinweis, wo der Rest liegt. */}
+      <PressableScale onPress={() => router.push("/einstellungen")} scaleTo={0.98} style={styles.weiteres} accessibilityRole="link" accessibilityLabel={`Alles Weitere wie ${mitStrafen ? "Satzung, Strafen, Spiele und Strichliste" : "Satzung, Spiele und Strichliste"} in den Einstellungen`}>
+        <View style={styles.weiteresIcons}>
+          {(mitStrafen ? [SYMBOL.satzung, SYMBOL.strafenkatalog, SYMBOL.spiele, SYMBOL.strichliste] : [SYMBOL.satzung, SYMBOL.spiele, SYMBOL.strichliste]).map((e) => <Emoji key={e} size={16}>{e}</Emoji>)}
+        </View>
+        <Text style={styles.weiteresText}>
+          {`Alles Weitere – ${mitStrafen ? "Satzung, Strafen, Spiele, Strichliste" : "Satzung, Spiele, Strichliste"} – in den `}<Text style={{ color: c.blue, fontFamily: FONT.w600 }}>Einstellungen</Text>
+        </Text>
+        <Ionicons name="chevron-forward" size={16} color={c.textMuted} />
+      </PressableScale>
+    </ChecklistenKarte>
+  );
+}
+
+export interface Schritt {
+  key: string;
+  emoji: string;
+  ton: Ton;
+  titel: string;
+  text: string;
+  erledigt: boolean;
+  los: () => void;
+}
+
+/**
+ * Checkliste als Karte: Titel, „x von y erledigt“, Fortschrittsbalken, die
+ * Schritte (erledigte abgehakt, offene antippbar) und optional ein Fuß.
+ * Gemeinsam für „Erste Schritte“ (Gründer) und „Willkommen“ (Beitretende).
+ */
+export function ChecklistenKarte({ titel, schritte, onAus, children }: {
+  titel: string;
+  schritte: Schritt[];
+  onAus: () => void;
+  children?: React.ReactNode;
+}) {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
+  const fertig = schritte.filter((s) => s.erledigt).length;
+  return (
     <Card enterIndex={0} style={{ gap: 10 }}>
       <View style={styles.kopf}>
         <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={styles.titel} accessibilityRole="header">Erste Schritte</Text>
+          <Text style={styles.titel} accessibilityRole="header">{titel}</Text>
           <Text style={styles.meta}>{`${fertig} von ${schritte.length} erledigt`}</Text>
         </View>
-        <PressableScale onPress={() => merken({ aus: true })} hitSlop={8} style={styles.aus} accessibilityLabel="Erste Schritte ausblenden">
+        <PressableScale onPress={onAus} hitSlop={8} style={styles.aus} accessibilityLabel={`${titel} ausblenden`}>
           <Text style={styles.ausText}>Ausblenden</Text>
         </PressableScale>
       </View>
@@ -137,16 +177,7 @@ export function ErsteSchritte({ verordnung, members, termine, ich }: {
           </PressableScale>
         ),
       )}
-      {/* Kein weiterer Pflichtteil: nur ein Hinweis, wo der Rest liegt. */}
-      <PressableScale onPress={() => router.push("/einstellungen")} scaleTo={0.98} style={styles.weiteres} accessibilityRole="link" accessibilityLabel={`Alles Weitere wie ${mitStrafen ? "Satzung, Strafen, Spiele und Strichliste" : "Satzung, Spiele und Strichliste"} in den Einstellungen`}>
-        <View style={styles.weiteresIcons}>
-          {(mitStrafen ? [SYMBOL.satzung, SYMBOL.strafenkatalog, SYMBOL.spiele, SYMBOL.strichliste] : [SYMBOL.satzung, SYMBOL.spiele, SYMBOL.strichliste]).map((e) => <Emoji key={e} size={16}>{e}</Emoji>)}
-        </View>
-        <Text style={styles.weiteresText}>
-          {`Alles Weitere – ${mitStrafen ? "Satzung, Strafen, Spiele, Strichliste" : "Satzung, Spiele, Strichliste"} – in den `}<Text style={{ color: c.blue, fontFamily: FONT.w600 }}>Einstellungen</Text>
-        </Text>
-        <Ionicons name="chevron-forward" size={16} color={c.textMuted} />
-      </PressableScale>
+      {children}
     </Card>
   );
 }

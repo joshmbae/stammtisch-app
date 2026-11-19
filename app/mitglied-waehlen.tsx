@@ -88,7 +88,7 @@ export default function MitgliedWaehlenScreen() {
 
       <View style={styles.intro}>
         <Text style={styles.titel} accessibilityRole="header">Wer bist du?</Text>
-        <Text style={styles.untertitel}>{members.length > 0 ? "Tipp auf deinen Namen." : "Hier ist noch niemand eingetragen."}</Text>
+        <Text style={styles.untertitel}>{members.length > 0 ? "Tipp auf deinen Namen – oder leg dich neu an." : "Hier ist noch niemand eingetragen."}</Text>
       </View>
 
       {members.length > 0 ? (
@@ -114,6 +114,16 @@ export default function MitgliedWaehlenScreen() {
               </Card>
             </View>
           ))}
+          {/* Neu in der Runde: noch nicht in der Liste – selbst anlegen. */}
+          <View style={styles.zelle}>
+            <PressableScale onPress={() => router.push("/member/new?ich=1")} scaleTo={0.97} style={[styles.karte, styles.neu, { borderColor: c.borderDark }]} accessibilityRole="button" accessibilityLabel="Ich bin neu, mich anlegen">
+              <View style={[styles.neuIcon, { backgroundColor: c.blueBg }]}>
+                <Ionicons name="person-add-outline" size={24} color={c.blue} />
+              </View>
+              <Text style={[styles.name, { color: c.blue }]} numberOfLines={1}>Ich bin neu</Text>
+              <Text style={styles.rolle} numberOfLines={1}>mich anlegen</Text>
+            </PressableScale>
+          </View>
         </View>
       ) : (
         <Card style={{ gap: 12 }}>
@@ -161,6 +171,8 @@ const makeStyles = (c: ThemeColors) =>
     untertitel: { fontFamily: FONT.w600, fontSize: 15, color: c.textMuted, marginTop: 4 },
     grid: { flexDirection: "row", flexWrap: "wrap", marginHorizontal: -4 },
     zelle: { width: "33.333%", padding: 4 },
+    neu: { borderWidth: 1.5, borderStyle: "dashed", backgroundColor: "transparent" },
+    neuIcon: { width: 52, height: 52, borderRadius: 26, alignItems: "center", justifyContent: "center" },
     karte: { minHeight: 124, alignItems: "center", justifyContent: "center", gap: 3, paddingHorizontal: 8, paddingVertical: 14, borderRadius: 26 },
     schloss: {
       position: "absolute", right: -4, bottom: -3, width: 22, height: 22, borderRadius: 11,

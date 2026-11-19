@@ -94,7 +94,13 @@ export default function OnboardingSetupScreen() {
 
       <Animated.View entering={ein(1)}>
         <Text style={styles.titel}>Wie läuft eure Runde?</Text>
-        <Text style={styles.untertitel}>Alles lässt sich später in den Einstellungen ändern.</Text>
+        {/* Klarstellen: nur ein Startpunkt, nichts ist endgültig. */}
+        <View style={[styles.vorauswahl, { backgroundColor: c.blueBg }]}>
+          <Ionicons name="options-outline" size={18} color={c.blue} />
+          <Text style={[styles.vorauswahlText, { color: c.blue }]}>
+            Nur eine Vorauswahl zum Start. Eigene Spiele, Strafen und Striche legt ihr jederzeit in den Einstellungen an.
+          </Text>
+        </View>
       </Animated.View>
 
       {/* Frage 1: Strafen ja oder nein. */}
@@ -120,25 +126,25 @@ export default function OnboardingSetupScreen() {
 
       {/* Frage 2: welches Spiel – Vorlagen oder keins. */}
       <Animated.View entering={ein(3)}>
-        <Text style={styles.frage}>Spielt ihr was?</Text>
+        <FrageKopf titel="Spielt ihr was?" zusatz="Vorschläge" />
         <View style={styles.raster} accessibilityRole="radiogroup">
           {SPIEL_VORLAGEN.map((v) => (
             <Wahl key={v.name} emoji={v.emoji} titel={v.name} gewaehlt={spiel?.name === v.name} onPress={() => setSpiel(v)} klein />
           ))}
-          <Wahl emoji={SYMBOL.keinSpiel} titel="Kein Spiel" gewaehlt={!spiel} onPress={() => setSpiel(null)} klein />
+          <Wahl emoji={SYMBOL.spaeter} titel="Später / keins" gewaehlt={!spiel} onPress={() => setSpiel(null)} klein />
         </View>
         <Text style={styles.hinweis}>
           {strafeImSpiel
-            ? `${strafeImSpiel.label} kostet ${formatBetrag(strafeImSpiel.strafBetrag!)} und landet in der Kasse. Anderes Spiel? Legst du später in den Einstellungen an.`
+            ? `${strafeImSpiel.label} kostet ${formatBetrag(strafeImSpiel.strafBetrag!)} und landet in der Kasse – Betrag und Ereignisse änderst du jederzeit.`
             : spiel
-              ? `Am Abend zählt ihr ${spiel.ereignisTypen.map((e) => e.label).join(" und ")} pro Person. Anderes Spiel? Legst du später in den Einstellungen an.`
-              : "Anderes Spiel? Legst du später in den Einstellungen an."}
+              ? `Am Abend zählt ihr ${spiel.ereignisTypen.map((e) => e.label).join(" und ")} pro Person – Ereignisse änderst du jederzeit.`
+              : "Euer Spiel ist nicht dabei? Eigene Spiele mit eigenen Zählern (z. B. Dart, Billard, Watten) legst du in den Einstellungen an."}
         </Text>
       </Animated.View>
 
       {/* Frage 3: Strichliste – gleiche Kacheln wie beim Spiel, aber mehrere möglich (eckige Haken). */}
       <Animated.View entering={ein(4)}>
-        <Text style={styles.frage}>Was kommt auf die Strichliste?</Text>
+        <FrageKopf titel="Was kommt auf die Strichliste?" zusatz="Vorschläge" />
         <View style={styles.raster}>
           {STRICH_VORLAGEN.map((v) => (
             <Wahl key={v.label} emoji={v.emoji} titel={v.label} gewaehlt={striche.includes(v.label)} onPress={() => strichUmschalten(v.label)} klein mehrfach />
@@ -146,8 +152,8 @@ export default function OnboardingSetupScreen() {
         </View>
         <Text style={styles.hinweis}>
           {striche.length
-            ? "Wie die Striche auf dem Bierdeckel: Am Abend zählt ihr pro Person mit, am Ende gibt's eine Rangliste. Eigenes wie „Pfeffi“ trägst du später ein."
-            : "Wie die Striche auf dem Bierdeckel: Am Abend zählt ihr pro Person mit, am Ende gibt's eine Rangliste. Mehrere möglich – oder keins."}
+            ? "Wie die Striche auf dem Bierdeckel: Am Abend zählt ihr pro Person mit, am Ende gibt's eine Rangliste. Eigenes wie „Pfeffi“ jederzeit in den Einstellungen."
+            : "Wie die Striche auf dem Bierdeckel: Am Abend zählt ihr pro Person mit, am Ende gibt's eine Rangliste. Mehrere möglich, keins oder später Eigenes."}
         </Text>
       </Animated.View>
 
@@ -157,6 +163,20 @@ export default function OnboardingSetupScreen() {
         <Text style={styles.fuss}>Als erstes Mitglied wirst du Admin. Der Rest steht auf Home als Checkliste.</Text>
       </Animated.View>
     </EinstiegScreen>
+  );
+}
+
+/** Überschrift einer Frage, rechts klein ein Hinweis wie „Vorschläge“. */
+function FrageKopf({ titel, zusatz }: { titel: string; zusatz: string }) {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
+  return (
+    <View style={styles.frageKopf}>
+      <Text style={[styles.frage, { marginTop: 0, marginBottom: 0, flex: 1 }]}>{titel}</Text>
+      <View style={[styles.zusatz, { backgroundColor: c.cardAlt }]}>
+        <Text style={[styles.zusatzText, { color: c.textMuted }]}>{zusatz}</Text>
+      </View>
+    </View>
   );
 }
 
@@ -213,6 +233,11 @@ const makeStyles = (c: ThemeColors) =>
 
     titel: { ...TYPE.title, color: c.textDark, marginTop: 26 },
     untertitel: { ...TYPE.caption, fontSize: 14, color: c.textMuted, marginTop: 4 },
+    vorauswahl: { flexDirection: "row", alignItems: "flex-start", gap: 10, borderRadius: RADIUS.md, padding: 12, marginTop: 10 },
+    vorauswahlText: { flex: 1, fontFamily: FONT.w600, fontSize: 14, lineHeight: 19 },
+    frageKopf: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 22, marginBottom: 10 },
+    zusatz: { height: 22, paddingHorizontal: 8, borderRadius: RADIUS.pill, justifyContent: "center" },
+    zusatzText: { fontFamily: FONT.w700, fontSize: 11, letterSpacing: 0.4, textTransform: "uppercase" },
     frage: { ...TYPE.label, color: c.textMuted, marginTop: 22, marginBottom: 10 },
     zeile: { flexDirection: "row", gap: 10 },
     raster: { flexDirection: "row", flexWrap: "wrap", gap: 10 },

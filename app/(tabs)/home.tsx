@@ -47,6 +47,7 @@ import OfflineBanner from "../../components/OfflineBanner";
 import { Avatar, Button, Card, HeaderIconButton, IconSquircle, PressableScale, Screen } from "../../components/ui";
 import { IchSheet } from "../../components/home/IchSheet";
 import { ErsteSchritte } from "../../components/home/ErsteSchritte";
+import { Willkommen } from "../../components/home/Willkommen";
 import { RsvpStatus } from "../../components/home/HeroCard";
 import { HeroKarussell } from "../../components/home/HeroKarussell";
 import { BilanzRow, BilanzWerte, Platzierung } from "../../components/home/BilanzRow";
@@ -239,6 +240,7 @@ export default function HomeScreen() {
       ) : (
         <>
           <ErsteSchritte verordnung={verordnung} members={members} termine={daten.termine} ich={activeMember ?? null} />
+          <Willkommen ich={activeMember ?? null} members={members} termine={daten.termine} stammtischName={verordnung?.name || "der Runde"} />
           <HeroKarussell
             termine={daten.termine}
             now={now}

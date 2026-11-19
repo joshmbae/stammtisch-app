@@ -118,8 +118,14 @@ export function BuehneZusagen() {
   return (
     <Buehne bg={c.blueBg} ring={c.isDark ? "rgba(255,255,255,0.05)" : "rgba(45,79,158,0.08)"}>
       <Animated.View style={[styles.karte, { backgroundColor: c.heroBlue, borderColor: c.heroBlueEdge }, schweben]}>
-        <Text style={[styles.kartenLabel, { color: c.heroBlueSub }]}>Nächster Stammtisch</Text>
-        <Text style={[styles.kartenZeile, { color: c.onHeroBlue }]}>Fr, 16.10. · 19:30</Text>
+        {/* Wie die Karte auf Home: Einordnung links, Datum rechts, darunter groß der Name. */}
+        <View style={{ gap: 2 }}>
+          <View style={[styles.zeile, { justifyContent: "space-between" }]}>
+            <Text style={[styles.kartenLabel, { color: c.heroBlueSub }]}>Als Nächstes</Text>
+            <Text style={[styles.klein, { color: c.onHeroBlue }]}>Fr, 16.10. · 19:30</Text>
+          </View>
+          <Text style={[styles.kartenName, { color: c.onHeroBlue }]}>Stammtisch</Text>
+        </View>
         <View style={styles.countdown}>
           {[["3", "Tage"], ["23", "Std"], ["10", "Min"]].map(([z, l]) => (
             <View key={l} style={[styles.kachel, { backgroundColor: c.heroBlueInner }]}>
@@ -146,7 +152,10 @@ export function BuehneZusagen() {
 
 // ─── 3 · Live ───────────────────────────────────────────────────────────────
 
-export function BuehneLive({ spielName }: { spielName: string }) {
+export function BuehneLive({ knoepfe }: {
+  /** Ein oder zwei Knöpfe wie auf der Live-Karte, der erste hell hervorgehoben (z. B. „Strafe“, „Schocken“). */
+  knoepfe: string[];
+}) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const schweben = useSchweben(0, 4);
@@ -161,15 +170,13 @@ export function BuehneLive({ spielName }: { spielName: string }) {
         </View>
         <Text style={[styles.timer, { color: c.onLive }]}>1:13:05</Text>
         <View style={styles.zeile}>
-          <View style={[styles.liveChip, { backgroundColor: "#FFFFFF", justifyContent: "center" }]}>
-            <Ionicons name="add" size={16} color={c.live} />
-            <Text style={[styles.liveChipText, { color: c.live, flex: 0 }]}>Strafe</Text>
-          </View>
-          <View style={[styles.liveChip, { justifyContent: "center" }]}>
-            <Ionicons name="add" size={16} color={c.onLive} />
-            <Text style={[styles.liveChipText, { color: c.onLive, flex: 0, flexShrink: 1 }]} numberOfLines={1}>{spielName}</Text>
-            <TippRing farbe={c.liveAccent} radius={14} />
-          </View>
+          {knoepfe.slice(0, 2).map((k, i) => (
+            <View key={k} style={[styles.liveChip, { justifyContent: "center" }, i === 0 && { backgroundColor: "#FFFFFF" }]}>
+              <Ionicons name="add" size={16} color={i === 0 ? c.live : c.onLive} />
+              <Text style={[styles.liveChipText, { color: i === 0 ? c.live : c.onLive, flex: 0, flexShrink: 1 }]} numberOfLines={1}>{k}</Text>
+              {i === knoepfe.slice(0, 2).length - 1 ? <TippRing farbe={c.liveAccent} radius={14} /> : null}
+            </View>
+          ))}
         </View>
       </Animated.View>
       <Animated.View style={[styles.toast, toast]}>
@@ -186,7 +193,7 @@ export function BuehneLive({ spielName }: { spielName: string }) {
 
 // ─── 4 · Kasse ──────────────────────────────────────────────────────────────
 
-export function BuehneKasse() {
+export function BuehneKasse({ mitStrafen = true }: { mitStrafen?: boolean }) {
   const c = useColors();
   const styles = useThemedStyles(makeStyles);
   const schweben = useSchweben(0, 4);
@@ -197,12 +204,12 @@ export function BuehneKasse() {
         <Text style={[styles.kartenLabel, { color: c.textMuted }]}>Kassenstand</Text>
         <Text style={[styles.gross, { color: c.textDark }]}>74,50 €</Text>
         <View style={[styles.posten, { borderTopColor: c.border }]}>
-          <IconSquircle emoji={SYMBOL.zuSpaet} ton="coral" size={30} />
+          <IconSquircle emoji={mitStrafen ? SYMBOL.zuSpaet : SYMBOL.einnahme} ton={mitStrafen ? "coral" : "green"} size={30} />
           <View style={{ flex: 1 }}>
-            <Text style={styles.postenTitel}>Zu spät · Max</Text>
+            <Text style={styles.postenTitel}>{mitStrafen ? "Zu spät · Max" : "Beitrag · Max"}</Text>
             <Text style={styles.postenSub}>bezahlt</Text>
           </View>
-          <Text style={[styles.postenBetrag, { color: c.successText }]}>5 €</Text>
+          <Text style={[styles.postenBetrag, { color: c.successText }]}>{mitStrafen ? "5 €" : "20 €"}</Text>
           <View style={[styles.haken, { backgroundColor: c.success }]}>
             <Ionicons name="checkmark" size={13} color={c.onAccent} />
           </View>
@@ -259,6 +266,46 @@ export function BuehneTabelle() {
 
 export const BUEHNE_HOEHE = 300;
 
+// ─── 6 · Und jetzt du ───────────────────────────────────────────────────────
+
+/** Die Willkommens-Liste von Home im Kleinen: der erste Punkt hakt sich ab. */
+export function BuehneDu({ stammtischName }: { stammtischName: string }) {
+  const c = useColors();
+  const styles = useThemedStyles(makeStyles);
+  const schweben = useSchweben(0, 4);
+  const zeilen: { emoji: string; ton: "blue" | "coral" | "green" | "mustard"; titel: string }[] = [
+    { emoji: SYMBOL.profilbild, ton: "blue", titel: "Profilbild hinzufügen" },
+    { emoji: SYMBOL.geburtstag, ton: "coral", titel: "Geburtstag eintragen" },
+    { emoji: SYMBOL.zusage, ton: "green", titel: "Zum Termin zusagen" },
+  ];
+  return (
+    <Buehne bg={c.blueBg} ring={c.isDark ? "rgba(255,255,255,0.05)" : "rgba(45,79,158,0.08)"}>
+      <Animated.View style={[styles.karte, styles.karteHell, schweben]}>
+        <View style={{ gap: 1 }}>
+          <Text style={[styles.kartenLabel, { color: c.blue }]} numberOfLines={1}>{stammtischName}</Text>
+          <Text style={[styles.kartenName, { color: c.textDark, fontSize: 18 }]} numberOfLines={1}>Willkommen in der Runde</Text>
+        </View>
+        <View style={[styles.spur, { backgroundColor: c.cardAlt }]}>
+          <View style={[styles.spurFuell, { backgroundColor: c.success }]} />
+        </View>
+        {zeilen.map((z, i) => (
+          <View key={z.titel} style={[styles.posten, { borderTopColor: c.border }]}>
+            {i === 0 ? (
+              <View style={[styles.haken, { width: 30, height: 30, borderRadius: 10, backgroundColor: c.success }]}>
+                <Ionicons name="checkmark" size={16} color={c.onAccent} />
+              </View>
+            ) : (
+              <IconSquircle emoji={z.emoji} ton={z.ton} size={30} />
+            )}
+            <Text style={[styles.postenTitel, { flex: 1 }, i === 0 && { color: c.textMuted, textDecorationLine: "line-through" }]} numberOfLines={1}>{z.titel}</Text>
+            {i > 0 ? <Ionicons name="chevron-forward" size={14} color={c.textMuted} /> : null}
+          </View>
+        ))}
+      </Animated.View>
+    </Buehne>
+  );
+}
+
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     buehne: { height: BUEHNE_HOEHE, borderRadius: 32, overflow: "hidden", alignItems: "center", justifyContent: "center" },
@@ -275,6 +322,9 @@ const makeStyles = (c: ThemeColors) =>
     karteHell: { backgroundColor: c.card, borderColor: c.hairline },
     kartenLabel: { ...TYPE.label, fontSize: 11 },
     kartenZeile: { fontFamily: FONT.w700, fontSize: 15 },
+    kartenName: { fontFamily: FONT.w800, fontSize: 22, lineHeight: 26, letterSpacing: -0.4 },
+    spur: { height: 6, borderRadius: 3, overflow: "hidden" },
+    spurFuell: { width: "33%", height: "100%", borderRadius: 3 },
     zeile: { flexDirection: "row", alignItems: "center", gap: 8 },
     klein: { fontFamily: FONT.w600, fontSize: 13 },
     countdown: { flexDirection: "row", gap: 6 },

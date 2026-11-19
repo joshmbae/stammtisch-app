@@ -19,8 +19,10 @@ export default function NewMemberScreen() {
   const [rollenOptionen, setRollenOptionen] = useState<string[]>(["Mitglied"]);
   const [speichert, setSpeichert] = useState(false);
   // Erstes Mitglied eines neuen Stammtischs: Admin mit PIN vorschlagen (abschaltbar).
-  const { erstes } = useLocalSearchParams<{ erstes?: string }>();
+  const { erstes, ich } = useLocalSearchParams<{ erstes?: string; ich?: string }>();
   const istErstes = erstes === "1";
+  /** Von „Wer bist du?“ aus („Ich bin neu“): das neue Profil ist man selbst. */
+  const istIch = istErstes || ich === "1";
 
   useEffect(() => {
     if (!istErstes) return;
@@ -88,7 +90,7 @@ export default function NewMemberScreen() {
       };
       const existing = await loadMembers();
       await saveMembers([...existing, newMember]);
-      if (!activeMemberId) {
+      if (!activeMemberId || istIch) {
         // Onboarding: noch niemand aktiv -> direkt als neues Mitglied weiter in die App
         await setActiveSession(newMember.id);
         router.replace("/onboarding-intro");
@@ -105,7 +107,7 @@ export default function NewMemberScreen() {
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={0}>
       <Screen header={<FormularKopf
-        title={istErstes ? "Du als erstes Mitglied" : "Neues Mitglied"}
+        title={istErstes ? "Du als erstes Mitglied" : istIch ? "Willkommen! Wer bist du?" : "Neues Mitglied"}
         subtitle={istErstes ? "Nur der Name ist Pflicht. Als Admin (mit 4-stelliger PIN) darfst nur du die Einstellungen ändern – unten abschaltbar." : "Nur der Name ist Pflicht"}
         onSpeichern={save}
         speichert={speichert}
