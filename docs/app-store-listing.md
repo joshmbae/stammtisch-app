@@ -279,15 +279,54 @@ eas build --platform all --profile production
 eas submit --platform all --latest
 ```
 
-`eas.json` schickt Android seit 1.9.0 in den Track **`production`** (öffentlich).
-Für reine Testversionen vorübergehend wieder `internal` eintragen.
+`eas.json` schickt Android seit 20.11.2026 in den Track **`alpha`** (geschlossener Test),
+weil das Konto noch keinen Produktionszugriff hat (siehe unten). Nach der Freigabe
+wieder `production` eintragen.
 
-**Wichtig für die erste öffentliche Veröffentlichung:** Private Entwicklerkonten,
-die nach dem 13.11.2023 angelegt wurden, müssen vor dem ersten Produktions-Release
-einen **geschlossenen Test mit mindestens 12 Testern über 14 Tage** abschließen.
-Ist das noch nicht erfolgt, lehnt Google den Upload in `production` ab – dann zuerst
-in den Track `alpha` (geschlossener Test) und den Produktionszugriff in der Play
-Console beantragen. Prüfen unter Play Console → Dashboard → „Produktionszugriff“.
+## Geschlossener Test → Produktionszugriff (Stand 20.11.2026: läuft)
+
+Google verlangt bei privaten Entwicklerkonten (angelegt nach dem 13.11.2023) vor der
+ersten öffentlichen Version: **mindestens 12 Tester, 14 Tage am Stück** im geschlossenen
+Test, danach Produktionszugriff beantragen.
+
+1. **Tester-Liste anlegen:** Play Console → Testen und veröffentlichen → Testen →
+   **Geschlossener Test** → Track „Alpha“ (bzw. „Closed testing“) → Tab **Tester** →
+   „E-Mail-Liste erstellen“, z. B. „Stammtisch-Tester“. Dort die **Google-Konto-Adressen**
+   (Gmail o. ä., mit der jeweils der Play Store läuft) eintragen. Lieber 15–20 als genau
+   12: Wer sich zwischendurch abmeldet, zählt nicht mehr, und die 14 Tage beginnen erst,
+   wenn 12 gleichzeitig dabei sind.
+   *Datenschutz:* Die Adressen nur in der Play Console pflegen, nicht im Repo oder in Notizen
+   sammeln; die Tester vorher fragen.
+2. **Release erstellen:** im selben Track „Neuen Release erstellen“ → die `.aab` hochladen
+   (1.10.0, versionCode 11) → Versionshinweise aus `docs/release-notes-1.10.0.txt` →
+   „Roll-out für geschlossenen Test starten“. Die erste Prüfung kann ein paar Tage dauern.
+3. **Feedback-Kanal** angeben (Pflichtfeld im Track): E-Mail-Adresse oder Link, z. B. die
+   Support-Seite.
+4. **Link verteilen:** Im Tab „Tester“ steht nach der Freigabe der **Opt-in-Link**
+   („Über das Web teilnehmen“). Den mit dem Einladungstext unten an die Tester schicken.
+5. **14 Tage warten.** Tester sollen die App installiert lassen und ab und zu öffnen –
+   Google schaut, ob wirklich getestet wird.
+6. **Produktionszugriff beantragen:** Dashboard → „Produktionszugriff beantragen“.
+   Fragen ehrlich und konkret beantworten (wer getestet hat: Mitglieder echter
+   Stammtische; was sich durch Feedback geändert hat: z. B. Strafen optional, Erinnern per
+   Mitteilung, Einladungscode). Antwort meist innerhalb von 7 Tagen.
+7. **Freigegeben:** Produktion → „Release aus Test übernehmen“ (gleiche `.aab`, kein neuer
+   Build) → Roll-out. Danach `eas.json` wieder auf `"track": "production"` stellen.
+
+Bis dahin können künftige Versionen ganz normal per `eas submit --platform android --latest`
+in den Alpha-Track gehen; die Tester bekommen sie als Update.
+
+### Einladungstext für Tester (WhatsApp)
+```
+Hi! Unsere Stammtisch-App „DeinStammtisch“ soll in den Play Store. Google will vorher, dass mindestens 12 Leute sie 14 Tage lang testen – hilfst du mit? 🍻
+
+1. Schick mir die E-Mail-Adresse deines Google-Kontos (die vom Play Store).
+2. Wenn ich dich eingetragen habe, öffne diesen Link und tipp auf „Tester werden“:
+[OPT-IN-LINK]
+3. Dann die App über den Link im Play Store installieren.
+
+Wichtig: Bitte 14 Tage nicht abmelden und die App ab und zu öffnen. Danach ist sie für alle im Store. Danke! 🙏
+```
 
 **Achtung bei der allerersten Veröffentlichung:** Die Google-API darf keinen
 neuen Store-Eintrag anlegen. War die App noch nie im Play Store, muss die erste
