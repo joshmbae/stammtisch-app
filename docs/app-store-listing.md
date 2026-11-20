@@ -82,7 +82,7 @@ Im Funkloch zeigt die App den letzten Stand an.
 DATENSCHUTZ
 Keine Werbung, kein Tracking, keine Analyse-Dienste. Keine Registrierung mit E-Mail: Ihr legt einen Stammtisch mit Name und Passwort an, die anderen kommen mit dem Einladungscode dazu – auch wer das Passwort vergessen hat. Eigenes Profil und ganzer Stammtisch lassen sich jederzeit in der App löschen.
 ```
-(2512 Zeichen)
+(2523 Zeichen)
 
 ### Keywords (max. 100 Zeichen, ohne Leerzeichen nach Komma)
 ```
