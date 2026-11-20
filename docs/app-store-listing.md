@@ -38,25 +38,25 @@ Zeichenlimits sind geprüft. Die App-ID `6789122309` (ascAppId in `eas.json`) ex
 
 ### Promotional Text (max. 170 Zeichen, jederzeit ohne Review änderbar)
 ```
-Termine, Strafen, Kasse und Tabelle für eure feste Runde – mit Live-Modus für den Abend und dem Rückblick als Bild für eure WhatsApp-Gruppe.
+Termine, Kasse, Spiele und Strichliste für eure feste Runde – mit Live-Modus für den Abend und dem Rückblick als Bild für eure WhatsApp-Gruppe.
 ```
-(140 Zeichen)
+(143 Zeichen)
 
 ### Description (max. 4000 Zeichen)
 ```
 DeinStammtisch ist die App für eure feste Runde – ob Kartenabend, Vereinsstammtisch oder Freundeskreis mit eigenen Regeln. Alles, was ihr sonst in Chatgruppen und Zettelwirtschaft verliert, liegt hier an einem Ort.
 
 DER ABEND: VORHER, LIVE, DANACH
-Vorher sagt jeder mit einem Tipp zu oder ab, wer noch nicht geantwortet hat, bekommt eine Erinnerung. Zur Startzeit öffnet die App direkt den laufenden Abend: wer da ist, wer zu spät kam, Strafen und euer Spiel mit einem Tipp. Danach seht ihr den Abend in Zahlen.
+Vorher sagt jeder mit einem Tipp zu oder ab, wer noch nicht geantwortet hat, bekommt eine Erinnerung aufs Handy. Zur Startzeit öffnet die App direkt den laufenden Abend: wer da ist, wer zu spät kam, euer Spiel und die Strichliste mit einem Tipp. Danach seht ihr den Abend in Zahlen.
 
 RÜCKBLICK ZUM TEILEN
 Nach dem Abend macht die App ein Bild mit eurem Foto vom Abend und den Siegern des Abends – fertig für die WhatsApp-Gruppe.
 
-STRAFEN – NACH EUREN REGELN
-Jeder Stammtisch legt seinen Strafenkatalog selbst fest. Strafen aus dem Spiel entstehen automatisch, offene Strafen sind mit einem Tipp beglichen.
+STRAFEN – WENN IHR WOLLT
+Jeder Stammtisch legt seinen Strafenkatalog selbst fest. Strafen aus dem Spiel entstehen automatisch, offene Strafen sind mit einem Tipp beglichen. Keine Strafen bei euch? Ausschalten, dann verschwinden sie überall in der App.
 
 KASSE
-Kassenstand, Einnahmen, Ausgaben und Rechnungen, die einer für alle bezahlt hat – mit Übersicht, wer seinen Anteil schon beglichen hat.
+Kassenstand, Einnahmen, Ausgaben und Rechnungen, die einer für alle bezahlt hat – mit Übersicht, wer seinen Anteil schon beglichen hat. Den eigenen Anteil zahlt ihr direkt per PayPal zurück.
 
 SPIELE
 Eigene Spiele mit eigenen Ereignissen, zum Beispiel Schocken oder Skat. Pro Ereignis ein Zähler, Strafen bei bestimmten Ergebnissen entstehen automatisch.
@@ -65,10 +65,13 @@ STRICHLISTE
 Bier, Kurze oder Runden – was ihr am Abend mitzählen wollt, kommt auf die Strichliste. Jeder Eintrag bekommt seine eigene Rangliste.
 
 TABELLE
-Ranglisten für Teilnahme, Verspätung, Strafen und eure Spiele, fürs laufende Jahr oder „Allzeit“. Ihr legt fest, ob viel oder wenig gut ist. Wer vorne liegt, trägt das Symbol am Profilbild.
+Ranglisten für Teilnahme, Verspätung, Strafen, eure Spiele und die Strichliste, fürs laufende Jahr oder „Allzeit“. Ihr legt fest, ob viel oder wenig gut ist. Wer vorne liegt, trägt das Symbol am Profilbild.
 
 DIE RUNDE
-Profile mit Foto und Rollen wie Kassenwart oder Schriftführer, optional mit PIN geschützt. Satzung, Protokolle und Einstellungen an einem Ort. Wer in mehreren Runden ist, wechselt mit einem Tipp.
+Profile mit Foto und Rollen wie Kassenwart oder Schriftführer, optional mit PIN geschützt. Satzung, Protokolle und Einstellungen an einem Ort. Wer in mehreren Runden ist, wechselt nach dem Abmelden mit einem Tipp.
+
+SCHNELL STARTKLAR
+Wer gründet, wählt gleich: mit oder ohne Strafen, welches Spiel und was auf die Strichliste kommt – alles später änderbar. Wer neu dazukommt, wird mit einer kurzen Tour begrüßt.
 
 HELL UND DUNKEL
 Ein warmes, ruhiges Design in Hell und Dunkel.
@@ -77,14 +80,15 @@ AUCH OHNE NETZ DABEI
 Im Funkloch zeigt die App den letzten Stand an.
 
 DATENSCHUTZ
-Keine Werbung, kein Tracking, keine Analyse-Dienste. Keine Registrierung mit E-Mail: Ihr legt einen Stammtisch mit Name und Passwort an, die anderen treten mit denselben Zugangsdaten bei. Eigenes Profil und ganzer Stammtisch lassen sich jederzeit in der App löschen.
+Keine Werbung, kein Tracking, keine Analyse-Dienste. Keine Registrierung mit E-Mail: Ihr legt einen Stammtisch mit Name und Passwort an, die anderen kommen mit dem Einladungscode dazu – auch wer das Passwort vergessen hat. Eigenes Profil und ganzer Stammtisch lassen sich jederzeit in der App löschen.
 ```
+(2512 Zeichen)
 
 ### Keywords (max. 100 Zeichen, ohne Leerzeichen nach Komma)
 ```
-stammtisch,verein,kneipenrunde,kasse,strafen,termine,rangliste,schocken,kartenrunde,skat,vereinsapp
+stammtisch,verein,kneipenrunde,kasse,strafen,termine,rangliste,schocken,strichliste,skat,vereinsapp
 ```
-(99 Zeichen. Name und Untertitel zählen schon als Suchbegriffe, daher dort nicht wiederholt.)
+(99 Zeichen. Name und Untertitel zählen schon als Suchbegriffe, daher dort nicht wiederholt. Seit 1.10.0 „strichliste“ statt „kartenrunde“.)
 
 ### Support URL
 ```
@@ -100,22 +104,8 @@ Leer lassen (optional).
 ```
 (Apple ergänzt das ©-Zeichen nicht selbst: Feld ohne „©“ ausfüllen oder „© 2026 Joshua Bär“ eintragen, beides ist üblich.)
 
-### What's New in This Version (max. 4000 Zeichen)
-```
-Der Abend geht noch schneller von der Hand:
-
-• Live-Abend aufgeräumt: oben immer sichtbar, ob Vorher, Live oder Danach – darunter Heute, Strafen und euer Spiel. Das Foto vom Abend ist schon während des Abends zu sehen.
-• Strafen mit zwei Tipps: der ganze Katalog als Kacheln, Strafe und Person antippen, fertig – mit „Rückgängig“.
-• Verspätung schnell eintragen: unter „Heute“ die Person antippen und Minuten eintragen.
-• Agenda auch am Abend, mit Namen, wer den Punkt eingetragen hat.
-• Direkt bezahlen: offene Strafen mit einem Tipp per PayPal zahlen, bei paypal.me ist der Betrag schon eingetragen.
-• Rückblick-Bild mit allen Siegern bei Gleichstand und der Anwesenheit in Prozent.
-• Profil: Bilanz fürs Jahr oder „Allzeit“, offene Strafen deutlich sichtbar, Profilbilder groß ansehen.
-• Dein Profilbild oben auf Home: Profil, Offenes, Hell/Dunkel und Einstellungen mit einem Tipp.
-• Neue Runde gründen: Schritt für Schritt mit Einladung, erstem Termin und Admin – als Checkliste auf Home.
-• Außerdem: „Die Runde“ aufgeräumt, auf Wunsch Veranstaltungen oben auf Home, viele kleine Verbesserungen und Fehlerbehebungen.
-```
-(ca. 1.120 Zeichen)
+### What's New in This Version
+Text unten in `docs/release-notes-1.10.0.txt` (371 Zeichen), siehe oben.
 
 ## 2. App-Informationen (links unter „Allgemein“)
 
@@ -223,7 +213,7 @@ Hinweise:
 
 ## 8. Build zuordnen & einreichen
 
-1. Version 1.9.0 → „Build“ → „+“ → den hochgeladenen Build auswählen.
+1. Version 1.10.0 → „Build“ → „+“ → den hochgeladenen Build auswählen.
 2. Alle Pflichtfelder prüfen (Screenshots, Beschreibung, Support-URL, Datenschutz, Review-Kontakt).
 3. „Zur Prüfung hinzufügen“ → „Zur Prüfung einreichen“.
 4. Release-Methode: „Manuell veröffentlichen“ empfohlen, dann bestimmt ihr den Zeitpunkt nach Freigabe.
